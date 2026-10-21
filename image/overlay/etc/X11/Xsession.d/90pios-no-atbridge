@@ -1,0 +1,3 @@
+# Erisilebilirlik veri yolu (AT-SPI) kurulu degil; GTK uygulamalarinin her
+# acilista uyari basip baglanmaya calismasini engeller.
+export NO_AT_BRIDGE=1

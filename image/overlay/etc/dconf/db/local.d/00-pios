@@ -1,0 +1,12 @@
+# Plank dock: her zaman gorunur, ortada, buyutme efektli (macOS benzeri).
+[net/launchpad/plank/docks/dock1]
+position='bottom'
+alignment='center'
+hide-mode=0
+icon-size=44
+zoom-enabled=true
+zoom-percent=140
+theme='Default'
+show-dock-item=false
+lock-items=false
+dock-items=['01-thunar.dockitem', '02-xfce4-terminal.dockitem', '03-chromium.dockitem', '04-vscode.dockitem', '05-pios-python.dockitem', '06-pios-agents.dockitem', '07-pios-camera.dockitem', '07-pios-gpio.dockitem', '08-pios-settings.dockitem']

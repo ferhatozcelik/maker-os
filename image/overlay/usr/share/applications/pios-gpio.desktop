@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=GPIO Pinleri
+Comment=Raspberry Pi pinlerini kontrol et, I2C aygıtlarını tara
+Exec=pios-open gpio
+Icon=pios-gpio
+Categories=Development;Electronics;
+StartupWMClass=pios-gpio

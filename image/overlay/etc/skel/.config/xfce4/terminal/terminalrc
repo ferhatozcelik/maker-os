@@ -1,0 +1,25 @@
+[Configuration]
+FontName=DejaVu Sans Mono 11
+MiscMenubarDefault=FALSE
+MiscToolbarDefault=FALSE
+MiscBordersDefault=TRUE
+MiscCursorBlinks=TRUE
+MiscCursorShape=TERMINAL_CURSOR_SHAPE_IBEAM
+MiscDefaultGeometry=110x30
+MiscConfirmClose=TRUE
+MiscTabCloseMiddleClick=TRUE
+MiscMouseWheelZoom=TRUE
+MiscRightClickAction=TERMINAL_RIGHT_CLICK_ACTION_CONTEXT_MENU
+MiscCopyOnSelect=FALSE
+MiscShowUnsafePasteDialog=TRUE
+ScrollingLines=10000
+ScrollingBar=TERMINAL_SCROLLBAR_RIGHT
+TitleMode=TERMINAL_TITLE_REPLACE
+ColorUseTheme=FALSE
+ColorForeground=#e6e6e6
+ColorBackground=#1e1f24
+ColorCursor=#ff455a
+ColorBold=#ffffff
+ColorBoldUseDefault=FALSE
+ColorPalette=#2e3038;#ff5f6d;#7fd17f;#f5c46b;#6aa8ff;#c792ea;#5fd7d7;#d8d8d8;#5c6070;#ff8a93;#a8e6a3;#ffd98a;#9cc4ff;#ddb6f2;#8ae8e8;#ffffff
+TabActivityColor=#ff455a

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Agent Yöneticisi
+Comment=Claude Code, Codex, Gemini, Antigravity, Ollama
+Exec=pios-open agent
+Icon=pios-agents
+Categories=Development;
+StartupWMClass=pios-agent

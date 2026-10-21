@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Kamera
+Comment=Pi kamera ve USB kameradan canlı görüntü, fotoğraf çek
+Exec=pios-open kamera
+Icon=pios-camera
+Categories=AudioVideo;Video;Photography;
+StartupWMClass=pios-kamera

@@ -1,0 +1,2 @@
+# Build artifacts stay on the host; stages access sources through /workspace.
+out/

@@ -1,0 +1,11 @@
+# Istege bagli: Pi'nin acilista evdeki Wi-Fi agina baglanmasi icin bu
+# dosyayi "wifi.txt" adiyla kopyalayip asagidaki iki satiri doldurun.
+# Dosya ilk acilista okunur, Wi-Fi profili eklenir ve guvenlik icin silinir.
+#
+# Bu dosya olmadan da sistem calisir: Ethernet kablosu takiliysa oradan
+# IP alir; hicbir ag yoksa "Pardus-Maker-XXXX" adli Wi-Fi agi acar
+# (sifre: pardus1234) ve web paneline (ekran + kontrol) http://10.42.0.1/
+# adresinden ulasilir.
+
+SSID=EvAgimin-Adi
+PAROLA=wifi-sifresi

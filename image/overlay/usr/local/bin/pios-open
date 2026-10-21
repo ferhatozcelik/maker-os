@@ -1,0 +1,8 @@
+#!/bin/sh
+# Pardus Maker Merkezi'nin bir bolumunu Chromium uygulama penceresinde acar.
+# Kullanim: pios-open [genel|wifi|python|projeler|agent|terminal|kamera|usb|gpio|...]
+SECTION="${1:-genel}"
+TOKEN="$(cat /run/pios/token 2>/dev/null)"
+exec chromium --app="http://localhost/?t=$TOKEN#$SECTION" \
+  --class="pios-$SECTION" --user-data-dir="$HOME/.config/pios-center" \
+  --window-size=1040,720 --no-first-run --no-default-browser-check

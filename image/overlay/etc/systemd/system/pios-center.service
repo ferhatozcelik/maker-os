@@ -1,0 +1,11 @@
+[Unit]
+Description=Pardus Maker Merkezi (web: ayarlar, Python, agent, GPIO, uzak ekran; port 80)
+After=network.target NetworkManager.service
+
+[Service]
+ExecStart=/usr/bin/python3 -I /usr/lib/pios/center/server.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

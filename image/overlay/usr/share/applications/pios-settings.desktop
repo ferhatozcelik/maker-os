@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Ayarlar
+Comment=Wi-Fi, görünüm, donanım, kullanıcı ve güncellemeler
+Exec=pios-open genel
+Icon=pios-settings
+Categories=Settings;System;
+StartupWMClass=pios-genel

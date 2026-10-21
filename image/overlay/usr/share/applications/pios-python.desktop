@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Python Yöneticisi
+Comment=Python sürümleri, projeler ve AI ortamı
+Exec=pios-open python
+Icon=pios-python
+Categories=Development;
+StartupWMClass=pios-python

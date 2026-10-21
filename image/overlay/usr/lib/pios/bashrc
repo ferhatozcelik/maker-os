@@ -1,0 +1,61 @@
+# Pardus Maker etkilesimli kabuk ayarlari (~/.bashrc tarafindan yuklenir).
+# Terminal pencereleri login kabugu olmadigindan PATH/alias'lar burada da
+# tanimlanir.
+[ -f /etc/profile.d/pios.sh ] && . /etc/profile.d/pios.sh
+
+# Renkli ve okunakli komut satiri: [ai] pardus@pardus-maker ~/Projeler/demo (main) $
+__pios_git() {
+  local b
+  b=$(git symbolic-ref --short HEAD 2>/dev/null) || return
+  printf ' (%s)' "$b"
+}
+__pios_venv() { [ -n "$VIRTUAL_ENV" ] && printf '[%s] ' "${VIRTUAL_ENV_PROMPT:-$(basename "$VIRTUAL_ENV")}"; }
+export VIRTUAL_ENV_DISABLE_PROMPT=1
+PS1='\[\e[35m\]$(__pios_venv)\[\e[1;32m\]\u@\h\[\e[0m\] \[\e[1;34m\]\w\[\e[33m\]$(__pios_git)\[\e[0m\]\n\$ '
+
+# Gecmis: daha uzun, tekrarsiz, pencereler arasi paylasimli.
+HISTSIZE=10000
+HISTFILESIZE=20000
+HISTCONTROL=ignoreboth:erasedups
+shopt -s histappend cdspell autocd 2>/dev/null
+PROMPT_COMMAND="history -a${PROMPT_COMMAND:+; $PROMPT_COMMAND}"
+
+alias ls='ls --color=auto'
+alias ll='ls -lh --group-directories-first'
+alias la='ls -lha --group-directories-first'
+alias grep='grep --color=auto'
+alias ..='cd ..'
+alias ...='cd ../..'
+alias projeler='cd ~/Projeler'
+alias guncelle='sudo apt update && sudo apt full-upgrade'
+alias sicaklik='awk "{printf \"CPU: %.1f °C\n\", \$1/1000}" /sys/class/thermal/thermal_zone0/temp'
+
+# Pardus Maker Merkezi bolumlerini acar: merkez [python|agent|gpio|wifi|...]
+merkez() { pios-open "${1:-genel}" >/dev/null 2>&1 & disown; }
+
+yardim() {
+  cat <<'TXT'
+Pardus Maker - sik kullanilan komutlar
+  python3 / python      varsayilan (en guncel) Python
+  ai-env                hazir AI ortamini etkinlestir (torch, opencv, onnxruntime...)
+  deactivate            sanal ortamdan cik
+  uv init proje         yeni Python projesi;  uv add paket  ile paket ekle
+  uv run main.py        projeyi kendi ortaminda calistir
+  code .                bulundugun klasoru VS Code'da ac
+  projeler              ~/Projeler klasorune git
+  merkez python         Python Yoneticisi (merkez agent | gpio | wifi | genel)
+  pinout                GPIO pin semasi (ai-env icinde)
+  i2cdetect -y 1        I2C aygitlarini tara
+  sicaklik              CPU sicakligi
+  guncelle              sistemi guncelle
+TXT
+}
+
+# Her yeni terminalde kisa karsilama (kapatmak icin: touch ~/.pios-sessiz)
+if [ -z "$PIOS_WELCOMED" ] && [ ! -e "$HOME/.pios-sessiz" ] && [ -t 1 ]; then
+  export PIOS_WELCOMED=1
+  __ip=$(hostname -I 2>/dev/null | awk '{print $1}')
+  printf '\e[1;31mPardus Maker\e[0m  %s.local%s  ·  %s  ·  komutlar icin \e[1myardim\e[0m\n\n' \
+    "$(hostname)" "${__ip:+ ($__ip)}" "$(python3 --version 2>/dev/null)"
+  unset __ip
+fi

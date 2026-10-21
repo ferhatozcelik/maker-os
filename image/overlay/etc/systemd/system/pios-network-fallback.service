@@ -1,0 +1,12 @@
+[Unit]
+Description=Pardus Maker ekransiz ag (wifi.txt, yedek erisim noktasi)
+After=NetworkManager.service pios-firstboot.service
+Wants=NetworkManager.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/pios/network-fallback.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,23 @@
+# Build ciktilari (imajlar GitHub Releases'te yayinlanir)
+image/out/
+*.img
+*.img.xz
+*.img.sha256
+*.img.xz.sha256
+*.manifest.txt
+
+# 01-pin-base.sh tarafindan base.env.example'dan uretilir
+image/pins/base.env
+
+# Python / Node
+__pycache__/
+*.pyc
+.venv/
+node_modules/
+
+# Sistem ve editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~

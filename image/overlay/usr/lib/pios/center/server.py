@@ -1,0 +1,367 @@
+#!/usr/bin/python3
+# Pardus Maker Merkezi (port 80): Ayarlar, Python Yoneticisi, Agent
+# Yoneticisi, GPIO Pinleri, Kamera, USB aygitlari, web terminali ve uzak
+# ekran icin tek web uygulamasi.
+#
+# Erisim:
+#  - Pi'nin masaustunden: pios-open betigi /run/pios/token'i URL ile verir,
+#    sunucu bunu HttpOnly/SameSite=Strict cerezine cevirir (parola sorulmaz).
+#  - Agdan: HTTP Basic ile sistem kullanicisi ve parolasi (/etc/shadow).
+# Durum degistiren tum istekler POST + "X-Pios: 1" basligi ister (CSRF).
+# Yalnizca Python standart kutuphanesi kullanir (Pardus 21: Python 3.9).
+import base64
+import crypt
+import grp
+import hmac
+import json
+import mimetypes
+import os
+import secrets
+import sys
+import time
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from urllib.parse import parse_qs, urlparse
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+import agents  # noqa: E402
+import camera  # noqa: E402
+import devices  # noqa: E402
+import gpio  # noqa: E402
+import pyman  # noqa: E402
+import system  # noqa: E402
+import terminal  # noqa: E402
+from common import USER, jobs  # noqa: E402
+
+PORT = int(os.environ.get("PIOS_CENTER_PORT", "80"))
+WEB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web")
+NOVNC_DIR = "/usr/share/novnc"
+XTERM_DIR = "/usr/share/pios/xterm"
+TOKEN_FILE = "/run/pios/token"
+
+
+def make_token():
+    token = secrets.token_urlsafe(24)
+    os.makedirs(os.path.dirname(TOKEN_FILE), exist_ok=True)
+    with open(TOKEN_FILE + ".tmp", "w") as f:
+        f.write(token)
+    try:
+        os.chown(TOKEN_FILE + ".tmp", 0, grp.getgrnam(USER).gr_gid)
+    except KeyError:
+        pass
+    os.chmod(TOKEN_FILE + ".tmp", 0o640)
+    os.replace(TOKEN_FILE + ".tmp", TOKEN_FILE)
+    return token
+
+
+TOKEN = make_token()
+
+
+def check_password(user, password):
+    if user != USER:
+        return False
+    try:
+        with open("/etc/shadow") as f:
+            for line in f:
+                parts = line.split(":")
+                if parts[0] == user:
+                    stored = parts[1]
+                    if not stored or stored[0] in "!*":
+                        return False
+                    return hmac.compare_digest(crypt.crypt(password, stored), stored)
+    except OSError:
+        pass
+    return False
+
+
+def _int(v):
+    try:
+        return int(v)
+    except (TypeError, ValueError):
+        return None
+
+
+class Handler(BaseHTTPRequestHandler):
+    server_version = "PardusMakerMerkezi"
+
+    def log_message(self, fmt, *args):
+        pass
+
+    # --- yardimcilar ------------------------------------------------------
+
+    def _cookie_token(self):
+        for part in self.headers.get("Cookie", "").split(";"):
+            k, _, v = part.strip().partition("=")
+            if k == "pios_t":
+                return v
+        return ""
+
+    def authorized(self, query):
+        self.new_cookie = None
+        if query.get("t") and hmac.compare_digest(query["t"][0], TOKEN):
+            self.new_cookie = TOKEN
+            return True
+        if self._cookie_token() and hmac.compare_digest(self._cookie_token(), TOKEN):
+            return True
+        header = self.headers.get("Authorization", "")
+        if header.startswith("Basic "):
+            try:
+                user, _, pw = base64.b64decode(header[6:]).decode().partition(":")
+            except (ValueError, UnicodeDecodeError):
+                user, pw = "", ""
+            if check_password(user, pw):
+                return True
+        time.sleep(1)
+        self.send_response(401)
+        self.send_header("WWW-Authenticate", 'Basic realm="Pardus Maker", charset="UTF-8"')
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+        return False
+
+    def send_body(self, body, ctype, code=200, cache=False):
+        self.send_response(code)
+        self.send_header("Content-Type", ctype)
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "max-age=3600" if cache else "no-store")
+        if getattr(self, "new_cookie", None):
+            self.send_header("Set-Cookie", "pios_t=%s; HttpOnly; SameSite=Strict; Path=/" % self.new_cookie)
+        self.end_headers()
+        self.wfile.write(body)
+
+    def send_json(self, obj, code=200):
+        self.send_body(json.dumps(obj).encode(), "application/json; charset=utf-8", code)
+
+    def send_file(self, base, rel):
+        path = os.path.realpath(os.path.join(base, rel.lstrip("/")))
+        if not path.startswith(os.path.realpath(base) + os.sep) or not os.path.isfile(path):
+            return self.send_json({"error": "bulunamadi"}, 404)
+        ctype = mimetypes.guess_type(path)[0] or "application/octet-stream"
+        if path.endswith(".js"):
+            ctype = "text/javascript"
+        with open(path, "rb") as f:
+            self.send_body(f.read(), ctype, cache=base in (NOVNC_DIR, XTERM_DIR))
+
+    def send_stream(self, frames):
+        """MJPEG canli goruntu: her kare multipart'in bir parcasi."""
+        self.send_response(200)
+        self.send_header("Content-Type", "multipart/x-mixed-replace; boundary=piosframe")
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Accel-Buffering", "no")
+        self.end_headers()
+        self.close_connection = True
+        try:
+            for frame in frames:
+                self.wfile.write(b"--piosframe\r\nContent-Type: image/jpeg\r\nContent-Length: %d\r\n\r\n"
+                                 % len(frame) + frame + b"\r\n")
+        except OSError:
+            pass  # tarayici sekmeyi kapatti
+        finally:
+            if hasattr(frames, "close"):
+                frames.close()
+
+    def job_reply(self, jid, err=""):
+        if not jid:
+            return self.send_json({"error": err or "baslatilamadi"}, 400)
+        return self.send_json({"job": jid})
+
+    def result(self, ok, msg=""):
+        return self.send_json({"ok": bool(ok), "message": msg}, 200 if ok else 400)
+
+    # --- GET --------------------------------------------------------------
+
+    def do_GET(self):
+        url = urlparse(self.path)
+        query = parse_qs(url.query)
+        p = url.path
+        # WebSocket: tarayicilar Basic kimligini WS istegine guvenilir sekilde
+        # eklemedigi icin tek kullanimlik bilet (/api/terminal/ticket) kullanilir.
+        if p == "/api/terminal/ws":
+            if not terminal.take_ticket(query.get("ticket", [""])[0]):
+                return self.send_json({"error": "gecersiz bilet"}, 403)
+            return terminal.serve(self)
+        if not self.authorized(query):
+            return
+        if p in ("/", "/index.html"):
+            return self.send_file(WEB_DIR, "index.html")
+        if p.startswith("/static/"):
+            return self.send_file(WEB_DIR, p[len("/static/"):])
+        if p.startswith("/novnc/"):
+            return self.send_file(NOVNC_DIR, p[len("/novnc/"):])
+        if p.startswith("/xterm/"):
+            return self.send_file(XTERM_DIR, p[len("/xterm/"):])
+
+        routes = {
+            # client_local: istek Pi'nin kendisinden mi (uzak ekran gereksiz).
+            "/api/status": lambda: dict(system.status(),
+                                        client_local=self.client_address[0] in ("127.0.0.1", "::1")),
+            "/api/wifi": lambda: system.wifi_scan(),
+            "/api/settings": lambda: {"theme": system.get_theme(), "hardware": system.hardware(),
+                                      "remote": system.remote_enabled()},
+            "/api/time": lambda: system.time_status(),
+            "/api/language": lambda: system.language_status(),
+            "/api/vnc": lambda: {"password": system.vnc_password(), "port": 6080},
+            "/api/python/versions": lambda: {"versions": pyman.versions(),
+                                             "default": pyman.default_version()},
+            "/api/python/projects": lambda: {"projects": pyman.projects(),
+                                             "dir": pyman.projects_dir(),
+                                             "templates": {k: v["title"] for k, v in pyman.TEMPLATES.items()}},
+            "/api/python/ai": lambda: pyman.ai_env(),
+            "/api/agents": lambda: {"agents": agents.list_agents(), "node": agents.node_version()},
+            "/api/gpio": lambda: gpio.state(),
+            "/api/network": lambda: {"ethernet": system.ethernet(), "saved": system.wifi_saved(),
+                                     "internet": system.internet(), "nm": system.nm_running()},
+            "/api/devices": lambda: {"usb": devices.usb_devices(), "storage": devices.storage(),
+                                     "serial": devices.serial_ports()},
+            "/api/displays": lambda: {"displays": devices.displays(), "current": devices.current_modes(),
+                                      "audio": devices.audio()},
+            "/api/camera": lambda: dict(camera.status(), photos=camera.photos()),
+            "/api/terminal/ticket": lambda: {"ticket": terminal.new_ticket(),
+                                             "ready": os.path.isfile(os.path.join(XTERM_DIR, "xterm.js"))},
+        }
+        if p in routes:
+            return self.send_json(routes[p]())
+        if p.startswith("/api/jobs/"):
+            job = jobs.get(p.rsplit("/", 1)[-1], _int(query.get("since", ["0"])[0]) or 0)
+            return self.send_json(job) if job else self.send_json({"error": "is yok"}, 404)
+        if p == "/api/camera/stream":
+            cam = camera.find(query.get("cam", [""])[0])
+            if not cam:
+                return self.send_json({"error": "kamera bulunamadi"}, 404)
+            return self.send_stream(camera.manager.frames(cam))
+        if p.startswith("/api/camera/photo/"):
+            path = camera.photo_path(p.rsplit("/", 1)[-1])
+            if not path:
+                return self.send_json({"error": "bulunamadi"}, 404)
+            thumb = camera.thumbnail(path) if query.get("thumb") else None
+            if thumb is None:
+                with open(path, "rb") as f:
+                    thumb = f.read()
+            if query.get("download"):
+                self.send_response(200)
+                self.send_header("Content-Type", "image/jpeg")
+                self.send_header("Content-Length", str(len(thumb)))
+                self.send_header("Content-Disposition", 'attachment; filename="%s"' % os.path.basename(path))
+                self.end_headers()
+                return self.wfile.write(thumb)
+            return self.send_body(thumb, "image/jpeg", cache=True)
+        if p == "/api/gpio/i2c":
+            found, err = gpio.i2c_scan()
+            return self.send_json({"devices": found}) if found is not None else self.send_json({"error": err}, 400)
+        self.send_json({"error": "bulunamadi"}, 404)
+
+    # --- POST -------------------------------------------------------------
+
+    def do_POST(self):
+        url = urlparse(self.path)
+        if not self.authorized(parse_qs(url.query)):
+            return
+        if self.headers.get("X-Pios") != "1":
+            return self.send_json({"error": "gecersiz istek"}, 403)
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+            d = json.loads(self.rfile.read(length) or b"{}")
+        except ValueError:
+            return self.send_json({"error": "gecersiz JSON"}, 400)
+        p = url.path
+        s = lambda k, default="": str(d.get(k, default)).strip()  # noqa: E731
+
+        # Ayarlar
+        if p == "/api/wifi/connect":
+            return self.result(*system.wifi_connect(str(d.get("ssid", "")), str(d.get("password", "")),
+                                                    bool(d.get("hidden")), s("identity")))
+        if p == "/api/wifi/forget":
+            return self.result(*system.wifi_forget(str(d.get("name", ""))))
+        if p == "/api/hotspot":
+            return self.result(*system.hotspot(bool(d.get("on"))))
+        if p == "/api/settings/theme":
+            return self.result(*system.set_theme(s("mode")))
+        if p == "/api/language":
+            return self.result(*system.set_language(s("locale")))
+        if p == "/api/keyboard":
+            return self.result(*system.set_keyboard(s("keyboard"), bool(d.get("switch"))))
+        if p == "/api/time/timezone":
+            return self.result(*system.set_timezone(s("timezone")))
+        if p == "/api/time/ntp":
+            return self.result(*system.set_ntp(bool(d.get("enabled"))))
+        if p == "/api/time/sync":
+            return self.result(*system.sync_time())
+        if p == "/api/time/set":
+            return self.result(*system.set_time(d.get("epoch")))
+        if p == "/api/settings/hostname":
+            return self.result(*system.set_hostname(s("name")))
+        if p == "/api/settings/password":
+            return self.result(*system.set_password(str(d.get("password", ""))))
+        if p == "/api/settings/resolution":
+            return self.result(*system.set_resolution(s("resolution")))
+        if p == "/api/settings/interface":
+            return self.result(*system.set_interface(s("key"), bool(d.get("enabled"))))
+        if p == "/api/settings/remote":
+            return self.result(*system.set_remote(bool(d.get("enabled"))))
+        if p == "/api/updates/check":
+            return self.job_reply(system.updates_check())
+        if p == "/api/updates/install":
+            return self.job_reply(system.updates_install())
+        if p == "/api/power":
+            return self.result(system.power(s("action")))
+        if p == "/api/desktop/restart":
+            return self.result(*system.restart_desktop())
+
+        # Aygitlar ve kamera
+        if p == "/api/devices/mount":
+            return self.result(*devices.mount(s("path")))
+        if p == "/api/devices/eject":
+            return self.result(*devices.eject(s("path")))
+        if p == "/api/devices/open":
+            return self.result(*devices.open_folder(s("path")))
+        if p == "/api/camera/photo":
+            ok, msg, name = camera.take_photo(s("cam"))
+            return self.send_json({"ok": ok, "message": msg, "name": name}, 200 if ok else 400)
+        if p == "/api/camera/delete":
+            return self.result(*camera.delete_photo(s("name")))
+        if p == "/api/camera/settings":
+            return self.result(*camera.save_settings(s("size"), bool(d.get("rotate"))))
+        if p == "/api/camera/model":
+            return self.result(*camera.set_model(s("model")))
+
+        # Python
+        if p == "/api/python/install":
+            return self.job_reply(pyman.install(s("minor")))
+        if p == "/api/python/uninstall":
+            return self.job_reply(*pyman.uninstall(s("minor")))
+        if p == "/api/python/default":
+            return self.result(*pyman.set_default(s("minor")))
+        if p == "/api/python/projects/create":
+            return self.job_reply(*pyman.create_project(s("name"), s("python"), s("template", "bos")))
+        if p == "/api/python/projects/add":
+            return self.job_reply(*pyman.add_package(s("name"), s("package")))
+        if p == "/api/python/projects/open":
+            return self.result(pyman.open_project(s("name"), s("how")))
+        if p == "/api/python/projects/delete":
+            return self.result(pyman.delete_project(s("name")))
+        if p == "/api/python/ai/open":
+            return self.result(pyman.ai_open(s("how")))
+
+        # Agent'lar
+        if p == "/api/agents/action":
+            return self.job_reply(*agents.action(s("id"), s("action")))
+        if p == "/api/agents/launch":
+            proj = pyman._project_path(s("project")) if s("project") else None
+            return self.result(agents.launch(s("id"), proj))
+
+        # GPIO
+        if p == "/api/gpio/set":
+            bcm = _int(d.get("bcm"))
+            mode = s("mode")
+            if mode == "out":
+                return self.result(*gpio.set_output(bcm, bool(d.get("value"))))
+            if mode == "in":
+                return self.result(*gpio.set_input(bcm, s("bias", "as-is")))
+            return self.result(gpio.release(bcm))
+
+        self.send_json({"error": "bulunamadi"}, 404)
+
+
+if __name__ == "__main__":
+    ThreadingHTTPServer.allow_reuse_address = True
+    ThreadingHTTPServer.daemon_threads = True
+    ThreadingHTTPServer(("", PORT), Handler).serve_forever()

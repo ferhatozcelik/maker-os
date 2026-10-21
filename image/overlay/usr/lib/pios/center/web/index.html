@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="theme-color" content="#c8102e">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Pardus Maker</title>
+<link rel="icon" href="/static/icons/pios-center.svg">
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<div id="app">
+  <header id="topbar">
+    <button id="menuBtn" aria-label="Menü"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    <b id="topTitle">Pardus Maker</b>
+  </header>
+  <aside id="sidebar">
+    <div class="device" id="device">
+      <img src="/static/icons/pios-center.svg" alt="">
+      <div><b id="devName">Pardus Maker</b><small id="devModel">—</small></div>
+    </div>
+    <nav id="nav"></nav>
+  </aside>
+  <div id="scrim"></div>
+  <main id="content"></main>
+</div>
+<div id="screen" hidden>
+  <div id="vncTarget"></div>
+  <div id="screenPill">
+    <button data-act="back" title="Merkeze dön">‹ Merkez</button>
+    <span id="screenState">bağlanıyor…</span>
+    <button data-act="kbd" title="Klavye">⌨</button>
+    <button data-act="keys" title="Ctrl+Alt+Del gönder">⌃⌥⌦</button>
+    <button data-act="full" title="Tam ekran">⤢</button>
+  </div>
+  <textarea id="kbd" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" aria-hidden="true"></textarea>
+  <div id="rotateHint">
+    <div class="phone"></div>
+    <b>Telefonu yatay çevirin</b>
+    <span>Masaüstü yatay ekranda tam boyutta görünür.</span>
+    <div class="btns"><button class="btn primary" data-act="landscape">Yatay tam ekran</button><button class="btn" data-act="portrait">Dikey devam et</button></div>
+  </div>
+</div>
+<div id="sheet" hidden>
+  <div class="sheet-card">
+    <h3 id="sheetTitle"></h3>
+    <pre id="sheetLog"></pre>
+    <div class="sheet-foot"><span id="sheetState"></span><button class="btn" id="sheetClose">Kapat</button></div>
+  </div>
+</div>
+<div id="lightbox" hidden>
+  <img id="lbImg" alt="">
+  <div class="lb-bar">
+    <span id="lbName"></span>
+    <a class="btn" id="lbDl" download>İndir</a>
+    <button class="btn danger" id="lbDel">Sil</button>
+    <button class="btn" id="lbClose">Kapat</button>
+  </div>
+</div>
+<dialog id="dlg"></dialog>
+<div id="parking" hidden></div>
+<div id="toast"></div>
+<script type="module" src="/static/app.js"></script>
+</body>
+</html>
