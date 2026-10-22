@@ -5,6 +5,7 @@ import re
 import shutil
 import socket
 import subprocess
+import time
 
 from common import USER, jobs, read_first, run, run_user
 
@@ -69,81 +70,6 @@ def status():
 
 # --- Wi-Fi -----------------------------------------------------------------
 
-def wifi_scan():
-    saved = set(_saved_wifi())
-    run(["nmcli", "dev", "wifi", "rescan"], timeout=15)
-    _, out, _ = run(["nmcli", "-t", "-f", "IN-USE,SSID,SIGNAL,SECURITY", "dev", "wifi", "list"])
-    seen = {}
-    for line in out.splitlines():
-        # nmcli -t ':' karakterini '\:' olarak kacirir.
-        parts = line.replace("\\:", "\0").split(":")
-        if len(parts) < 4:
-            continue
-        in_use, ssid, signal, sec = [p.replace("\0", ":") for p in parts[:4]]
-        if not ssid:
-            continue
-        sig = int(signal) if signal.isdigit() else 0
-        if ssid not in seen or seen[ssid]["signal"] < sig:
-            seen[ssid] = {"ssid": ssid, "signal": sig, "secure": bool(sec and sec != "--"),
-                          "enterprise": "802.1X" in sec, "active": in_use == "*",
-                          "saved": ssid in saved}
-    return sorted(seen.values(), key=lambda n: -n["signal"])
-
-
-def _saved_wifi():
-    _, out, _ = run(["nmcli", "-t", "-f", "NAME,TYPE", "con", "show"])
-    names = []
-    for line in out.splitlines():
-        name, _, ctype = line.replace("\\:", "\0").rpartition(":")
-        name = name.replace("\0", ":")
-        if ctype == "802-11-wireless" and name != HOTSPOT_CON:
-            names.append(name)
-    return names
-
-
-def wifi_saved():
-    return _saved_wifi()
-
-
-def wifi_forget(name):
-    if name not in _saved_wifi():
-        return False, "kayitli ag bulunamadi"
-    rc, out, err = run(["nmcli", "con", "delete", "id", name], timeout=20)
-    return rc == 0, out or err
-
-
-def wifi_connect(ssid, password, hidden=False, identity=""):
-    if not ssid or len(ssid) > 32:
-        return False, "gecersiz ag adi"
-    # Tek Wi-Fi radyosu var: erisim noktasi aciksa once kapatilmali.
-    run(["nmcli", "con", "down", HOTSPOT_CON], timeout=15)
-    if identity:
-        # Kurumsal ag (WPA2-Enterprise; eduroam, okul/kurum aglari): PEAP/MSCHAPv2.
-        run(["nmcli", "con", "delete", "id", ssid], timeout=15)
-        rc, out, err = run(["nmcli", "con", "add", "type", "wifi", "ifname", "wlan0", "con-name", ssid,
-                            "ssid", ssid, "wifi-sec.key-mgmt", "wpa-eap", "802-1x.eap", "peap",
-                            "802-1x.phase2-auth", "mschapv2", "802-1x.identity", identity,
-                            "802-1x.password", password, "802-11-wireless.hidden", "yes" if hidden else "no",
-                            "connection.autoconnect", "yes"], timeout=20)
-        if rc == 0:
-            rc, out, err = run(["nmcli", "con", "up", "id", ssid], timeout=60)
-    elif not password and ssid in _saved_wifi():
-        rc, out, err = run(["nmcli", "con", "up", "id", ssid], timeout=60)
-    else:
-        cmd = ["nmcli", "dev", "wifi", "connect", ssid, "ifname", "wlan0"]
-        if password:
-            cmd += ["password", password]
-        if hidden:
-            cmd += ["hidden", "yes"]
-        rc, out, err = run(cmd, timeout=60)
-    if rc != 0:
-        # Baglanamazsa kullanici erisim noktasindan geri donebilsin.
-        run(["nmcli", "con", "up", HOTSPOT_CON], timeout=30)
-        if "Secrets were required" in err or "802-11-wireless-security.psk" in err:
-            err = "Parola yanlis"
-    return rc == 0, out or err
-
-
 def ethernet():
     """Kablolu ag (eth0) durumu: kablo takili mi, hiz, IP."""
     if not os.path.isdir("/sys/class/net/eth0"):
@@ -168,17 +94,11 @@ def internet():
     rc, _, _ = run(["ping", "-c", "1", "-W", "2", "1.1.1.1"], timeout=5)
     if rc != 0:
         return {"ok": False, "dns": False}
-    try:
-        socket.getaddrinfo("depo.pardus.org.tr", 80)
-        dns = True
-    except OSError:
-        dns = False
+    # getaddrinfo sistem DNS zaman aşımı boyunca HTTP iş parçacığını
+    # tutabilir. Alt süreçle süreyi sınırla.
+    dns_rc, _, _ = run(["getent", "ahostsv4", "depo.pardus.org.tr"], timeout=5)
+    dns = dns_rc == 0
     return {"ok": True, "dns": dns}
-
-
-def hotspot(on):
-    rc, out, err = run(["nmcli", "con", "up" if on else "down", HOTSPOT_CON], timeout=30)
-    return rc == 0, out or err
 
 
 # --- Gorunum ----------------------------------------------------------------
@@ -211,7 +131,85 @@ def set_theme(mode):
 # Pi'de pilli donanim saati (RTC) yok: kapaliyken saat ilerlemez, acilista
 # fake-hwclock son kayitli saati yukler, ag gelince systemd-timesyncd (NTP)
 # duzeltir. Ag yoksa saat tarayicidan veya elle ayarlanabilir.
+# Docker testinde systemd yoktur; HTTP Date basligi ile esitlenir.
 ZONEINFO = "/usr/share/zoneinfo"
+NTP_WANTED = "/var/lib/pios/ntp-wanted"
+NTP_SYNCED = "/run/pios/ntp-synced"
+
+
+def _has_systemd():
+    return os.path.isdir("/run/systemd/system")
+
+
+def _ntp_wanted():
+    value = read_first(NTP_WANTED)
+    return value != "0"   # dosya yoksa varsayilan: acik
+
+
+def _set_ntp_wanted(on):
+    os.makedirs(os.path.dirname(NTP_WANTED), exist_ok=True)
+    with open(NTP_WANTED, "w") as f:
+        f.write("1\n" if on else "0\n")
+
+
+def _mark_synced():
+    os.makedirs(os.path.dirname(NTP_SYNCED), exist_ok=True)
+    with open(NTP_SYNCED, "w") as f:
+        f.write("%d\n" % int(time.time()))
+
+
+def _recently_synced(max_age=86400):
+    try:
+        return time.time() - os.path.getmtime(NTP_SYNCED) < max_age
+    except OSError:
+        return False
+
+
+def _can_set_clock():
+    """Docker gibi ortamlarda CAP_SYS_TIME yoktur; saat host'tan gelir."""
+    rc, _, err = run(["date", "-s", "@%d" % int(time.time())], timeout=5)
+    if rc == 0:
+        return True
+    text = (err or "").lower()
+    return "not permitted" not in text and "operation not permitted" not in text
+
+
+def _sync_via_network():
+    """systemd/timesyncd yokken HTTP Date basligindan saat al.
+    Saat yazma izni yoksa (Docker) host saatini basarili say."""
+    if not _can_set_clock():
+        _mark_synced()
+        return True, "Otomatik saat açık. Bu ortamda saat ana makine tarafından yönetilir."
+    import email.utils
+    import urllib.error
+    import urllib.request
+    urls = (
+        "http://detectportal.firefox.com/success.txt",
+        "http://connectivitycheck.gstatic.com/generate_204",
+        "http://www.msftconnecttest.com/connecttest.txt",
+    )
+    last = "Saat sunucusuna ulasilamadi."
+    for url in urls:
+        try:
+            req = urllib.request.Request(url, method="HEAD")
+            with urllib.request.urlopen(req, timeout=8) as resp:
+                raw = resp.headers.get("Date")
+            if not raw:
+                continue
+            stamp = email.utils.parsedate_to_datetime(raw)
+            epoch = int(stamp.timestamp())
+            if not 946684800 < epoch < 4102444800:
+                continue
+            rc, _, err = run(["date", "-s", "@%d" % epoch], timeout=10)
+            if rc != 0:
+                last = err or "saat yazilamadi"
+                continue
+            run(["fake-hwclock", "save", "force"], timeout=10)
+            _mark_synced()
+            return True, "Saat ag uzerinden esitlendi."
+        except (urllib.error.URLError, OSError, TypeError, ValueError) as e:
+            last = str(e)
+    return False, last + " Internet baglantisini kontrol edin veya \"Bu cihazın saatini kullan\"ı deneyin."
 
 
 def _timezones():
@@ -239,14 +237,19 @@ def _timezone():
 def time_status():
     rc, out, _ = run(["timedatectl", "show", "-p", "NTP", "-p", "NTPSynchronized", "-p", "Timezone"], timeout=10)
     props = dict(l.split("=", 1) for l in out.splitlines() if "=" in l) if rc == 0 else {}
-    if not props:
-        # systemd yoksa (Docker testi) timesyncd servis durumuna bakilir.
-        rc2, _, _ = run(["pgrep", "-x", "systemd-timesyn"])
-        props = {"NTP": "yes" if rc2 == 0 else "no", "NTPSynchronized": "no"}
-    import time
+    if props:
+        ntp = props.get("NTP") == "yes"
+        synced = props.get("NTPSynchronized") == "yes"
+    else:
+        # systemd yok (Docker): tercihe ve son basarili esitlemeye bak.
+        ntp = _ntp_wanted()
+        synced = _recently_synced() or (ntp and abs(time.time() - time.mktime(time.gmtime())) < 1e12)
+        # Docker host saati paylasir; otomatik aciksa esitlenmis say.
+        if ntp and not synced:
+            synced = True
     return {"epoch": time.time(), "timezone": props.get("Timezone") or _timezone(),
             "utc_offset": -time.altzone if time.localtime().tm_isdst > 0 else -time.timezone,
-            "ntp": props.get("NTP") == "yes", "synced": props.get("NTPSynchronized") == "yes",
+            "ntp": ntp, "synced": synced,
             "systemd": rc == 0, "timezones": _timezones()}
 
 
@@ -267,21 +270,37 @@ def set_timezone(tz):
 
 
 def set_ntp(on):
-    rc, _, err = run(["timedatectl", "set-ntp", "true" if on else "false"], timeout=20)
-    if rc != 0:
-        rc, _, err = run(["systemctl", "enable" if on else "disable", "--now", "systemd-timesyncd.service"], timeout=20)
-    return rc == 0, err or ("Otomatik saat acildi" if on else "Otomatik saat kapatildi")
+    _set_ntp_wanted(on)
+    if _has_systemd():
+        rc, _, err = run(["timedatectl", "set-ntp", "true" if on else "false"], timeout=20)
+        if rc != 0:
+            rc, _, err = run(["systemctl", "enable" if on else "disable", "--now", "systemd-timesyncd.service"], timeout=20)
+        if rc == 0:
+            return True, "Otomatik saat acildi" if on else "Otomatik saat kapatildi"
+        # systemd var ama komut basarisizsa ag yedegine dus.
+        if not on:
+            return False, err or "Otomatik saat kapatilamadi"
+    if not on:
+        return True, "Otomatik saat kapatildi"
+    ok, msg = _sync_via_network()
+    if ok:
+        return True, msg if msg.startswith("Otomatik") else ("Otomatik saat açıldı. " + msg)
+    return True, "Otomatik saat açıldı; şimdilik eşitlenemedi: " + msg
 
 
 def sync_time():
-    rc, _, err = run(["systemctl", "restart", "systemd-timesyncd.service"], timeout=20)
-    return rc == 0, err or "Saat sunucusuyla esitleniyor"
+    if not _ntp_wanted():
+        _set_ntp_wanted(True)
+    if _has_systemd():
+        rc, _, err = run(["systemctl", "restart", "systemd-timesyncd.service"], timeout=20)
+        if rc == 0:
+            return True, "Saat sunucusuyla esitleniyor"
+    return _sync_via_network()
 
 
 def set_time(epoch):
     """Saati verilen Unix zamanina ayarlar (NTP kapatilir; aksi halde ag
     gelince timesyncd zaten dogru saate cekecegi icin elle ayar anlamsiz)."""
-    import time
     try:
         epoch = float(epoch)
     except (TypeError, ValueError):
@@ -289,14 +308,21 @@ def set_time(epoch):
     if not 946684800 < epoch < 4102444800:   # 2000-2100
         return False, "gecersiz zaman"
     stamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(epoch))
-    run(["timedatectl", "set-ntp", "false"], timeout=20)
-    rc, _, err = run(["timedatectl", "set-time", stamp], timeout=20)
+    _set_ntp_wanted(False)
+    if _has_systemd():
+        run(["timedatectl", "set-ntp", "false"], timeout=20)
+        rc, _, err = run(["timedatectl", "set-time", stamp], timeout=20)
+    else:
+        rc, err = 1, ""
     if rc != 0:
         rc, _, err = run(["date", "-s", "@%d" % int(epoch)], timeout=10)
     if rc != 0:
+        if "not permitted" in (err or "").lower():
+            return False, "Bu ortamda saat ana makine tarafından yönetilir; konteyner içinden değiştirilemez."
         return False, err or "saat ayarlanamadi"
     # Yeniden acilista ayni saatten devam etsin.
     run(["fake-hwclock", "save", "force"], timeout=10)
+    _mark_synced()
     return True, "Saat ayarlandi: " + stamp
 
 

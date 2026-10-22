@@ -17,6 +17,8 @@ uv run main.py                         # kamera otomatik: önce Pi kamera, yoksa
 uv run main.py --kaynak usb:1          # ikinci USB kamera
 uv run main.py --kaynak video.mp4      # video dosyası
 uv run main.py --kaynak resim.jpg      # tek resim
+uv run main.py --kaynak ./resimler --cikti ./sonuclar  # klasörü sırayla analiz et
+uv run main.py --profil tasarruf       # daha düşük CPU yükü ve analiz sıklığı
 uv run main.py --pencere-yok           # yalnızca web yayını
 uv run main.py --genislik 1280 --yukseklik 720
 ```
@@ -24,6 +26,13 @@ uv run main.py --genislik 1280 --yukseklik 720
 Sonuç Pi'nin ekranında bir pencerede (`q` veya `Esc` ile çıkılır) ve
 `http://pardus-maker.local:8000/` adresinde canlı görünür; telefondan da
 açılabilir. Terminalden `Ctrl+C` ile durdurulur.
+
+Tek resim veya resim klasörü analizinde web yayını açılmaz: her resim
+**bir kez** IMAGE API'siyle analiz edilir, işaretli PNG ve yapılandırılmış
+JSON `sonuclar/` klasörüne yazılır, ardından program kapanır. Resimler
+aynalama yapılmadan, en-boy oranı korunarak analiz boyutuna küçültülür;
+küçük resimler büyütülmez. Segmentasyon JSON'u büyük maskelerin kendisi
+yerine boyut ve değer aralığını içerir; PNG ayrılmış arka planı gösterir.
 
 ## Örnekler
 
@@ -48,9 +57,41 @@ GPIO kullanılamazsa (pin meşgul, Pi dışı bilgisayar) örnek yalnızca ekran
 
 ### Performans
 
-Anlık hız görüntünün sol alt köşesinde FPS olarak yazar. Raspberry Pi 4'te
-daha akıcı sonuç için çözünürlüğü düşürün (`--genislik 480 --yukseklik 360`);
-nesne algılama ve yüz ağı diğerlerinden ağırdır. Pi 3B+ belirgin şekilde yavaştır.
+| Profil | En fazla analiz boyutu | En fazla analiz/sn | CPU çekirdeği sınırı | JPEG kalitesi |
+| --- | --- | --- | --- | --- |
+| `tasarruf` | 480×360 | 6 | 1 | 55 |
+| `dengeli` (varsayılan) | 640×480 | 10 | 2 | 65 |
+| `kalite` | 960×720 | 15 | 3 | 75 |
+
+Bunlar hedef üst sınırlardır; gerçek hız model ve donanıma bağlıdır.
+`--fps`, `--cekirdek`, `--genislik`, `--yukseklik` ve `--jpeg-kalite`
+ile değiştirilebilir. Linux'ta CPU affinity model kurulmadan önce uygulanır;
+OpenCV iş parçacıkları da sınırlandırılır. Diğer sistemlerde affinity
+desteklenmiyorsa bu adım atlanır.
+
+Canlı kameradan yalnız **son kare** saklanır: analiz yavaşken eski
+kareler kuyrukta birikmez. Video dosyaları ise kareleri atlamadan, hedef
+analiz hızında işlenir. Web JPEG'i yalnız izleyici varsa üretilir;
+tüm izleyiciler aynı JPEG'i paylaşır, yayın en fazla yaklaşık 6,7 FPS ve
+dört izleyicidir. Arka plan bulanıklığı daha küçük resimde hesaplanır.
+
+Varsayılan sıcaklık eşiği 75 °C'dir: 68 °C'de analiz sıklığı yarıya,
+75 °C'de dörtte bire iner; 80 °C'de analiz duraklar. 72 °C'ye düşünce
+devam eder. 120 saniyede soğumazsa açıklamalı hatayla kapanır. Bu eşik
+`--sicaklik-siniri 65` gibi 55–75 °C arasında ayarlanabilir.
+Sıcaklık sensörü yoksa hız sınırlaması sürer, ısıl denetim uygulanamaz.
+Canlı sayfa sıcaklığı, hedef/gerçek hızı ve soğuma durumunu gösterir.
+
+Bu kontroller ısı yükünü azaltmayı amaçlar; fiziksel soğutmanın yerini
+almaz. Gerçek Pi'de FPS ve sıcaklık ölçümü yapılmadan donmama veya belirli
+bir sıcaklığı aşmama garantisi verilmez. Pi'nin [ısıl yönetim davranışı](https://github.com/raspberrypi/documentation/blob/master/documentation/asciidoc/computers/raspberry-pi/frequency-management.adoc)
+ve MediaPipe'ın [IMAGE/VIDEO API ayrımı](https://developers.google.com/edge/mediapipe/solutions/vision/object_detector/python)
+referans alınmıştır.
+
+Yeni şablonlar güncellendikten sonra oluşturulan projeler bu ayarları
+kullanır. Mevcut kişisel projeler otomatik olarak değiştirilmez; yeni bir
+örnek proje oluşturabilir veya ortak yardımcıyı ve örnekteki
+`calisma_modu`, `analiz`, `performans_ayarla` çağrılarını uyarlayabilirsin.
 
 ## Proje yapısı
 
@@ -91,11 +132,14 @@ with vision.HandLandmarker.create_from_options(secenek) as model, \
 
 | Öğe | Açıklama |
 | --- | --- |
-| `Kamera(kaynak="otomatik", genislik=640, yukseklik=480, fps=30)` | `"pi"`: `libcamera-vid` MJPEG akışı; `"usb"`/`"usb:N"`: OpenCV V4L2; dosya yolu: video veya resim |
+| `Kamera(kaynak="otomatik", genislik=640, yukseklik=480, fps=10, denetim=None)` | Pi/USB kamera, video, tek resim veya resim klasörü; son-kare tamponu ve ısıl denetim |
 | `Gosterici(baslik, port=8000, pencere=True)` | Masaüstü penceresi (`DISPLAY` varsa) ve MJPEG web yayını; FPS'i köşeye yazar |
 | `Gosterici.yaz(kare, metin, satir=0, renk=...)` | Gölgeli, okunaklı yazı |
 | `mp_goruntu(kare)` | BGR → MediaPipe `Image` (SRGB) |
 | `zaman_ms()` | VIDEO modu için artan zaman damgası |
+| `performans_ayarla(args)` | Profil, CPU affinity, OpenCV iş parçacıkları ve sıcaklık denetimini hazırlar |
+| `calisma_modu(args)` | Resim/klasör için IMAGE, kamera/video için VIDEO |
+| `analiz(model, kare, kamera, tur="detect")` | IMAGE/VIDEO API'sini seçer, süreyi ve resim sonucunu kaydeder; `recognize`/`segment` de desteklenir |
 | `arguman_ayristirici(aciklama)` | Ortak `--kaynak`, `--genislik`, `--yukseklik`, `--port`, `--pencere-yok` seçenekleri |
 
 ## Başka modeller

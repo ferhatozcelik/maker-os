@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Türkiye
+Name[tr]=Türkiye
+Comment=Türkiye Cumhuriyeti
+Comment[tr]=Türkiye Cumhuriyeti
+Exec=true
+Icon=pios-turkiye
+Terminal=false
+StartupNotify=false
+Categories=Utility;

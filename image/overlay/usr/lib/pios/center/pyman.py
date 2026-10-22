@@ -215,7 +215,7 @@ def create_project(name, minor, template):
             files += ("if [ -f '{src}' ]; then cp '{src}' models/; else echo 'Model indiriliyor: {m}'; "
                       "curl -fL --retry 3 -o 'models/{m}' '{url}'; fi; ").format(
                 src=os.path.join(MODEL_DIR, m), m=m, url=MODEL_URL + MODELS[m])
-        files += "printf '.venv/\\n__pycache__/\\nfotograflar/\\n' > .gitignore; "
+        files += "printf '.venv/\\n__pycache__/\\nfotograflar/\\nsonuclar/\\n' > .gitignore; "
     else:
         files = "printf '%s' '{}' > main.py; ".format(tpl["main"].replace("'", "'\\''"))
     run_hint = "echo 'Calistirmak icin: cd {path} && uv run main.py'; ".format(path=path) if tpl.get("dir") else ""

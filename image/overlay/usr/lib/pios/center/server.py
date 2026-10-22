@@ -6,7 +6,10 @@
 # Erisim:
 #  - Pi'nin masaustunden: pios-open betigi /run/pios/token'i URL ile verir,
 #    sunucu bunu HttpOnly/SameSite=Strict cerezine cevirir (parola sorulmaz).
-#  - Agdan: HTTP Basic ile sistem kullanicisi ve parolasi (/etc/shadow).
+#  - Agdan: ozel giris sayfasi (/api/login) ile sistem kullanicisi ve parolasi
+#    (/etc/shadow); basarili giriste ayni pios_t cerezi verilir. Istemci
+#    araclarina Basic kimlik de sessizce kabul edilir; WWW-Authenticate
+#    gonderilmez (tarayici diyalogu acilmasin diye).
 # Durum degistiren tum istekler POST + "X-Pios: 1" basligi ister (CSRF).
 # Yalnizca Python standart kutuphanesi kullanir (Pardus 21: Python 3.9).
 import base64
@@ -19,16 +22,21 @@ import os
 import secrets
 import sys
 import time
+import logging
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import agents  # noqa: E402
+import activity  # noqa: E402
+import fan  # noqa: E402
+import network  # noqa: E402
 import camera  # noqa: E402
 import devices  # noqa: E402
 import gpio  # noqa: E402
 import pyman  # noqa: E402
+import plugins  # noqa: E402
 import system  # noqa: E402
 import terminal  # noqa: E402
 from common import USER, jobs  # noqa: E402
@@ -96,8 +104,10 @@ class Handler(BaseHTTPRequestHandler):
                 return v
         return ""
 
-    def authorized(self, query):
+    def try_auth(self, query):
+        """Kimligi dogrula; ?t= varsa cerez yazmak icin new_cookie ayarla. Yanit gondermez."""
         self.new_cookie = None
+        self.clear_cookie = False
         if query.get("t") and hmac.compare_digest(query["t"][0], TOKEN):
             self.new_cookie = TOKEN
             return True
@@ -111,12 +121,11 @@ class Handler(BaseHTTPRequestHandler):
                 user, pw = "", ""
             if check_password(user, pw):
                 return True
-        time.sleep(1)
-        self.send_response(401)
-        self.send_header("WWW-Authenticate", 'Basic realm="Pardus Maker", charset="UTF-8"')
-        self.send_header("Content-Length", "0")
-        self.end_headers()
+            time.sleep(1)
         return False
+
+    def deny(self):
+        self.send_json({"error": "giris gerekli"}, 401)
 
     def send_body(self, body, ctype, code=200, cache=False):
         self.send_response(code)
@@ -125,8 +134,43 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Cache-Control", "max-age=3600" if cache else "no-store")
         if getattr(self, "new_cookie", None):
             self.send_header("Set-Cookie", "pios_t=%s; HttpOnly; SameSite=Strict; Path=/" % self.new_cookie)
+        elif getattr(self, "clear_cookie", False):
+            self.send_header("Set-Cookie", "pios_t=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0")
         self.end_headers()
         self.wfile.write(body)
+
+    def _read_json(self, maximum=1048576):
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+            if not 0 <= length <= maximum:
+                self.send_json({"error": "İstek boyutu sınırı aşıldı (%s MB)." % (maximum // 1048576)}, 413)
+                return None
+            self.connection.settimeout(30)
+            data = json.loads(self.rfile.read(length) or b"{}")
+            if not isinstance(data, dict):
+                raise ValueError("JSON object required")
+            return data
+        except ValueError:
+            self.send_json({"error": "gecersiz JSON"}, 400)
+            return None
+
+    def handle_login(self):
+        if self.headers.get("X-Pios") != "1":
+            return self.send_json({"error": "gecersiz istek"}, 403)
+        data = self._read_json()
+        if data is None:
+            return
+        user = str(data.get("username", "")).strip()
+        password = str(data.get("password", ""))
+        if check_password(user, password):
+            self.new_cookie = TOKEN
+            return self.send_json({"ok": True, "user": USER})
+        time.sleep(1)
+        return self.send_json({"ok": False, "message": "Kullanıcı adı veya parola hatalı."}, 401)
+
+    def handle_logout(self):
+        self.clear_cookie = True
+        return self.send_json({"ok": True})
 
     def send_json(self, obj, code=200):
         self.send_body(json.dumps(obj).encode(), "application/json; charset=utf-8", code)
@@ -143,6 +187,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def send_stream(self, frames):
         """MJPEG canli goruntu: her kare multipart'in bir parcasi."""
+        self.connection.settimeout(20)
         self.send_response(200)
         self.send_header("Content-Type", "multipart/x-mixed-replace; boundary=piosframe")
         self.send_header("Cache-Control", "no-store")
@@ -170,6 +215,26 @@ class Handler(BaseHTTPRequestHandler):
     # --- GET --------------------------------------------------------------
 
     def do_GET(self):
+        self._guard(self._get)
+
+    def do_POST(self):
+        self._guard(self._post)
+
+    def _guard(self, action):
+        try:
+            action()
+        except (BrokenPipeError, ConnectionResetError):
+            pass
+        except Exception as e:
+            ref = secrets.token_hex(4)
+            logging.exception("Merkez istek hatası %s: %s", ref, urlparse(self.path).path)
+            try:
+                self.send_json({"error": "İstek tamamlanamadı.", "details": str(e),
+                                "reference": ref, "path": urlparse(self.path).path}, 500)
+            except OSError:
+                pass
+
+    def _get(self):
         url = urlparse(self.path)
         query = parse_qs(url.query)
         p = url.path
@@ -179,12 +244,14 @@ class Handler(BaseHTTPRequestHandler):
             if not terminal.take_ticket(query.get("ticket", [""])[0]):
                 return self.send_json({"error": "gecersiz bilet"}, 403)
             return terminal.serve(self)
-        if not self.authorized(query):
-            return
+        # ?t= ile masaustu acilisi cerezi burada yazilir; sayfa herkese aciktir.
+        authed = self.try_auth(query)
         if p in ("/", "/index.html"):
             return self.send_file(WEB_DIR, "index.html")
         if p.startswith("/static/"):
             return self.send_file(WEB_DIR, p[len("/static/"):])
+        if not authed:
+            return self.deny()
         if p.startswith("/novnc/"):
             return self.send_file(NOVNC_DIR, p[len("/novnc/"):])
         if p.startswith("/xterm/"):
@@ -194,7 +261,12 @@ class Handler(BaseHTTPRequestHandler):
             # client_local: istek Pi'nin kendisinden mi (uzak ekran gereksiz).
             "/api/status": lambda: dict(system.status(),
                                         client_local=self.client_address[0] in ("127.0.0.1", "::1")),
-            "/api/wifi": lambda: system.wifi_scan(),
+            "/api/wifi": lambda: network.operation(),
+            "/api/network/operation": lambda: network.operation(),
+            "/api/network/diagnostics": lambda: network.diagnostics(),
+            "/api/activity": lambda: activity.snapshot(),
+            "/api/fan": lambda: fan.status(),
+            "/api/plugins": lambda: plugins.list_plugins(),
             "/api/settings": lambda: {"theme": system.get_theme(), "hardware": system.hardware(),
                                       "remote": system.remote_enabled()},
             "/api/time": lambda: system.time_status(),
@@ -208,8 +280,7 @@ class Handler(BaseHTTPRequestHandler):
             "/api/python/ai": lambda: pyman.ai_env(),
             "/api/agents": lambda: {"agents": agents.list_agents(), "node": agents.node_version()},
             "/api/gpio": lambda: gpio.state(),
-            "/api/network": lambda: {"ethernet": system.ethernet(), "saved": system.wifi_saved(),
-                                     "internet": system.internet(), "nm": system.nm_running()},
+            "/api/network": lambda: dict(network.overview(), ethernet=system.ethernet(), internet=system.internet()),
             "/api/devices": lambda: {"usb": devices.usb_devices(), "storage": devices.storage(),
                                      "serial": devices.serial_ports()},
             "/api/displays": lambda: {"displays": devices.displays(), "current": devices.current_modes(),
@@ -220,6 +291,10 @@ class Handler(BaseHTTPRequestHandler):
         }
         if p in routes:
             return self.send_json(routes[p]())
+        if p == "/api/plugins/template.zip":
+            return self.send_body(plugins.template(), "application/zip")
+        if p == "/api/plugins/logs":
+            return self.send_json(plugins.logs(query.get("id", [""])[0]))
         if p.startswith("/api/jobs/"):
             job = jobs.get(p.rsplit("/", 1)[-1], _int(query.get("since", ["0"])[0]) or 0)
             return self.send_json(job) if job else self.send_json({"error": "is yok"}, 404)
@@ -251,28 +326,38 @@ class Handler(BaseHTTPRequestHandler):
 
     # --- POST -------------------------------------------------------------
 
-    def do_POST(self):
+    def _post(self):
         url = urlparse(self.path)
-        if not self.authorized(parse_qs(url.query)):
-            return
+        p = url.path
+        if p == "/api/login":
+            return self.handle_login()
+        if not self.try_auth(parse_qs(url.query)):
+            return self.deny()
         if self.headers.get("X-Pios") != "1":
             return self.send_json({"error": "gecersiz istek"}, 403)
-        try:
-            length = int(self.headers.get("Content-Length", "0"))
-            d = json.loads(self.rfile.read(length) or b"{}")
-        except ValueError:
-            return self.send_json({"error": "gecersiz JSON"}, 400)
-        p = url.path
+        if p == "/api/logout":
+            return self.handle_logout()
+        maximum = 22 * 1024 * 1024 if p == "/api/plugins/import" else 1048576
+        d = self._read_json(maximum)
+        if d is None:
+            return
         s = lambda k, default="": str(d.get(k, default)).strip()  # noqa: E731
 
         # Ayarlar
+        if p == "/api/plugins/import":
+            return self.result(*plugins.import_zip(d.get("archive", "")))
+        if p == "/api/plugins/action":
+            return self.result(*plugins.action(s("id"), s("action")))
         if p == "/api/wifi/connect":
-            return self.result(*system.wifi_connect(str(d.get("ssid", "")), str(d.get("password", "")),
-                                                    bool(d.get("hidden")), s("identity")))
+            return self.result(*network.start("connect", d))
+        if p == "/api/wifi/scan":
+            return self.result(*network.start("scan", d))
         if p == "/api/wifi/forget":
-            return self.result(*system.wifi_forget(str(d.get("name", ""))))
+            return self.result(*network.start("forget", d))
         if p == "/api/hotspot":
-            return self.result(*system.hotspot(bool(d.get("on"))))
+            return self.result(*network.start("hotspot", d))
+        if p == "/api/fan":
+            return self.result(*fan.save(d))
         if p == "/api/settings/theme":
             return self.result(*system.set_theme(s("mode")))
         if p == "/api/language":
@@ -314,7 +399,7 @@ class Handler(BaseHTTPRequestHandler):
         if p == "/api/devices/open":
             return self.result(*devices.open_folder(s("path")))
         if p == "/api/camera/photo":
-            ok, msg, name = camera.take_photo(s("cam"))
+            ok, msg, name = camera.take_photo(s("cam"), s("name"))
             return self.send_json({"ok": ok, "message": msg, "name": name}, 200 if ok else 400)
         if p == "/api/camera/delete":
             return self.result(*camera.delete_photo(s("name")))

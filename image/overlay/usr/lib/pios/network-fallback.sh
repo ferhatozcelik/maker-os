@@ -8,6 +8,12 @@
 #     (SD kart bilgisayara takilarak okunabilir).
 set -u
 
+# Web paneldeki ağ değişikliğiyle ilk açılış erişim noktası yarışmasın.
+if [ "${PIOS_NETWORK_LOCKED:-}" != 1 ]; then
+  mkdir -p /run/pios
+  exec flock -w 120 /run/pios/network.lock env PIOS_NETWORK_LOCKED=1 "$0" "$@"
+fi
+
 BOOT=/boot/firmware
 WIFI_TXT="$BOOT/wifi.txt"
 STATUS="$BOOT/pardus-durum.txt"

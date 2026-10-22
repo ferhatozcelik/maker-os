@@ -11,7 +11,24 @@
 <link rel="stylesheet" href="/static/app.css">
 </head>
 <body>
-<div id="app">
+<div id="login" hidden>
+  <form id="loginForm" class="login-card" autocomplete="on">
+    <img src="/static/icons/pios-center.svg" alt="" width="56" height="56">
+    <h1>Pardus Maker</h1>
+    <p>Cihaza bağlanmak için giriş yapın</p>
+    <label class="fld"><span>Kullanıcı adı</span>
+      <input name="username" type="text" value="pardus" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required>
+    </label>
+    <label class="fld"><span>Parola</span>
+      <input name="password" type="password" autocomplete="current-password" required>
+    </label>
+    <label class="chk"><input type="checkbox" id="loginShowPw"> Parolayı göster</label>
+    <p id="loginError" class="error-inline" hidden></p>
+    <button class="btn primary" type="submit" id="loginBtn">Giriş yap</button>
+    <p class="hint">Varsayılan: <b>pardus</b> / <b>pardus</b> — ilk iş parolayı değiştirin.</p>
+  </form>
+</div>
+<div id="app" hidden>
   <header id="topbar">
     <button id="menuBtn" aria-label="Menü"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
     <b id="topTitle">Pardus Maker</b>
@@ -60,6 +77,10 @@
   </div>
 </div>
 <dialog id="dlg"></dialog>
+<aside id="errorPanel" role="alert" hidden>
+  <div class="hrow"><b>İşlem tamamlanamadı</b><span class="sp"></span><button class="btn" id="errorCopy">Kopyala</button><button class="btn" id="errorClose">Kapat</button></div>
+  <pre id="errorDetails"></pre>
+</aside>
 <div id="parking" hidden></div>
 <div id="toast"></div>
 <script type="module" src="/static/app.js"></script>

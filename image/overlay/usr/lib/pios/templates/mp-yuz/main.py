@@ -5,13 +5,13 @@ Calistirma:  uv run main.py
              uv run main.py --fotograf-yok
 Web yayini:  http://pardus-maker.local:8000/
 """
+from pios_kamera import Gosterici, Kamera, arguman_ayristirici, analiz, calisma_modu, performans_ayarla
+
 import os
 import time
 
 import cv2
 from mediapipe.tasks.python import BaseOptions, vision
-
-from pios_kamera import Gosterici, Kamera, arguman_ayristirici, mp_goruntu, zaman_ms
 
 KLASOR = os.path.dirname(os.path.abspath(__file__))
 MODEL = os.path.join(KLASOR, "models", "blaze_face_short_range.tflite")
@@ -23,16 +23,17 @@ def main():
     p = arguman_ayristirici("MediaPipe yuz algilama ve otomatik fotograf")
     p.add_argument("--fotograf-yok", action="store_true", help="otomatik fotograf cekme")
     args = p.parse_args()
+    performans_ayarla(args)
     os.makedirs(FOTO_KLASORU, exist_ok=True)
     secenek = vision.FaceDetectorOptions(
         base_options=BaseOptions(model_asset_path=MODEL),
-        running_mode=vision.RunningMode.VIDEO, min_detection_confidence=0.5)
+        running_mode=calisma_modu(args), min_detection_confidence=0.5)
     onceki, son_foto = 0, 0.0
     with vision.FaceDetector.create_from_options(secenek) as model, \
-            Kamera(args.kaynak, args.genislik, args.yukseklik) as kam, \
-            Gosterici("Yuz algilama", args.port, not args.pencere_yok) as ekran:
+            Kamera(args.kaynak, args.genislik, args.yukseklik, args.fps, args.denetim) as kam, \
+            Gosterici("Yuz algilama", args.port, not args.pencere_yok, kamera=kam, cikti=args.cikti, kalite=args.jpeg_kalite) as ekran:
         for kare in kam:
-            sonuc = model.detect_for_video(mp_goruntu(kare), zaman_ms())
+            sonuc = analiz(model, kare, kam, "detect")
             temiz = kare.copy()
             for yuz in sonuc.detections:
                 k = yuz.bounding_box

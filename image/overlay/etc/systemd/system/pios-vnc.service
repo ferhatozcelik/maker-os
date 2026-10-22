@@ -4,8 +4,11 @@ After=lightdm.service
 Wants=lightdm.service
 
 [Service]
+# defer/wait dusuk: tiklama ve imlec daha canli; pointer_mode 4: LAN icin hizli
+# imlec; threads: CPU'yu paylas; speeds lan: sikistirma LAN varsayar.
 ExecStart=/usr/bin/x11vnc -display WAIT:0 -auth guess -forever -loop -shared \
-  -rfbauth /etc/pios/vnc.pass -rfbport 5900 -noxdamage -repeat -quiet
+  -rfbauth /etc/pios/vnc.pass -rfbport 5900 -repeat -threads \
+  -pointer_mode 4 -defer 1 -wait 10 -speeds lan -cursor arrow -quiet
 Restart=always
 RestartSec=3
 

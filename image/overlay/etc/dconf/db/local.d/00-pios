@@ -3,9 +3,9 @@
 position='bottom'
 alignment='center'
 hide-mode=0
-icon-size=44
+icon-size=56
 zoom-enabled=true
-zoom-percent=140
+zoom-percent=155
 theme='Default'
 show-dock-item=false
 lock-items=false

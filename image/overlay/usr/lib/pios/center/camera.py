@@ -8,6 +8,8 @@
 import json
 import os
 import re
+import secrets
+import select
 import shutil
 import subprocess
 import threading
@@ -19,6 +21,7 @@ SETTINGS_FILE = "/etc/pios/camera.json"
 SIZES = ["640x480", "1280x720", "1920x1080"]
 DEFAULTS = {"size": "1280x720", "fps": 15, "rotate": False}
 IDLE_STOP_SECS = 8
+_photo_lock = threading.Lock()
 PHOTO_RE = re.compile(r"^[\w.-]+\.jpg$")
 
 # config.txt'de elle secilebilen sensorler (otomatik algilama disinda).
@@ -215,21 +218,40 @@ class Manager:
 
     @staticmethod
     def _drain(proc):
-        for line in proc.stderr:
-            line = line.decode(errors="replace").strip()
-            if line and not line.startswith("#"):
-                proc.err_tail = (proc.err_tail + [line])[-20:]
+        try:
+            for line in proc.stderr:
+                line = line.decode(errors="replace").strip()
+                if line and not line.startswith("#"):
+                    proc.err_tail = (proc.err_tail + [line[-2000:]])[-20:]
+        finally:
+            proc.stderr.close()
 
     def _reader(self, proc, cam):
+        try:
+            self._read_stream(proc, cam)
+        finally:
+            proc.stdout.close()
+
+    def _read_stream(self, proc, cam):
         buf, started, got = b"", time.time(), False
         fd = proc.stdout.fileno()
+        last_data = time.monotonic()
         while True:
+            if not select.select([fd], [], [], 2)[0]:
+                if time.monotonic() - last_data > 20 or (self.viewers == 0 and time.time() - self.last_seen > IDLE_STOP_SECS):
+                    with self.lock:
+                        if self.proc is proc:
+                            self.error = "Kamera 20 saniyedir veri göndermiyor veya izleyici kalmadı. Kamera kablosunu ve başka bir uygulamanın kamerayı kullanıp kullanmadığını kontrol edin."
+                            self.stop()
+                    return
+                continue
             try:
                 chunk = os.read(fd, 262144)
             except OSError:
                 chunk = b""
             if not chunk:
                 break
+            last_data = time.monotonic()
             buf += chunk
             while True:
                 soi = buf.find(b"\xff\xd8")
@@ -265,7 +287,7 @@ class Manager:
                 self.encode = True
                 self.start(cam)
                 return
-            self.error = (err[-1] if err else "kamera sureci durdu (kod %s)" % rc)[:300]
+            self.error = "Kamera süreci durdu (kod %s).\n%s" % (rc, "\n".join(err)[-8000:])
         with self.cond:
             self.frame = None
             self.cond.notify_all()
@@ -319,12 +341,24 @@ def status():
 
 # --- Fotograf -------------------------------------------------------------------
 
-def take_photo(cam_id):
+def take_photo(cam_id, requested_name=""):
+    if not _photo_lock.acquire(blocking=False):
+        return False, "Başka bir fotoğraf çekimi sürüyor. Tamamlanmasını bekleyin.", None
+    try:
+        stem = requested_name.removesuffix(".jpg")
+        if stem and not re.fullmatch(r"[\w -]{1,60}", stem):
+            return False, "Fotoğraf adı en fazla 60 harf, rakam, boşluk, alt çizgi veya tire içerebilir.", None
+        return _take_photo(cam_id, stem)
+    finally:
+        _photo_lock.release()
+
+
+def _take_photo(cam_id, stem):
     cam = find(cam_id)
     if not cam:
         return False, "Kamera bulunamadi", None
     uid, gid, _ = user_info()
-    name = time.strftime("foto-%Y%m%d-%H%M%S.jpg")
+    name = "%s-%s-%s.jpg" % (stem or "foto", time.strftime("%Y%m%d-%H%M%S"), secrets.token_hex(3))
     path = os.path.join(_ensure_photo_dir(), name)
     if cam["kind"] == "csi":
         still = _tool("still")
@@ -348,7 +382,9 @@ def take_photo(cam_id):
                 with manager.cond:
                     manager.cond.notify_all()
         if rc != 0 or not os.path.isfile(path):
-            return False, (err.splitlines() or ["fotograf cekilemedi"])[-1][:300], None
+            if os.path.isfile(path):
+                os.remove(path)
+            return False, "Fotoğraf çekilemedi (kod %s).\n%s" % (rc, err[-8000:] or "Kamera dosya oluşturmadı."), None
     else:
         frame = manager.wait_frame(cam)
         if not frame:

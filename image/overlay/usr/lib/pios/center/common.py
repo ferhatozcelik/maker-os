@@ -19,8 +19,12 @@ def run(cmd, timeout=30, env=None, input=None):
         p = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout,
                            env=env, input=input)
         return p.returncode, p.stdout.strip(), p.stderr.strip()
-    except (OSError, subprocess.TimeoutExpired) as e:
-        return 1, "", str(e)
+    except subprocess.TimeoutExpired:
+        # TimeoutExpired metni komut argümanlarını (Wi-Fi parolası dahil)
+        # içerir. Kimlik bilgilerini hata yanıtına taşımayın.
+        return 124, "", "İşlem %s saniyede tamamlanamadı (%s)." % (timeout, os.path.basename(cmd[0]))
+    except OSError as e:
+        return 1, "", "%s başlatılamadı: %s" % (os.path.basename(cmd[0]), e.strerror)
 
 
 def read_first(path, default=""):
@@ -112,12 +116,15 @@ class Jobs:
     def start(self, title, cmd, env=None, user=False, after=None):
         jid = str(next(self._ids))
         job = {"id": jid, "title": title, "lines": [], "status": "running",
-               "started": time.time()}
+               "started": time.time(), "offset": 0}
         with self._lock:
             self._jobs[jid] = job
             # Eski bitmis isleri at.
             for k in [k for k, j in self._jobs.items()
                       if j["status"] != "running" and time.time() - j["started"] > 3600]:
+                del self._jobs[k]
+            finished = [k for k, j in self._jobs.items() if j["status"] != "running"]
+            for k in finished[:-100]:
                 del self._jobs[k]
         if user:
             cmd = as_user(cmd)
@@ -130,23 +137,29 @@ class Jobs:
             p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                  text=True, env=env, bufsize=1)
             for line in p.stdout:
-                job["lines"].append(line.rstrip("\n")[-500:])
-                if len(job["lines"]) > 2000:
-                    del job["lines"][:500]
+                with self._lock:
+                    job["lines"].append(line.rstrip("\n")[-2000:])
+                    if len(job["lines"]) > 2000:
+                        del job["lines"][:500]
+                        job["offset"] += 500
             rc = p.wait()
-            job["status"] = "ok" if rc == 0 else "error"
             if rc == 0 and after:
                 after()
-        except OSError as e:
-            job["lines"].append(str(e))
-            job["status"] = "error"
+            with self._lock:
+                job["status"] = "ok" if rc == 0 else "error"
+        except Exception as e:
+            with self._lock:
+                job["lines"].append(str(e))
+                job["status"] = "error"
 
     def get(self, jid, since=0):
-        job = self._jobs.get(jid)
-        if not job:
-            return None
-        return {"id": job["id"], "title": job["title"], "status": job["status"],
-                "lines": job["lines"][since:], "next": len(job["lines"])}
+        with self._lock:
+            job = self._jobs.get(jid)
+            if not job:
+                return None
+            offset = job["offset"]
+            return {"id": job["id"], "title": job["title"], "status": job["status"],
+                    "lines": job["lines"][max(0, since - offset):], "next": offset + len(job["lines"])}
 
 
 jobs = Jobs()

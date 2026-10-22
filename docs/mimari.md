@@ -98,10 +98,13 @@ betikler ve servisler arasında ortak kullanılır.
 
 ## Güvenlik modeli
 
-- **Kimlik doğrulama:** ağdan gelen istekler HTTP Basic ile sistem
-  kullanıcısının parolasıyla (`/etc/shadow`) doğrulanır. Pi'nin kendi
-  masaüstünden açılan pencereler `/run/pios/token` jetonunu kullanır
-  (HttpOnly, SameSite=Strict çerez); parola sorulmaz.
+- **Kimlik doğrulama:** ağdan gelen istekler Merkez giriş sayfası
+  (`/api/login`) ile sistem kullanıcısının parolasıyla (`/etc/shadow`)
+  doğrulanır; tarayıcıya `WWW-Authenticate` gönderilmez. Oturum
+  `pios_t` çerezidir. İstemci araçları isteğe bağlı Basic kimlik
+  kullanabilir. Pi'nin kendi masaüstünden açılan pencereler
+  `/run/pios/token` jetonunu kullanır (HttpOnly, SameSite=Strict); parola
+  sorulmaz.
 - **CSRF:** durum değiştiren tüm istekler `POST` ve `X-Pios: 1` başlığı ister.
 - **Web terminali:** WebSocket, kimliği doğrulanmış bir istekle alınan tek
   kullanımlık ve 30 sn geçerli bir biletle açılır; `Origin` başlığı `Host`

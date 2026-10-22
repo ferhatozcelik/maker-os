@@ -78,6 +78,8 @@ Tüm görüntüler için [ekran görüntüsü galerisine](docs/ekran-goruntuleri
 | MediaPipe | Kamerayla çalışan 7 hazır proje: el takibi, jest ile LED (GPIO), yüz, poz/egzersiz sayacı, nesne algılama, arka plan ayırma, yüz ağı. Modeller imajda, internet gerekmez |
 | Python ve yapay zeka | uv ile her Python sürümü tek tıkla; hazır AI ortamı (`ai-env`): PyTorch, ONNX Runtime, LiteRT, OpenCV, Ultralytics, Jupyter Lab |
 | Donanım | GPIO (sudo'suz), I2C, SPI, UART; USB bellek bağla/güvenle çıkar, Arduino/ESP32 seri portları; HDMI 0/1, DSI dokunmatik ekran, HDMI/3.5 mm ses |
+| İzleme ve soğutma | Türkçe Görev Yöneticisi: CPU, RAM, işlemler, anlık ağ aktarımı ve toplam sayaçlar; GPIO kontrollü fan için sıcaklık eşikleri |
+| Python eklentileri | Genel Python proje şablonu, ZIP içe aktarma, uygulama listesi, başlat/durdur ve çalışma günlüğü; [eklenti rehberi](docs/eklentiler.md) |
 | Agent'lar | Claude Code, Codex CLI, Gemini CLI, OpenCode, Antigravity, Ollama: Merkez'den kur, güncelle, başlat |
 | Uzak erişim | Web (masaüstü + tüm ayarlar), VNC (5900), SSH, mDNS (`pardus-maker.local`) |
 
@@ -88,6 +90,15 @@ ve sade bir sistem.
 ## Kurulum rehberi
 
 ### 1. SD karta yazın
+
+macOS'ta proje klasöründen `./flash-sd.sh` çalıştırabilirsiniz. Betik
+`image/out/` içindeki imajı seçer, harici veya çıkarılabilir fiziksel diskleri listeler ve
+seçtiğiniz diski açık onayınızdan sonra silip imajı yazar. Yazılan veriyi
+karttan geri okuyarak SHA-256 ile doğrular ve kartı çıkarır. Farklı bir
+imaj için `./flash-sd.sh /yol/imaj.img.xz` kullanın (`.xz` için `xz`
+gereklidir). Yazma sırasında macOS kullanıcı parolanız istenir.
+
+Grafik arayüzle yazmak için:
 
 1. [Sürüm sayfasından](https://github.com/ferhatozcelik/pardus-maker/releases/tag/v1.0.0) `.img.xz` dosyasını indirin. 16 GB veya daha büyük bir kart önerilir.
 2. [Raspberry Pi Imager](https://www.raspberrypi.com/software/)'da **İşletim sistemi → Özel imaj kullan** (Use custom) ile dosyayı seçin. Imager'ın "işletim sistemi özelleştirme" ayarlarını **kullanmayın**. balenaEtcher da olur.
@@ -110,7 +121,7 @@ Pi açılınca ağı ekler ve parola içeren dosyayı siler.
 | Ağ yok | ~45 sn sonra `Pardus-Maker-XXXX` Wi-Fi ağı açılır (parola `pardus1234`) → `http://10.42.0.1/` |
 | Monitör takılı | Masaüstü doğrudan açılır; Merkez dock'taki simgelerden |
 
-Giriş: kullanıcı `pardus`, parola `pardus`. Ağdan ilk girişte masaüstü açılır;
+Giriş ekranında kullanıcı `pardus`, parola `pardus`. Ağdan ilk girişte masaüstü açılır;
 telefonda ekranı yatay çevirin. Üstteki **‹ Merkez** ile ayarlara geçilir.
 
 IP bulunamazsa kartı bilgisayara takıp `bootfs` bölümündeki
@@ -158,6 +169,16 @@ tek uygulamada açılabilir; örnek çalışırken Merkez'deki Kamera sayfasın�
 
 ## Kaynaktan derleme
 
+Çalışan Pi'deki Merkez'i SD kartı silmeden güncellemek için:
+
+```bash
+./update-center.sh pardus@pardus-maker.local   # cihazın IP adresi de kullanılabilir
+```
+
+Betik eski dosyaları yedekler ve Merkez servisini yeniden başlatır.
+Tarayıcıyı yenileyin. Bu işlem mevcut `.img` dosyasını değiştirmez;
+fan yapılandırması ayrıca Pi'nin yeniden başlatılmasını gerektirir.
+
 Apple Silicon Mac'te (arm64, qemu gerekmez) veya arm64 Linux'ta Docker ile:
 
 ```bash
@@ -169,7 +190,9 @@ cd image
 ```
 
 Docker testi: `http://localhost:8080/` (`pardus` / `pardus`). Konteynerde HDMI
-yerine Xvfb kullanılır; Wi-Fi, kamera, GPIO ve güç işlemleri çalışmaz.
+yerine Xvfb kullanılır (varsayılan `1280x720`; `PIOS_RESOLUTION` ile değiştirilir).
+Wi-Fi, kamera, GPIO ve güç işlemleri çalışmaz; uzak ekran gerçek Pi + LAN’a
+göre daha yavaş olabilir.
 
 | Aşama | İş |
 | --- | --- |

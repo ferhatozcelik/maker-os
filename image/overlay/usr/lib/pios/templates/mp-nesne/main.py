@@ -6,12 +6,12 @@ Calistirma:  uv run main.py
              uv run main.py --alarm          (kisi gorulunce GPIO17)
 Web yayini:  http://pardus-maker.local:8000/
 """
+from pios_kamera import Gosterici, Kamera, arguman_ayristirici, analiz, calisma_modu, performans_ayarla
+
 import os
 
 import cv2
 from mediapipe.tasks.python import BaseOptions, vision
-
-from pios_kamera import Gosterici, Kamera, arguman_ayristirici, mp_goruntu, zaman_ms
 
 MODEL = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models", "efficientdet_lite0.tflite")
 TURKCE = {
@@ -29,6 +29,7 @@ def main():
     p.add_argument("--alarm", action="store_true", help="kisi gorulunce GPIO17'yi etkinlestir")
     p.add_argument("--esik", type=float, default=0.45, help="en dusuk guven (0-1)")
     args = p.parse_args()
+    performans_ayarla(args)
     alarm = None
     if args.alarm:
         try:
@@ -38,12 +39,12 @@ def main():
             print("GPIO kullanilamiyor:", e)
     secenek = vision.ObjectDetectorOptions(
         base_options=BaseOptions(model_asset_path=MODEL),
-        running_mode=vision.RunningMode.VIDEO, max_results=8, score_threshold=args.esik)
+        running_mode=calisma_modu(args), max_results=8, score_threshold=args.esik)
     with vision.ObjectDetector.create_from_options(secenek) as model, \
-            Kamera(args.kaynak, args.genislik, args.yukseklik) as kam, \
-            Gosterici("Nesne algilama", args.port, not args.pencere_yok) as ekran:
+            Kamera(args.kaynak, args.genislik, args.yukseklik, args.fps, args.denetim) as kam, \
+            Gosterici("Nesne algilama", args.port, not args.pencere_yok, kamera=kam, cikti=args.cikti, kalite=args.jpeg_kalite) as ekran:
         for kare in kam:
-            sonuc = model.detect_for_video(mp_goruntu(kare), zaman_ms())
+            sonuc = analiz(model, kare, kam, "detect")
             kisi = 0
             for d in sonuc.detections:
                 k, c = d.bounding_box, d.categories[0]

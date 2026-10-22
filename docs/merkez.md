@@ -10,11 +10,14 @@ JavaScript modülüdür (`web/`). Dış CDN kullanılmaz; Pi internetsizken de �
 | Nereden | Nasıl |
 | --- | --- |
 | Pi'nin masaüstü | Dock'taki Ayarlar, Python, Agent'lar, Kamera, GPIO simgeleri (`pios-open <bölüm>`, Chromium uygulama penceresi, parola sorulmaz) |
-| Aynı ağdaki telefon/bilgisayar | `http://pardus-maker.local/` veya `http://<IP>/`, kullanıcı `pardus` |
+| Aynı ağdaki telefon/bilgisayar | `http://pardus-maker.local/` veya `http://<IP>/`, giriş ekranında `pardus` ve parola |
 | Erişim noktası | `Pardus-Maker-XXXX` ağına bağlanıp `http://10.42.0.1/` |
 
-Ağdan ilk girişte uzak masaüstü açılır; üstteki **‹ Merkez** düğmesi ayarlara
-geçer. Telefonda menü sol üstteki ☰ düğmesindedir.
+Ağdan açıldığında önce Merkez'in giriş sayfası gelir (tarayıcı Basic Auth
+penceresi kullanılmaz). Girişten sonra oturum `pios_t` çereziyle tutulur;
+**Kullanıcı → Çıkış yap** ile kapanır. İlk ziyarette uzak masaüstü açılır;
+üstteki **‹ Merkez** düğmesi ayarlara geçer. Telefonda menü sol üstteki ☰
+düğmesindedir.
 
 ## Bölümler
 
@@ -22,6 +25,8 @@ geçer. Telefonda menü sol üstteki ☰ düğmesindedir.
 | --- | --- | --- |
 | Ayarlar | Genel | Sıcaklık, bellek, disk, IP, çekirdek, sürüm; masaüstünü/Pi'yi yeniden başlat, kapat |
 | | Wi-Fi ve Ağ | İnternet/DNS durumu, Ethernet (kablo, hız, IP, ağ geçidi), Wi-Fi tarama ve bağlanma, gizli ağ, kurumsal ağ (PEAP/MSCHAPv2), kayıtlı ağları unutma, erişim noktası |
+| | Görev Yöneticisi | Toplam ve işlem başına CPU, RAM, sıcaklık, işlem arama/sıralama, ağ aktarım hızı ve arayüz sayaçları |
+| | Fan ve Soğutma | GPIO kontrollü fan: otomatik açılma/kapanma eşikleri, sürekli açık veya yönetimsiz mod (yeniden başlatma gerekir) |
 | | Görünüm | Pardus 100. Yıl teması, açık/koyu |
 | | Dil ve Klavye | Sistem dili (gerekirse `locale-gen` ile üretilir), klavye düzeni (Türkçe Q/F, İngilizce...), Alt+Shift ile ikinci düzen |
 | | Tarih ve Saat | Canlı saat, saat dilimi, NTP aç/kapat, şimdi eşitle, tarayıcının saatini kullan, elle ayarla |
@@ -30,6 +35,7 @@ geçer. Telefonda menü sol üstteki ☰ düğmesindedir.
 | | Kullanıcı | Parola (giriş, SSH, sudo, web, VNC birlikte), cihaz adı |
 | | Güncellemeler | `apt` ile denetle ve güncelle (canlı günlük) |
 | Geliştirme | Python | uv ile sürüm kur/kaldır/varsayılan yap, hazır AI ortamı (Terminal, Jupyter Lab) |
+| | Eklentiler | Genel Python şablonunu indir, ZIP içe aktar, uygulamaları listele, başlat/durdur, günlük ve web arayüzü |
 | | Projeler | Şablondan proje (boş, GPIO, yapay zeka, Flask, 7 MediaPipe örneği), VS Code/Terminal'de aç, paket ekle, sil |
 | | Agent'lar | Claude Code, Codex CLI, Gemini CLI, OpenCode, Antigravity, Ollama: kur, güncelle, kaldır, başlat |
 | | Terminal | Tarayıcıda kabuk (xterm.js); telefon için Esc/Tab/Ctrl/ok tuşları; sayfalar arası geçişte oturum korunur |
@@ -53,11 +59,22 @@ curl -u pardus:PAROLA -H 'X-Pios: 1' -H 'Content-Type: application/json' \
 
 | Uç nokta | Yöntem | Açıklama |
 | --- | --- | --- |
+| `/api/login` | POST | `{username, password}` → oturum çerezi; giriş sayfası için |
+| `/api/logout` | POST | Oturum çerezini siler |
 | `/api/status` | GET | Cihaz durumu (model, sıcaklık, bellek, disk, IP, bağlantılar) |
 | `/api/settings` | GET | Tema, donanım arayüzleri, çözünürlük, uzak ekran durumu |
 | `/api/settings/theme`, `/api/settings/hostname`, `/api/settings/password`, `/api/settings/resolution`, `/api/settings/interface`, `/api/settings/remote` | POST | Ayarlar |
 | `/api/network` | GET | Ethernet, kayıtlı ağlar, internet/DNS, NetworkManager durumu |
-| `/api/wifi` | GET | Wi-Fi tarama sonuçları |
+| `/api/wifi`, `/api/network/operation` | GET | Son ağ işlemi: `status`, `kind`, `message`, `updated`, `networks`; GET tarama başlatmaz |
+| `/api/wifi/scan` | POST | Arka planda tarama; erişim noktasını geçici durdurmak için `{interrupt: true}` |
+| `/api/network/diagnostics` | GET | NetworkManager, radyo, aygıt ve rfkill tanılaması |
+| `/api/activity` | GET | İki saniyede bir alınan ortak CPU/RAM/işlem/ağ örneği; ilk yanıt `ready: false` olabilir |
+| `/api/fan` | GET/POST | Fan ayarları ve çalışan sürücü / `{mode: auto\|always\|unmanaged, pin, on_c, off_c}` |
+| `/api/plugins` | GET | Eklenti listesi, hizmet durumu, PID ve bellek |
+| `/api/plugins/template.zip` | GET | Python proje şablonu |
+| `/api/plugins/import` | POST | `{archive: "base64 ZIP"}`; ZIP en fazla 15 MB |
+| `/api/plugins/action` | POST | `{id, action: start\|stop\|remove}` |
+| `/api/plugins/logs?id=<kimlik>` | GET | Son 200 günlük satırı |
 | `/api/wifi/connect` | POST | `{ssid, password, hidden, identity}` (identity: kurumsal ağ kullanıcı adı) |
 | `/api/wifi/forget`, `/api/hotspot` | POST | Kayıtlı ağı unut, erişim noktasını aç/kapat |
 | `/api/time` | GET | Saat, saat dilimi, NTP durumu, saat dilimleri |
@@ -87,6 +104,48 @@ curl -u pardus:PAROLA -H 'X-Pios: 1' -H 'Content-Type: application/json' \
 | `/api/jobs/<id>` | GET | Arka plan işinin durumu ve çıktısı |
 
 ## Geliştirme
+
+Donanımsız kontroller: depo kökünden
+`python3 -m unittest discover -s image/test/unit -v`.
+
+### Çalışan Pi'yi SD kartı silmeden güncelleme
+
+Mac/Linux'ta depo kökünden `./update-center.sh pardus@pardus-maker.local`
+çalıştırın; IP adresi de verilebilir. Betik paketi SSH/SCP ile gönderir,
+mevcut Merkez'i Pi'de `/var/backups/pios-center.*` altında yedekler ve
+servisi yeniden başlatır. Servis başlamazsa eski dosyaları geri yükler.
+Wi-Fi ve kullanıcı ayarları korunur. Yalnız paket üretmek için
+`./update-center.sh --package` kullanın; çıktı
+`image/out/pardus-maker-center-update.tar.gz` olur. İmaj dosyaları bu
+işlemle güncellenmez. Tarayıcıyı yenileyin; fan ayarları için ayrıca
+Pi'yi yeniden başlatın.
+
+### Ağ geçişi ve ölçümlerin anlamı
+
+Ağ işlemleri HTTP yanıtından sonra arka planda başlar; bağlantı kesilse
+de tamamlanır. Aynı anda ikinci ağ işlemi kabul edilmez. İlk açılış
+erişim noktası betiği ve Merkez aynı dosya kilidini kullanır.
+Erişim noktası açıkken tarama için kullanıcı açıkça duraklatmayı seçer;
+tarama sonunda erişim noktası geri açılır. Bağlanma başarısızsa önceki
+bağlantının UUID'si, bu da başarısızsa erişim noktası denenir. Yeni
+parola mevcut profile bir deneme kopyası üzerinden uygulanır; başarısız
+deneme eski parolayı değiştirmez. Hatalar UI'de kapanana kadar görünür,
+ayrıntıları kopyalanabilir. Parolalar hata ayrıntılarına eklenmez.
+
+Görev Yöneticisi tek örnekleyiciyi paylaşır. Toplam CPU %0–100;
+işlem CPU'su bir çekirdeğe göredir ve çok çekirdekte %100'ü aşabilir.
+Ağ toplamları `/proc/net/dev` sayaçlarıdır; fatura dönemi tüketimi veya
+internet hız testi değildir. Arayüz/cihaz yeniden başladığında sayaçlar
+sıfırlanabilir. RAM hesabında kullanılabilir bellek çıkarılır.
+
+Fan, [Raspberry Pi gpio-fan sürücüsünün](https://github.com/raspberrypi/firmware/blob/master/boot/overlays/README)
+GPIO, sıcaklık ve histerezis parametrelerini kullanır. Güç girişi 5V'a
+doğrudan bağlı bir fan bu yöntemle kontrol edilemez; kontrol girişli fan
+veya uygun sürücü devresi gerekir. Seçilen pin BCM numarasıdır.
+Kamera çekim isteğinde isteğe bağlı `name` alanı fotoğrafın ad önekidir;
+tarih ve benzersiz kod eklenir, mevcut dosyalar üzerine yazılmaz.
+
+### Docker ile deneme
 
 Merkez'i değiştirip denemek için kök dosya sistemini yeniden üretmek gerekmez:
 

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 24" role="img" aria-label="Türkiye bayra1">
+  <rect width="36" height="24" rx="2.5" fill="#E30A17"/>
+  <!-- Hilal -->
+  <circle cx="13.2" cy="12" r="7.2" fill="#fff"/>
+  <circle cx="15.6" cy="12" r="5.7" fill="#E30A17"/>
+  <!-- Y1ld1z (5 kö_e) -->
+  <path fill="#fff" d="M22.8 7.6l1.05 3.22h3.38l-2.74 1.99 1.05 3.22-2.74-1.99-2.74 1.99 1.05-3.22-2.74-1.99h3.38z"/>
+</svg>
