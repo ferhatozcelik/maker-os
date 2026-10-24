@@ -66,14 +66,14 @@ TEMPLATES = {
             "if __name__ == '__main__':\n    app.run(host='0.0.0.0', port=5000)\n"),
     },
     # Kamera ile calisan MediaPipe ornekleri (/usr/lib/pios/templates).
-    "mp-el": _mp("El takibi ve parmak sayma", "mp-el", "hand_landmarker.task"),
-    "mp-jest": _mp("Jest ile LED kontrolü (GPIO)", "mp-jest", "gesture_recognizer.task", ["gpiozero", "RPi.GPIO"]),
-    "mp-yuz": _mp("Yüz algılama ve otomatik fotoğraf", "mp-yuz", "blaze_face_short_range.tflite"),
-    "mp-poz": _mp("Poz: squat ve kol kaldırma sayacı", "mp-poz", "pose_landmarker_lite.task"),
-    "mp-nesne": _mp("Nesne algılama (80 sınıf, GPIO alarm)", "mp-nesne", "efficientdet_lite0.tflite",
+    "mp-hand": _mp("El takibi ve parmak sayma", "mp-hand", "hand_landmarker.task"),
+    "mp-gesture": _mp("Jest ile LED kontrolü (GPIO)", "mp-gesture", "gesture_recognizer.task", ["gpiozero", "RPi.GPIO"]),
+    "mp-face": _mp("Yüz algılama ve otomatik fotoğraf", "mp-face", "blaze_face_short_range.tflite"),
+    "mp-pose": _mp("Poz: squat ve kol kaldırma sayacı", "mp-pose", "pose_landmarker_lite.task"),
+    "mp-object": _mp("Nesne algılama (80 sınıf, GPIO alarm)", "mp-object", "efficientdet_lite0.tflite",
                     ["gpiozero", "RPi.GPIO"]),
     "mp-segment": _mp("Arka plan bulanıklaştırma", "mp-segment", "selfie_segmenter.tflite"),
-    "mp-yuz-agi": _mp("Yüz ağı ve göz kırpma sayacı", "mp-yuz-agi", "face_landmarker.task"),
+    "mp-face-mesh": _mp("Yüz ağı ve göz kırpma sayacı", "mp-face-mesh", "face_landmarker.task"),
 }
 
 
@@ -177,7 +177,7 @@ def set_default(minor):
 # --- Projeler ----------------------------------------------------------------
 
 def projects_dir():
-    return os.path.join(user_info()[2], "Projeler")
+    return os.path.join(user_info()[2], "Projects")
 
 
 def projects():
@@ -210,12 +210,12 @@ def create_project(name, minor, template):
     py = tpl.get("python") or (minor if re.fullmatch(r"3\.\d+", minor or "") else default_version())
     if tpl.get("dir"):
         # Ornek proje: ortak kamera yardimcisi + ornek dosyalari + modeller.
-        files = "cp -r '{t}/_ortak/.' '{t}/{d}/.' .; mkdir -p models; ".format(t=TEMPLATE_DIR, d=tpl["dir"])
+        files = "cp -r '{t}/_common/.' '{t}/{d}/.' .; mkdir -p models; ".format(t=TEMPLATE_DIR, d=tpl["dir"])
         for m in tpl.get("models", []):
             files += ("if [ -f '{src}' ]; then cp '{src}' models/; else echo 'Model indiriliyor: {m}'; "
                       "curl -fL --retry 3 -o 'models/{m}' '{url}'; fi; ").format(
                 src=os.path.join(MODEL_DIR, m), m=m, url=MODEL_URL + MODELS[m])
-        files += "printf '.venv/\\n__pycache__/\\nfotograflar/\\nsonuclar/\\n' > .gitignore; "
+        files += "printf '.venv/\\n__pycache__/\\nphotos/\\nresults/\\n' > .gitignore; "
     else:
         files = "printf '%s' '{}' > main.py; ".format(tpl["main"].replace("'", "'\\''"))
     run_hint = "echo 'Calistirmak icin: cd {path} && uv run main.py'; ".format(path=path) if tpl.get("dir") else ""
@@ -264,7 +264,7 @@ def delete_project(name):
     path = _project_path(name)
     if not path:
         return False
-    trash = os.path.join(projects_dir(), ".silinenler")
+    trash = os.path.join(projects_dir(), ".trash")
     os.makedirs(trash, exist_ok=True)
     shutil.move(path, os.path.join(trash, name))
     uid, gid, _ = user_info()

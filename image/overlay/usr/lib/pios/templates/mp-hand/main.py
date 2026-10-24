@@ -5,7 +5,7 @@ Calistirma:  uv run main.py            (Pi kamera veya USB kamera)
              uv run main.py --kaynak el.mp4
 Web yayini:  http://pardus-maker.local:8000/
 """
-from pios_kamera import Gosterici, Kamera, arguman_ayristirici, analiz, calisma_modu, performans_ayarla
+from pios_camera import Gosterici, Kamera, arguman_ayristirici, analiz, calisma_modu, performans_ayarla
 
 import math
 import os

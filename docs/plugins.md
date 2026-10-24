@@ -48,14 +48,14 @@ plan akışı kullan.
 ZIP en fazla 15 MB, açılmış içerik en fazla 64 MB ve 500 giriş olabilir.
 İçe aktarmada dosya yolları ve sembolik bağlantılar kontrol edilir.
 Aynı kimlikle içe aktarma mevcut kodu ezmez. Yeni sürüm yüklemek için önce
-durdurup **Kaldır** ile listeden çıkar; eski klasör `.silinenler` altında
+durdurup **Kaldır** ile listeden çıkar; eski klasör `.trash` altında
 saklanır. Ardından yeni ZIP'i içe aktar. Kaldırılan uygulamanın bu klasör
 dışına yazdığı kişisel dosyalar korunur.
 
 ## MediaPipe projesini uygulamaya çevir
 
 Merkez'de bir MediaPipe projesi oluştur. Projedeki `main.py`,
-`pios_kamera.py`, `pyproject.toml`, varsa `uv.lock` ve `models/` klasörünün
+`pios_camera.py`, `pyproject.toml`, varsa `uv.lock` ve `models/` klasörünün
 yanına `plugin.json` ekle. Örneğin:
 
 ```json
@@ -75,7 +75,7 @@ GPIO aynı anda birden çok uygulama tarafından kullanılamayabilir; ilgili
 diğer uygulamayı durdur. Büyük modeller ZIP sınırına sığmıyorsa projenin
 Pi'deki `/usr/share/pios/mediapipe/` modellerini okumasını sağlayabilirsin.
 Resim analizi için `args` listesine `--kaynak`, resim yolu ve `--cikti`,
-`/home/maker/analiz-sonuclari` eklenebilir. Tek resim veya klasör analizi
+`/home/maker/analysis-results` eklenebilir. Tek resim veya klasör analizi
 tamamlandığında uygulama normal şekilde kapanır.
 
 Uygulamalar root olarak çalışmaz; normal kullanıcının dosya ve donanım

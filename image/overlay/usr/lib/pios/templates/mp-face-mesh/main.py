@@ -5,7 +5,7 @@ kirpmalarini sayar, gulumsemeyi ve agiz acikligini gosterir
 Calistirma:  uv run main.py
 Web yayini:  http://pardus-maker.local:8000/
 """
-from pios_kamera import Gosterici, Kamera, arguman_ayristirici, analiz, calisma_modu, performans_ayarla
+from pios_camera import Gosterici, Kamera, arguman_ayristirici, analiz, calisma_modu, performans_ayarla
 
 import os
 

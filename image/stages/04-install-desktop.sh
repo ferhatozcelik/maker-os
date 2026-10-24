@@ -13,11 +13,8 @@ require_rootfs
 trap chroot_umount EXIT
 chroot_mount
 
-echo "== apt kaynaklari (build aynasi; 06 resmi adresleri yazar) =="
-cat > "$ROOTFS_DIR/etc/apt/sources.list" <<CFG
-deb $PARDUS_BUILD_MIRROR $PARDUS_SUITE $PARDUS_COMPONENTS
-deb $PARDUS_BUILD_SECURITY_MIRROR $PARDUS_SECURITY_SUITE $PARDUS_COMPONENTS
-CFG
+echo "== apt kaynaklari (build: yalnizca vendor deposu; senkron: Pardus aynalari) =="
+write_build_sources
 
 BASE_PKGS="
   base-files pardus-archive-keyring lsb-release
@@ -68,8 +65,11 @@ echo "== taban paketler =="
 in_chroot apt-get install -y $BASE_PKGS
 
 echo "== RPi Wi-Fi/Bluetooth firmware paketleri =="
-# 03 paketleri indirir; build 04'ten yeniden baslatildiysa zaten kuruludur.
-if ls "$ROOTFS_DIR"/var/cache/pios-debs/*.deb >/dev/null 2>&1; then
+# Build: depodaki (RPi OS) surumleri. Senkron: 03 paketleri indirir; build
+# 04'ten yeniden baslatildiysa zaten kuruludur.
+if ! is_sync; then
+  in_chroot apt-get install -y firmware-brcm80211 bluez-firmware
+elif ls "$ROOTFS_DIR"/var/cache/pios-debs/*.deb >/dev/null 2>&1; then
   in_chroot sh -c 'apt-get install -y /var/cache/pios-debs/*.deb'
   rm -rf "$ROOTFS_DIR/var/cache/pios-debs"
 else
@@ -90,6 +90,8 @@ echo "== Raspberry Pi kamera: libcamera, libcamera-apps, picamera2 =="
 # deposu yalnizca bu paketler icin eklenir. apt tercihleri depodaki diger
 # her seyi (kernel, firmware, chromium, mesa...) -1 ile engeller.
 RPI_CAMERA_SUITE="${RPI_CAMERA_SUITE:-bullseye}"
+# Build modunda kamera paketleri zaten depoda; RPi deposu yalnizca senkronda acilir.
+if is_sync; then
 curl -fsSL "$RPI_APT_MIRROR/raspberrypi.gpg.key" | gpg --dearmor > "$ROOTFS_DIR/usr/share/keyrings/raspberrypi-archive-keyring.gpg"
 [ -s "$ROOTFS_DIR/usr/share/keyrings/raspberrypi-archive-keyring.gpg" ] || { echo "HATA: RPi depo anahtari yazilamadi" >&2; exit 1; }
 echo "deb [signed-by=/usr/share/keyrings/raspberrypi-archive-keyring.gpg] $RPI_APT_MIRROR $RPI_CAMERA_SUITE main" \
@@ -105,6 +107,7 @@ Package: *
 Pin: origin archive.raspberrypi.com
 Pin-Priority: -1
 CFG
+fi
 # libcamera0 "raspberrypi-kernel" paketine bagimli; kernel burada 03'te
 # raspberrypi/firmware'den kurulur. Gercek paket /boot'u ezeceginden yerine
 # sahte bir paket kurulur ve tutulur.
@@ -127,12 +130,17 @@ in_chroot sh -c 'command -v libcamera-hello && libcamera-hello --version' || { e
 echo "== Pardus 100. Yil (Yuzyil) temasi =="
 # Pardus 23 deposundaki mimariden bagimsiz paket (ikon temasi, duvar
 # kagidi, baslat simgesi); bagimliligi yalnizca librsvg2-common.
-mkdir -p "$PIOS_CACHE"
-YUZYIL_DEB="$PIOS_CACHE/$(basename "$PARDUS_YUZYIL_DEB")"
-[ -s "$YUZYIL_DEB" ] || curl -fL --retry 3 "$PARDUS_YUZYIL_DEB" -o "$YUZYIL_DEB"
-cp "$YUZYIL_DEB" "$ROOTFS_DIR/tmp/yuzyil.deb"
-in_chroot apt-get install -y /tmp/yuzyil.deb
-rm -f "$ROOTFS_DIR/tmp/yuzyil.deb"
+if is_sync; then
+  mkdir -p "$PIOS_CACHE" "$PIOS_WORK/sync/debs"
+  YUZYIL_DEB="$PIOS_CACHE/$(basename "$PARDUS_YUZYIL_DEB")"
+  [ -s "$YUZYIL_DEB" ] || curl -fL --retry 3 "$PARDUS_YUZYIL_DEB" -o "$YUZYIL_DEB"
+  cp "$YUZYIL_DEB" "$ROOTFS_DIR/tmp/yuzyil.deb"
+  cp "$YUZYIL_DEB" "$PIOS_WORK/sync/debs/"
+  in_chroot apt-get install -y /tmp/yuzyil.deb
+  rm -f "$ROOTFS_DIR/tmp/yuzyil.deb"
+else
+  in_chroot apt-get install -y pardus-yuzyil
+fi
 
 echo "== yerel ayarlar: Turkce, Europe/Istanbul, TR-Q klavye =="
 sed -i -e 's/^# *\(tr_TR.UTF-8 UTF-8\)/\1/' -e 's/^# *\(en_US.UTF-8 UTF-8\)/\1/' "$ROOTFS_DIR/etc/locale.gen"

@@ -14,7 +14,9 @@ Güncellemeyi her zaman kullanıcı başlatır; cihaz yalnızca haber verir.
 3. **Yedek:** üzerine yazılacak her dosya `/var/lib/pios/ota/backup/` altına
    alınır; yeni oluşan dosyalar kaydedilir.
 4. **Kurulum ve kanca:** dosyalar atomik olarak yerleştirilir; kurulum betiği
-   yeni servisleri etkinleştirir, eksik paketleri kurar. Cihaz ayarları
+   yeni servisleri etkinleştirir ve paketin içindeki `.deb`'leri kurar. Cihazın
+   dış paket deposu yoktur: OTA paketi, ilk sürümden bu yana değişen tüm
+   sistem paketlerini taşır (bkz. `vendor/README.md`). Cihaz ayarları
    (`config.txt`, `cmdline.txt`, kullanıcı, Wi-Fi, parolalar) değişmez.
 5. **Sağlık kontrolü:** Merkez yeniden başlatılır ve 45 sn içinde yanıt vermezse
    yedek **kendiliğinden** geri yüklenir.

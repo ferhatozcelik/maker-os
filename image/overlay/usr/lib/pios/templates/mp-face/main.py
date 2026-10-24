@@ -1,11 +1,11 @@
 """MediaPipe Yuz Algilama: yuzleri cerceveler, yeni bir yuz gorununce
-otomatik fotograf ceker (fotograflar/ klasorune).
+otomatik fotograf ceker (photos/ klasorune).
 
 Calistirma:  uv run main.py
              uv run main.py --fotograf-yok
 Web yayini:  http://pardus-maker.local:8000/
 """
-from pios_kamera import Gosterici, Kamera, arguman_ayristirici, analiz, calisma_modu, performans_ayarla
+from pios_camera import Gosterici, Kamera, arguman_ayristirici, analiz, calisma_modu, performans_ayarla
 
 import os
 import time
@@ -15,7 +15,7 @@ from mediapipe.tasks.python import BaseOptions, vision
 
 KLASOR = os.path.dirname(os.path.abspath(__file__))
 MODEL = os.path.join(KLASOR, "models", "blaze_face_short_range.tflite")
-FOTO_KLASORU = os.path.join(KLASOR, "fotograflar")
+FOTO_KLASORU = os.path.join(KLASOR, "photos")
 BEKLEME_SN = 5   # iki otomatik fotograf arasi en az sure
 
 

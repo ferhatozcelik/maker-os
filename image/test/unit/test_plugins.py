@@ -104,7 +104,7 @@ class PluginTests(unittest.TestCase):
         with patch.object(plugins, '_states', return_value=({}, '')):
             self.assertTrue(plugins.action('benim-eklentim', 'remove')[0])
         self.assertFalse((self.base / 'benim-eklentim').exists())
-        self.assertEqual(len(list((self.base / '.silinenler').iterdir())), 1)
+        self.assertEqual(len(list((self.base / '.trash').iterdir())), 1)
 
     def test_missing_service_is_not_fatal_for_new_plugin(self):
         with patch.object(plugins, 'run', return_value=(1, '', 'Unit pios-plugin-test.service could not be found.')):

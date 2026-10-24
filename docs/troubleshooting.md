@@ -16,7 +16,7 @@
 
 1. `http://pardus-maker.local/` açılmıyorsa (bazı Windows ve Android
    sürümleri `.local` adlarını çözmez) modemin bağlı cihazlar listesinden IP'ye bakın.
-2. Kartı bilgisayara takıp `bootfs/pardus-durum.txt` dosyasını açın:
+2. Kartı bilgisayara takıp `bootfs/pardus-status.txt` dosyasını açın:
    ana makine adı, mod (istemci/erişim noktası) ve IP adresleri yazar.
 3. Ağ yoksa 45 sn sonra `Pardus-Maker-XXXX` erişim noktası açılır → `http://10.42.0.1/`.
 
@@ -35,7 +35,7 @@ ağları NTP'yi (UDP 123) engelleyebilir.
 
 ## Kamera görünmüyor
 
-- Kabloyu Pi kapalıyken takın; yönünü kontrol edin ([Donanım rehberi](donanim.md#kamera)).
+- Kabloyu Pi kapalıyken takın; yönünü kontrol edin ([Donanım rehberi](hardware.md#kamera)).
 - Terminal: `libcamera-hello --list-cameras` kamerayı listelemeli.
 - Üçüncü taraf kamerada **Merkez → Kamera → Pi kamera modeli**'nden sensörü seçip yeniden başlatın.
 - "Kamera meşgul": başka bir uygulama (Python betiği, MediaPipe örneği, ikinci bir sekme) kamerayı kullanıyordur.

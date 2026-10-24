@@ -10,11 +10,11 @@ import unittest
 from unittest.mock import Mock, patch
 
 TEMPLATES = pathlib.Path(__file__).resolve().parents[2] / 'overlay/usr/lib/pios/templates'
-sys.path.insert(0, str(TEMPLATES / '_ortak'))
+sys.path.insert(0, str(TEMPLATES / '_common'))
 try:
     import cv2
     import numpy as np
-    import pios_kamera as kamera
+    import pios_camera as kamera
     HAVE_CV = True
 except ImportError:
     HAVE_CV = False

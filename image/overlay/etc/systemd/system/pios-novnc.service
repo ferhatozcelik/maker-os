@@ -1,10 +1,10 @@
 [Unit]
-Description=Pardus Maker tarayicidan masaustu (websockify, port 6080; Merkez > Ekran kullanir)
+Description=Pardus Maker tarayicidan masaustu (websockify, yalnizca 127.0.0.1:6080; Merkez > Ekran port 80 uzerinden aktarir)
 After=pios-vnc.service network.target
 Wants=pios-vnc.service
 
 [Service]
-ExecStart=/usr/bin/websockify --web=/usr/share/novnc 6080 localhost:5900
+ExecStart=/usr/bin/websockify 127.0.0.1:6080 localhost:5900
 Restart=always
 RestartSec=3
 

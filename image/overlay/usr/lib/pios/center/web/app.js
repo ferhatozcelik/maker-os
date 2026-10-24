@@ -626,25 +626,20 @@ async function renderGuncelleme(el) {
     // Yeniden çizimde kullanıcının açtığı/kapattığı bölümler korunur.
     const opened = {};
     el.querySelectorAll("details[data-k]").forEach(x => opened[x.dataset.k] = x.open);
-    el.innerHTML = `<h1>Güncellemeler</h1><p class="lead">Pardus Maker sürümü ve sistem paketleri.</p>
+    el.innerHTML = `<h1>Güncellemeler</h1><p class="lead">Pardus Maker ve tüm sistem paketleri tek sürümle güncellenir.</p>
       <h2>Pardus Maker</h2><div class="list">
         ${row("Yüklü sürüm", "", `<span class="v">${esc(o.current || "—")}</span>`)}
         ${state}
         ${busy ? "" : row("Yeni sürümü denetle", "GitHub'daki son yayınla karşılaştırır; 6 saatte bir kendiliğinden denetlenir", '<button class="btn" id="otaCheck">Denetle</button>')}
       </div>${info}${notes}
       ${logText && (busy || o.status === "error") ? `<details class="ota-notes" data-k="log" ${busy ? "open" : ""}><summary>Günlük</summary><pre id="otaLog">${esc(logText)}</pre></details>` : ""}
-      <h2>Sistem paketleri</h2><div class="list">
-        ${row("Güncellemeleri denetle", "Pardus deposu, güvenlik güncellemeleri ve VS Code", '<button class="btn" id="chk">Denetle</button>')}
-        ${row("Tümünü güncelle", "İnternet hızına göre birkaç dakika sürebilir", '<button class="btn primary" id="ins">Güncelle</button>')}
-      </div>
-      <p class="hint">Python sürümleri <a href="#python">Python</a>, yapay zeka ajanları <a href="#agent">Agent'lar</a> bölümünden güncellenir.</p>`;
+      <p class="hint">Sistem paketleri (Pardus, çekirdek, VS Code, Chromium…) Pardus Maker sürümleriyle birlikte gelir; ayrıca güncellenmez.
+        Python sürümleri <a href="#python">Python</a>, yapay zeka ajanları <a href="#agent">Agent'lar</a> bölümünden güncellenir.</p>`;
     el.querySelectorAll("details[data-k]").forEach(x => { if (x.dataset.k in opened) x.open = opened[x.dataset.k]; });
     const log = $("#otaLog", el);
     if (log && logText !== shownLog) log.scrollTop = log.scrollHeight;
     shownLog = logText;
     const on = (id, fn) => { const b = $("#" + id, el); if (b) b.onclick = fn; };
-    on("chk", () => runJob("/api/updates/check", {}));
-    on("ins", () => runJob("/api/updates/install", {}));
     on("otaCheck", async e => { e.target.disabled = true; e.target.textContent = "Denetleniyor…"; await act("/api/ota/check", {}, "Denetlendi"); draw(); });
     on("otaGo", async () => { if (confirm(`Pardus Maker ${o.latest} kurulsun mu? Önce yedek alınır.`) && await act("/api/ota/start", {})) draw(); });
     on("otaOk", () => otaDecide("confirm", draw));
@@ -801,7 +796,7 @@ async function renderProjeler(el) {
       </div></div>
     <p class="hint" id="ptip" hidden>MediaPipe örnekleri Python 3.12 ile kurulur, Pi kamerayı veya USB kamerayı otomatik kullanır.
       Projeyi Terminal'de açıp <code>uv run main.py --profil tasarruf</code> yazın; sonucu Pi'nin ekranında veya telefondan <b>http://&lt;pi&gt;.local:8000</b> adresinde izleyin.
-      Resim için <code>uv run main.py --kaynak foto.jpg</code>: PNG ve JSON çıktıları <code>sonuclar/</code> klasörüne kaydedilir. Kamera aynı anda tek uygulamada açılabilir: Kamera sayfasını kapatın.</p>
+      Resim için <code>uv run main.py --kaynak foto.jpg</code>: PNG ve JSON çıktıları <code>results/</code> klasörüne kaydedilir. Kamera aynı anda tek uygulamada açılabilir: Kamera sayfasını kapatın.</p>
     <h2>Projelerim</h2><div class="list">${p.projects.length ? p.projects.map(x => row(esc(x.name),
       (x.python ? "Python " + esc(x.python) : "sanal ortam yok"),
       `<div class="btns"><button class="btn" data-o="code" data-n="${esc(x.name)}">VS Code</button>
@@ -819,7 +814,7 @@ async function renderProjeler(el) {
   el.querySelectorAll("button[data-o]").forEach(b => b.onclick = async () => {
     const n = b.dataset.n, o = b.dataset.o;
     if (o === "add") { const pkg = prompt("Eklenecek paket(ler) (örn. requests numpy):"); if (pkg) runJob("/api/python/projects/add", { name: n, package: pkg }); }
-    else if (o === "del") { if (confirm(`"${n}" silinsin mi? (Projeler/.silinenler klasörüne taşınır)`) && await act("/api/python/projects/delete", { name: n }, "Taşındı")) route(); }
+    else if (o === "del") { if (confirm(`"${n}" silinsin mi? (Projects/.trash klasörüne taşınır)`) && await act("/api/python/projects/delete", { name: n }, "Taşındı")) route(); }
     else act("/api/python/projects/open", { name: n, how: o }, o === "code" ? "VS Code açılıyor…" : "Terminal açıldı");
   });
 }
@@ -1117,7 +1112,7 @@ async function openScreen() {
   $("#app").hidden = true; $("#screen").hidden = false;
   if (touch) landscape();
   if (rfb) return;
-  const { password, port } = await api("/api/vnc");
+  const { password, path } = await api("/api/vnc");
   const [{ default: RFB }, ks, kd] = await Promise.all([import("/novnc/core/rfb.js"),
     import("/novnc/core/input/keysym.js"), import("/novnc/core/input/keysymdef.js")]);
   KeyTable = ks.default; keysyms = kd.default;
@@ -1125,7 +1120,7 @@ async function openScreen() {
   const connect = () => {
     $("#screenState").textContent = "bağlanıyor…";
     $("#vncTarget").innerHTML = "";
-    rfb = new RFB($("#vncTarget"), `${proto}://${location.hostname}:${port}/websockify`, { credentials: { password } });
+    rfb = new RFB($("#vncTarget"), `${proto}://${location.host}${path}`, { credentials: { password } });
     // Dusuk gecikme: olcekle, surukleyerek kaydirma kapali, tiklamada odak al.
     rfb.scaleViewport = true;
     rfb.clipViewport = false;

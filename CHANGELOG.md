@@ -27,13 +27,18 @@ raporlanmalıdır; Docker testi kamera, Wi-Fi ve GPIO desteğini doğrulamaz.
 - **Kullanıcı ve parola:** `maker` / `maker` (ilk iş değiştirin). Merkez kullanıcıyı cihazdan okur
 - **Uzak ekran:** varsayılan masaüstü 1280×720; x11vnc kararlı 30 FPS (33 ms yoklama, bekleme modu kapalı); tam ekran ve yön değişiminde görüntü hemen yeniden sığdırılır
 - **Sistem güncellemesi:** Pardus deposu ve VS Code; süren apt işine bağlanır, apt kilidi için bekler
+- **Kendi paket depomuz:** build ve cihazlar Pardus veya başka bir dış depoya bağlanmaz; tüm paketler ve dosyalar `vendor/` kilitleriyle kendi Release'imizdeki depodan gelir. Depo `vendor/sync.sh` ile istenen zaman yenilenir; paket değişiklikleri `vendor/overrides/` ile yapılır (ilk örnek: `pardus-xfce-settings` zenity'siz, ~140 MB daha küçük imaj)
 - **GitHub Actions:** `main`'e push'ta arm64 makinede imaj build edilir; `VERSION` yeni bir sürümse imaj ve OTA paketi doğrudan GitHub Release'e eklenir
 - Birim testleri (Merkez, OTA, eklentiler, MediaPipe yardımcıları)
+- **Tek port:** uzak ekran da Merkez portu (80) üzerinden çalışır (`/api/vnc/ws`); websockify yalnızca içeriden erişilir, 6080 dışarı kapalı
+- **Pencereler ortada açılır:** Merkez pencereleri ekranın ~%70'i boyutunda ve ortada; tüm pencereler xfwm4 ile ortalanır
+- **Varsayılan çözünürlük 1920x1080:** 1080p monitörlerde büyütülmüş (zoom) görüntü yok; Merkez ara genişlik ve kısa ekranlarda daha sıkı menü
+- **Uluslararası dosya adları:** tüm doküman, betik, şablon ve cihazda oluşan dosya/klasör adları İngilizce (`~/Projects`, `pardus-status.txt`, `mp-hand`…); OTA eski adları taşır
 
 ### Performans (Raspberry Pi 4)
 
 Ayarlar Docker'da doğrulandı; hız aşırtma, frekans yöneticisi ve G/Ç ayarları gerçek Pi'de
-ölçülmelidir (bkz. `docs/donanim.md` → Performans ve soğutma).
+ölçülmelidir (bkz. `docs/hardware.md` → Performans ve soğutma).
 
 - **Pi 4 hız aşırtma:** CPU 2.0 GHz, GPU 750 MHz (`[pi4]` bölümü; soğutucu/fan gerekir)
 - **Çekirdek ve sistem:** `ondemand` frekans yöneticisi hızlı tepki ayarlarıyla (`pios-cpu.service`), SD kart için BFQ zamanlayıcı, zswap kapalı (takas zram'da), zram için `vm.page-cluster=0`, açılışta `boot_delay=0` ve `initial_turbo=30`
@@ -41,4 +46,7 @@ Ayarlar Docker'da doğrulandı; hız aşırtma, frekans yöneticisi ve G/Ç ayar
 - **Merkez:** HTTP/1.1 kalıcı bağlantı, gzip ve ETag/304 (arayüz 85 KB → 26 KB, sonraki açılışta 0); agent sürümleri paralel ve önbellekli; Etkinlik örnekleyicisi izleyen yokken durur; masaüstü oturumu, GPIO çipi ve saat dilimleri önbellekte; kamera MJPEG ayrıştırması kopyasız
 - **MediaPipe:** analiz geride kalınca eski kareler çözülmez; kare başına kopya kaldırıldı
 - **AI ortamı:** paketler önceden derlenmiş bytecode ile gelir (torch/cv2 içe aktarma hızlanır)
+- **Çekirdek ve açılış:** Raspberry Pi'nin `stable` dalı (Raspberry Pi OS'in test edilmiş çekirdeği); açılış bölümünde yalnızca Pi 4/400 ve Pi 3 firmware'i (hata ayıklama, eski kamera ve küçültülmüş varyantlar çıkarıldı)
+- **Daha küçük imaj:** Chromium'da yalnızca Türkçe/İngilizce dil dosyaları (~88 MB), `zenity`/WebKit yok (~140 MB), yardım belgeleri yok
+- **Paket deposu senkronu:** firmware deposunun tamamı (175 MB) yerine kısmi git çekimi (~35 MB); takılan indirmeler süre sınırı ve yeniden denemeyle sürer
 - **`flash-sd.sh`:** çok çekirdekli xz açma; doğrulamada imaj ikinci kez açılmaz

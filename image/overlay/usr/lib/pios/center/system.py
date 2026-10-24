@@ -8,7 +8,7 @@ import socket
 import subprocess
 import time
 
-from common import USER, jobs, read_first, run, run_user
+from common import USER, read_first, run, run_user
 
 HOTSPOT_CON = "pardus-hotspot"
 BOOT = "/boot/firmware"
@@ -540,42 +540,8 @@ def set_remote(on):
 
 
 # --- Guncellemeler -----------------------------------------------------------
-
-UPDATE_TITLES = ("Guncellemeler denetleniyor", "Sistem guncelleniyor")
-# apt/dpkg kilidi baska bir islemdeyse (onceki "Denetle", acilista calisan
-# apt-get) hata vermek yerine bu kadar saniye bekle (apt >= 1.9.11).
-APT_LOCK_WAIT = 600
-APT = "apt-get -o DPkg::Lock::Timeout=%d" % APT_LOCK_WAIT
-
-
-def _updates_running():
-    """Suren guncelleme isinin kimligi; ikinci bir apt-get baslatmak yerine
-    arayuz ayni ise baglanir (gunluk penceresi kapatilip tekrar basilsa da)."""
-    for job in jobs.running():
-        if job["title"] in UPDATE_TITLES:
-            return job["id"]
-    return None
-
-
-def updates_check():
-    running = _updates_running()
-    if running:
-        return running
-    env = dict(os.environ, DEBIAN_FRONTEND="noninteractive", LC_ALL="C.UTF-8")
-    return jobs.start(UPDATE_TITLES[0], [
-        "sh", "-c", APT + " update && echo && echo '== Guncellenebilir paketler ==' && "
-                    "apt list --upgradable 2>/dev/null | tail -n +2"], env=env)
-
-
-def updates_install():
-    running = _updates_running()
-    if running:
-        return running
-    env = dict(os.environ, DEBIAN_FRONTEND="noninteractive", LC_ALL="C.UTF-8")
-    return jobs.start(UPDATE_TITLES[1], [
-        "sh", "-c", APT + " update && " + APT + " -y -o Dpkg::Options::=--force-confdef "
-                    "-o Dpkg::Options::=--force-confold full-upgrade "
-                    "&& " + APT + " -y autoremove && echo && echo 'Guncelleme tamamlandi.'"], env=env)
+# Sistem paketleri dis depolardan degil, Pardus Maker surumleriyle (ota.py)
+# guncellenir; cihazda apt kaynagi yoktur (bkz. vendor/README.md).
 
 
 # --- Guc / oturum ------------------------------------------------------------

@@ -228,6 +228,20 @@ a.btn { text-decoration: none; display: inline-block; }
   #screen:not(.portrait-ok) #rotateHint { display: flex; }
 }
 
+/* Ara genislik (kucuk pencere, tablet): dar menu, daha az kenar boslugu */
+@media (min-width: 761px) and (max-width: 1080px) {
+  #sidebar { width: 200px; padding: 12px 8px; }
+  #content { padding: 18px 20px 32px; }
+  .device img { width: 32px; height: 32px; }
+}
+/* Kisa ekran (720p, kucuk pencere): menu kaydirmadan sigsin */
+@media (min-width: 761px) and (max-height: 760px) {
+  #nav .group { margin: 9px 10px 2px; }
+  #nav a { padding: 3px 8px; }
+  .device { padding-bottom: 8px; }
+  #content { padding-top: 14px; }
+}
+
 /* Mobil: ust cubuk + cekmece menu */
 @media (max-width: 760px) {
   body { font-size: 14.5px; }

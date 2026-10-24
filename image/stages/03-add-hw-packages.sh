@@ -16,23 +16,42 @@ require_root
 require_rootfs
 
 mkdir -p "$PIOS_CACHE"
-FW_TARBALL="$PIOS_CACHE/rpi-firmware-$RPI_FIRMWARE_REF.tar.gz"
-if [ ! -s "$FW_TARBALL" ]; then
-  echo "== raspberrypi/firmware ($RPI_FIRMWARE_REF) indiriliyor (buyuk dosya) =="
-  curl -fL --retry 3 --max-time 1800 \
-    "https://github.com/raspberrypi/firmware/archive/${RPI_FIRMWARE_REF}.tar.gz" \
-    -o "$FW_TARBALL.part"
-  mv "$FW_TARBALL.part" "$FW_TARBALL"
-fi
-
 WORKTMP="$(mktemp -d)"
 trap 'rm -rf "$WORKTMP"' EXIT
-
-echo "== yalnizca gerekli kisimlar aciliyor (boot/, modules/*-v8+) =="
-tar -xzf "$FW_TARBALL" -C "$WORKTMP" --wildcards \
-  '*/boot/bootcode.bin' '*/boot/start*.elf' '*/boot/fixup*.dat' \
-  '*/boot/kernel8.img' '*/boot/bcm27*.dtb' '*/boot/overlays/*' \
-  '*/modules/*-v8+/*'
+# Raspberry Pi cekirdek ve acilis yazilimi: raspberrypi/firmware deposunun
+# "stable" dali (Raspberry Pi OS'in kullandigi test edilmis surum). Senkron
+# deponun tamamini (~175 MB) indirmez: kismi git cekimi yalnizca kullanilan
+# dosyalari alir (~35 MB). Acilis dosyalarindan Pi 4/400 (start4) ve Pi 3
+# (start, bootcode) disindaki varyantlar (hata ayiklama _db, eski kamera _x,
+# kucultulmus _cd) imaja girmez; firmware onlari hic yuklemez.
+FW_FILES="boot/bootcode.bin boot/start.elf boot/fixup.dat boot/start4.elf boot/fixup4.dat boot/kernel8.img"
+if is_sync; then
+  FW_GIT="$WORKTMP/git"
+  git init -q "$FW_GIT"
+  git -C "$FW_GIT" remote add origin https://github.com/raspberrypi/firmware
+  echo "== raspberrypi/firmware ($RPI_FIRMWARE_BRANCH) cekiliyor (kismi) =="
+  git -C "$FW_GIT" fetch -q --depth 1 --filter=blob:none origin "$RPI_FIRMWARE_BRANCH"
+  RPI_FIRMWARE_REF="$(depo_version RPI_FIRMWARE_REF "git -C '$FW_GIT' rev-parse FETCH_HEAD")"
+  KMODS="$(git -C "$FW_GIT" ls-tree --name-only FETCH_HEAD modules/ | grep -- '-v8+$' | head -n1)"
+  [ -n "$KMODS" ] || { echo "HATA: firmware deposunda -v8+ modul dizini yok" >&2; exit 1; }
+  # shellcheck disable=SC2086
+  git -C "$FW_GIT" sparse-checkout set --no-cone $FW_FILES 'boot/bcm27*.dtb' 'boot/overlays/' "$KMODS/"
+  git -C "$FW_GIT" checkout -q FETCH_HEAD
+  FW_NAME="rpi-firmware-$RPI_FIRMWARE_REF-v8.tar.xz"
+  mkdir -p "$WORKTMP/firmware-$RPI_FIRMWARE_REF/boot" "$WORKTMP/firmware-$RPI_FIRMWARE_REF/modules"
+  mv "$FW_GIT"/boot/* "$WORKTMP/firmware-$RPI_FIRMWARE_REF/boot/"
+  mv "$FW_GIT/$KMODS" "$WORKTMP/firmware-$RPI_FIRMWARE_REF/modules/"
+  rm -rf "$FW_GIT"
+  mkdir -p "$PIOS_CACHE/files" "$PIOS_WORK/sync"
+  tar -C "$WORKTMP" -cf - . | xz -T0 -6 > "$PIOS_CACHE/files/$FW_NAME"
+  printf '%s\t%s\n' "$FW_NAME" "https://github.com/raspberrypi/firmware/tree/$RPI_FIRMWARE_REF (boot/, $KMODS)" \
+    >> "$PIOS_WORK/sync/files.txt"
+else
+  RPI_FIRMWARE_REF="$(depo_version RPI_FIRMWARE_REF)"
+  FW_NAME="rpi-firmware-$RPI_FIRMWARE_REF-v8.tar.xz"
+  echo "== cekirdek ve acilis dosyalari depodan aciliyor =="
+  depo_file "$FW_NAME" "" - | xz -dc | tar -C "$WORKTMP" -xf -
+fi
 FW_SRC="$(find "$WORKTMP" -mindepth 1 -maxdepth 1 -type d | head -n1)"
 
 KVER_DIR="$(find "$FW_SRC/modules" -mindepth 1 -maxdepth 1 -type d -name '*-v8+' | head -n1)"
@@ -51,8 +70,7 @@ rm -rf "$BOOT_DIR" "$ROOTFS_DIR/lib/modules"
 mkdir -p "$BOOT_DIR/overlays" "$ROOTFS_DIR/lib/modules"
 
 echo "== boot dosyalari kopyalaniyor =="
-cp "$FW_SRC"/boot/bootcode.bin "$FW_SRC"/boot/start*.elf "$FW_SRC"/boot/fixup*.dat \
-  "$FW_SRC"/boot/kernel8.img "$FW_SRC"/boot/bcm27*.dtb "$BOOT_DIR/"
+( cd "$FW_SRC" && cp $FW_FILES boot/bcm27*.dtb "$BOOT_DIR/" )
 cp -r "$FW_SRC"/boot/overlays/. "$BOOT_DIR/overlays/"
 
 echo "== kernel modulleri kopyalaniyor ($KVER) =="
@@ -68,18 +86,22 @@ echo "== Wi-Fi/Bluetooth firmware'i (Raspberry Pi OS paketleri) =="
 # Debian bullseye'daki firmware-brcm80211 (2021) yerine RPi'nin guncel
 # paketleri dpkg ile kurulur; boylece paket veritabaninda da izlenir ve
 # Pardus deposundaki eski surum (epoch'suz) bunu asagi indiremez.
-RPI_PKGS_GZ="$WORKTMP/rpi-Packages.gz"
-curl -sfL --max-time 120 "$RPI_APT_MIRROR/dists/$RPI_APT_SUITE/main/binary-arm64/Packages.gz" -o "$RPI_PKGS_GZ"
-mkdir -p "$ROOTFS_DIR/var/cache/pios-debs"
-for pkg in firmware-brcm80211 bluez-firmware; do
-  path=$(zcat "$RPI_PKGS_GZ" | awk -v p="$pkg" '$1=="Package:"{n=$2} $1=="Filename:" && n==p {print $2; exit}')
-  if [ -z "$path" ]; then
-    echo "HATA: $pkg RPi deposunda bulunamadi" >&2
-    exit 1
-  fi
-  echo "   $pkg <- $path"
-  curl -sfL --max-time 300 "$RPI_APT_MIRROR/$path" -o "$ROOTFS_DIR/var/cache/pios-debs/$(basename "$path")"
-done
+# Build modunda bu paketler depodan 04'te adiyla kurulur.
+if is_sync; then
+  RPI_PKGS_GZ="$WORKTMP/rpi-Packages.gz"
+  curl -sfL --max-time 120 "$RPI_APT_MIRROR/dists/$RPI_APT_SUITE/main/binary-arm64/Packages.gz" -o "$RPI_PKGS_GZ"
+  mkdir -p "$ROOTFS_DIR/var/cache/pios-debs" "$PIOS_WORK/sync/debs"
+  for pkg in firmware-brcm80211 bluez-firmware; do
+    path=$(zcat "$RPI_PKGS_GZ" | awk -v p="$pkg" '$1=="Package:"{n=$2} $1=="Filename:" && n==p {print $2; exit}')
+    if [ -z "$path" ]; then
+      echo "HATA: $pkg RPi deposunda bulunamadi" >&2
+      exit 1
+    fi
+    echo "   $pkg <- $path"
+    curl -sfL --max-time 300 "$RPI_APT_MIRROR/$path" -o "$ROOTFS_DIR/var/cache/pios-debs/$(basename "$path")"
+    cp "$ROOTFS_DIR/var/cache/pios-debs/$(basename "$path")" "$PIOS_WORK/sync/debs/"
+  done
+fi
 
 echo "== config.txt / cmdline.txt yaziliyor =="
 cat > "$BOOT_DIR/config.txt" <<'CFG'

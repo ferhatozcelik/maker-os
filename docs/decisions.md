@@ -63,7 +63,7 @@ getirdiği kısıtlara karşı alınan kararları kaydeder.
 | `lgpio` arm64 tekerlekleri glibc 2.34 istiyor | GPIO için `gpiozero` + `RPi.GPIO` (Pi 4 için yeterli) |
 | `ai-edge-litert` 2.1+ GLIBCXX 3.4.29 istiyor | 2.0.3'e sabitlendi |
 | PyPI'deki aarch64 `torch` CUDA ile geliyor (~4 GB) | PyTorch CPU deposu |
-| VS Code postinst'i anahtarı `gpg` ile yazıyor | `gnupg` kurulur, anahtar build'de ayrıca yazılır ve `apt update` ile doğrulanır |
+| Dış depolara bağımlılık (build ve cihaz) | Tüm paketler kendi depomuzda (`vendor/`, Release); build ve cihaz dış depoya bağlanmaz; yenileme `vendor/sync.sh` ile elle (bkz. `vendor/README.md`) |
 | Python 3.13+ `crypt` modülünü kaldırdı | Sistem servisleri `/usr/bin/python3` (3.9); kullanıcı `python3`'ü uv ile en güncel sürüm |
 | MediaPipe 1.x yalnızca `manylinux_2_28` arm64 tekerleği sunuyor | glibc 2.31 ile uyumlu; Pi üzerinde 7 görev (el, jest, yüz, poz, nesne, segmentasyon, yüz ağı) doğrulandı |
 | En güncel Python'da numpy/matplotlib arm64 tekerleği gecikebiliyor | MediaPipe projeleri Python 3.12'ye sabitlenir |
@@ -85,5 +85,5 @@ getirdiği kısıtlara karşı alınan kararları kaydeder.
 
 Projenin özgün kaynakları **GPL-3.0-or-later** kapsamındadır. Üçüncü taraf
 bileşenler kendi lisanslarını korur; [NOTICE.md](../NOTICE.md) dosyasında
-kaynaklarıyla listelenir. Marka ve dağıtım koşulları [lisans notlarında](lisans.md)
+kaynaklarıyla listelenir. Marka ve dağıtım koşulları [lisans notlarında](license.md)
 açıklanır.

@@ -37,23 +37,23 @@ for spec in \
   "@xterm/addon-fit/-/addon-fit-0.10.0.tgz 917ac44972453d5eed52edc1e50260c76398ce48cf2290c2e60671102bba0b33 lib/addon-fit.js"; do
   # shellcheck disable=SC2086
   set -- $spec
-  tgz="$PIOS_CACHE/$(basename "$1")"
-  [ -s "$tgz" ] || curl -fL --retry 3 "https://registry.npmjs.org/$1" -o "$tgz"
+  tgz="$PIOS_WORK/$(basename "$1")"
+  depo_file "xterm/$(basename "$1")" "https://registry.npmjs.org/$1" "$tgz"
   echo "$2  $tgz" | sha256sum -c - >/dev/null || { echo "HATA: $tgz sha256 uyusmuyor" >&2; rm -f "$tgz"; exit 1; }
   tgz_file="$tgz"; shift 2
   for f in "$@"; do
     tar -xzf "$tgz_file" -O "package/$f" > "$XTERM_DIR/$(basename "$f")"
   done
+  rm -f "$tgz_file"
 done
 
 echo "== MediaPipe modelleri (Projeler > MediaPipe ornekleri, agsiz calisir) =="
 MP_DIR="$ROOTFS_DIR/usr/share/pios/mediapipe"
-mkdir -p "$MP_DIR" "$PIOS_CACHE/mediapipe"
+mkdir -p "$MP_DIR"
 while read -r sum path; do
-  f="$PIOS_CACHE/mediapipe/$(basename "$path")"
-  [ -s "$f" ] || curl -fL --retry 3 "https://storage.googleapis.com/mediapipe-models/$path" -o "$f"
+  f="$MP_DIR/$(basename "$path")"
+  depo_file "mediapipe/$(basename "$path")" "https://storage.googleapis.com/mediapipe-models/$path" "$f"
   echo "$sum  $f" | sha256sum -c - >/dev/null || { echo "HATA: $f sha256 uyusmuyor" >&2; rm -f "$f"; exit 1; }
-  cp "$f" "$MP_DIR/"
 done <<'MODELS'
 fbc2a30080c3c557093b5ddfc334698132eb341044ccee322ccf8bcf3607cde1 hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task
 97952348cf6a6a4915c2ea1496b4b37ebabc50cbbf80571435643c455f2b0482 gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task
@@ -113,7 +113,7 @@ for rc in "$ROOTFS_DIR/etc/skel/.bashrc" "$USER_HOME/.bashrc"; do
   grep -q '/usr/lib/pios/bashrc' "$rc" 2>/dev/null || \
     printf '\n# Pardus Maker\n[ -f /usr/lib/pios/bashrc ] && . /usr/lib/pios/bashrc\n' >> "$rc"
 done
-mkdir -p "$USER_HOME/.config/autostart" "$USER_HOME/Projeler"
+mkdir -p "$USER_HOME/.config/autostart" "$USER_HOME/Projects"
 # Ekran kilidi/ekran koruyucu yok (otomatik oturum + uzak ekran).
 for app in light-locker xfce4-screensaver xscreensaver pardus-welcome blueman; do
   printf '[Desktop Entry]\nType=Application\nName=%s\nHidden=true\n' "$app" \
@@ -133,9 +133,18 @@ JSON
 echo "== MediaPipe paketleri kullanici uv onbellegine (ornek projeler agsiz/hizli kurulsun) =="
 # Projeler ayni dosya sisteminde oldugu icin uv onbellekten sert baglanti
 # kullanir; her MediaPipe projesi diskte neredeyse yer kaplamaz.
+# Senkron: PyPI'den bir kez kurulur, onbellek depoya alinir (065). Build:
+# depodaki onbellek oldugu gibi acilir (internet yok).
 in_chroot chown -R "$PIOS_USER:$PIOS_USER" "/home/$PIOS_USER"
-in_chroot runuser -u "$PIOS_USER" -- env HOME="/home/$PIOS_USER" UV_PYTHON_INSTALL_DIR=/opt/pios/python UV_NO_PROGRESS=1 \
-  sh -c 'set -e; uv venv -q --python 3.12 /tmp/mp-onbellek && uv pip install -q --python /tmp/mp-onbellek/bin/python mediapipe gpiozero RPi.GPIO && /tmp/mp-onbellek/bin/python -c "import mediapipe; print(\"   mediapipe\", mediapipe.__version__)"; rm -rf /tmp/mp-onbellek'
+if is_sync; then
+  in_chroot runuser -u "$PIOS_USER" -- env HOME="/home/$PIOS_USER" UV_PYTHON_INSTALL_DIR=/opt/pios/python UV_NO_PROGRESS=1 \
+    sh -c 'set -e; uv venv -q --python 3.12 /tmp/mp-onbellek && uv pip install -q --python /tmp/mp-onbellek/bin/python mediapipe gpiozero RPi.GPIO && /tmp/mp-onbellek/bin/python -c "import mediapipe; print(\"   mediapipe\", mediapipe.__version__)"; rm -rf /tmp/mp-onbellek'
+else
+  [ -f "$PIOS_DEPO/user-uv-cache.tar" ] || { echo "HATA: depoda user-uv-cache.tar yok" >&2; exit 1; }
+  rm -rf "$USER_HOME/.cache/uv"
+  mkdir -p "$USER_HOME/.cache"
+  tar -C "$USER_HOME/.cache" -xf "$PIOS_DEPO/user-uv-cache.tar"
+fi
 in_chroot chown -R "$PIOS_USER:$PIOS_USER" "/home/$PIOS_USER"
 
 echo "== SSH: parola ile giris acik (ekransiz erisim icin) =="

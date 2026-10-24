@@ -13,9 +13,9 @@ kablonun metal temas yüzü HDMI portlarına, mavi yüzü Ethernet portuna bakar
 
 **Kullanım:**
 
-- Merkez → Kamera: canlı görüntü, fotoğraf (Pi kamerada tam çözünürlük), galeri (`~/Resimler/Kamera`).
+- Merkez → Kamera: canlı görüntü, fotoğraf (Pi kamerada tam çözünürlük), galeri (`~/Resimler/Camera`).
 - Terminal: `libcamera-hello --list-cameras`, `libcamera-still -o foto.jpg`, `libcamera-vid -t 10000 -o video.h264`.
-- Python: `picamera2` sistem Python'unda kuruludur (`/usr/bin/python3`); uv projelerinde [`pios_kamera`](mediapipe.md#pios_kamera) yardımcısını kullanın.
+- Python: `picamera2` sistem Python'unda kuruludur (`/usr/bin/python3`); uv projelerinde [`pios_camera`](mediapipe.md#pios_camera) yardımcısını kullanın.
 - `maker` kullanıcısı `video` grubundadır; kamera için sudo gerekmez.
 
 Kamera aynı anda yalnızca bir uygulama tarafından açılabilir. Merkez'deki

@@ -10,7 +10,7 @@ web yönetimi çalışır durumdadır.
 ┌──────────────────────────────────────────────────────────────────────┐
 │ Kullanıcı: tarayıcı (telefon/bilgisayar) · Pi'nin monitörü · SSH     │
 ├──────────────────────────────────────────────────────────────────────┤
-│ Pardus Maker Merkezi (port 80)   noVNC/websockify (6080)  x11vnc (5900)│
+│ Pardus Maker Merkezi (port 80: panel + ekran)     x11vnc (5900)        │
 │  ayarlar · terminal · kamera · USB · GPIO · Python · agent'lar        │
 ├──────────────────────────────────────────────────────────────────────┤
 │ XFCE + Plank (LightDM otomatik oturum, kullanıcı: pardus)            │
@@ -19,7 +19,7 @@ web yönetimi çalışır durumdadır.
 │ Geliştirme: uv + CPython sürümleri · ai-env (Python 3.12) · Node.js  │
 │ Kamera: libcamera, libcamera-apps, picamera2 · ffmpeg · MediaPipe    │
 ├──────────────────────────────────────────────────────────────────────┤
-│ Pardus 21 "Yirmibir" arm64 (Debian 11) + Pardus güvenlik deposu      │
+│ Pardus 21 "Yirmibir" arm64 (Debian 11), paketler vendor deposundan   │
 │ systemd · NetworkManager · avahi (mDNS) · zram · udisks2             │
 ├──────────────────────────────────────────────────────────────────────┤
 │ Raspberry Pi çekirdeği 6.18 (-v8+), DTB/overlay, açılış yazılımı,    │
@@ -43,7 +43,7 @@ bulunmadığı için bunlar Raspberry Pi'nin kaynaklarından alınır:
 
 | Bölüm | Dosya sistemi | Boyut | İçerik |
 | --- | --- | --- | --- |
-| 1 | FAT32 (`PARDUSBOOT`) | 512 MiB | `config.txt`, `cmdline.txt`, çekirdek, DTB, overlay'ler, `wifi-ornek.txt`, `pardus-durum.txt` |
+| 1 | FAT32 (`PARDUSBOOT`) | 512 MiB | `config.txt`, `cmdline.txt`, çekirdek, DTB, overlay'ler, `wifi-example.txt`, `pardus-status.txt` |
 | 2 | ext4 (`pardusroot`) | ilk açılışta kartın tamamı | Kök dosya sistemi |
 
 `/tmp` tmpfs'tir, takas zram (zstd) ile bellekte tutulur; SD kart yazımlarını
@@ -61,7 +61,7 @@ azaltmak için `noatime`, journald sınırı ve kapatılmış zamanlayıcılar k
 3. **`pios-network-fallback.service`**: `bootfs/wifi.txt` varsa Wi-Fi
    profili olarak ekler ve dosyayı siler; 45 sn içinde varsayılan rota
    oluşmazsa `Pardus-Maker-XXXX` erişim noktasını (10.42.0.1) açar; adresleri
-   `bootfs/pardus-durum.txt` dosyasına yazar.
+   `bootfs/pardus-status.txt` dosyasına yazar.
 4. **`pios-center.service`**: Merkez'i port 80'de başlatır ve
    `/run/pios/token` dosyasına yerel giriş jetonunu yazar.
 5. **LightDM** `maker` kullanıcısıyla otomatik oturum açar;
@@ -73,7 +73,7 @@ azaltmak için `noatime`, journald sınırı ve kapatılmış zamanlayıcılar k
 | --- | --- | --- |
 | `pios-center.service` | Pardus Maker Merkezi (root, Python 3.9 stdlib) | 80 |
 | `pios-vnc.service` | x11vnc, ekran `:0` | 5900 |
-| `pios-novnc.service` | websockify + noVNC dosyaları | 6080 |
+| `pios-novnc.service` | websockify (Merkez > Ekran bunu port 80 üzerinden `/api/vnc/ws` ile aktarır) | 127.0.0.1:6080 (dışarı kapalı) |
 | `pios-network-fallback.service` | Ağ yedeği ve durum dosyası | — |
 | `pios-firstboot.service` | İlk açılış işleri | — |
 | `ssh`, `avahi-daemon`, `NetworkManager`, `systemd-timesyncd`, `fake-hwclock`, `zramswap`, `bluetooth` | Sistem | 22 |
@@ -86,15 +86,15 @@ betikler ve servisler arasında ortak kullanılır.
 | Yol | İçerik |
 | --- | --- |
 | `/usr/lib/pios/center/` | Merkez backend'i (`server.py`, `system.py`, `camera.py`, `devices.py`, `terminal.py`, `pyman.py`, `agents.py`, `gpio.py`) ve `web/` arayüzü |
-| `/usr/lib/pios/templates/` | MediaPipe örnek projeleri ve ortak `pios_kamera.py` |
+| `/usr/lib/pios/templates/` | MediaPipe örnek projeleri ve ortak `pios_camera.py` |
 | `/usr/share/pios/xterm/` | xterm.js (sabit sürüm, sha256 doğrulamalı) |
 | `/usr/share/pios/mediapipe/` | MediaPipe modelleri (sabit sürüm, sha256 doğrulamalı) |
 | `/opt/pios/python/` | uv ile kurulan CPython sürümleri (`maker` grubu yazabilir) |
 | `/opt/pios/envs/ai/` | Hazır yapay zeka ortamı (`ai-env` komutu) |
 | `/opt/pios/node/` | Node.js LTS |
 | `/etc/pios/` | VNC parolası, kamera ayarları |
-| `~/Projeler/` | Kullanıcı projeleri (her biri kendi `.venv`'i ile) |
-| `~/Resimler/Kamera/` | Merkez'den çekilen fotoğraflar |
+| `~/Projects/` | Kullanıcı projeleri (her biri kendi `.venv`'i ile) |
+| `~/Resimler/Camera/` | Merkez'den çekilen fotoğraflar |
 
 ## Güvenlik modeli
 

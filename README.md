@@ -40,25 +40,25 @@
     <th align="center">Telefon · Terminal</th>
   </tr>
   <tr>
-    <td align="center" valign="top"><img src="docs/screenshots/merkez.png" alt="Pardus Maker Merkezi genel bakış sayfası" width="420"></td>
-    <td align="center" valign="top"><img src="docs/screenshots/telefon-wifi.png" alt="Telefonda Wi-Fi ve ağ ayarları" width="190"></td>
-    <td align="center" valign="top"><img src="docs/screenshots/telefon-terminal.png" alt="Telefonda web terminali ve ek tuş çubuğu" width="190"></td>
+    <td align="center" valign="top"><img src="docs/screenshots/center.png" alt="Pardus Maker Merkezi genel bakış sayfası" width="420"></td>
+    <td align="center" valign="top"><img src="docs/screenshots/phone-wifi.png" alt="Telefonda Wi-Fi ve ağ ayarları" width="190"></td>
+    <td align="center" valign="top"><img src="docs/screenshots/phone-terminal.png" alt="Telefonda web terminali ve ek tuş çubuğu" width="190"></td>
   </tr>
   <tr><th align="center" colspan="3">Uzak masaüstü (tarayıcıda)</th></tr>
-  <tr><td align="center" colspan="3"><img src="docs/screenshots/masaustu.png" alt="Tarayıcıdan açılan Pardus masaüstü" width="850"></td></tr>
+  <tr><td align="center" colspan="3"><img src="docs/screenshots/desktop.png" alt="Tarayıcıdan açılan Pardus masaüstü" width="850"></td></tr>
 </table>
 
 <table align="center">
   <tr><th>Python ve yapay zeka ortamı</th><th>MediaPipe proje şablonları</th></tr>
   <tr>
     <td><img src="docs/screenshots/python.png" alt="Python sürümleri ve hazır yapay zeka ortamı" width="420"></td>
-    <td><img src="docs/screenshots/projeler.png" alt="MediaPipe şablonundan el takibi projesi oluşturma" width="420"></td>
+    <td><img src="docs/screenshots/projects.png" alt="MediaPipe şablonundan el takibi projesi oluşturma" width="420"></td>
   </tr>
 </table>
 
 Görüntüler güncel build'in Docker ortamında, masaüstü ve telefon boyutlarında çekilmiştir.
 Kamera, Wi-Fi ve GPIO'nun donanım testleri Raspberry Pi gerektirir.
-Tüm görüntüler için [ekran görüntüsü galerisine](docs/ekran-goruntuleri.md) bakın.
+Tüm görüntüler için [ekran görüntüsü galerisine](docs/screenshots.md) bakın.
 
 ## İndir
 
@@ -69,7 +69,7 @@ Tüm görüntüler için [ekran görüntüsü galerisine](docs/ekran-goruntuleri
 
 | Alan | İçerik |
 | --- | --- |
-| Taban | Pardus 21 "Yirmibir" (Debian 11) arm64 + Pardus güvenlik deposu, Raspberry Pi'nin güncel çekirdeği (`-v8+`) |
+| Taban | Pardus 21 "Yirmibir" (Debian 11) arm64 + güvenlik güncellemeleri, Raspberry Pi'nin güncel çekirdeği (`-v8+`); tüm paketler kendi depomuzdan ([vendor](vendor/README.md)) |
 | Masaüstü | XFCE, macOS benzeri: üst çubuk + Plank dock, Pardus **100. Yıl** teması (açık/koyu), Chromium, VS Code, Dosyalar, Terminal |
 | Pardus Maker Merkezi | Tek web uygulaması (port 80), telefona uyumlu: ayarlar, ağ, tarih-saat, dil-klavye, Python, projeler, agent'lar, terminal, kamera, USB, GPIO, uzak ekran |
 | Ağ | Ethernet (durum, hız), Wi-Fi tarama, gizli ağ, okul/kurum ağı (WPA2-Enterprise, eduroam), kayıtlı ağlar; ağ yoksa `Pardus-Maker-XXXX` erişim noktası |
@@ -79,7 +79,7 @@ Tüm görüntüler için [ekran görüntüsü galerisine](docs/ekran-goruntuleri
 | Python ve yapay zeka | uv ile her Python sürümü tek tıkla; hazır AI ortamı (`ai-env`): PyTorch, ONNX Runtime, LiteRT, OpenCV, Ultralytics, Jupyter Lab |
 | Donanım | GPIO (sudo'suz), I2C, SPI, UART; USB bellek bağla/güvenle çıkar, Arduino/ESP32 seri portları; HDMI 0/1, DSI dokunmatik ekran, HDMI/3.5 mm ses |
 | İzleme ve soğutma | Türkçe Görev Yöneticisi: CPU, RAM, işlemler, anlık ağ aktarımı ve toplam sayaçlar; GPIO kontrollü fan için sıcaklık eşikleri |
-| Python eklentileri | Genel Python proje şablonu, ZIP içe aktarma, uygulama listesi, başlat/durdur ve çalışma günlüğü; [eklenti rehberi](docs/eklentiler.md) |
+| Python eklentileri | Genel Python proje şablonu, ZIP içe aktarma, uygulama listesi, başlat/durdur ve çalışma günlüğü; [eklenti rehberi](docs/plugins.md) |
 | Agent'lar | Claude Code, Codex CLI, Gemini CLI, OpenCode, Antigravity, Ollama: Merkez'den kur, güncelle, başlat |
 | Uzak erişim | Web (masaüstü + tüm ayarlar), VNC (5900), SSH, mDNS (`pardus-maker.local`) |
 
@@ -106,7 +106,7 @@ Grafik arayüzle yazmak için:
 
 ### 2. (İsteğe bağlı) Evdeki Wi-Fi'ye doğrudan bağlansın
 
-Kartı bilgisayara takın, `bootfs` bölümündeki `wifi-ornek.txt` dosyasını
+Kartı bilgisayara takın, `bootfs` bölümündeki `wifi-example.txt` dosyasını
 `wifi.txt` olarak kopyalayın, `SSID` ve `PAROLA` satırlarını doldurun.
 Pi açılınca ağı ekler ve parola içeren dosyayı siler.
 
@@ -125,7 +125,7 @@ Giriş ekranında kullanıcı `maker`, parola `maker`. Ağdan ilk girişte masa�
 telefonda ekranı yatay çevirin. Üstteki **‹ Merkez** ile ayarlara geçilir.
 
 IP bulunamazsa kartı bilgisayara takıp `bootfs` bölümündeki
-`pardus-durum.txt` dosyasına bakın.
+`pardus-status.txt` dosyasına bakın.
 
 ### 4. İlk iş: parolayı değiştirin
 
@@ -190,7 +190,7 @@ cd image
 ```
 
 Docker testi: `http://localhost:8080/` (`maker` / `maker`). Konteynerde HDMI
-yerine Xvfb kullanılır (varsayılan `1280x720`; `PIOS_RESOLUTION` ile değiştirilir).
+yerine Xvfb kullanılır (varsayılan `1600x900`; `PIOS_RESOLUTION` ile değiştirilir).
 Wi-Fi, kamera, GPIO ve güç işlemleri çalışmaz; uzak ekran gerçek Pi + LAN’a
 göre daha yavaş olabilir.
 
@@ -255,4 +255,4 @@ hak sahiplerinin koşullarına ayrıca tabidir; bkz.
 Yazılım, yürürlükteki hukukun izin verdiği ölçüde, lisanslarda belirtilen
 şekilde **olduğu gibi ve garanti verilmeksizin** sunulur. Bu açıklama,
 emredici hukuk kurallarından doğan hakları sınırlamaz ve hukuki uygunluk
-belgesi değildir. Ayrıntılar: [lisans ve dağıtım notları](docs/lisans.md).
+belgesi değildir. Ayrıntılar: [lisans ve dağıtım notları](docs/license.md).

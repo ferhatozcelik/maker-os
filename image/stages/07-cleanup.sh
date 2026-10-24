@@ -20,10 +20,14 @@ in_chroot apt-get clean
 chroot_umount
 trap - EXIT
 
-cat > "$ROOTFS_DIR/etc/apt/sources.list" <<CFG
-deb $PARDUS_MIRROR $PARDUS_SUITE $PARDUS_COMPONENTS
-deb $PARDUS_SECURITY_MIRROR $PARDUS_SECURITY_SUITE $PARDUS_COMPONENTS
+# Cihaz disaridaki depolara (Pardus, Raspberry Pi, Microsoft) baglanmaz:
+# paketler yalnizca Pardus Maker surumleriyle (OTA) gelir. Bkz. vendor/README.md
+cat > "$ROOTFS_DIR/etc/apt/sources.list" <<'CFG'
+# Pardus Maker: sistem paketleri Pardus Maker surumleriyle (Merkez >
+# Guncellemeler, OTA) guncellenir. Bu cihaz dis depolara baglanmaz.
 CFG
+rm -f "$ROOTFS_DIR"/etc/apt/sources.list.d/* "$ROOTFS_DIR/etc/apt/preferences.d/50-pios-raspberrypi" \
+  "$ROOTFS_DIR/etc/apt/apt.conf.d/89-pios-sync"
 rm -rf "$ROOTFS_DIR"/var/lib/apt/lists/* "$ROOTFS_DIR"/var/cache/apt/*.bin
 rm -rf "$ROOTFS_DIR"/var/cache/debconf/*-old "$ROOTFS_DIR"/var/lib/dpkg/*-old
 rm -rf "$ROOTFS_DIR"/tmp/* "$ROOTFS_DIR"/var/tmp/* "$ROOTFS_DIR"/root/.cache

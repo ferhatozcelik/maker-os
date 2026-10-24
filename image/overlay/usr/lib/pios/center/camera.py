@@ -3,7 +3,7 @@
 # (multipart/x-mixed-replace) olarak verilir; tek kamera sureci kareleri
 # tum izleyicilere dagitir ve izleyici kalmayinca kapanir.
 #
-# Fotograflar kullanicinin Resimler/Kamera klasorune kaydedilir. Pi kamerasi
+# Fotograflar kullanicinin Resimler/Camera klasorune kaydedilir. Pi kamerasi
 # icin fotograf, akis kisa sure durdurularak tam cozunurlukte cekilir.
 import json
 import os
@@ -72,7 +72,7 @@ def photo_dir():
     for line in read_first(os.path.join(home, ".config/user-dirs.dirs")).splitlines():
         if line.startswith("XDG_PICTURES_DIR="):
             pics = line.split("=", 1)[1].strip('"').replace("$HOME", home)
-    return os.path.join(pics, "Kamera")
+    return os.path.join(pics, "Camera")
 
 
 def _ensure_photo_dir():
@@ -364,7 +364,7 @@ def _take_photo(cam_id, stem):
     if not cam:
         return False, "Kamera bulunamadi", None
     uid, gid, _ = user_info()
-    name = "%s-%s-%s.jpg" % (stem or "foto", time.strftime("%Y%m%d-%H%M%S"), secrets.token_hex(3))
+    name = "%s-%s-%s.jpg" % (stem or "photo", time.strftime("%Y%m%d-%H%M%S"), secrets.token_hex(3))
     path = os.path.join(_ensure_photo_dir(), name)
     if cam["kind"] == "csi":
         still = _tool("still")

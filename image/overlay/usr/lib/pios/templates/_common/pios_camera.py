@@ -65,7 +65,7 @@ def arguman_ayristirici(aciklama):
     p.add_argument('--cekirdek', type=_pozitif, help='İşleme ayrılacak en fazla CPU çekirdeği')
     p.add_argument('--sicaklik-siniri', type=int, default=75)
     p.add_argument('--jpeg-kalite', type=int)
-    p.add_argument('--cikti', default='sonuclar', help='Resim analizi PNG ve JSON çıktı klasörü')
+    p.add_argument('--cikti', default='results', help='Resim analizi PNG ve JSON çıktı klasörü')
     p.add_argument('--port', type=int, default=int(os.environ.get('PIOS_PLUGIN_PORT', '8000')), help='Web yayını portu (0: kapalı)')
     p.add_argument('--pencere-yok', action='store_true')
     return p
@@ -407,7 +407,7 @@ class _Yayin(BaseHTTPRequestHandler):
 
 
 class Gosterici:
-    def __init__(self, baslik, port=8000, pencere=True, kamera=None, cikti='sonuclar', kalite=65):
+    def __init__(self, baslik, port=8000, pencere=True, kamera=None, cikti='results', kalite=65):
         self.baslik, self.kapandi, self.kamera = baslik, False, kamera
         self.cikti, self.kalite = cikti, kalite
         self.pencere = pencere and bool(os.environ.get('DISPLAY'))

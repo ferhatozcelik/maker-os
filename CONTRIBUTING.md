@@ -11,7 +11,7 @@ bir kayıt açın ve şunları ekleyin:
 - Pi modeli ve bellek miktarı, kullanılan imaj sürümü (**Merkez → Genel → Sürüm**)
 - Takılı donanım (kamera modeli, ekran, USB aygıtları)
 - Ne beklediğiniz, ne olduğu; mümkünse ekran görüntüsü
-- İlgili günlük: `journalctl -u pios-center -b` veya `bootfs/pardus-durum.txt`
+- İlgili günlük: `journalctl -u pios-center -b` veya `bootfs/pardus-status.txt`
 
 ## Geliştirme
 

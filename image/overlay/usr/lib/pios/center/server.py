@@ -41,6 +41,7 @@ import pyman  # noqa: E402
 import plugins  # noqa: E402
 import system  # noqa: E402
 import terminal  # noqa: E402
+import vncproxy  # noqa: E402
 from common import USER, jobs  # noqa: E402
 
 PORT = int(os.environ.get("PIOS_CENTER_PORT", "80"))
@@ -358,6 +359,9 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_file(WEB_DIR, p[len("/static/"):])
         if not authed:
             return self.deny()
+        # Uzak ekran: noVNC, Merkez portu uzerinden yerel websockify'a baglanir.
+        if p == "/api/vnc/ws":
+            return vncproxy.serve(self)
         if p.startswith("/novnc/"):
             return self.send_file(NOVNC_DIR, p[len("/novnc/"):])
         if p.startswith("/xterm/"):
@@ -378,7 +382,7 @@ class Handler(BaseHTTPRequestHandler):
                                       "remote": system.remote_enabled()},
             "/api/time": lambda: system.time_status(),
             "/api/language": lambda: system.language_status(),
-            "/api/vnc": lambda: {"password": system.vnc_password(), "port": 6080},
+            "/api/vnc": lambda: {"password": system.vnc_password(), "path": "/api/vnc/ws"},
             "/api/python/versions": lambda: {"versions": pyman.versions(),
                                              "default": pyman.default_version()},
             "/api/python/projects": lambda: {"projects": pyman.projects(),
@@ -489,10 +493,6 @@ class Handler(BaseHTTPRequestHandler):
             return self.result(*system.set_interface(s("key"), bool(d.get("enabled"))))
         if p == "/api/settings/remote":
             return self.result(*system.set_remote(bool(d.get("enabled"))))
-        if p == "/api/updates/check":
-            return self.job_reply(system.updates_check())
-        if p == "/api/updates/install":
-            return self.job_reply(system.updates_install())
         if p.startswith("/api/ota/"):
             return self.ota_action(p[len("/api/ota/"):])
         if p == "/api/power":

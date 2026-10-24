@@ -1,8 +1,17 @@
 #!/bin/sh
 # Pardus Maker Merkezi'nin bir bolumunu Chromium uygulama penceresinde acar.
 # Kullanim: pios-open [genel|wifi|python|projeler|agent|terminal|kamera|usb|gpio|...]
+# Pencere ekranin ~%70'i boyutunda ve ortada acilir (tam ekran degil).
 SECTION="${1:-genel}"
 TOKEN="$(cat /run/pios/token 2>/dev/null)"
+SIZE="$(xrandr --current 2>/dev/null | sed -n 's/.* current \([0-9]*\) x \([0-9]*\),.*/\1 \2/p')"
+SW="${SIZE%% *}"; SH="${SIZE##* }"
+[ -n "$SW" ] && [ -n "$SH" ] || { SW=1920; SH=1080; }
+W=$((SW * 70 / 100)); H=$((SH * 78 / 100))
+[ "$W" -gt 1280 ] && W=1280
+[ "$H" -gt 880 ] && H=880
+[ "$W" -lt 820 ] && W=$((SW < 820 ? SW : 820))
+X=$(((SW - W) / 2)); Y=$(((SH - H) / 2))
 exec chromium --app="http://localhost/?t=$TOKEN#$SECTION" \
   --class="pios-$SECTION" --user-data-dir="$HOME/.config/pios-center" \
-  --window-size=1040,720 --no-first-run --no-default-browser-check
+  --window-size="$W,$H" --window-position="$X,$Y" --no-first-run --no-default-browser-check

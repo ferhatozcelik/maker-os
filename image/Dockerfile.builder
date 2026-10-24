@@ -5,6 +5,7 @@ FROM debian:bookworm-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     debootstrap \
+    apt-utils \
     qemu-user-static \
     curl \
     ca-certificates \

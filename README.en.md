@@ -40,25 +40,25 @@
     <th align="center">Phone · Terminal</th>
   </tr>
   <tr>
-    <td align="center" valign="top"><img src="docs/screenshots/merkez.png" alt="Pardus Maker Center overview" width="420"></td>
-    <td align="center" valign="top"><img src="docs/screenshots/telefon-wifi.png" alt="Wi-Fi and network settings on a phone" width="190"></td>
-    <td align="center" valign="top"><img src="docs/screenshots/telefon-terminal.png" alt="Web terminal with extra key bar on a phone" width="190"></td>
+    <td align="center" valign="top"><img src="docs/screenshots/center.png" alt="Pardus Maker Center overview" width="420"></td>
+    <td align="center" valign="top"><img src="docs/screenshots/phone-wifi.png" alt="Wi-Fi and network settings on a phone" width="190"></td>
+    <td align="center" valign="top"><img src="docs/screenshots/phone-terminal.png" alt="Web terminal with extra key bar on a phone" width="190"></td>
   </tr>
   <tr><th align="center" colspan="3">Remote desktop (in the browser)</th></tr>
-  <tr><td align="center" colspan="3"><img src="docs/screenshots/masaustu.png" alt="Pardus desktop opened from a browser" width="850"></td></tr>
+  <tr><td align="center" colspan="3"><img src="docs/screenshots/desktop.png" alt="Pardus desktop opened from a browser" width="850"></td></tr>
 </table>
 
 <table align="center">
   <tr><th>Python and AI environment</th><th>MediaPipe project templates</th></tr>
   <tr>
     <td><img src="docs/screenshots/python.png" alt="Python versions and ready AI environment" width="420"></td>
-    <td><img src="docs/screenshots/projeler.png" alt="Creating a hand tracking project from a MediaPipe template" width="420"></td>
+    <td><img src="docs/screenshots/projects.png" alt="Creating a hand tracking project from a MediaPipe template" width="420"></td>
   </tr>
 </table>
 
 Screenshots show the current build running in Docker, with desktop and phone viewports.
 Camera, Wi-Fi and GPIO require a Raspberry Pi for hardware testing.
-See the [screenshot gallery](docs/ekran-goruntuleri.md).
+See the [screenshot gallery](docs/screenshots.md).
 
 ## Download
 
@@ -87,7 +87,7 @@ be changed under **Center → Dil ve Klavye** (Language and Keyboard).
 ## Setup guide
 
 1. Download the `.img.xz` from the [release page](https://github.com/ferhatozcelik/pardus-maker/releases/tag/v1.0.0) (16 GB+ card recommended) and write it with [Raspberry Pi Imager](https://www.raspberrypi.com/software/) → **Use custom**. Do **not** use Imager's OS customisation. balenaEtcher also works.
-2. Optional: copy `wifi-ornek.txt` on the `bootfs` partition to `wifi.txt` and fill in `SSID` and `PAROLA` (password).
+2. Optional: copy `wifi-example.txt` on the `bootfs` partition to `wifi.txt` and fill in `SSID` and `PAROLA` (password).
 3. Power on the Pi. On first boot the root partition grows to fill the card and SSH host keys are generated (~1 min).
 4. Connect:
    - Ethernet or `wifi.txt`: `http://pardus-maker.local/`
@@ -161,4 +161,4 @@ holders' terms, including the
 Software is provided **as is, without warranty**, to the extent permitted by
 applicable law and under the applicable licenses. This notice does not
 limit mandatory statutory rights or certify legal compliance. See the
-[detailed licensing notes (Turkish)](docs/lisans.md).
+[detailed licensing notes (Turkish)](docs/license.md).

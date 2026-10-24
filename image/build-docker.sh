@@ -23,4 +23,7 @@ docker run --rm --privileged \
   ${PIOS_PASSWORD:+-e PIOS_PASSWORD="$PIOS_PASSWORD"} \
   ${PIOS_COMPRESS:+-e PIOS_COMPRESS="$PIOS_COMPRESS"} \
   ${PIOS_BUILD_VERSION:+-e PIOS_BUILD_VERSION="$PIOS_BUILD_VERSION"} \
+  ${PIOS_SYNC:+-e PIOS_SYNC="$PIOS_SYNC"} \
+  ${PIOS_STOP_AFTER:+-e PIOS_STOP_AFTER="$PIOS_STOP_AFTER"} \
+  ${PIOS_GITHUB_REPO:+-e PIOS_GITHUB_REPO="$PIOS_GITHUB_REPO"} \
   pardus-maker-builder /workspace/image/build.sh "$@"

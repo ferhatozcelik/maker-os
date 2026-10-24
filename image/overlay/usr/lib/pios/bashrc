@@ -3,7 +3,7 @@
 # tanimlanir.
 [ -f /etc/profile.d/pios.sh ] && . /etc/profile.d/pios.sh
 
-# Renkli ve okunakli komut satiri: [ai] pardus@pardus-maker ~/Projeler/demo (main) $
+# Renkli ve okunakli komut satiri: [ai] pardus@pardus-maker ~/Projects/demo (main) $
 __pios_git() {
   local b
   b=$(git symbolic-ref --short HEAD 2>/dev/null) || return
@@ -26,8 +26,8 @@ alias la='ls -lha --group-directories-first'
 alias grep='grep --color=auto'
 alias ..='cd ..'
 alias ...='cd ../..'
-alias projeler='cd ~/Projeler'
-alias guncelle='sudo apt update && sudo apt full-upgrade'
+alias projeler='cd ~/Projects'
+alias guncelle='pios-open guncelleme >/dev/null 2>&1 & disown'
 alias sicaklik='awk "{printf \"CPU: %.1f °C\n\", \$1/1000}" /sys/class/thermal/thermal_zone0/temp'
 
 # Pardus Maker Merkezi bolumlerini acar: merkez [python|agent|gpio|wifi|...]
@@ -42,17 +42,17 @@ Pardus Maker - sik kullanilan komutlar
   uv init proje         yeni Python projesi;  uv add paket  ile paket ekle
   uv run main.py        projeyi kendi ortaminda calistir
   code .                bulundugun klasoru VS Code'da ac
-  projeler              ~/Projeler klasorune git
+  projeler              ~/Projects klasorune git
   merkez python         Python Yoneticisi (merkez agent | gpio | wifi | genel)
   pinout                GPIO pin semasi (ai-env icinde)
   i2cdetect -y 1        I2C aygitlarini tara
   sicaklik              CPU sicakligi
-  guncelle              sistemi guncelle
+  guncelle              Pardus Maker guncellemeleri (Merkez)
 TXT
 }
 
-# Her yeni terminalde kisa karsilama (kapatmak icin: touch ~/.pios-sessiz)
-if [ -z "$PIOS_WELCOMED" ] && [ ! -e "$HOME/.pios-sessiz" ] && [ -t 1 ]; then
+# Her yeni terminalde kisa karsilama (kapatmak icin: touch ~/.pios-quiet)
+if [ -z "$PIOS_WELCOMED" ] && [ ! -e "$HOME/.pios-quiet" ] && [ -t 1 ]; then
   export PIOS_WELCOMED=1
   __ip=$(hostname -I 2>/dev/null | awk '{print $1}')
   printf '\e[1;31mPardus Maker\e[0m  %s.local%s  ·  %s  ·  komutlar icin \e[1myardim\e[0m\n\n' \

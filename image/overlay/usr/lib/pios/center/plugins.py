@@ -90,7 +90,7 @@ plugin.json, main.py, pyproject.toml ve yardımcı dosyaları ZIP'in köküne ko
 Merkez > Eklentiler > ZIP içe aktar ile yükleyip Çalıştır'a basın. İlk çalıştırmada uv bağımlılıkları kurar; internet gerekebilir.
 Eklenti masaüstü kullanıcısı (maker) olarak çalışır; otomatik olarak root yetkisi verilmez. Kamera/GPIO aynı anda tek uygulamada kullanılabilir.
 Çıktıları ev klasörünüzde (/home/maker) kendi klasörünüze yazın. Eklenti silme klasörü taşır, kişisel dosyaları silmez.
-MediaPipe kullanacaksanız pios_kamera.py yardımcısını ve gerekli models/ dosyalarını projeye ekleyin.
+MediaPipe kullanacaksanız pios_camera.py yardımcısını ve gerekli models/ dosyalarını projeye ekleyin.
 '''
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as z:
@@ -218,9 +218,9 @@ def action(plugin_id, operation):
         if operation == 'remove':
             if active:
                 return False, 'Kaldırmadan önce eklentiyi durdurun.'
-            os.makedirs(BASE + '/.silinenler', exist_ok=True)
-            shutil.move(root, BASE + '/.silinenler/%s-%s' % (plugin_id, time.time_ns()))
-            return True, 'Eklenti listeden kaldırılıp .silinenler klasörüne taşındı.'
+            os.makedirs(BASE + '/.trash', exist_ok=True)
+            shutil.move(root, BASE + '/.trash/%s-%s' % (plugin_id, time.time_ns()))
+            return True, 'Eklenti listeden kaldırılıp .trash klasörüne taşındı.'
         if operation != 'start':
             return False, 'Geçersiz eklenti işlemi.'
         if active:

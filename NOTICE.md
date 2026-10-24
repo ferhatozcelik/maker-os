@@ -45,4 +45,4 @@ Bu dosyadaki kaynak bağlantıları da kaynak kodu sağlama yükümlülüklerini
 yerine getirildiğine dair bir beyan değildir. Sürüme karşılık gelen
 kaynakların ve yeniden dağıtım izinlerinin ayrıca doğrulanması gerekir.
 
-Ayrıntılar ve resmî kaynaklar: [Lisans ve dağıtım notları](docs/lisans.md).
+Ayrıntılar ve resmî kaynaklar: [Lisans ve dağıtım notları](docs/license.md).

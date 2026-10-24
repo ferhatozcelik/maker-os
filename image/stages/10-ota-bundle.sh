@@ -6,6 +6,9 @@
 #   kernel/boot/   cekirdek, DTB, overlay'ler, acilis yazilimi (config.txt ve
 #                  cmdline.txt haric: cihaz ayarlari ezilmez)
 #   kernel/modules/<surum>/
+#   debs/          ilk surumun kilidinden (vendor/packages.base.lock) bu yana
+#                  degisen veya eklenen paketler; cihazin dis deposu yoktur,
+#                  hangi surumden yukseltilirse yukseltilsin eksiksiz guncellenir
 #   hooks/post-install.sh, enable.txt (pios birimleri), packages.txt
 set -eu
 
@@ -18,7 +21,7 @@ KVER="$(cat "$PIOS_WORK/kernel-version")"
 STAGE="$PIOS_WORK/ota"
 OUT="$PIOS_OUT/pardus-maker-$VERSION-ota.tar.xz"
 rm -rf "$STAGE"
-mkdir -p "$STAGE/root" "$STAGE/kernel/boot" "$STAGE/kernel/modules" "$STAGE/hooks"
+mkdir -p "$STAGE/root" "$STAGE/kernel/boot" "$STAGE/kernel/modules" "$STAGE/hooks" "$STAGE/debs"
 
 echo "== Pardus Maker katmani =="
 LIST="$STAGE/files.txt"
@@ -33,6 +36,19 @@ echo "== cekirdek $KVER =="
 ( cd "$ROOTFS_DIR/boot/firmware" && cp -a kernel8.img bcm27*.dtb start*.elf fixup*.dat bootcode.bin overlays "$STAGE/kernel/boot/" )
 cp -a "$ROOTFS_DIR/lib/modules/$KVER" "$STAGE/kernel/modules/"
 
+echo "== degisen paketler =="
+if [ -f "$VENDOR_DIR/packages.base.lock" ] && [ -d "$PIOS_DEPO/apt/pool" ]; then
+  LC_ALL=C sort "$VENDOR_DIR/packages.base.lock" > "$STAGE/base.sorted"
+  LC_ALL=C sort "$VENDOR_DIR/packages.lock" | LC_ALL=C comm -13 "$STAGE/base.sorted" - \
+    | while IFS="$(printf '\t')" read -r pkg ver arch; do
+        f="$PIOS_DEPO/apt/pool/${pkg}_$(echo "$ver" | sed 's/^[0-9]*://')_$arch.deb"
+        [ -f "$f" ] || { echo "HATA: depoda yok: $f" >&2; exit 1; }
+        cp "$f" "$STAGE/debs/"
+      done
+  rm -f "$STAGE/base.sorted"
+fi
+echo "   $(ls "$STAGE/debs" | wc -l) paket"
+
 echo "== kanca ve listeler =="
 cp "$IMAGE_DIR/ota/post-install.sh" "$STAGE/hooks/post-install.sh"
 ls "$ROOTFS_DIR"/etc/systemd/system/*.wants/ | grep -E '^pios-.*\.(service|timer)$' | sort -u > "$STAGE/enable.txt"
@@ -44,7 +60,7 @@ rm -f "$LIST"
 
 echo "== paketleniyor =="
 rm -f "$OUT" "$OUT.sha256"
-tar -C "$STAGE" --numeric-owner --hard-dereference -cf - ota.json root kernel hooks enable.txt packages.txt | xz -T0 -6 > "$OUT"
+tar -C "$STAGE" --numeric-owner --hard-dereference -cf - ota.json root kernel hooks debs enable.txt packages.txt | xz -T0 -6 > "$OUT"
 ( cd "$PIOS_OUT" && sha256sum "$(basename "$OUT")" > "$(basename "$OUT").sha256" )
 rm -rf "$STAGE"
 ls -lh "$OUT"

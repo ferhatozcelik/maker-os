@@ -17,7 +17,7 @@ uv run main.py                         # kamera otomatik: önce Pi kamera, yoksa
 uv run main.py --kaynak usb:1          # ikinci USB kamera
 uv run main.py --kaynak video.mp4      # video dosyası
 uv run main.py --kaynak resim.jpg      # tek resim
-uv run main.py --kaynak ./resimler --cikti ./sonuclar  # klasörü sırayla analiz et
+uv run main.py --kaynak ./images --cikti ./results  # klasörü sırayla analiz et
 uv run main.py --profil tasarruf       # daha düşük CPU yükü ve analiz sıklığı
 uv run main.py --pencere-yok           # yalnızca web yayını
 uv run main.py --genislik 1280 --yukseklik 720
@@ -29,7 +29,7 @@ açılabilir. Terminalden `Ctrl+C` ile durdurulur.
 
 Tek resim veya resim klasörü analizinde web yayını açılmaz: her resim
 **bir kez** IMAGE API'siyle analiz edilir, işaretli PNG ve yapılandırılmış
-JSON `sonuclar/` klasörüne yazılır, ardından program kapanır. Resimler
+JSON `results/` klasörüne yazılır, ardından program kapanır. Resimler
 aynalama yapılmadan, en-boy oranı korunarak analiz boyutuna küçültülür;
 küçük resimler büyütülmez. Segmentasyon JSON'u büyük maskelerin kendisi
 yerine boyut ve değer aralığını içerir; PNG ayrılmış arka planı gösterir.
@@ -40,7 +40,7 @@ yerine boyut ve değer aralığını içerir; PNG ayrılmış arka planı göste
 | --- | --- | --- | --- |
 | El takibi ve parmak sayma | `hand_landmarker.task` | İki ele kadar 21 eklem noktası, her eldeki açık parmak sayısı (el yönünden bağımsız) | — |
 | Jest ile LED kontrolü | `gesture_recognizer.task` | 👍 LED yakar, 👎 söndürür, ✋ buzzer öttürür | GPIO17 LED, GPIO27 buzzer |
-| Yüz algılama ve otomatik fotoğraf | `blaze_face_short_range.tflite` | Yüzleri çerçeveler, yeni bir yüz görününce `fotograflar/` klasörüne kaydeder | `--fotograf-yok` |
+| Yüz algılama ve otomatik fotoğraf | `blaze_face_short_range.tflite` | Yüzleri çerçeveler, yeni bir yüz görününce `photos/` klasörüne kaydeder | `--fotograf-yok` |
 | Poz: squat ve kol kaldırma | `pose_landmarker_lite.task` | 33 noktalı iskelet, diz açısıyla squat ve iki kolu kaldırma sayacı | — |
 | Nesne algılama | `efficientdet_lite0.tflite` | 80 COCO sınıfı (Türkçe adlarla), kişi görünce alarm | `--alarm`, `--esik 0.45` |
 | Arka plan bulanıklaştırma | `selfie_segmenter.tflite` | Kişiyi ayırır; bulanık, tek renk veya resimli arka plan | `--mod bulanik\|renk\|resim`, `--resim arka.jpg` |
@@ -96,9 +96,9 @@ kullanır. Mevcut kişisel projeler otomatik olarak değiştirilmez; yeni bir
 ## Proje yapısı
 
 ```
-~/Projeler/el-takibi/
+~/Projects/el-takibi/
 ├── main.py            # örnek kod (Türkçe açıklamalı)
-├── pios_kamera.py     # kamera + gösterim yardımcısı
+├── pios_camera.py     # kamera + gösterim yardımcısı
 ├── models/            # MediaPipe modeli (imajdan kopyalanır)
 ├── pyproject.toml     # uv projesi (Python 3.12, mediapipe)
 ├── uv.lock
@@ -109,12 +109,12 @@ MediaPipe projeleri Python 3.12 ile kurulur: MediaPipe'ın arm64 tekerleği ve
 hazır AI ortamı bu sürümdedir. Paketler imajdaki uv önbelleğinden gelir; her
 proje diskte neredeyse yer kaplamaz (sert bağlantı).
 
-## `pios_kamera`
+## `pios_camera`
 
 Örneklerin ortak yardımcısı; kendi projelerinizde de kullanabilirsiniz.
 
 ```python
-from pios_kamera import Gosterici, Kamera, mp_goruntu, zaman_ms
+from pios_camera import Gosterici, Kamera, mp_goruntu, zaman_ms
 from mediapipe.tasks.python import BaseOptions, vision
 
 secenek = vision.HandLandmarkerOptions(

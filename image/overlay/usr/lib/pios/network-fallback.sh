@@ -4,7 +4,7 @@
 #     eklenir ve parola iceren dosya silinir.
 #  2. Ethernet/Wi-Fi ile varsayilan rota bekleme suresi icinde olusmazsa
 #     wlan0 uzerinde "Pardus-Maker-XXXX" erisim noktasi acilir.
-#  3. Bulunan adresler /boot/firmware/pardus-durum.txt dosyasina yazilir
+#  3. Bulunan adresler /boot/firmware/pardus-status.txt dosyasina yazilir
 #     (SD kart bilgisayara takilarak okunabilir).
 set -u
 
@@ -16,7 +16,7 @@ fi
 
 BOOT=/boot/firmware
 WIFI_TXT="$BOOT/wifi.txt"
-STATUS="$BOOT/pardus-durum.txt"
+STATUS="$BOOT/pardus-status.txt"
 HOTSPOT_CON=pardus-hotspot
 HOTSPOT_PSK="${PIOS_HOTSPOT_PSK:-pardus1234}"
 WAIT_SECS="${PIOS_FALLBACK_WAIT:-45}"
@@ -80,7 +80,6 @@ write_status() {
     ip -4 -o addr show scope global | awk '{print "  " $2 ": " $4}'
     echo
     echo "Web panel (ekran + kontrol): http://$(hostname).local/  veya  http://<IP>/"
-    echo "Yalnizca ekran (noVNC)     : http://<IP>:6080/"
     echo "VNC istemcisi              : <IP>:5900"
     echo "SSH                : ssh $(sed -n "s/^autologin-user=//p" /etc/lightdm/lightdm.conf.d/50-pios.conf 2>/dev/null || echo maker)@$(hostname).local"
   } > "$STATUS.tmp" 2>/dev/null && mv "$STATUS.tmp" "$STATUS"

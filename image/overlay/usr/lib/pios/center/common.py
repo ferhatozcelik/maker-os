@@ -181,12 +181,6 @@ class Jobs:
                 job["lines"].append(str(e))
                 job["status"] = "error"
 
-    def running(self):
-        """Suren islerin (id, title) listesi."""
-        with self._lock:
-            return [{"id": j["id"], "title": j["title"]}
-                    for j in self._jobs.values() if j["status"] == "running"]
-
     def get(self, jid, since=0):
         with self._lock:
             job = self._jobs.get(jid)

@@ -12,27 +12,27 @@ Cihaz durumu, sistem bilgileri ve yönetim bölümleri. Docker ortamında
 çekirdek, bellek ve ağ bilgileri Raspberry Pi yerine konteynerin çalıştığı
 Linux ortamını yansıtır.
 
-![Pardus Maker Merkezi genel bakış](screenshots/merkez.png)
+![Pardus Maker Merkezi genel bakış](screenshots/center.png)
 
 ## Telefon: Wi-Fi ve ağ
 
 Docker'da fiziksel Wi-Fi radyosu bulunmaz; bu görüntü telefon düzenini ve
 ağ sayfasını gösterir. Gerçek Wi-Fi tarama ve bağlantı testi Pi üzerinde yapılır.
 
-<img src="screenshots/telefon-wifi.png" alt="Telefon boyutunda Wi-Fi ve ağ sayfası" width="390">
+<img src="screenshots/phone-wifi.png" alt="Telefon boyutunda Wi-Fi ve ağ sayfası" width="390">
 
 ## Telefon: web terminali
 
 `maker` kullanıcısıyla çalışan kabuk ve telefon için ek tuş çubuğu.
 
-<img src="screenshots/telefon-terminal.png" alt="Telefonda çalışan web terminali" width="390">
+<img src="screenshots/phone-terminal.png" alt="Telefonda çalışan web terminali" width="390">
 
 ## Tarayıcıda uzak masaüstü
 
 XFCE ve Plank, test ortamında sanal X ekranında çalışır; görüntü noVNC ile
 Merkez'in uzak ekran bölümünde açılır.
 
-![Tarayıcıdaki Pardus masaüstü](screenshots/masaustu.png)
+![Tarayıcıdaki Pardus masaüstü](screenshots/desktop.png)
 
 ## Python ve hazır yapay zeka ortamı
 
@@ -45,7 +45,7 @@ Python sürüm yönetimi ve imajla birlikte gelen AI ortamı.
 El takibi şablonunun seçildiği yeni proje formu. Bu bir kamera çıkarımı
 veya GPIO testi değildir; kamera ve bağlı devreler gerçek Pi gerektirir.
 
-![MediaPipe el takibi projesi oluşturma formu](screenshots/projeler.png)
+![MediaPipe el takibi projesi oluşturma formu](screenshots/projects.png)
 
 ## Yerelde açma
 

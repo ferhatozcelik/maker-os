@@ -11,6 +11,21 @@ DEVICE_USER="${PIOS_USER:-maker}"
 # kullanicida kalsin (ilk on surum imajlarinda: pardus).
 sed -i "s/^autologin-user=.*/autologin-user=$DEVICE_USER/" /etc/lightdm/lightdm.conf.d/50-pios.conf
 
+# Dosya ve klasor adlari Ingilizce oldu: eski adlar tasinir (veri korunur;
+# hedef zaten varsa dokunulmaz).
+HOME_DIR="$(getent passwd "$DEVICE_USER" | cut -d: -f6)"
+move_old() { [ -e "$1" ] && [ ! -e "$2" ] && mv "$1" "$2" && echo "tasindi: $1 -> $2"; return 0; }
+if [ -n "$HOME_DIR" ]; then
+  move_old "$HOME_DIR/Projeler" "$HOME_DIR/Projects"
+  move_old "$HOME_DIR/Projects/.silinenler" "$HOME_DIR/Projects/.trash"
+  move_old "$HOME_DIR/.pios-sessiz" "$HOME_DIR/.pios-quiet"
+  PICS="$(sed -n 's/^XDG_PICTURES_DIR="\(.*\)"/\1/p' "$HOME_DIR/.config/user-dirs.dirs" 2>/dev/null | sed "s|\$HOME|$HOME_DIR|")"
+  [ -n "$PICS" ] && move_old "$PICS/Kamera" "$PICS/Camera"
+fi
+move_old /var/lib/pios/plugins/.silinenler /var/lib/pios/plugins/.trash
+move_old /boot/firmware/wifi-ornek.txt /boot/firmware/wifi-example.txt
+rm -f /boot/firmware/pardus-durum.txt
+
 # Varsayilan arka plani hala kullanan kullanicida yenisine gec (kendi
 # resmini secen kullanicinin ayarina dokunulmaz; oturum yenilenince gorunur).
 DESKTOP_XML="$(getent passwd "$DEVICE_USER" | cut -d: -f6)/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml"
@@ -31,14 +46,12 @@ sysctl --system >/dev/null 2>&1 || true
 dconf update 2>/dev/null || true
 gtk-update-icon-cache -f -q /usr/share/icons/hicolor 2>/dev/null || true
 
-# Bu surumun gerektirdigi ama cihazda olmayan paketler (or. yeni bagimliliklar).
-missing="$(dpkg-query -W -f='${Package}\n' 2>/dev/null | sort -u | comm -13 - "$DIR/packages.txt" | tr '\n' ' ')"
-if [ -n "$(echo "$missing" | tr -d ' ')" ]; then
-  echo "eksik paketler: $missing"
+# Paketler: cihazin dis deposu yok; bu surumle degisen .deb'ler paketin
+# icinde gelir ve bagimliliklari birbirinden/kurulu sistemden karsilanir.
+if ls "$DIR"/debs/*.deb >/dev/null 2>&1; then
+  echo "paketler: $(ls "$DIR"/debs | wc -l) .deb kuruluyor"
   export DEBIAN_FRONTEND=noninteractive
-  apt-get -o DPkg::Lock::Timeout=600 update -qq || true
-  # shellcheck disable=SC2086
-  apt-get -o DPkg::Lock::Timeout=600 install -y --no-install-recommends $missing || \
-    for p in $missing; do apt-get -o DPkg::Lock::Timeout=600 install -y --no-install-recommends "$p" || echo "uyari: $p kurulamadi"; done
+  apt-get -o DPkg::Lock::Timeout=600 -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold \
+    install -y --no-install-recommends --allow-downgrades "$DIR"/debs/*.deb || exit 1
 fi
 exit 0
