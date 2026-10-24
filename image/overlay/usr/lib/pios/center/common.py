@@ -14,7 +14,7 @@ LIGHTDM_CONF = "/etc/lightdm/lightdm.conf.d/50-pios.conf"
 def _desktop_user():
     """Masaustu kullanicisi: PIOS_USER, yoksa LightDM otomatik oturumu.
 
-    Sabit yazilmaz: 1.1.0 ve oncesi imajlarda kullanici "pardus", sonrakilerde
+    Sabit yazilmaz: ilk on surum imajlarinda kullanici "pardus", sonrakilerde
     "maker"; ayni Merkez (OTA ile gelen) ikisinde de calisir.
     """
     if os.environ.get("PIOS_USER"):

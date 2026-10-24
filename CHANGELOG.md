@@ -1,34 +1,11 @@
 # Değişiklik günlüğü
 
-## 1.2.0
-
-- **Kablosuz güncelleme (OTA):** Merkez → Güncellemeler yeni Pardus Maker sürümünü GitHub'dan denetler (6 saatte bir ve elle) ve haber verir; kurulumu kullanıcı başlatır. Önce üzerine yazılacak dosyaların yedeği alınır; Merkez yeni sürümle açılmazsa kendiliğinden geri dönülür. Yeni çekirdek Pi'nin `tryboot` özelliğiyle bir kez denenir. Kurulumdan sonra açılan pencerede onaylayınca yedek ve geçici dosyalar silinir; "Geri al" önceki sürüme döner. Ayrıntılar: `docs/ota.md`
-- **Varsayılan kullanıcı ve parola `maker` / `maker`** (önceki imajlarda `pardus`). Merkez kullanıcıyı cihazdan okur; OTA ile yükseltilen cihazlarda kullanıcı değişmez
-- **Uzak ekran:** varsayılan masaüstü 1280×720; x11vnc kararlı 30 FPS (33 ms yoklama, bekleme modu kapalı); tam ekran ve yön değişiminde görüntü hemen yeniden sığdırılır
-- **Wi-Fi:** sabit bilgi kutusu kaldırıldı; durum kutusu yalnızca işlem sürerken veya hata olduğunda görünür
-- **Sistem güncellemesi:** "Tümünü güncelle" ikinci bir apt işlemiyle çakışıp hata vermez; süren işe bağlanır, apt kilidi için bekler
-- **GitHub Actions:** `main`'e push'ta arm64 makinede imaj build edilir; `VERSION` yeni bir sürümse imaj ve OTA paketi doğrudan GitHub Release'e eklenir
-- Birim testleri tamamen geçiyor (OTA testleri eklendi)
-
-## 1.1.0
-
-Performans sürümü; Raspberry Pi 4 için ayarlandı. Ayarlar Docker'da
-doğrulandı; hız aşırtma, frekans yöneticisi ve G/Ç ayarları gerçek Pi'de
-ölçülmelidir (bkz. `docs/donanim.md` → Performans ve soğutma).
-
-- **Pi 4 hız aşırtma:** CPU 2.0 GHz, GPU 750 MHz (`[pi4]` bölümü; soğutucu/fan gerekir)
-- **Çekirdek ve sistem:** `ondemand` frekans yöneticisi hızlı tepki ayarlarıyla (`pios-cpu.service`), SD kart için BFQ zamanlayıcı, zswap kapalı (takas zram'da), zram için `vm.page-cluster=0`, açılışta `boot_delay=0` ve `initial_turbo=30`
-- **Masaüstü:** pencere gölgeleri kapalı (compositing ve dock şeffaflığı korunur); Chromium GPU ile çizer
-- **Merkez:** HTTP/1.1 kalıcı bağlantı, gzip ve ETag/304 (arayüz 85 KB → 26 KB, sonraki açılışta 0); agent sürümleri paralel ve önbellekli; Etkinlik örnekleyicisi izleyen yokken durur; masaüstü oturumu, GPIO çipi ve saat dilimleri önbellekte; kamera MJPEG ayrıştırması kopyasız
-- **MediaPipe:** analiz geride kalınca eski kareler çözülmez; kare başına kopya kaldırıldı
-- **AI ortamı:** paketler önceden derlenmiş bytecode ile gelir (torch/cv2 içe aktarma hızlanır)
-- **`flash-sd.sh`:** çok çekirdekli xz açma; doğrulamada imaj ikinci kez açılmaz
-- **Build:** `PIOS_BUILD_VERSION` Docker build'ine aktarılır
-
 ## 1.0.0
 
 İlk sürümün kapsamı. Donanım doğrulaması kullanılan Pi modeliyle birlikte
 raporlanmalıdır; Docker testi kamera, Wi-Fi ve GPIO desteğini doğrulamaz.
+
+### Temel
 
 - **Taban:** Pardus 21 "Yirmibir" arm64, Raspberry Pi çekirdeği 6.18 (`-v8+`), XFCE + Plank, Pardus 100. Yıl teması
 - **Pardus Maker Merkezi:** telefon uyumlu tek web uygulaması (port 80)
@@ -42,4 +19,26 @@ raporlanmalıdır; Docker testi kamera, Wi-Fi ve GPIO desteğini doğrulamaz.
   - Uzak ekran: telefonda yatay tam ekran, ekran klavyesi
   - Python, projeler, hazır AI ortamı, agent yöneticisi, GPIO
 - **MediaPipe örnekleri:** el takibi, jest ile LED, yüz, poz, nesne, arka plan ayırma, yüz ağı; modeller imajda
-- Masaüstünde uygulama menüsü kaldırıldı; uygulamalar dock'ta
+- **Masaüstü:** uygulama menüsü kaldırıldı, uygulamalar dock'ta; yeni Pardus Maker arka planı (Türkiye haritası, maker ikonları)
+
+### Güncelleme ve dağıtım
+
+- **Kablosuz güncelleme (OTA):** Merkez → Güncellemeler yeni Pardus Maker sürümünü GitHub'dan denetler (6 saatte bir ve elle) ve haber verir; kurulumu kullanıcı başlatır. Önce üzerine yazılacak dosyaların yedeği alınır; Merkez yeni sürümle açılmazsa kendiliğinden geri dönülür. Yeni çekirdek Pi'nin `tryboot` özelliğiyle bir kez denenir. Kurulumdan sonra açılan pencerede onaylayınca yedek ve geçici dosyalar silinir; "Geri al" önceki sürüme döner. Ayrıntılar: `docs/ota.md`
+- **Kullanıcı ve parola:** `maker` / `maker` (ilk iş değiştirin). Merkez kullanıcıyı cihazdan okur
+- **Uzak ekran:** varsayılan masaüstü 1280×720; x11vnc kararlı 30 FPS (33 ms yoklama, bekleme modu kapalı); tam ekran ve yön değişiminde görüntü hemen yeniden sığdırılır
+- **Sistem güncellemesi:** Pardus deposu ve VS Code; süren apt işine bağlanır, apt kilidi için bekler
+- **GitHub Actions:** `main`'e push'ta arm64 makinede imaj build edilir; `VERSION` yeni bir sürümse imaj ve OTA paketi doğrudan GitHub Release'e eklenir
+- Birim testleri (Merkez, OTA, eklentiler, MediaPipe yardımcıları)
+
+### Performans (Raspberry Pi 4)
+
+Ayarlar Docker'da doğrulandı; hız aşırtma, frekans yöneticisi ve G/Ç ayarları gerçek Pi'de
+ölçülmelidir (bkz. `docs/donanim.md` → Performans ve soğutma).
+
+- **Pi 4 hız aşırtma:** CPU 2.0 GHz, GPU 750 MHz (`[pi4]` bölümü; soğutucu/fan gerekir)
+- **Çekirdek ve sistem:** `ondemand` frekans yöneticisi hızlı tepki ayarlarıyla (`pios-cpu.service`), SD kart için BFQ zamanlayıcı, zswap kapalı (takas zram'da), zram için `vm.page-cluster=0`, açılışta `boot_delay=0` ve `initial_turbo=30`
+- **Masaüstü:** pencere gölgeleri kapalı (compositing ve dock şeffaflığı korunur); Chromium GPU ile çizer
+- **Merkez:** HTTP/1.1 kalıcı bağlantı, gzip ve ETag/304 (arayüz 85 KB → 26 KB, sonraki açılışta 0); agent sürümleri paralel ve önbellekli; Etkinlik örnekleyicisi izleyen yokken durur; masaüstü oturumu, GPIO çipi ve saat dilimleri önbellekte; kamera MJPEG ayrıştırması kopyasız
+- **MediaPipe:** analiz geride kalınca eski kareler çözülmez; kare başına kopya kaldırıldı
+- **AI ortamı:** paketler önceden derlenmiş bytecode ile gelir (torch/cv2 içe aktarma hızlanır)
+- **`flash-sd.sh`:** çok çekirdekli xz açma; doğrulamada imaj ikinci kez açılmaz

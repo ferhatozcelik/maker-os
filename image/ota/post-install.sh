@@ -8,8 +8,15 @@ DIR="${PIOS_OTA_DIR:?}"
 DEVICE_USER="${PIOS_USER:-maker}"
 
 # Paket build kullanicisini (maker) tasir; otomatik oturum cihazdaki
-# kullanicida kalsin (1.1.0 ve oncesi: pardus).
+# kullanicida kalsin (ilk on surum imajlarinda: pardus).
 sed -i "s/^autologin-user=.*/autologin-user=$DEVICE_USER/" /etc/lightdm/lightdm.conf.d/50-pios.conf
+
+# Varsayilan arka plani hala kullanan kullanicida yenisine gec (kendi
+# resmini secen kullanicinin ayarina dokunulmaz; oturum yenilenince gorunur).
+DESKTOP_XML="$(getent passwd "$DEVICE_USER" | cut -d: -f6)/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml"
+if [ -f /usr/share/backgrounds/pardus-maker.jpg ] && [ -f "$DESKTOP_XML" ]; then
+  sed -i 's|/usr/share/backgrounds/pardus-yuzyil.svg|/usr/share/backgrounds/pardus-maker.jpg|g' "$DESKTOP_XML"
+fi
 
 if [ -d /run/systemd/system ]; then
   systemctl daemon-reload

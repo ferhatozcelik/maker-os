@@ -42,5 +42,5 @@ ekleyin ve `main`'e gönderin. GitHub Actions imajı build eder, imaj ve OTA
 paketini sürüm notlarıyla birlikte yayına ekler. `VERSION` değişmeyen push'lar
 yalnızca build ile test edilir.
 
-1.1.0 ve önceki imajlarda OTA yoktur; bu cihazlar bir kez 1.2.0 imajıyla
-yeniden yazılmalıdır.
+OTA, 24 Ekim 2026'dan önce indirilen ön sürüm imajlarda yoktur; bu cihazlar bir
+kez güncel 1.0.0 imajıyla yeniden yazılmalıdır.

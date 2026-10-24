@@ -11,14 +11,14 @@
 <p align="center"><strong>SD karta yaz. Pi'yi aç. Tarayıcıdan bağlan.</strong></p>
 
 <p align="center">
-  <a href="https://github.com/ferhatozcelik/pardus-maker/releases/tag/v1.1.0"><img src="https://img.shields.io/badge/sürüm-v1.1.0-c8102e" alt="Sürüm v1.1.0"></a>
+  <a href="https://github.com/ferhatozcelik/pardus-maker/releases/tag/v1.0.0"><img src="https://img.shields.io/badge/sürüm-v1.0.0-c8102e" alt="Sürüm v1.0.0"></a>
   <img src="https://img.shields.io/badge/Raspberry%20Pi-4%20%7C%20400%20%7C%203B%2B-c8102e" alt="Raspberry Pi 4, 400, 3B+">
   <img src="https://img.shields.io/badge/taban-Pardus%2021%20arm64-c8102e" alt="Taban: Pardus 21 arm64">
   <a href="LICENSE"><img src="https://img.shields.io/badge/lisans-GPL--3.0-c8102e" alt="GPL-3.0 lisansı"></a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/ferhatozcelik/pardus-maker/releases/tag/v1.1.0">İndir</a> ·
+  <a href="https://github.com/ferhatozcelik/pardus-maker/releases/tag/v1.0.0">İndir</a> ·
   <a href="#kurulum-rehberi">Kurulum rehberi</a> ·
   <a href="#özellikler">Özellikler</a> ·
   <a href="#kaynaktan-derleme">Kaynaktan derleme</a> ·
@@ -62,7 +62,7 @@ Tüm görüntüler için [ekran görüntüsü galerisine](docs/ekran-goruntuleri
 
 ## İndir
 
-[Sürüm 1.1.0](https://github.com/ferhatozcelik/pardus-maker/releases/tag/v1.1.0): `pardus-maker-<sürüm>.img.xz` (Raspberry Pi 4 / 400 / 3B+, 64 bit).
+[Sürüm 1.0.0](https://github.com/ferhatozcelik/pardus-maker/releases/tag/v1.0.0): `pardus-maker-<sürüm>.img.xz` (Raspberry Pi 4 / 400 / 3B+, 64 bit).
 İndirdikten sonra `sha256sum -c pardus-maker-*.img.xz.sha256` ile doğrulayın.
 
 ## Özellikler
@@ -100,7 +100,7 @@ gereklidir). Yazma sırasında macOS kullanıcı parolanız istenir.
 
 Grafik arayüzle yazmak için:
 
-1. [Sürüm sayfasından](https://github.com/ferhatozcelik/pardus-maker/releases/tag/v1.1.0) `.img.xz` dosyasını indirin. 16 GB veya daha büyük bir kart önerilir.
+1. [Sürüm sayfasından](https://github.com/ferhatozcelik/pardus-maker/releases/tag/v1.0.0) `.img.xz` dosyasını indirin. 16 GB veya daha büyük bir kart önerilir.
 2. [Raspberry Pi Imager](https://www.raspberrypi.com/software/)'da **İşletim sistemi → Özel imaj kullan** (Use custom) ile dosyayı seçin. Imager'ın "işletim sistemi özelleştirme" ayarlarını **kullanmayın**. balenaEtcher da olur.
 3. Yazma ve doğrulama bitene kadar bekleyin.
 

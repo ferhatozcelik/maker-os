@@ -10,7 +10,7 @@ calisir (python3 ota.py apply); durum STATE dosyasindan okunur. Kurulum
 yarida kalirsa (elektrik kesintisi) acilista boot-check yedekten geri doner.
 
 Paket bicimi (image/stages/10-ota-bundle.sh uretir):
-  ota.json        {"format": 1, "version": "1.2.0", "kernel": "6.18.57-v8+"}
+  ota.json        {"format": 1, "version": "1.0.1", "kernel": "6.18.57-v8+"}
   root/...        Pardus Maker katmani (/usr/lib/pios, servisler, ayarlar...)
   kernel/boot/... cekirdek, DTB, overlay'ler, acilis yazilimi
   kernel/modules/ /lib/modules/<surum>
