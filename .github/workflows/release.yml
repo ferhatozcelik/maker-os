@@ -1,0 +1,87 @@
+# main'e her push'ta Raspberry Pi imaji build edilir. VERSION dosyasindaki
+# surumun yayini yoksa imaj, OTA paketi ve ozetler dogrudan GitHub Release'e
+# yuklenir (Actions artifact kullanilmaz). Yayin zaten varsa build yalnizca
+# test amaclidir. Cihazlar yeni yayini OTA ile gorur (Merkez > Guncellemeler).
+name: Imaj ve surum
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["docs/**", "README.md", "README.en.md", "CONTRIBUTING.md", "NOTICE.md"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: image-build
+  cancel-in-progress: false
+
+jobs:
+  build:
+    # arm64: chroot icinde emulasyon (qemu) gerekmez, build birkac kat hizli.
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 340
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Surum
+        id: v
+        run: |
+          VERSION="$(tr -d ' \r\n' < VERSION)"
+          echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' || { echo "::error::VERSION gecersiz: $VERSION"; exit 1; }
+          if gh release view "v$VERSION" >/dev/null 2>&1; then
+            echo "release=0" >> "$GITHUB_OUTPUT"
+            echo "::notice::v$VERSION zaten yayinda; yalnizca test build'i. Yeni surum icin VERSION'i artirin."
+          else
+            echo "release=1" >> "$GITHUB_OUTPUT"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Birim testleri
+        run: python3 -m unittest discover -s image/test/unit
+
+      - name: Disk alani
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL /usr/local/share/boost || true
+          docker system prune -af >/dev/null || true
+          df -h /
+
+      - name: Imaj build
+        env:
+          PIOS_BUILD_VERSION: ${{ steps.v.outputs.version }}
+          PIOS_COMPRESS: ${{ steps.v.outputs.release }}
+        run: ./image/build-docker.sh
+
+      - name: Surum notlari
+        if: steps.v.outputs.release == '1'
+        run: |
+          V="${{ steps.v.outputs.version }}"
+          {
+            echo "Pardus Maker $V — Raspberry Pi için hazır kurulu Pardus imajı."
+            echo
+            # CHANGELOG'daki "## $V" bolumu
+            awk -v v="## $V" '$0 == v {on=1; next} /^## / && on {exit} on' CHANGELOG.md
+            echo
+            echo "## Kurulum"
+            echo "- **Kurulu cihaz:** Merkez → Güncellemeler → Güncelle (önce yedek alınır; onaylayınca yedek silinir)."
+            echo "- **Yeni kart:** \`pardus-maker-$V.img.xz\` dosyasını Raspberry Pi Imager → *Use custom* ile en az 16 GB karta yazın."
+            echo
+            echo "Doğrulama: \`shasum -a 256 -c pardus-maker-$V.img.xz.sha256\`"
+            echo
+            echo "İlk giriş: \`http://pardus-maker.local/\` — \`maker\` / \`maker\` (ilk iş parolayı değiştirin)."
+          } > "$RUNNER_TEMP/notes.md"
+          cat "$RUNNER_TEMP/notes.md"
+
+      - name: GitHub Release
+        if: steps.v.outputs.release == '1'
+        run: |
+          V="${{ steps.v.outputs.version }}"
+          cd image/out
+          ls -lh
+          gh release create "v$V" --target "$GITHUB_SHA" --title "Pardus Maker $V" \
+            --notes-file "$RUNNER_TEMP/notes.md" --latest \
+            "pardus-maker-$V.img.xz" "pardus-maker-$V.img.xz.sha256" "pardus-maker-$V.img.sha256" \
+            "pardus-maker-$V.manifest.txt" "pardus-maker-$V-ota.tar.xz" "pardus-maker-$V-ota.tar.xz.sha256"

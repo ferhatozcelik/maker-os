@@ -1,9 +1,9 @@
 #!/bin/bash
-# SD kartı yeniden yazmadan Merkez'i güncelle: ./update-center.sh [pardus@cihaz]
+# SD kartı yeniden yazmadan Merkez'i güncelle: ./update-center.sh [maker@cihaz]
 # Yalnız paket üret: ./update-center.sh --package
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")" && pwd)"
-TARGET="${1:-pardus@pardus-maker.local}"
+TARGET="${1:-maker@pardus-maker.local}"
 STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT
 mkdir -p "$STAGE/usr/lib/pios" "$ROOT/image/out"

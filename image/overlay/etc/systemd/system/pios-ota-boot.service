@@ -1,0 +1,11 @@
+[Unit]
+Description=Pardus Maker guncelleme acilis denetimi (cekirdek denemesi, yarim kalan kurulum)
+After=local-fs.target
+Before=pios-center.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 -I /usr/lib/pios/center/ota.py boot-check
+
+[Install]
+WantedBy=multi-user.target

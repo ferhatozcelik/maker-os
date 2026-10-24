@@ -1,0 +1,9 @@
+[Unit]
+Description=Pardus Maker yeni surum denetimi (GitHub; yalnizca haber verir)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 -I /usr/lib/pios/center/ota.py check
+Nice=10

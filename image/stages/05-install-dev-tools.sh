@@ -62,7 +62,7 @@ in_chroot env $UVENV uv venv --python "$PIOS_AI_PYTHON" --prompt ai /opt/pios/en
 # PyPI'deki aarch64 torch CUDA (NVIDIA, ~4 GB) ile gelir; Pi icin PyTorch'un
 # CPU deposu kullanilir. Once torch kurulur, geri kalan paketler (ultralytics
 # dahil) bu kurulu torch'u kullanir.
-# --compile-bytecode: ortam root'a ait oldugu icin pardus kullanicisi .pyc
+# --compile-bytecode: ortam root'a ait oldugu icin masaustu kullanicisi .pyc
 # yazamaz; derlenmezse torch/cv2/ultralytics her ice aktarmada yeniden derlenir.
 # shellcheck disable=SC2086
 in_chroot env $UVENV uv pip install --compile-bytecode --python /opt/pios/envs/ai/bin/python \
@@ -111,7 +111,7 @@ CODE_VERSION="$(in_chroot dpkg-query -W -f='${Version}' code)"
 echo "   VS Code $CODE_VERSION"
 
 echo "== paylasilan dizin izinleri =="
-# pardus kullanicisi da "uv python install" ile surum ekleyebilsin.
+# Masaustu kullanicisi da "uv python install" ile surum ekleyebilsin.
 in_chroot chgrp -R "$PIOS_USER" /opt/pios/python
 chmod -R g+w "$ROOTFS_DIR/opt/pios/python"
 find "$ROOTFS_DIR/opt/pios/python" -type d -exec chmod g+s {} +

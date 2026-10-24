@@ -46,7 +46,7 @@ DESKTOP_PKGS="
   x11-xserver-utils xauth libgl1-mesa-dri libgl1 libglib2.0-0
   lightdm lightdm-gtk-greeter
   xfce4-session xfwm4 xfce4-panel xfdesktop4 xfce4-settings xfconf
-  xfce4-notifyd xfce4-pulseaudio-plugin
+  xfce4-notifyd xfce4-pulseaudio-plugin libnotify-bin
   dbus-x11 dconf-gsettings-backend dconf-cli policykit-1 policykit-1-gnome
   xdg-user-dirs xdg-utils gvfs
   pardus-xfce-settings pardus-gtk-theme pardus-icon-theme pardus-locales
@@ -157,7 +157,7 @@ echo "== kullanici: $PIOS_USER (otomatik oturum, sudo) =="
 in_chroot groupadd -f i2c
 in_chroot groupadd -f autologin
 if ! in_chroot id "$PIOS_USER" >/dev/null 2>&1; then
-  in_chroot useradd -m -s /bin/bash -c "Pardus" "$PIOS_USER"
+  in_chroot useradd -m -s /bin/bash -c "Maker" "$PIOS_USER"
 fi
 in_chroot usermod -aG sudo,adm,audio,video,render,input,plugdev,netdev,bluetooth,dialout,i2c,autologin "$PIOS_USER"
 echo "$PIOS_USER:$PIOS_PASSWORD" | in_chroot chpasswd

@@ -1,7 +1,7 @@
 # Python eklentileri
 
 Merkez → **Eklentiler**, yerel Python projelerini uygulama gibi listeler.
-Her uygulama ayrı bir systemd hizmetinde `pardus` kullanıcısıyla çalışır.
+Her uygulama ayrı bir systemd hizmetinde `maker` kullanıcısıyla çalışır.
 Merkez sayfasını kapatmak uygulamayı durdurmaz. **Durdur**, uygulamayı ve
 alt süreçlerini kapatır; **Günlük** son 200 satırı gösterir. Web arayüzü
 olan uygulamalarda **Uygulamayı aç** düğmesi bulunur.
@@ -34,7 +34,7 @@ olan uygulamalarda **Uygulamayı aç** düğmesi bulunur.
 önbellekte bulunmayan paketler için internet gerekir. Örnek şablon Python
 3.12'yi seçer; kendi projenin sürümünü `pyproject.toml` ile belirleyebilirsin.
 `uv.lock` dosyası eklenebilir. Proje dosyaları `/var/lib/pios/plugins/<id>`
-altındadır ve `pardus` tarafından düzenlenebilir.
+altındadır ve `maker` tarafından düzenlenebilir.
 
 `id`, küçük harfle başlar; en fazla 40 küçük harf, rakam veya tire içerir.
 `entrypoint`, proje içindeki bir `.py` dosyasıdır. `args`, isteğe bağlı komut
@@ -75,7 +75,7 @@ GPIO aynı anda birden çok uygulama tarafından kullanılamayabilir; ilgili
 diğer uygulamayı durdur. Büyük modeller ZIP sınırına sığmıyorsa projenin
 Pi'deki `/usr/share/pios/mediapipe/` modellerini okumasını sağlayabilirsin.
 Resim analizi için `args` listesine `--kaynak`, resim yolu ve `--cikti`,
-`/home/pardus/analiz-sonuclari` eklenebilir. Tek resim veya klasör analizi
+`/home/maker/analiz-sonuclari` eklenebilir. Tek resim veya klasör analizi
 tamamlandığında uygulama normal şekilde kapanır.
 
 Uygulamalar root olarak çalışmaz; normal kullanıcının dosya ve donanım

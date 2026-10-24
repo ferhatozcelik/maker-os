@@ -64,7 +64,7 @@ azaltmak için `noatime`, journald sınırı ve kapatılmış zamanlayıcılar k
    `bootfs/pardus-durum.txt` dosyasına yazar.
 4. **`pios-center.service`**: Merkez'i port 80'de başlatır ve
    `/run/pios/token` dosyasına yerel giriş jetonunu yazar.
-5. **LightDM** `pardus` kullanıcısıyla otomatik oturum açar;
+5. **LightDM** `maker` kullanıcısıyla otomatik oturum açar;
    **`pios-vnc`** (x11vnc) ve **`pios-novnc`** (websockify) uzak ekranı sunar.
 
 ## Servisler
@@ -89,7 +89,7 @@ betikler ve servisler arasında ortak kullanılır.
 | `/usr/lib/pios/templates/` | MediaPipe örnek projeleri ve ortak `pios_kamera.py` |
 | `/usr/share/pios/xterm/` | xterm.js (sabit sürüm, sha256 doğrulamalı) |
 | `/usr/share/pios/mediapipe/` | MediaPipe modelleri (sabit sürüm, sha256 doğrulamalı) |
-| `/opt/pios/python/` | uv ile kurulan CPython sürümleri (`pardus` grubu yazabilir) |
+| `/opt/pios/python/` | uv ile kurulan CPython sürümleri (`maker` grubu yazabilir) |
 | `/opt/pios/envs/ai/` | Hazır yapay zeka ortamı (`ai-env` komutu) |
 | `/opt/pios/node/` | Node.js LTS |
 | `/etc/pios/` | VNC parolası, kamera ayarları |
@@ -108,12 +108,12 @@ betikler ve servisler arasında ortak kullanılır.
 - **CSRF:** durum değiştiren tüm istekler `POST` ve `X-Pios: 1` başlığı ister.
 - **Web terminali:** WebSocket, kimliği doğrulanmış bir istekle alınan tek
   kullanımlık ve 30 sn geçerli bir biletle açılır; `Origin` başlığı `Host`
-  ile aynı olmalıdır. Kabuk root değil `pardus` kullanıcısıdır. En fazla 4
+  ile aynı olmalıdır. Kabuk root değil `maker` kullanıcısıdır. En fazla 4
   oturum, 2 saat boşta kalınca kapanır; açılış/kapanış günlüğe yazılır.
 - **Dosya yolları:** statik dosya sunumu `realpath` ile kök dizine
   hapsedilir; fotoğraf ve proje adları düzenli ifadeyle doğrulanır; USB
   bağlama yalnızca `lsblk`'te USB olarak görünen bölümler için yapılır ve
   sistem diski çıkarılamaz.
-- **Sınırlar:** Varsayılan parola (`pardus`) tüm imajlarda aynıdır ve ilk iş
+- **Sınırlar:** Varsayılan parola (`maker`) tüm imajlarda aynıdır ve ilk iş
   değiştirilmelidir. Web ve VNC trafiği şifrelenmez; yalnızca güvenilir yerel
   ağda kullanılmalıdır. Erişim noktası parolası (`pardus1234`) de ortaktır.

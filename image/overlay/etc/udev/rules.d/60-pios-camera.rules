@@ -1,4 +1,4 @@
-# pardus kullanicisi (video grubu) sudo olmadan Pi kamerayi kullanabilsin
+# Masaustu kullanicisi (video grubu) sudo olmadan Pi kamerayi kullanabilsin
 # (libcamera/picamera2: DMA heap, VideoCore arayuzleri, medya aygitlari).
 SUBSYSTEM=="dma_heap", GROUP="video", MODE="0660"
 KERNEL=="vchiq", GROUP="video", MODE="0660"

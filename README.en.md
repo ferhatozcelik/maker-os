@@ -76,7 +76,7 @@ be changed under **Center → Dil ve Klavye** (Language and Keyboard).
 | Desktop | XFCE in a macOS-like layout (top bar + Plank dock), Pardus **100th Year** theme (light/dark), Chromium, VS Code, Files, Terminal |
 | Pardus Maker Center | One phone-friendly web app (port 80): settings, network, date/time, language/keyboard, Python, projects, agents, terminal, camera, USB, GPIO, remote desktop |
 | Network | Ethernet (status, speed), Wi-Fi scan, hidden networks, WPA2-Enterprise (eduroam), saved networks; falls back to a `Pardus-Maker-XXXX` hotspot |
-| Web terminal | A real shell in the browser (xterm.js) with Esc/Tab/Ctrl/arrow keys for phones; runs as `pardus`, not root |
+| Web terminal | A real shell in the browser (xterm.js) with Esc/Tab/Ctrl/arrow keys for phones; runs as `maker`, not root |
 | Camera | Raspberry Pi camera modules (libcamera, picamera2) and USB webcams: live view, full-resolution photos, gallery |
 | MediaPipe | 7 ready-made camera projects: hand tracking, gesture-controlled LED (GPIO), faces, pose/exercise counter, object detection, background segmentation, face mesh. Models are bundled, no internet needed |
 | Python and AI | Any Python version in one click with uv; ready AI environment (`ai-env`): PyTorch, ONNX Runtime, LiteRT, OpenCV, Ultralytics, Jupyter Lab |
@@ -92,7 +92,7 @@ be changed under **Center → Dil ve Klavye** (Language and Keyboard).
 4. Connect:
    - Ethernet or `wifi.txt`: `http://pardus-maker.local/`
    - No network: after ~45 s join the `Pardus-Maker-XXXX` Wi-Fi (password `pardus1234`) → `http://10.42.0.1/`
-5. Log in as `pardus` / `pardus` and change the password first under **Center → Kullanıcı** (User). Web and VNC traffic is not encrypted; use them on a trusted local network only.
+5. Log in as `maker` / `maker` and change the password first under **Center → Kullanıcı** (User). Web and VNC traffic is not encrypted; use them on a trusted local network only.
 
 ### Camera and MediaPipe
 

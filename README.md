@@ -73,7 +73,7 @@ Tüm görüntüler için [ekran görüntüsü galerisine](docs/ekran-goruntuleri
 | Masaüstü | XFCE, macOS benzeri: üst çubuk + Plank dock, Pardus **100. Yıl** teması (açık/koyu), Chromium, VS Code, Dosyalar, Terminal |
 | Pardus Maker Merkezi | Tek web uygulaması (port 80), telefona uyumlu: ayarlar, ağ, tarih-saat, dil-klavye, Python, projeler, agent'lar, terminal, kamera, USB, GPIO, uzak ekran |
 | Ağ | Ethernet (durum, hız), Wi-Fi tarama, gizli ağ, okul/kurum ağı (WPA2-Enterprise, eduroam), kayıtlı ağlar; ağ yoksa `Pardus-Maker-XXXX` erişim noktası |
-| Web terminali | Tarayıcıda gerçek kabuk (xterm.js), telefon için Esc/Tab/Ctrl/ok tuşları; root değil, `pardus` kullanıcısı |
+| Web terminali | Tarayıcıda gerçek kabuk (xterm.js), telefon için Esc/Tab/Ctrl/ok tuşları; root değil, `maker` kullanıcısı |
 | Kamera | Pi kamera modülleri (libcamera, picamera2) ve USB kameralar: canlı görüntü, tam çözünürlükte fotoğraf, galeri |
 | MediaPipe | Kamerayla çalışan 7 hazır proje: el takibi, jest ile LED (GPIO), yüz, poz/egzersiz sayacı, nesne algılama, arka plan ayırma, yüz ağı. Modeller imajda, internet gerekmez |
 | Python ve yapay zeka | uv ile her Python sürümü tek tıkla; hazır AI ortamı (`ai-env`): PyTorch, ONNX Runtime, LiteRT, OpenCV, Ultralytics, Jupyter Lab |
@@ -121,7 +121,7 @@ Pi açılınca ağı ekler ve parola içeren dosyayı siler.
 | Ağ yok | ~45 sn sonra `Pardus-Maker-XXXX` Wi-Fi ağı açılır (parola `pardus1234`) → `http://10.42.0.1/` |
 | Monitör takılı | Masaüstü doğrudan açılır; Merkez dock'taki simgelerden |
 
-Giriş ekranında kullanıcı `pardus`, parola `pardus`. Ağdan ilk girişte masaüstü açılır;
+Giriş ekranında kullanıcı `maker`, parola `maker`. Ağdan ilk girişte masaüstü açılır;
 telefonda ekranı yatay çevirin. Üstteki **‹ Merkez** ile ayarlara geçilir.
 
 IP bulunamazsa kartı bilgisayara takıp `bootfs` bölümündeki
@@ -189,7 +189,7 @@ cd image
 ./test/run-test.sh         # imajın kök dosya sistemini Docker'da çalıştır
 ```
 
-Docker testi: `http://localhost:8080/` (`pardus` / `pardus`). Konteynerde HDMI
+Docker testi: `http://localhost:8080/` (`maker` / `maker`). Konteynerde HDMI
 yerine Xvfb kullanılır (varsayılan `1280x720`; `PIOS_RESOLUTION` ile değiştirilir).
 Wi-Fi, kamera, GPIO ve güç işlemleri çalışmaz; uzak ekran gerçek Pi + LAN’a
 göre daha yavaş olabilir.
@@ -199,7 +199,7 @@ göre daha yavaş olabilir.
 | `01-pin-base` | Pardus deposu ve raspberrypi/firmware commit'ini sabitler |
 | `02-build-rootfs` | debootstrap minbase (arm64) |
 | `03-add-hw-packages` | Çekirdek, modüller, DTB/overlay, Wi-Fi/BT donanım yazılımı, `config.txt` |
-| `04-install-desktop` | XFCE, Chromium, Pardus temaları, kamera yığını (libcamera), ffmpeg, udisks2, `pardus` kullanıcısı |
+| `04-install-desktop` | XFCE, Chromium, Pardus temaları, kamera yığını (libcamera), ffmpeg, udisks2, `maker` kullanıcısı |
 | `05-install-dev-tools` | uv, en güncel Python, AI ortamı, Node.js LTS, VS Code |
 | `06-configure-system` | overlay, xterm.js ve MediaPipe modelleri (sabit sürüm + sha256), Merkez, VNC, servisler |
 | `07-cleanup` | apt önbelleği, SSH anahtarları, machine-id temizliği |

@@ -8,7 +8,30 @@ import subprocess
 import threading
 import time
 
-USER = os.environ.get("PIOS_USER", "pardus")
+LIGHTDM_CONF = "/etc/lightdm/lightdm.conf.d/50-pios.conf"
+
+
+def _desktop_user():
+    """Masaustu kullanicisi: PIOS_USER, yoksa LightDM otomatik oturumu.
+
+    Sabit yazilmaz: 1.1.0 ve oncesi imajlarda kullanici "pardus", sonrakilerde
+    "maker"; ayni Merkez (OTA ile gelen) ikisinde de calisir.
+    """
+    if os.environ.get("PIOS_USER"):
+        return os.environ["PIOS_USER"]
+    try:
+        with open(LIGHTDM_CONF) as f:
+            for line in f:
+                key, _, value = line.strip().partition("=")
+                if key == "autologin-user" and value:
+                    pwd.getpwnam(value)
+                    return value
+    except (OSError, KeyError):
+        pass
+    return "maker"
+
+
+USER = _desktop_user()
 # Alt surecler kullanici ortamiyla (PATH'inde sbin yok) baslatildigi icin
 # runuser tam yoluyla cagrilir.
 RUNUSER = shutil.which("runuser", path="/usr/sbin:/sbin:/usr/bin:/bin") or "/sbin/runuser"
@@ -157,6 +180,12 @@ class Jobs:
             with self._lock:
                 job["lines"].append(str(e))
                 job["status"] = "error"
+
+    def running(self):
+        """Suren islerin (id, title) listesi."""
+        with self._lock:
+            return [{"id": j["id"], "title": j["title"]}
+                    for j in self._jobs.values() if j["status"] == "running"]
 
     def get(self, jid, since=0):
         with self._lock:

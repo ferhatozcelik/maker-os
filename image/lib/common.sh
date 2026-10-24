@@ -13,10 +13,11 @@ PIOS_CACHE="${PIOS_CACHE:-$PIOS_WORK/cache}"
 ROOTFS_DIR="${ROOTFS_DIR:-$PIOS_WORK/rootfs}"
 
 PIOS_HOSTNAME="${PIOS_HOSTNAME:-pardus-maker}"
-PIOS_USER="${PIOS_USER:-pardus}"
-PIOS_PASSWORD="${PIOS_PASSWORD:-pardus}"
-# Monitor yokken masaustunun calisacagi sanal ekran cozunurlugu.
-PIOS_RESOLUTION="${PIOS_RESOLUTION:-1920x1080}"
+PIOS_USER="${PIOS_USER:-maker}"
+PIOS_PASSWORD="${PIOS_PASSWORD:-maker}"
+# Masaustu cozunurlugu (monitor olmasa da). 1280x720: uzak ekran (VNC) Pi'de
+# kararli 30 FPS verir; 1080p 2.25 kat piksel demek. Merkez > Ekran'dan degisir.
+PIOS_RESOLUTION="${PIOS_RESOLUTION:-1280x720}"
 
 require_root() {
   if [ "$(id -u)" -ne 0 ]; then

@@ -13,4 +13,4 @@ docker run --rm -v pios-work:/work debian:bookworm-slim tar -C /work/rootfs -c .
 docker build -t pardus-maker-test .
 docker run -d --restart unless-stopped --name pardus-maker-test --hostname pardus-maker \
   -p 8080:80 -p 6080:6080 -p 5900:5900 pardus-maker-test
-echo "Panel: http://localhost:8080/  (pardus / pardus) - durdurmak: docker rm -f pardus-maker-test"
+echo "Panel: http://localhost:8080/  (maker / maker) - durdurmak: docker rm -f pardus-maker-test"

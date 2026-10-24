@@ -222,7 +222,7 @@ class ApiTests(unittest.TestCase):
         handler = object.__new__(self.server.Handler)
         handler.path = path
         handler.client_address = ('127.0.0.1', 1234)
-        handler.authorized = Mock(return_value=True)
+        handler.try_auth = Mock(return_value=True)
         handler.send_json = Mock()
         handler.connection = Mock()
         handler.headers = {'X-Pios': '1'}

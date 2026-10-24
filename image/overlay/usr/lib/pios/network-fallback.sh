@@ -82,7 +82,7 @@ write_status() {
     echo "Web panel (ekran + kontrol): http://$(hostname).local/  veya  http://<IP>/"
     echo "Yalnizca ekran (noVNC)     : http://<IP>:6080/"
     echo "VNC istemcisi              : <IP>:5900"
-    echo "SSH                : ssh pardus@$(hostname).local"
+    echo "SSH                : ssh $(sed -n "s/^autologin-user=//p" /etc/lightdm/lightdm.conf.d/50-pios.conf 2>/dev/null || echo maker)@$(hostname).local"
   } > "$STATUS.tmp" 2>/dev/null && mv "$STATUS.tmp" "$STATUS"
 }
 

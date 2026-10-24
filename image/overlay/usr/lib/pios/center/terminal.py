@@ -1,6 +1,6 @@
 # Web terminali: tarayicidaki xterm.js <-> WebSocket <-> PTY.
 #
-# Kabuk root olarak degil, masaustu kullanicisi (pardus) olarak giris
+# Kabuk root olarak degil, masaustu kullanicisi (maker) olarak giris
 # kabugu (bash -l) acar; masaustu oturumunun DISPLAY/DBUS degiskenleri
 # verildigi icin "code ." gibi komutlar Pi'nin ekraninda pencere acar.
 #

@@ -88,8 +88,8 @@ Web arayüzünüz varsa web_port belirtin ve PIOS_PLUGIN_PORT ortam değişkenin
 Her web uygulaması için boş ve farklı bir port seçin. Başlangıç dosyasını sürekli çalışacak şekilde yazabilirsiniz.
 plugin.json, main.py, pyproject.toml ve yardımcı dosyaları ZIP'in köküne koyun; .venv/ ve __pycache__/ eklemeyin.
 Merkez > Eklentiler > ZIP içe aktar ile yükleyip Çalıştır'a basın. İlk çalıştırmada uv bağımlılıkları kurar; internet gerekebilir.
-Eklenti pardus kullanıcısı olarak çalışır; otomatik olarak root yetkisi verilmez. Kamera/GPIO aynı anda tek uygulamada kullanılabilir.
-Çıktıları /home/pardus altında kendi klasörünüze yazın. Eklenti silme klasörü taşır, kişisel dosyaları silmez.
+Eklenti masaüstü kullanıcısı (maker) olarak çalışır; otomatik olarak root yetkisi verilmez. Kamera/GPIO aynı anda tek uygulamada kullanılabilir.
+Çıktıları ev klasörünüzde (/home/maker) kendi klasörünüze yazın. Eklenti silme klasörü taşır, kişisel dosyaları silmez.
 MediaPipe kullanacaksanız pios_kamera.py yardımcısını ve gerekli models/ dosyalarını projeye ekleyin.
 '''
     buf = io.BytesIO()

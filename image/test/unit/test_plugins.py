@@ -85,11 +85,11 @@ class PluginTests(unittest.TestCase):
 
     def test_start_runs_as_user_and_controls_process_tree(self):
         self.import_template()
-        with patch.object(plugins, '_states', return_value=({}, '')), patch.object(plugins.shutil, 'which', return_value='/usr/local/bin/uv'), patch.object(plugins, 'session_env', return_value={'HOME': '/home/pardus', 'PATH': '/usr/local/bin:/usr/bin:/bin'}), patch.object(plugins, 'run', return_value=(0, '', '')) as run:
+        with patch.object(plugins, '_states', return_value=({}, '')), patch.object(plugins.shutil, 'which', return_value='/usr/local/bin/uv'), patch.object(plugins, 'session_env', return_value={'HOME': '/home/maker', 'PATH': '/usr/local/bin:/usr/bin:/bin'}), patch.object(plugins, 'run', return_value=(0, '', '')) as run:
             ok, _ = plugins.action('benim-eklentim', 'start')
         self.assertTrue(ok)
         cmd = run.call_args.args[0]
-        self.assertIn('--property=User=pardus', cmd)
+        self.assertIn('--property=User=' + plugins.USER, cmd)
         self.assertIn('--property=KillMode=control-group', cmd)
         self.assertEqual(cmd[-1], 'main.py')
         self.assertIn('--setenv=PIOS_PLUGIN_PORT=8765', cmd)

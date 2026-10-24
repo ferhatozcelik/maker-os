@@ -343,3 +343,8 @@ a.btn { text-decoration: none; display: inline-block; }
 .plugin-card details { margin-top: 12px; color: var(--muted); font-size: 12px; }
 .plugin-card summary { cursor: pointer; }
 .plugin-log { min-height: 180px; max-height: 45vh; background: #17171a; color: #e5e5e8; }
+
+.ota-notes { margin: 10px 0; }
+.ota-notes summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+.ota-notes pre { white-space: pre-wrap; max-height: 260px; overflow: auto; font-size: 12px; background: var(--hover);
+  padding: 10px; border-radius: 10px; margin: 8px 0 0; }

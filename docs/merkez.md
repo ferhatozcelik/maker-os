@@ -52,8 +52,8 @@ durum değiştiren istekler `POST`, `Content-Type: application/json` ve
 ile izlenir.
 
 ```bash
-curl -u pardus:PAROLA http://pardus-maker.local/api/status
-curl -u pardus:PAROLA -H 'X-Pios: 1' -H 'Content-Type: application/json' \
+curl -u maker:PAROLA http://pardus-maker.local/api/status
+curl -u maker:PAROLA -H 'X-Pios: 1' -H 'Content-Type: application/json' \
      -d '{"timezone":"Europe/Istanbul"}' http://pardus-maker.local/api/time/timezone
 ```
 

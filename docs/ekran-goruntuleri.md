@@ -23,7 +23,7 @@ ağ sayfasını gösterir. Gerçek Wi-Fi tarama ve bağlantı testi Pi üzerinde
 
 ## Telefon: web terminali
 
-`pardus` kullanıcısıyla çalışan kabuk ve telefon için ek tuş çubuğu.
+`maker` kullanıcısıyla çalışan kabuk ve telefon için ek tuş çubuğu.
 
 <img src="screenshots/telefon-terminal.png" alt="Telefonda çalışan web terminali" width="390">
 
@@ -54,7 +54,7 @@ cd image
 ./test/run-test.sh
 ```
 
-Merkez: <http://localhost:8080/> · kullanıcı: `pardus` · parola: `pardus`.
+Merkez: <http://localhost:8080/> · kullanıcı: `maker` · parola: `maker`.
 Konteyner arka planda çalışır. Günlükler: `docker logs pardus-maker-test`.
 Durdurmak için: `docker stop pardus-maker-test`; tekrar başlatmak için:
 `docker start pardus-maker-test`.

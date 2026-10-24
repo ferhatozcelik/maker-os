@@ -16,6 +16,9 @@ echo "== overlay kopyalaniyor =="
 # Eski build'den kalan dock ogeleri (or. 04-code.dockitem) kalmasin.
 rm -rf "$ROOTFS_DIR/etc/skel/.config/plank"
 cp -a "$OVERLAY_DIR/." "$ROOTFS_DIR/"
+# Gelistirme makinesinde test sirasinda olusan Python onbellekleri imaja girmesin.
+find "$ROOTFS_DIR/usr/lib/pios" -name __pycache__ -type d -prune -exec rm -rf {} +
+find "$ROOTFS_DIR" -xdev -name .DS_Store -delete 2>/dev/null || true
 chown -R 0:0 "$ROOTFS_DIR/etc/systemd/system" "$ROOTFS_DIR/usr/lib/pios" "$ROOTFS_DIR/etc/skel" \
   "$ROOTFS_DIR/etc/lightdm" "$ROOTFS_DIR/etc/X11/xorg.conf.d" "$ROOTFS_DIR/etc/dconf" \
   "$ROOTFS_DIR/usr/share/applications" "$ROOTFS_DIR/usr/share/icons/hicolor" \
@@ -87,6 +90,7 @@ echo "== servisler =="
 in_chroot systemctl set-default graphical.target
 in_chroot systemctl enable \
   pios-firstboot.service pios-network-fallback.service pios-center.service pios-cpu.service \
+  pios-ota-boot.service pios-ota-check.timer \
   pios-vnc.service pios-novnc.service \
   NetworkManager.service ssh.service avahi-daemon.service \
   lightdm.service systemd-timesyncd.service fake-hwclock.service \

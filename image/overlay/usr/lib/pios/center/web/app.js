@@ -278,12 +278,10 @@ async function renderWifi(el) {
       <div class="tile"><div class="k">Wi-Fi</div><div class="n net-name">${wifi ? esc(wifi.name) : s.hotspot ? "Erişim noktası" : "Bağlı değil"}</div></div>
       <div class="tile"><div class="k">Ethernet</div><div class="n">${e && e.carrier ? (e.speed ? e.speed + " Mb/s" : "Bağlı") : "Kablo yok"}</div></div>
     </div>
-    <section class="network-notice" aria-live="polite">
-      <b>Ağ değişirken bağlantı kısa süre kesilebilir.</b>
-      <p>Telefonunuzu hedef ağa bağlayın ve <a href="http://${esc(s.hostname)}.local/">http://${esc(s.hostname)}.local/</a> adresini açın. Bağlantı kurulamazsa önceki ağ veya Pardus-Maker erişim noktası geri açılır.</p>
+    <section class="network-notice" id="netNotice" aria-live="polite" ${n.nm && !n.warning ? "hidden" : ""}>
       ${!n.nm ? '<p class="net-alert">NetworkManager çalışmıyor. Yerel terminalde <code>systemctl status NetworkManager</code> ile hizmeti kontrol edin.</p>' : ""}
       ${n.warning ? `<p class="net-alert">${esc(n.warning)}</p>` : ""}
-      <div class="net-op"><div class="hrow"><b>İşlem durumu</b><span class="sp"></span><span id="netState" class="badge">Hazır</span></div><pre id="netMessage">Tarama başlatabilirsiniz.</pre></div>
+      <div class="net-op" id="netOp" hidden><div class="hrow"><span id="netState" class="badge">Hazır</span></div><pre id="netMessage"></pre></div>
     </section>
     <h2 class="hrow">Wi-Fi ağları<span class="sp"></span><button class="btn primary" id="scan">Tara</button><button class="btn" id="manual">Elle bağlan</button></h2>
     ${s.hotspot ? '<p class="hint">Erişim noktası açık. Tarama için duraklatma gerekir; telefon bağlantısı geçici kesilir ve tarama sonunda erişim noktası geri açılır.</p><button class="btn" id="apScan">Erişim noktasını duraklat ve tara</button>' : ""}
@@ -298,12 +296,21 @@ async function renderWifi(el) {
     <p class="hint">Anlık aktarım hızı ve alınan/gönderilen toplam veri için <a href="#etkinlik">Görev Yöneticisi</a>.</p>`;
   let lastUpdated = 0, seenRunning = false, refreshing = false;
   const controls = busy => el.querySelectorAll("#scan, #manual, #apScan, [data-net], [data-saved], [data-edit], [data-forget], #hs").forEach(b => b.disabled = busy);
+  // Durum kutusu yalnızca bir işlem sürerken veya başarısız olduğunda görünür.
+  const showOp = (state, message, visible) => {
+    const notice = $("#netNotice", el), op = $("#netOp", el);
+    if (!notice || !op) return;
+    op.hidden = !visible;
+    $("#netState", el).textContent = state;
+    $("#netMessage", el).textContent = message || "";
+    notice.hidden = op.hidden && !notice.querySelector(".net-alert");
+  };
   const begin = async (path, body) => {
-    controls(true); $("#netState", el).textContent = "Başlatılıyor…";
+    controls(true); showOp("Başlatılıyor…", "", true);
     const r = await act(path, body, "İşlem başlatıldı");
     if (!el.isConnected) return;
-    if (r) { seenRunning = true; $("#netMessage", el).textContent = "İşlem sürüyor. Bağlantı kesilirse hedef ağa veya Pardus-Maker ağına yeniden bağlanın."; }
-    else controls(false);
+    if (r) { seenRunning = true; showOp("Çalışıyor…", "", true); }
+    else { controls(false); showOp("Hazır", "", false); }
   };
   const connect = async (network, edit = false) => {
     let values = { password: "", identity: "" };
@@ -326,8 +333,8 @@ async function renderWifi(el) {
       if (!el.isConnected) return;
       controls(op.status === "running");
       el.querySelectorAll("[data-net]").forEach(b => b.disabled = op.status === "running");
-      $("#netState", el).textContent = ({ idle: "Hazır", running: "Çalışıyor…", ok: "Tamamlandı", error: "Başarısız" })[op.status];
-      $("#netMessage", el).textContent = op.message || "Tarama başlatabilirsiniz.";
+      const active = op.status === "running" || op.status === "error";
+      showOp(({ idle: "Hazır", running: "Çalışıyor…", ok: "Tamamlandı", error: "Başarısız" })[op.status], active ? op.message : "", active);
       if (op.status === "running") seenRunning = true;
       if (op.updated !== lastUpdated) {
         if (op.kind === "scan" && op.status === "ok") drawNetworks(op.networks);
@@ -337,8 +344,7 @@ async function renderWifi(el) {
       if (seenRunning && op.status === "ok" && op.kind !== "scan" && !refreshing) { refreshing = true; route(); }
     } catch (error) {
       if (!el.isConnected) return;
-      $("#netState", el).textContent = "Cihaza ulaşılamıyor";
-      $("#netMessage", el).textContent = "Ağ geçişi sırasında bağlantı kesilmiş olabilir. Telefonunuzu hedef ağa veya Pardus-Maker ağına bağlayın. Bu sayfa yeniden deneyecek.\n\n" + error.message;
+      showOp("Cihaza ulaşılamıyor", "Ağ geçişi sırasında bağlantı kesilmiş olabilir. Telefonunuzu hedef ağa veya Pardus-Maker ağına bağlayın. Bu sayfa yeniden deneyecek.\n\n" + error.message, true);
     }
   };
   $("#scan", el).onclick = () => s.hotspot ? toast("Erişim noktasını duraklat ve tara düğmesini kullanın.") : begin("/api/wifi/scan", {});
@@ -522,7 +528,7 @@ async function renderDonanim(el) {
   if (!el.isConnected) return;
   const ifs = [["i2c", "I2C", "Sensörler, OLED ekranlar (GPIO2/3)"], ["spi", "SPI", "Ekranlar, ADC'ler (GPIO7-11)"],
                ["serial", "Seri port (UART)", "GPIO14/15 · seri konsol"]];
-  const resName = r => r === "auto" ? "Otomatik (monitöre göre)" : r;
+  const resName = r => r === "auto" ? "Otomatik (monitöre göre)" : r === "1280x720" ? "1280x720 (uzak ekran için önerilen, 30 FPS)" : r;
   el.innerHTML = `<h1>Ekran ve Donanım</h1><p class="lead">Ekran, ses ve GPIO arayüzleri. Yapılandırma değişiklikleri yeniden başlatınca uygulanır.</p>
     <h2>Ekranlar</h2><div class="list">${dsp.displays.length ? dsp.displays.map(d => row(
       `${esc(d.kind)}${d.port ? ` <span class="badge">${esc(d.port)}</span>` : ""}`,
@@ -559,7 +565,7 @@ async function renderUzak(el) {
       ${row("Web adresi", "Tarayıcıya yazın; kullanıcı adı ve parola ile girin", `<span class="v">http://${esc(s.hostname)}.local</span>`)}
       ${row("IP ile", "", `<span class="v">http://${esc(ip)}</span>`)}
       ${row("VNC istemcisi", "RealVNC, Remmina vb.", `<span class="v">${esc(ip)}:5900</span>`)}
-      ${row("SSH", "", `<span class="v">ssh pardus@${esc(s.hostname)}.local</span>`)}
+      ${row("SSH", "", `<span class="v">ssh ${esc(s.user || "maker")}@${esc(s.hostname)}.local</span>`)}
     </div><p class="hint">Bağlantı şifrelenmez (HTTP/VNC); yalnızca güvendiğiniz yerel ağda kullanın.</p>`;
   $("#rem", el).onchange = e => act("/api/settings/remote", { enabled: e.target.checked }, e.target.checked ? "Uzak ekran açıldı" : "Uzak ekran kapatıldı");
 }
@@ -568,7 +574,7 @@ async function renderUzak(el) {
 async function renderKullanici(el) {
   const s = await api("/api/status");
   if (!el.isConnected) return;
-  el.innerHTML = `<h1>Kullanıcı</h1><p class="lead">Kullanıcı: <b>pardus</b> · otomatik oturum açık</p>
+  el.innerHTML = `<h1>Kullanıcı</h1><p class="lead">Kullanıcı: <b>${esc(s.user || "maker")}</b> · otomatik oturum açık</p>
     <h2>Parola</h2><div class="list">
       ${row("Yeni parola", "Giriş, SSH, sudo, web ve uzak ekran (uzak ekran ilk 8 karakteri kullanır)",
         '<input type="password" id="pw" placeholder="en az 6 karakter" style="width:180px"> <button class="btn primary" id="pwb">Değiştir</button>')}
@@ -590,20 +596,104 @@ async function renderKullanici(el) {
 
 // ---------------------------------------------------------------- Guncellemeler
 async function renderGuncelleme(el) {
-  el.innerHTML = `<h1>Güncellemeler</h1><p class="lead">Pardus paket deposu, güvenlik güncellemeleri ve VS Code.</p>
-    <div class="list">
-      ${row("Güncellemeleri denetle", "Paket listesini yeniler, güncellenebilecekleri gösterir", '<button class="btn" id="chk">Denetle</button>')}
-      ${row("Tümünü güncelle", "İnternet hızına göre birkaç dakika sürebilir", '<button class="btn primary" id="ins">Güncelle</button>')}
-    </div>
-    <p class="hint">Python sürümleri <a href="#python">Python</a>, yapay zeka ajanları <a href="#agent">Agent'lar</a> bölümünden güncellenir.</p>`;
-  $("#chk", el).onclick = () => runJob("/api/updates/check", {});
-  $("#ins", el).onclick = () => runJob("/api/updates/install", {});
+  const fmtTime = t => t ? new Date(t * 1000).toLocaleString("tr-TR", { dateStyle: "short", timeStyle: "short" }) : "henüz yok";
+  let shownLog = "";
+  const draw = async () => {
+    const o = await api("/api/ota");
+    if (!el.isConnected) return;
+    const busy = o.status === "running" || o.rolling;
+    const newer = o.latest && o.latest !== o.current;
+    let state;
+    if (busy) state = `<div class="row"><div class="grow"><div class="t">${esc(o.stage || "Çalışıyor…")}</div>
+        <progress max="100" value="${o.rolling ? 50 : o.progress || 0}" style="width:100%"></progress>
+        <div class="d">Merkez kısa süre yeniden başlayabilir; sayfa kendiliğinden devam eder.</div></div></div>`;
+    else if (o.status === "confirm") state = row(`<b>${esc(o.current)}</b> kuruldu <span class="badge acc">onay bekliyor</span>`,
+        esc(o.stage || "") + " Onaylayınca yedek ve geçici dosyalar silinir.",
+        '<button class="btn" id="otaBack">Geri al</button><button class="btn primary" id="otaOk">Onayla</button>');
+    else if (o.status === "reboot") state = row("Yeni çekirdek hazır", "Bir kez denenir; açılmazsa Pi'yi kapatıp açın, eski çekirdekle başlar.",
+        '<button class="btn" id="otaBack">Geri al</button><button class="btn primary" id="otaBoot">Yeniden başlat</button>');
+    else if (o.status === "available") state = row(`Yeni sürüm: <b>${esc(o.latest)}</b>`,
+        `İndirme ${fmtSize(o.size || 0)}. Önce yedek alınır; sorun olursa kendiliğinden geri döner.`,
+        '<button class="btn primary" id="otaGo">Güncelle</button>');
+    else if (newer && !o.installable && o.latest) state = row(`${esc(o.latest)} yayınlandı`,
+        "Bu sürüm için kablosuz güncelleme paketi yok; SD kartı yeniden yazın.", o.page ? `<a class="btn" href="${esc(o.page)}" target="_blank" rel="noopener">Sürüm sayfası</a>` : "");
+    else state = row('Pardus Maker güncel <span class="badge ok">✓</span>', "Son denetim: " + fmtTime(o.checked));
+    const info = [o.status === "error" && o.message ? `<pre class="error-inline">${esc(o.message)}</pre>` : "",
+                  o.status !== "error" && o.message ? `<p class="hint">${esc(o.message)}</p>` : "",
+                  o.check_error ? `<p class="hint">${esc(o.check_error)}</p>` : ""].join("");
+    const notes = o.status === "available" && o.notes ? `<details class="ota-notes" data-k="notes"><summary>Bu sürümde neler var?</summary><pre>${esc(o.notes)}</pre></details>` : "";
+    const logText = (o.log || []).join("\n");
+    // Yeniden çizimde kullanıcının açtığı/kapattığı bölümler korunur.
+    const opened = {};
+    el.querySelectorAll("details[data-k]").forEach(x => opened[x.dataset.k] = x.open);
+    el.innerHTML = `<h1>Güncellemeler</h1><p class="lead">Pardus Maker sürümü ve sistem paketleri.</p>
+      <h2>Pardus Maker</h2><div class="list">
+        ${row("Yüklü sürüm", "", `<span class="v">${esc(o.current || "—")}</span>`)}
+        ${state}
+        ${busy ? "" : row("Yeni sürümü denetle", "GitHub'daki son yayınla karşılaştırır; 6 saatte bir kendiliğinden denetlenir", '<button class="btn" id="otaCheck">Denetle</button>')}
+      </div>${info}${notes}
+      ${logText && (busy || o.status === "error") ? `<details class="ota-notes" data-k="log" ${busy ? "open" : ""}><summary>Günlük</summary><pre id="otaLog">${esc(logText)}</pre></details>` : ""}
+      <h2>Sistem paketleri</h2><div class="list">
+        ${row("Güncellemeleri denetle", "Pardus deposu, güvenlik güncellemeleri ve VS Code", '<button class="btn" id="chk">Denetle</button>')}
+        ${row("Tümünü güncelle", "İnternet hızına göre birkaç dakika sürebilir", '<button class="btn primary" id="ins">Güncelle</button>')}
+      </div>
+      <p class="hint">Python sürümleri <a href="#python">Python</a>, yapay zeka ajanları <a href="#agent">Agent'lar</a> bölümünden güncellenir.</p>`;
+    el.querySelectorAll("details[data-k]").forEach(x => { if (x.dataset.k in opened) x.open = opened[x.dataset.k]; });
+    const log = $("#otaLog", el);
+    if (log && logText !== shownLog) log.scrollTop = log.scrollHeight;
+    shownLog = logText;
+    const on = (id, fn) => { const b = $("#" + id, el); if (b) b.onclick = fn; };
+    on("chk", () => runJob("/api/updates/check", {}));
+    on("ins", () => runJob("/api/updates/install", {}));
+    on("otaCheck", async e => { e.target.disabled = true; e.target.textContent = "Denetleniyor…"; await act("/api/ota/check", {}, "Denetlendi"); draw(); });
+    on("otaGo", async () => { if (confirm(`Pardus Maker ${o.latest} kurulsun mu? Önce yedek alınır.`) && await act("/api/ota/start", {})) draw(); });
+    on("otaOk", () => otaDecide("confirm", draw));
+    on("otaBack", () => otaDecide("rollback", draw));
+    on("otaBoot", () => otaDecide("reboot", draw));
+  };
+  await draw();
+  if (el.isConnected) pollView(el, draw, 2000);
+}
+
+// Onay / geri alma / çekirdek denemesi: sayfadan veya açılır pencereden.
+async function otaDecide(what, after) {
+  const text = { confirm: "Güncelleme onaylansın mı? Yedek ve geçici dosyalar silinir; bundan sonra geri alınamaz.",
+                 rollback: "Güncelleme geri alınsın mı? Önceki sürüm yedekten geri yüklenir.",
+                 reboot: "Pi yeni çekirdekle yeniden başlatılsın mı? Açılmazsa Pi'yi kapatıp açın; eski çekirdekle başlar." }[what];
+  if (!confirm(text)) return;
+  if (await act("/api/ota/" + what, {}) && after) after();
+}
+
+// Kurulan sürüm onay bekliyorsa Merkez'in hangi sayfası açık olursa olsun sorulur.
+let otaAsked = "";
+async function otaWatch() {
+  let o;
+  try { o = await api("/api/ota", undefined, 10000); } catch { return; }
+  const key = o.status + ":" + o.current + ":" + o.latest;
+  const d = $("#dlg");
+  if (otaAsked === key || d.open || o.rolling) return;
+  if (o.status === "available" && current !== "guncelleme") { otaAsked = key; toast(`Yeni Pardus Maker sürümü: ${o.latest} — Güncellemeler'den kurabilirsiniz`, 6000); return; }
+  if (o.status !== "confirm" && o.status !== "reboot") return;
+  otaAsked = key;
+  const reboot = o.status === "reboot";
+  d.innerHTML = `<form method="dialog"><h3>Pardus Maker ${esc(o.current)} kuruldu</h3>
+    <p class="note">${reboot ? "Yeni çekirdeği denemek için Pi'yi yeniden başlatın. Açılmazsa kapatıp açın; eski çekirdekle başlar."
+      : esc(o.stage || "") + " Her şey yolundaysa onaylayın: yedek ve geçici dosyalar silinir. Sorun varsa geri alın."}</p>
+    <div class="dlg-foot"><button class="btn" value="later">Sonra</button><button class="btn" value="rollback">Geri al</button>
+      <button class="btn primary" value="${reboot ? "reboot" : "confirm"}">${reboot ? "Yeniden başlat" : "Onayla ve temizle"}</button></div></form>`;
+  d.onclose = async () => {
+    const v = d.returnValue;
+    if (v === "confirm" || v === "rollback" || v === "reboot") {
+      if (await act("/api/ota/" + v, {}) && current === "guncelleme") route();
+    }
+  };
+  d.returnValue = ""; d.showModal();
 }
 
 // ---------------------------------------------------------------- Python eklentileri
 async function renderPlugins(el) {
   el.innerHTML = `<h1>Eklentiler</h1><p class="lead">Kendi Python projelerinizi uygulama gibi ekleyin ve çalıştırın.</p>
-    <div class="network-notice"><b>Bir şablonla başlayın.</b><p>Python kodunuzu ve bağımlılıklarınızı projeye ekleyin; ZIP dosyasını içe aktarın. Eklentiler pardus kullanıcısı olarak çalışır. İlk açılışta paketlerin indirilmesi gerekebilir.</p></div>
+    <div class="network-notice"><b>Bir şablonla başlayın.</b><p>Python kodunuzu ve bağımlılıklarınızı projeye ekleyin; ZIP dosyasını içe aktarın. Eklentiler masaüstü kullanıcısı olarak çalışır. İlk açılışta paketlerin indirilmesi gerekebilir.</p></div>
     <div class="plugin-tools"><a class="btn" href="/api/plugins/template.zip" download="pardus-python-eklenti.zip">Python şablonunu indir</a>
       <label class="btn primary" for="pluginZip">ZIP içe aktar</label><input id="pluginZip" type="file" accept=".zip,application/zip" hidden><button class="btn" id="pluginsRefresh">Yenile</button></div>
     <p id="pluginImportState" role="status" class="hint">ZIP kökünde plugin.json, pyproject.toml ve başlangıç .py dosyası bulunmalı. En fazla 15 MB; .venv eklemeyin.</p>
@@ -820,7 +910,7 @@ async function renderUsb(el) {
             ? (local ? `<button class="btn" data-open="${esc(p.mountpoint)}">Dosyalar'da aç</button>` : '<span class="badge ok">bağlı</span>')
             : `<button class="btn primary" data-mt="${esc(p.path)}">Bağla</button>`)).join("")}`).join("")
         : '<div class="empty">USB bellek takılı değil</div>'}</div>
-      <p class="hint">Bağlanan bellekler <code>/media/pardus/</code> altında görünür (FAT32, exFAT, NTFS, ext4). Çıkarmadan önce "Güvenle çıkar"a basın.</p>
+      <p class="hint">Bağlanan bellekler <code>/media/${esc(d.user || "maker")}/</code> altında görünür (FAT32, exFAT, NTFS, ext4). Çıkarmadan önce "Güvenle çıkar"a basın.</p>
       <h2>Seri portlar</h2><div class="list">${d.serial.length ? d.serial.map(sp => row(esc(sp.product), esc(sp.vendor || ""),
         `<code>${esc(sp.dev)}</code>`)).join("") : '<div class="empty">Seri aygıt yok (Arduino, ESP32, USB-seri dönüştürücü takınca görünür)</div>'}</div>
       <h2>Tüm USB aygıtları</h2><div class="list">${d.usb.filter(u => !u.hub).length ? d.usb.filter(u => !u.hub).map(u => row(
@@ -1055,6 +1145,11 @@ async function openScreen() {
   };
   connect();
 }
+// Tam ekran/yön değişince bazı mobil tarayıcılar "resize"ı geç gönderir;
+// görüntü yeni alana hemen sığdırılır (scaleViewport ayarı yeniden ölçekler).
+const rescale = () => { if (rfb) { rfb.scaleViewport = false; rfb.scaleViewport = true; } };
+document.addEventListener("fullscreenchange", () => requestAnimationFrame(rescale));
+window.addEventListener("orientationchange", () => setTimeout(rescale, 250));
 function closeScreen() {
   if ($("#screen").hidden) return;
   $("#screen").hidden = true; $("#app").hidden = false;
@@ -1123,6 +1218,7 @@ async function boot() {
   api("/api/settings").then(st => document.documentElement.dataset.theme = st.theme).catch(() => {});
   // Agdan gelen ilk ziyarette dogrudan masaustu; Pi'nin kendisinde Ayarlar.
   if (!local && !location.hash) location.hash = "#ekran"; else route();
+  otaWatch(); setInterval(otaWatch, 60000);
 }
 boot().catch(e => {
   $("#login").hidden = false;

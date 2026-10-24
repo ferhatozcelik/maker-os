@@ -33,6 +33,7 @@ import agents  # noqa: E402
 import activity  # noqa: E402
 import fan  # noqa: E402
 import network  # noqa: E402
+import ota  # noqa: E402
 import camera  # noqa: E402
 import devices  # noqa: E402
 import gpio  # noqa: E402
@@ -281,6 +282,35 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_json({"error": err or "baslatilamadi"}, 400)
         return self.send_json({"job": jid})
 
+    def ota_action(self, what):
+        """Pardus Maker surum guncellemesi. Kurulum ve geri alma Merkez'i
+        yeniden baslattigi icin ayri surecte calisir; arayuz /api/ota'yi yoklar."""
+        st = ota.status()["status"]
+        try:
+            if what == "check":
+                return self.send_json(ota.check())
+            if what == "start":
+                if st != "available":
+                    return self.result(False, "Kurulacak yeni sürüm yok.")
+                ota.save_state(status="running", stage="Başlatılıyor…", progress=1, message="", started=time.time())
+                ota.spawn("apply")
+                return self.result(True, "Güncelleme başladı")
+            if what == "confirm":
+                ota.confirm()
+                return self.result(True, "Güncelleme onaylandı; yedek ve geçici dosyalar silindi.")
+            if what == "rollback":
+                if st not in ("confirm", "reboot") or ota.load_state().get("rolling"):
+                    return self.result(False, "Geri alınacak güncelleme yok.")
+                ota.save_state(rolling=True, stage="Geri alınıyor…", started=time.time())
+                ota.spawn("rollback")
+                return self.result(True, "Geri alınıyor")
+            if what == "reboot":
+                ota.reboot_trial()
+                return self.result(True, "Yeni çekirdekle yeniden başlatılıyor…")
+        except ota.OtaError as e:
+            return self.result(False, str(e))
+        return self.send_json({"error": "bulunamadi"}, 404)
+
     def result(self, ok, msg=""):
         return self.send_json({"ok": bool(ok), "message": msg}, 200 if ok else 400)
 
@@ -335,13 +365,14 @@ class Handler(BaseHTTPRequestHandler):
 
         routes = {
             # client_local: istek Pi'nin kendisinden mi (uzak ekran gereksiz).
-            "/api/status": lambda: dict(system.status(),
+            "/api/status": lambda: dict(system.status(), user=USER,
                                         client_local=self.client_address[0] in ("127.0.0.1", "::1")),
             "/api/wifi": lambda: network.operation(),
             "/api/network/operation": lambda: network.operation(),
             "/api/network/diagnostics": lambda: network.diagnostics(),
             "/api/activity": lambda: activity.snapshot(),
             "/api/fan": lambda: fan.status(),
+            "/api/ota": lambda: ota.status(),
             "/api/plugins": lambda: plugins.list_plugins(),
             "/api/settings": lambda: {"theme": system.get_theme(), "hardware": system.hardware(),
                                       "remote": system.remote_enabled()},
@@ -357,7 +388,7 @@ class Handler(BaseHTTPRequestHandler):
             "/api/agents": lambda: {"agents": agents.list_agents(), "node": agents.node_version()},
             "/api/gpio": lambda: gpio.state(),
             "/api/network": lambda: dict(network.overview(), ethernet=system.ethernet(), internet=system.internet()),
-            "/api/devices": lambda: {"usb": devices.usb_devices(), "storage": devices.storage(),
+            "/api/devices": lambda: {"usb": devices.usb_devices(), "storage": devices.storage(), "user": USER,
                                      "serial": devices.serial_ports()},
             "/api/displays": lambda: {"displays": devices.displays(), "current": devices.current_modes(),
                                       "audio": devices.audio()},
@@ -462,6 +493,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.job_reply(system.updates_check())
         if p == "/api/updates/install":
             return self.job_reply(system.updates_install())
+        if p.startswith("/api/ota/"):
+            return self.ota_action(p[len("/api/ota/"):])
         if p == "/api/power":
             return self.result(system.power(s("action")))
         if p == "/api/desktop/restart":

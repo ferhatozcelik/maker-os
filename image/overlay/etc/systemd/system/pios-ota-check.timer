@@ -1,0 +1,10 @@
+[Unit]
+Description=Pardus Maker yeni surum denetimi (acilistan 10 dk sonra, sonra 6 saatte bir)
+
+[Timer]
+OnBootSec=10min
+OnUnitActiveSec=6h
+RandomizedDelaySec=30min
+
+[Install]
+WantedBy=timers.target

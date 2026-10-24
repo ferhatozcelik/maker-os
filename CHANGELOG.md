@@ -1,5 +1,15 @@
 # Değişiklik günlüğü
 
+## 1.2.0
+
+- **Kablosuz güncelleme (OTA):** Merkez → Güncellemeler yeni Pardus Maker sürümünü GitHub'dan denetler (6 saatte bir ve elle) ve haber verir; kurulumu kullanıcı başlatır. Önce üzerine yazılacak dosyaların yedeği alınır; Merkez yeni sürümle açılmazsa kendiliğinden geri dönülür. Yeni çekirdek Pi'nin `tryboot` özelliğiyle bir kez denenir. Kurulumdan sonra açılan pencerede onaylayınca yedek ve geçici dosyalar silinir; "Geri al" önceki sürüme döner. Ayrıntılar: `docs/ota.md`
+- **Varsayılan kullanıcı ve parola `maker` / `maker`** (önceki imajlarda `pardus`). Merkez kullanıcıyı cihazdan okur; OTA ile yükseltilen cihazlarda kullanıcı değişmez
+- **Uzak ekran:** varsayılan masaüstü 1280×720; x11vnc kararlı 30 FPS (33 ms yoklama, bekleme modu kapalı); tam ekran ve yön değişiminde görüntü hemen yeniden sığdırılır
+- **Wi-Fi:** sabit bilgi kutusu kaldırıldı; durum kutusu yalnızca işlem sürerken veya hata olduğunda görünür
+- **Sistem güncellemesi:** "Tümünü güncelle" ikinci bir apt işlemiyle çakışıp hata vermez; süren işe bağlanır, apt kilidi için bekler
+- **GitHub Actions:** `main`'e push'ta arm64 makinede imaj build edilir; `VERSION` yeni bir sürümse imaj ve OTA paketi doğrudan GitHub Release'e eklenir
+- Birim testleri tamamen geçiyor (OTA testleri eklendi)
+
 ## 1.1.0
 
 Performans sürümü; Raspberry Pi 4 için ayarlandı. Ayarlar Docker'da

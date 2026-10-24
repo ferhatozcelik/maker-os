@@ -16,7 +16,7 @@ kablonun metal temas yüzü HDMI portlarına, mavi yüzü Ethernet portuna bakar
 - Merkez → Kamera: canlı görüntü, fotoğraf (Pi kamerada tam çözünürlük), galeri (`~/Resimler/Kamera`).
 - Terminal: `libcamera-hello --list-cameras`, `libcamera-still -o foto.jpg`, `libcamera-vid -t 10000 -o video.h264`.
 - Python: `picamera2` sistem Python'unda kuruludur (`/usr/bin/python3`); uv projelerinde [`pios_kamera`](mediapipe.md#pios_kamera) yardımcısını kullanın.
-- `pardus` kullanıcısı `video` grubundadır; kamera için sudo gerekmez.
+- `maker` kullanıcısı `video` grubundadır; kamera için sudo gerekmez.
 
 Kamera aynı anda yalnızca bir uygulama tarafından açılabilir. Merkez'deki
 canlı görüntü izleyici kalmayınca 8 sn içinde kamerayı bırakır.
@@ -40,10 +40,10 @@ Sonradan takılan monitör algılanmazsa "Masaüstünü yeniden başlat" yeterli
 
 - **Bellekler ve diskler:** FAT32, exFAT, NTFS ve ext4 desteklenir. Pi'nin
   masaüstünde otomatik bağlanır (Thunar); ağdan **Merkez → USB Aygıtları →
-  Bağla** ile `/media/pardus/<etiket>` altına bağlanır. Çıkarmadan önce
+  Bağla** ile `/media/maker/<etiket>` altına bağlanır. Çıkarmadan önce
   **Güvenle çıkar** önbelleği yazar ve aygıtın gücünü keser.
 - **Seri aygıtlar:** Arduino, ESP32, USB–seri dönüştürücüler `/dev/ttyACM*` /
-  `/dev/ttyUSB*` olarak görünür; `pardus` kullanıcısı `dialout` grubundadır.
+  `/dev/ttyUSB*` olarak görünür; `maker` kullanıcısı `dialout` grubundadır.
 - **Güç:** Pi 4'ün USB portları toplam ~1,2 A verir. Harici 2,5" diskler
   için beslemeli USB hub kullanın; resmi 5V/3A güç kaynağı önerilir.
 - Pi 4: mavi portlar USB 3.0, siyah portlar USB 2.0'dır.
@@ -59,7 +59,7 @@ görünür; pinler çıkış/giriş yapılabilir, I2C veri yolu taranabilir.
 | SPI | GPIO7-11 | Açık |
 | UART | GPIO14 (TX), GPIO15 (RX), 115200 | Açık (seri konsol) |
 
-`pardus` kullanıcısı `gpio`, `i2c`, `spi` gruplarındadır; sudo gerekmez.
+`maker` kullanıcısı `gpio`, `i2c`, `spi` gruplarındadır; sudo gerekmez.
 Python'da `gpiozero` + `RPi.GPIO` kullanın (Pardus 21'in glibc 2.31'i
 `lgpio` tekerleklerini desteklemez). Pinler **3,3 V**'tur, 5 V uygulamayın.
 
