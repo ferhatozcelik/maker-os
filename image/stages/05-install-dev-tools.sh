@@ -62,11 +62,13 @@ in_chroot env $UVENV uv venv --python "$PIOS_AI_PYTHON" --prompt ai /opt/pios/en
 # PyPI'deki aarch64 torch CUDA (NVIDIA, ~4 GB) ile gelir; Pi icin PyTorch'un
 # CPU deposu kullanilir. Once torch kurulur, geri kalan paketler (ultralytics
 # dahil) bu kurulu torch'u kullanir.
+# --compile-bytecode: ortam root'a ait oldugu icin pardus kullanicisi .pyc
+# yazamaz; derlenmezse torch/cv2/ultralytics her ice aktarmada yeniden derlenir.
 # shellcheck disable=SC2086
-in_chroot env $UVENV uv pip install --python /opt/pios/envs/ai/bin/python \
+in_chroot env $UVENV uv pip install --compile-bytecode --python /opt/pios/envs/ai/bin/python \
   --index-url https://download.pytorch.org/whl/cpu torch torchvision
 # shellcheck disable=SC2086
-in_chroot env $UVENV uv pip install --python /opt/pios/envs/ai/bin/python $AI_PKGS
+in_chroot env $UVENV uv pip install --compile-bytecode --python /opt/pios/envs/ai/bin/python $AI_PKGS
 if ls "$ROOTFS_DIR"/opt/pios/envs/ai/lib/python*/site-packages | grep -qE '^(nvidia|triton)$|^nvidia_(cu|nccl|cudnn)'; then
   echo "HATA: AI ortamina CUDA paketleri girdi (nvidia/triton)" >&2
   exit 1

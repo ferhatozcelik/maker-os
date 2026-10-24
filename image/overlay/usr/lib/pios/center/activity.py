@@ -1,5 +1,7 @@
-"""Sabit aralıklı /proc örneklemesi; istemci sayısından bağımsız CPU/ağ ölçümü."""
-import copy
+"""Sabit aralıklı /proc örneklemesi; istemci sayısından bağımsız CPU/ağ ölçümü.
+
+Örnekleyici ilk istekte başlar ve IDLE_STOP_SECS boyunca istek gelmezse durur;
+Etkinlik sayfası kapalıyken işlemci /proc taramasıyla meşgul edilmez."""
 import glob
 import os
 import pwd
@@ -13,7 +15,22 @@ NET = "/sys/class/net"
 _lock = threading.Lock()
 _start_lock = threading.Lock()
 _thread = None
-_snapshot = {"ready": False, "processes": [], "interfaces": [], "error": ""}
+_EMPTY = {"ready": False, "processes": [], "interfaces": [], "error": ""}
+_snapshot = _EMPTY
+IDLE_STOP_SECS = 60
+_last_request = time.time()
+_users = {}   # uid -> kullanıcı adı (her örnekte süreç başına NSS sorgusu yapılmasın)
+
+
+def _user(uid):
+    name = _users.get(uid)
+    if name is None:
+        try:
+            name = pwd.getpwuid(uid).pw_name
+        except KeyError:
+            name = str(uid)
+        _users[uid] = name
+    return name
 
 
 def _cpu():
@@ -42,11 +59,7 @@ def _processes():
             end = raw.rindex(")")
             fields = raw[end + 2:].split()  # field 3: state
             pid = int(path.split("/")[-2])
-            uid = os.stat(os.path.dirname(path)).st_uid
-            try:
-                user = pwd.getpwuid(uid).pw_name
-            except KeyError:
-                user = str(uid)
+            user = _user(os.stat(os.path.dirname(path)).st_uid)
             # Komut argümanları parola içerebilir; yalnızca işlem adı gösterilir.
             result[pid] = {"pid": pid, "name": raw[raw.index("(") + 1:end], "user": user,
                            "state": fields[0], "ticks": int(fields[11]) + int(fields[12]),
@@ -73,7 +86,7 @@ def _interfaces():
 
 
 def _loop():
-    global _snapshot
+    global _snapshot, _thread
     previous, last_cpu, last_procs, last_nets = None, None, {}, {}
     hz = os.sysconf("SC_CLK_TCK")
     while True:
@@ -107,15 +120,24 @@ def _loop():
                 _snapshot = snapshot
         except Exception as e:
             with _lock:
-                _snapshot["error"] = "Kaynak kullanımı okunamadı: %s" % e
+                # Yayımlanan nesne değiştirilmez; okuyucular kopyasız kullanır.
+                _snapshot = dict(_snapshot, error="Kaynak kullanımı okunamadı: %s" % e)
+        with _start_lock:
+            if time.time() - _last_request > IDLE_STOP_SECS:
+                with _lock:
+                    _snapshot = _EMPTY
+                _thread = None
+                return
         time.sleep(max(.2, 2 - (time.monotonic() - started)))
 
 
 def snapshot():
-    global _thread
+    """Son örnek. Yayımlanan sözlük sonradan değiştirilmez; salt okunur kullanın."""
+    global _thread, _last_request
     with _start_lock:
+        _last_request = time.time()
         if _thread is None:
             _thread = threading.Thread(target=_loop, daemon=True)
             _thread.start()
     with _lock:
-        return copy.deepcopy(_snapshot)
+        return _snapshot

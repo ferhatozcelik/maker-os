@@ -82,3 +82,25 @@ Terminalden: `arecord -l`, `aplay -l`, `arecord -d 5 kayit.wav`.
 
 Pi'de tek Wi-Fi radyosu vardır: bir ağa bağlanınca erişim noktası kapanır.
 Wi-Fi ülke kodu `TR` olarak ayarlıdır (`cmdline.txt`).
+
+## Performans ve soğutma
+
+İmaj Raspberry Pi 4 için hızlı çalışacak şekilde ayarlıdır:
+
+| Ayar | Değer | Nerede |
+| --- | --- | --- |
+| CPU / GPU | 2.0 GHz / 750 MHz (`arm_freq=2000`, `gpu_freq=750`, `over_voltage=6`) | `config.txt`, `[pi4]` bölümü |
+| Frekans yöneticisi | `ondemand`: yük %50'yi geçince tam hız, 5 sn tam hızda kalır | `pios-cpu.service` |
+| SD kart G/Ç | BFQ zamanlayıcı: ağır yazma sırasında uygulamalar takılmaz | `/etc/udev/rules.d/60-pios-iosched.rules` |
+| Takas | zram (zstd, RAM'in yarısı), zswap kapalı | `cmdline.txt`, `/etc/default/zramswap` |
+| Masaüstü | Pencere gölgeleri kapalı; Chromium GPU ile çizer | `xfwm4.xml`, `/etc/chromium.d/pios` |
+
+**Soğutucu veya fan kullanın.** Pi 80 °C'de kendini yavaşlatır; sıcaklığı
+Merkez → Etkinlik'ten veya `sicaklik` komutuyla izleyin. Kısıtlama olup
+olmadığını `vcgencmd get_throttled` gösterir (`0x0` = sorun yok).
+
+Hız aşırtma her kartta aynı kararlılıkta değildir. Donma, beklenmedik yeniden
+başlama veya SD kart hatası görürseniz kartı bilgisayara takıp
+`PARDUSBOOT/config.txt` içindeki `arm_freq`, `gpu_freq` ve `over_voltage`
+satırlarını silin; Pi standart hızda (1.8 GHz) açılır. Chromium'da çizim hatası
+olursa `/etc/chromium.d/pios` dosyasındaki GPU satırını silin.

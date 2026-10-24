@@ -1,0 +1,4 @@
+# SD kart: BFQ zamanlayici. Paket kurulumu, pip/uv veya kopyalama gibi agir
+# yazma sirasinda uygulama acilisi ve masaustu okumalari one alinir; yavas
+# SD kartta takilmayi belirgin azaltir.
+ACTION=="add|change", KERNEL=="mmcblk[0-9]", ATTR{queue/scheduler}="bfq"

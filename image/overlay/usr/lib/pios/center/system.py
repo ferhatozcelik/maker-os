@@ -1,5 +1,6 @@
 # Ayarlar: durum, Wi-Fi, gorunum, cihaz adi, parola, ekran, donanim
 # arayuzleri, uzak erisim, guncellemeler, guc.
+import functools
 import os
 import re
 import shutil
@@ -212,7 +213,9 @@ def _sync_via_network():
     return False, last + " Internet baglantisini kontrol edin veya \"Bu cihazın saatini kullan\"ı deneyin."
 
 
+@functools.lru_cache(maxsize=1)
 def _timezones():
+    # Liste calisirken degismez; her Saat sayfasinda yeniden uretilmez.
     rc, out, _ = run(["timedatectl", "list-timezones"], timeout=10)
     if rc == 0 and out:
         return out.splitlines()

@@ -195,7 +195,7 @@ class Kamera:
         self.surec = subprocess.Popen([tool, '-t', '0', '-n', '--codec', 'mjpeg', '--width', str(self.genislik),
                                       '--height', str(self.yukseklik), '--framerate', str(self.fps), '--flush', '-o', '-'],
                                      stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        self._tampon = b''
+        self._tampon = bytearray()
         def drain():
             with self.surec.stderr as stderr:
                 for line in stderr:
@@ -203,13 +203,25 @@ class Kamera:
         threading.Thread(target=drain, daemon=True).start()
 
     def _pi_kare(self):
+        """Tampondaki en yeni tam JPEG'i çözer; analiz geride kaldıysa eski
+        kareler çözülmeden atlanır (gecikme ve boşa işlemci harcanmaz)."""
         fd = self.surec.stdout.fileno()
         deadline = time.monotonic() + 10
+        tampon = self._tampon
         while not self._stop.is_set():
-            bas = self._tampon.find(b'\xff\xd8')
-            son = self._tampon.find(b'\xff\xd9', bas + 2) if bas >= 0 else -1
-            if son >= 0:
-                jpeg, self._tampon = self._tampon[bas:son + 2], self._tampon[son + 2:]
+            jpeg = None
+            while True:
+                bas = tampon.find(b'\xff\xd8')
+                if bas < 0:
+                    del tampon[:-1]
+                    break
+                son = tampon.find(b'\xff\xd9', bas + 2)
+                if son < 0:
+                    del tampon[:bas]
+                    break
+                jpeg = bytes(tampon[bas:son + 2])
+                del tampon[:son + 2]
+            if jpeg:
                 return cv2.imdecode(np.frombuffer(jpeg, np.uint8), cv2.IMREAD_COLOR)
             if time.monotonic() > deadline:
                 raise RuntimeError('Pi kamera 10 saniyedir kare göndermiyor.\n' + '\n'.join(self._stderr))
@@ -218,8 +230,8 @@ class Kamera:
             parca = os.read(fd, 262144)
             if not parca:
                 raise RuntimeError('Pi kamera akışı durdu.\n' + '\n'.join(self._stderr))
-            self._tampon += parca
-            if len(self._tampon) > 16 * 1024 * 1024:
+            tampon += parca
+            if len(tampon) > 16 * 1024 * 1024:
                 raise RuntimeError('Kamera JPEG tamponu sınırı aşıldı; çözünürlüğü düşürün.')
         return None
 
@@ -274,7 +286,9 @@ class Kamera:
                         raise RuntimeError('Kameradan yeni kare alınamadı (12 saniye).')
                     if self._stop.is_set():
                         return
-                    kare, son = self._kare.copy(), self._sira
+                    # Okuyucu her karede yeni dizi üretir ve eskisine dokunmaz;
+                    # kopya gerekmez (çizimler yalnızca bu kareyi değiştirir).
+                    kare, son = self._kare, self._sira
             else:
                 ok, kare = self.cap.read()
                 if not ok:

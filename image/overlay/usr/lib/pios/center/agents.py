@@ -2,6 +2,7 @@
 # yerel model calistiriciyi kurar, gunceller, kaldirir, baslatir.
 import os
 import shutil
+from concurrent.futures import ThreadPoolExecutor
 
 from common import as_user, jobs, open_terminal, run, user_info
 
@@ -91,18 +92,39 @@ def _version(exe):
     return text[0][:60] if rc == 0 and text else ""
 
 
+# exe -> (anahtar, surum). Node CLI'lari Pi'de --version icin 1-3 sn surer;
+# kurulum/guncelleme baglantiyi veya hedef dosyayi degistirince anahtar tutmaz.
+_versions = {}
+
+
+def _cached_version(exe):
+    try:
+        key = (os.path.realpath(exe), os.lstat(exe).st_mtime_ns, os.stat(exe).st_mtime_ns)
+    except OSError:
+        return ""
+    hit = _versions.get(exe)
+    if hit and hit[0] == key:
+        return hit[1]
+    version = _version(exe)
+    _versions[exe] = (key, version)
+    return version
+
+
 def node_version():
     rc, out, _ = run(["/opt/pios/node/bin/node", "--version"])
     return out if rc == 0 else ""
 
 
 def list_agents():
+    exes = [_find(a) for a in AGENTS]
+    # Surumler paralel sorgulanir: sayfa en yavas CLI kadar bekler, toplami kadar degil.
+    with ThreadPoolExecutor(max_workers=len(AGENTS)) as pool:
+        versions = list(pool.map(lambda exe: _cached_version(exe) if exe else "", exes))
     rows = []
-    for a in AGENTS:
-        exe = _find(a)
+    for a, exe, version in zip(AGENTS, exes, versions):
         row = {k: a[k] for k in ("id", "name", "vendor", "summary", "tip", "account", "docs")}
         row["installed"] = bool(exe)
-        row["version"] = _version(exe) if exe else ""
+        row["version"] = version
         rows.append(row)
     return rows
 
@@ -115,6 +137,7 @@ def action(aid, what):
     a = _get(aid)
     if not a:
         return None, "bilinmeyen agent"
+    _versions.clear()
     title = "%s: %s" % (a["name"], {"install": "kuruluyor", "update": "guncelleniyor",
                                     "remove": "kaldiriliyor"}.get(what, what))
     if a["kind"] == "npm":

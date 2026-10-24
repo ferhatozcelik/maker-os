@@ -92,6 +92,10 @@ dtoverlay=vc4-kms-v3d
 max_framebuffers=2
 disable_overscan=1
 disable_splash=1
+# Daha hizli acilis: cekirdek yuklenmeden once 1 sn bekleme yok; ilk 30 sn
+# islemci tam hizda (ondemand henuz devrede degilken servisler hizli baslar).
+boot_delay=0
+initial_turbo=30
 # Monitor takili olmasa da HDMI etkin kabul edilir (ekransiz masaustu).
 hdmi_force_hotplug=1
 
@@ -108,7 +112,14 @@ display_auto_detect=1
 enable_uart=1
 
 [pi4]
+# Pi 4 hiz asirtma: CPU 1.5/1.8 -> 2.0 GHz, GPU (v3d, masaustu/Chromium)
+# 500 -> 750 MHz. force_turbo yok: bostayken frekans duser, garanti bozulmaz.
+# Sogutucu veya fan gerekir; sogutmasiz Pi 80 C'de kendini yavaslatir.
+# Kararsizlik (donma, SD hatasi) olursa bu dort satiri silip yeniden baslatin.
 arm_boost=1
+arm_freq=2000
+gpu_freq=750
+over_voltage=6
 
 [all]
 CFG
@@ -116,8 +127,10 @@ CFG
 # PARTUUID'ler 08-package-image.sh tarafindan gercek degerle degistirilir.
 # video=...D : monitor bagli olmasa da HDMI-A-1 cikisini bu cozunurlukte
 # zorla etkinlestirir; boylece masaustu calisir ve VNC ile erisilir.
+# zswap.enabled=0: takas zram'da; zswap acik kalirsa sayfalar iki kez
+# sikistirilir. logo.nologo: acilista cekirdek logosu cizilmez.
 cat > "$BOOT_DIR/cmdline.txt" <<CFG
-console=serial0,115200 console=tty1 root=PARTUUID=00000000-02 rootfstype=ext4 fsck.repair=yes rootwait quiet loglevel=3 video=HDMI-A-1:${PIOS_RESOLUTION}M@60D cfg80211.ieee80211_regdom=TR
+console=serial0,115200 console=tty1 root=PARTUUID=00000000-02 rootfstype=ext4 fsck.repair=yes rootwait quiet loglevel=3 logo.nologo zswap.enabled=0 video=HDMI-A-1:${PIOS_RESOLUTION}M@60D cfg80211.ieee80211_regdom=TR
 CFG
 
 echo "== fstab yaziliyor =="

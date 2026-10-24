@@ -1,2 +1,5 @@
 # Pi icin: ilk acilis sihirbazi ve ceviri balonu yok, anahtarlik sorusu yok.
 export CHROMIUM_FLAGS="$CHROMIUM_FLAGS --no-first-run --password-store=basic --disable-features=Translate"
+# Pi 4 GPU'su (v3d) Chromium'un engel listesinde; sayfa cizimi ve kaydirma
+# GPU'ya alinir. Cizim hatasi gorulurse bu satiri silin.
+export CHROMIUM_FLAGS="$CHROMIUM_FLAGS --ignore-gpu-blocklist --enable-gpu-rasterization"

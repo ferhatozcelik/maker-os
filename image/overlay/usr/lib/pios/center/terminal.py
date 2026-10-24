@@ -189,6 +189,9 @@ def serve(handler):
     try:
         if not handshake(handler):
             return
+        # HTTP bosta kalma zaman asimi terminali kesmesin; bosta kalma
+        # IDLE_SECS ile ayrica denetlenir.
+        handler.connection.settimeout(None)
         ws = WebSocket(handler.rfile, handler.wfile)
         client = handler.client_address[0]
         pid, fd = _spawn_shell()

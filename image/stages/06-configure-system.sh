@@ -86,7 +86,7 @@ in_chroot dconf update
 echo "== servisler =="
 in_chroot systemctl set-default graphical.target
 in_chroot systemctl enable \
-  pios-firstboot.service pios-network-fallback.service pios-center.service \
+  pios-firstboot.service pios-network-fallback.service pios-center.service pios-cpu.service \
   pios-vnc.service pios-novnc.service \
   NetworkManager.service ssh.service avahi-daemon.service \
   lightdm.service systemd-timesyncd.service fake-hwclock.service \

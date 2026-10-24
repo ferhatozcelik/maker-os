@@ -233,7 +233,9 @@ class Manager:
             proc.stdout.close()
 
     def _read_stream(self, proc, cam):
-        buf, started, got = b"", time.time(), False
+        # bytearray: parca ekleme/bastan silme yerinde yapilir (bytes ile her
+        # parcada tum tampon kopyalanirdi).
+        buf, started, got = bytearray(), time.time(), False
         fd = proc.stdout.fileno()
         last_data = time.monotonic()
         while True:
@@ -253,23 +255,27 @@ class Manager:
                 break
             last_data = time.monotonic()
             buf += chunk
+            frame = None
             while True:
                 soi = buf.find(b"\xff\xd8")
                 if soi < 0:
-                    buf = b""
+                    del buf[:-1]   # isaretin ilk bayti parcanin sonunda kalmis olabilir
                     break
                 eoi = buf.find(b"\xff\xd9", soi + 2)
                 if eoi < 0:
-                    buf = buf[soi:]
+                    del buf[:soi]
                     break
+                frame = bytes(buf[soi:eoi + 2])
+                del buf[:eoi + 2]
+            if frame is not None:
+                # Parcada birden cok kare varsa yalnizca en yenisi yayimlanir.
                 with self.cond:
-                    self.frame = buf[soi:eoi + 2]
+                    self.frame = frame
                     self.seq += 1
                     self.cond.notify_all()
                 got = True
-                buf = buf[eoi + 2:]
             if len(buf) > 16 << 20:
-                buf = b""
+                buf.clear()
             if self.viewers == 0 and time.time() - self.last_seen > IDLE_STOP_SECS:
                 with self.lock:
                     if self.proc is proc:

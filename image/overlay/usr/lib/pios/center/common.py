@@ -40,18 +40,23 @@ def user_info():
     return pw.pw_uid, pw.pw_gid, pw.pw_dir
 
 
+_session_pid = [None]
+
+
 def session_env():
     """Kullanicinin calisan masaustu oturumunun ortam degiskenleri.
 
     xfce4-session surecinin /proc/<pid>/environ dosyasindan DISPLAY,
     XAUTHORITY ve DBUS_SESSION_BUS_ADDRESS alinir; boylece hem Pi'deki
-    LightDM oturumunda hem de Docker test konteynerinde calisir.
+    LightDM oturumunda hem de Docker test konteynerinde calisir. Bulunan
+    PID once denenir; /proc yalnizca oturum yeniden baslayinca taranir.
     """
     uid, _, home = user_info()
     env = {"HOME": home, "USER": USER, "LOGNAME": USER, "LANG": "tr_TR.UTF-8",
            "PATH": "/opt/pios/node/bin:%s/.local/bin:/usr/local/bin:/usr/bin:/bin" % home,
            "DISPLAY": ":0", "XDG_RUNTIME_DIR": "/run/user/%d" % uid}
-    for pid in os.listdir("/proc"):
+    cached = _session_pid[0]
+    for pid in itertools.chain([cached] if cached else [], os.listdir("/proc")):
         if not pid.isdigit():
             continue
         try:
@@ -70,6 +75,7 @@ def session_env():
                 k, _, v = item.decode(errors="replace").partition("=")
                 if k in ("DISPLAY", "XAUTHORITY", "DBUS_SESSION_BUS_ADDRESS"):
                     env[k] = v
+            _session_pid[0] = pid
             break
         except (OSError, subprocess.TimeoutExpired):
             continue

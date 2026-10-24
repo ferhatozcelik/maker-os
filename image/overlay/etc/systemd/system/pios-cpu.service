@@ -1,0 +1,13 @@
+[Unit]
+Description=Pardus Maker CPU frekans ayari (ondemand, hizli tepki)
+DefaultDependencies=no
+After=systemd-modules-load.service
+Before=basic.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/pios/cpu-tune.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=sysinit.target

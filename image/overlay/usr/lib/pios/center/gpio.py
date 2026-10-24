@@ -39,16 +39,20 @@ USER_PINS = {bcm for _, bcm, kind in HEADER.values() if bcm is not None and kind
 _lock = threading.Lock()
 _outputs = {}   # bcm -> (Popen, value)
 _inputs = {}    # bcm -> bias
+_chip = []      # bulunan gpiochip; calisirken degismez, her yoklamada aranmaz
 
 
 def chip():
     """Baslik pinlerini yoneten gpiochip (Pi4: pinctrl-bcm2711, Pi5: rp1)."""
+    if _chip:
+        return _chip[0]
     rc, out, _ = run(["gpiodetect"])
     if rc != 0:
         return None
     for line in out.splitlines():
         if re.search(r"pinctrl-bcm27|pinctrl-rp1|rp1", line):
-            return line.split()[0]
+            _chip.append(line.split()[0])
+            return _chip[0]
     return None
 
 

@@ -15,6 +15,7 @@
 import base64
 import crypt
 import grp
+import gzip
 import hmac
 import json
 import mimetypes
@@ -64,6 +65,31 @@ def make_token():
 
 TOKEN = make_token()
 
+# Bu boyuttan kucuk yanitlar sikistirilmaz (kazanc baslik maliyetinden az).
+GZIP_MIN = 1024
+COMPRESSIBLE = ("text/", "application/json", "application/javascript", "image/svg+xml", "application/xml")
+# Statik dosyalar: yol -> ((mtime_ns, boyut), etag, ham, gzip). Dosya
+# degisince anahtar tutmaz ve yeniden okunur.
+_static = {}
+
+
+def _compressible(ctype):
+    return ctype.startswith(COMPRESSIBLE)
+
+
+def _load_static(path, ctype):
+    st = os.stat(path)
+    key = (st.st_mtime_ns, st.st_size)
+    hit = _static.get(path)
+    if hit and hit[0] == key:
+        return hit
+    with open(path, "rb") as f:
+        raw = f.read()
+    gz = gzip.compress(raw, 9) if _compressible(ctype) and len(raw) >= GZIP_MIN else None
+    entry = (key, '"%x-%x"' % key, raw, gz)
+    _static[path] = entry
+    return entry
+
 
 def check_password(user, password):
     if user != USER:
@@ -91,6 +117,11 @@ def _int(v):
 
 class Handler(BaseHTTPRequestHandler):
     server_version = "PardusMakerMerkezi"
+    _body_read = True
+    # Kalici baglanti: sayfa ve yoklama istekleri ayni TCP baglantisini (ve
+    # is parcacigini) kullanir. Bosta kalan baglanti 60 sn sonra kapanir.
+    protocol_version = "HTTP/1.1"
+    timeout = 60
 
     def log_message(self, fmt, *args):
         pass
@@ -111,7 +142,8 @@ class Handler(BaseHTTPRequestHandler):
         if query.get("t") and hmac.compare_digest(query["t"][0], TOKEN):
             self.new_cookie = TOKEN
             return True
-        if self._cookie_token() and hmac.compare_digest(self._cookie_token(), TOKEN):
+        cookie = self._cookie_token()
+        if cookie and hmac.compare_digest(cookie, TOKEN):
             return True
         header = self.headers.get("Authorization", "")
         if header.startswith("Basic "):
@@ -127,15 +159,44 @@ class Handler(BaseHTTPRequestHandler):
     def deny(self):
         self.send_json({"error": "giris gerekli"}, 401)
 
-    def send_body(self, body, ctype, code=200, cache=False):
-        self.send_response(code)
-        self.send_header("Content-Type", ctype)
-        self.send_header("Content-Length", str(len(body)))
-        self.send_header("Cache-Control", "max-age=3600" if cache else "no-store")
+    def _cookie_headers(self):
         if getattr(self, "new_cookie", None):
             self.send_header("Set-Cookie", "pios_t=%s; HttpOnly; SameSite=Strict; Path=/" % self.new_cookie)
         elif getattr(self, "clear_cookie", False):
             self.send_header("Set-Cookie", "pios_t=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0")
+
+    def _accepts_gzip(self):
+        return "gzip" in self.headers.get("Accept-Encoding", "")
+
+    def send_body(self, body, ctype, code=200, cache=False, gz=None, etag=None):
+        """cache: False (no-store), True (1 saat) veya Cache-Control metni.
+        gz: onceden sikistirilmis govde (statik dosyalar)."""
+        compressible = _compressible(ctype)
+        if compressible and self._accepts_gzip():
+            if gz is None and len(body) >= GZIP_MIN:
+                gz = gzip.compress(body, 5)
+        else:
+            gz = None
+        if gz is not None and len(gz) >= len(body):
+            gz = None
+        self.send_response(code)
+        self.send_header("Content-Type", ctype)
+        if gz is not None:
+            body = gz
+            self.send_header("Content-Encoding", "gzip")
+        if compressible:
+            self.send_header("Vary", "Accept-Encoding")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", cache if isinstance(cache, str) else "max-age=3600" if cache else "no-store")
+        if etag:
+            self.send_header("ETag", etag)
+        self._cookie_headers()
+        # Govdesi okunmadan yanitlanan istekte (401, 403, 413) kalan baytlar
+        # kalici baglantida sonraki istek gibi okunmasin: istemciye bildirip kapat.
+        if not self._body_read and self.headers.get("Content-Length", "0") not in ("", "0"):
+            self.close_connection = True
+        if getattr(self, "close_connection", False):
+            self.send_header("Connection", "close")
         self.end_headers()
         self.wfile.write(body)
 
@@ -146,7 +207,9 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json({"error": "İstek boyutu sınırı aşıldı (%s MB)." % (maximum // 1048576)}, 413)
                 return None
             self.connection.settimeout(30)
-            data = json.loads(self.rfile.read(length) or b"{}")
+            raw = self.rfile.read(length)
+            self._body_read = True
+            data = json.loads(raw or b"{}")
             if not isinstance(data, dict):
                 raise ValueError("JSON object required")
             return data
@@ -182,8 +245,17 @@ class Handler(BaseHTTPRequestHandler):
         ctype = mimetypes.guess_type(path)[0] or "application/octet-stream"
         if path.endswith(".js"):
             ctype = "text/javascript"
-        with open(path, "rb") as f:
-            self.send_body(f.read(), ctype, cache=base in (NOVNC_DIR, XTERM_DIR))
+        _, etag, raw, gz = _load_static(path, ctype)
+        # Merkez arayuzu her acilista dogrulanir (guncelleme hemen gorunur;
+        # degismediyse 304 ile govde gonderilmez). noVNC/xterm sabit surumdur.
+        cache = "max-age=3600" if base in (NOVNC_DIR, XTERM_DIR) else "no-cache"
+        if etag in self.headers.get("If-None-Match", ""):
+            self.send_response(304)
+            self.send_header("ETag", etag)
+            self.send_header("Cache-Control", cache)
+            self._cookie_headers()
+            return self.end_headers()
+        self.send_body(raw, ctype, cache=cache, gz=gz, etag=etag)
 
     def send_stream(self, frames):
         """MJPEG canli goruntu: her kare multipart'in bir parcasi."""
@@ -215,17 +287,21 @@ class Handler(BaseHTTPRequestHandler):
     # --- GET --------------------------------------------------------------
 
     def do_GET(self):
+        self._body_read = True
         self._guard(self._get)
 
     def do_POST(self):
+        self._body_read = False
         self._guard(self._post)
 
     def _guard(self, action):
         try:
             action()
         except (BrokenPipeError, ConnectionResetError):
-            pass
+            self.close_connection = True
         except Exception as e:
+            # Yanit yarida kalmis olabilir; baglanti yeniden kullanilmasin.
+            self.close_connection = True
             ref = secrets.token_hex(4)
             logging.exception("Merkez istek hatası %s: %s", ref, urlparse(self.path).path)
             try:

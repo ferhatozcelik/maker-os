@@ -31,13 +31,21 @@ case "$IMAGE" in
     *) die 'Yalnızca .img ve .img.xz dosyaları desteklenir.' ;;
 esac
 
+expected_raw=""
 if [[ -f "$IMAGE.sha256" ]]; then
     printf 'İmaj SHA-256 doğrulanıyor…\n'
     expected="$(awk 'NR == 1 {print $1}' "$IMAGE.sha256")"
     actual="$(shasum -a 256 "$IMAGE" | awk '{print $1}')"
     [[ "$expected" == "$actual" ]] || die 'SHA-256 uyuşmuyor; yazma iptal edildi.'
+    # Ham imajın özeti artık biliniyor; kart doğrulamasında yeniden hesaplanmaz.
+    [[ "$IMAGE" == *.img ]] && expected_raw="$actual"
 else
     printf 'SHA-256 dosyası bulunamadı: %s.sha256\n' "$IMAGE"
+fi
+# .img.xz için build'in ürettiği ham imaj özeti (.img.sha256) varsa kullanılır;
+# yoksa doğrulamada imaj bir kez daha açılır.
+if [[ "$IMAGE" == *.xz && -f "${IMAGE%.xz}.sha256" ]]; then
+    expected_raw="$(awk 'NR == 1 {print $1}' "${IMAGE%.xz}.sha256")"
 fi
 case "$IMAGE" in
     *.xz) image_size="$(xz --robot --list "$IMAGE" | awk '$1 == "totals" {print $5}')" ;;
@@ -91,16 +99,20 @@ inspect_disk "$target" || die 'Disk artık harici veya çıkarılabilir fiziksel
 diskutil unmountDisk "$target" || die 'Disk ayrılamadı.'
 raw="/dev/r${target#/dev/}"
 printf '\nYazılıyor… İlerlemeyi görmek için Ctrl+T kullanabilirsiniz.\n'
+# -T0: build imajı çok iş parçacıklı (bloklu) sıkıştırır; açma da tüm
+# çekirdekleri kullanır.
 case "$IMAGE" in
-    *.xz) xz -dc "$IMAGE" | sudo dd of="$raw" bs=4m ;;
+    *.xz) xz -T0 -dc "$IMAGE" | sudo dd of="$raw" bs=4m ;;
     *) sudo dd if="$IMAGE" of="$raw" bs=4m ;;
 esac
 sync
 printf 'Yazılan veri SHA-256 ile doğrulanıyor…\n'
-if [[ "$IMAGE" == *.xz ]]; then
-    expected_raw="$(xz -dc "$IMAGE" | shasum -a 256 | awk '{print $1}')"
-else
-    expected_raw="$(shasum -a 256 "$IMAGE" | awk '{print $1}')"
+if [[ -z "$expected_raw" ]]; then
+    if [[ "$IMAGE" == *.xz ]]; then
+        expected_raw="$(xz -T0 -dc "$IMAGE" | shasum -a 256 | awk '{print $1}')"
+    else
+        expected_raw="$(shasum -a 256 "$IMAGE" | awk '{print $1}')"
+    fi
 fi
 # head yalnızca imaj uzunluğu kadar okur; kartın kalan alanı karşılaştırılmaz.
 actual_raw="$(sudo head -c "$image_size" "$raw" | shasum -a 256 | awk '{print $1}')"

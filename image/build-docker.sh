@@ -22,4 +22,5 @@ docker run --rm --privileged \
   ${PIOS_RESOLUTION:+-e PIOS_RESOLUTION="$PIOS_RESOLUTION"} \
   ${PIOS_PASSWORD:+-e PIOS_PASSWORD="$PIOS_PASSWORD"} \
   ${PIOS_COMPRESS:+-e PIOS_COMPRESS="$PIOS_COMPRESS"} \
+  ${PIOS_BUILD_VERSION:+-e PIOS_BUILD_VERSION="$PIOS_BUILD_VERSION"} \
   pardus-maker-builder /workspace/image/build.sh "$@"
