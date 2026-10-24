@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Pencere dugmeleri solda (kapat, kucult, buyut), baslik ortada.
-     Compositing acik (dock seffafligi), golgeler kapali: xfwm4 golgeleri
-     CPU ile cizer; Pi'de pencere tasima ve VNC'yi yavaslatir.
+     Compositing kapali: xfwm4 efektleri CPU ile cizer ve her degisiklikte
+     genis alanlari yeniden boyar; Pi'de pencere tasima ve uzak ekran (VNC)
+     belirgin yavaslar. Dock seffaf degil, duz arka planlidir.
      placement_ratio 0: her yeni pencere ekranin ortasinda acilir. -->
 <channel name="xfwm4" version="1.0">
   <property name="general" type="empty">
@@ -9,7 +10,7 @@
     <property name="button_layout" type="string" value="CHM|"/>
     <property name="title_alignment" type="string" value="center"/>
     <property name="title_font" type="string" value="Inter Semi-Bold 10"/>
-    <property name="use_compositing" type="bool" value="true"/>
+    <property name="use_compositing" type="bool" value="false"/>
     <property name="show_frame_shadow" type="bool" value="false"/>
     <property name="show_popup_shadow" type="bool" value="false"/>
     <property name="show_dock_shadow" type="bool" value="false"/>

@@ -1108,9 +1108,22 @@ async function landscape() {
     await screen.orientation.lock("landscape");
   } catch { /* tarayici desteklemiyor: uyari kalir */ }
 }
+// Uzak masaustu tarayici alaninin oranina gecer (siyah bosluk kalmaz);
+// monitor takiliysa sunucu cozunurlugu degistirmez.
+let fitKey = "";
+function fitScreen() {
+  const el = $("#screen"), w = el.clientWidth, h = el.clientHeight;
+  const key = (w / h).toFixed(2);
+  if (el.hidden || !w || !h || key === fitKey) return;
+  fitKey = key;
+  api("/api/vnc/fit", { width: w, height: h }).catch(() => { /* olcekleme yine calisir */ });
+}
+let fitTimer = 0;
+window.addEventListener("resize", () => { clearTimeout(fitTimer); fitTimer = setTimeout(fitScreen, 600); });
 async function openScreen() {
   $("#app").hidden = true; $("#screen").hidden = false;
   if (touch) landscape();
+  fitScreen();
   if (rfb) return;
   const { password, path } = await api("/api/vnc");
   const [{ default: RFB }, ks, kd] = await Promise.all([import("/novnc/core/rfb.js"),
@@ -1127,6 +1140,9 @@ async function openScreen() {
     rfb.dragViewport = false;
     rfb.resizeSession = false;
     rfb.focusOnClick = true;
+    // LAN: zlib sikistirmasi dusuk (Pi CPU'su kodlamaya yetissin), JPEG kalitesi orta.
+    rfb.compressionLevel = 1;
+    rfb.qualityLevel = 6;
     rfb.addEventListener("connect", () => {
       $("#screenState").textContent = "bağlı";
       try { rfb.focus(); } catch { /* yok */ }
@@ -1143,7 +1159,7 @@ async function openScreen() {
 // Tam ekran/yön değişince bazı mobil tarayıcılar "resize"ı geç gönderir;
 // görüntü yeni alana hemen sığdırılır (scaleViewport ayarı yeniden ölçekler).
 const rescale = () => { if (rfb) { rfb.scaleViewport = false; rfb.scaleViewport = true; } };
-document.addEventListener("fullscreenchange", () => requestAnimationFrame(rescale));
+document.addEventListener("fullscreenchange", () => requestAnimationFrame(() => { rescale(); fitScreen(); }));
 window.addEventListener("orientationchange", () => setTimeout(rescale, 250));
 function closeScreen() {
   if ($("#screen").hidden) return;
@@ -1152,6 +1168,7 @@ function closeScreen() {
   if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
   try { screen.orientation.unlock(); } catch { /* yok */ }
   if (rfb) { const r = rfb; rfb = null; r.disconnect(); }
+  fitKey = "";
 }
 $("#screen").addEventListener("click", e => {
   const a = e.target.dataset && e.target.dataset.act;

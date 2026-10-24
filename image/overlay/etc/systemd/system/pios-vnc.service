@@ -8,9 +8,11 @@ Wants=lightdm.service
 # 10 ms biriktirilir (defer). Daha sik yoklama Pi'de CPU'yu doyurup FPS'i
 # dalgalandirir. nonap: bostayken yavaslamaz, ilk kareler gecikmez.
 # pointer_mode 4: LAN icin hizli imlec; speeds lan: sikistirma LAN varsayar.
+# xrandr resize: Merkez > Ekran cozunurlugu tarayiciya uydurunca istemci
+# yeni boyutu hemen alir.
 ExecStart=/usr/bin/x11vnc -display WAIT:0 -auth guess -forever -loop -shared \
   -rfbauth /etc/pios/vnc.pass -rfbport 5900 -repeat -threads -nonap \
-  -pointer_mode 4 -defer 10 -wait 33 -speeds lan -cursor arrow -quiet
+  -pointer_mode 4 -defer 10 -wait 33 -speeds lan -cursor arrow -xrandr resize -quiet
 Restart=always
 RestartSec=3
 

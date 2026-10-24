@@ -456,6 +456,51 @@ def set_password(new):
     return True, "Parola degistirildi (giris, SSH, sudo ve uzak ekran)"
 
 
+# Uzak ekran tarayiciyi tam kaplasin: masaustu, tarayici penceresinin
+# oraninda ve 720 piksel yukseklikte bir moda gecer (VNC'de her karede az
+# piksel). Gercek monitor takiliysa (EDID var) monitorun cozunurlugu korunur.
+REMOTE_HEIGHT = 720
+FIT_SCRIPT = r"""
+out=$(xrandr --current | awk '/ connected/ {print $1; exit}')
+[ -n "$out" ] || exit 3
+name="pios-${1}x${2}"
+if ! xrandr --current | grep -q "^ *$name "; then
+  ml=$(cvt "$1" "$2" 60 | sed -n 's/^Modeline "[^"]*" *//p')
+  xrandr --newmode "$name" $ml && xrandr --addmode "$out" "$name" || exit 4
+fi
+xrandr --output "$out" --mode "$name"
+"""
+
+
+def monitor_attached():
+    for root, _, files in os.walk("/sys/class/drm"):
+        if "-HDMI-A-" in root and "edid" in files:
+            try:
+                if os.path.getsize(os.path.join(root, "edid")) > 0:
+                    return True
+            except OSError:
+                pass
+    return False
+
+
+def fit_remote(width, height):
+    try:
+        width, height = float(width), float(height)
+    except (TypeError, ValueError):
+        return False, "gecersiz boyut"
+    if width < 200 or height < 150:
+        return False, "gecersiz boyut"
+    if monitor_attached():
+        return False, "Monitör takılı; çözünürlük monitöre göre kalır."
+    # Oran 4:3 ile 21:9 arasi; genislik 8'in kati (cvt bunu bekler).
+    ratio = min(max(width / height, 4 / 3), 21 / 9)
+    w = int(round(REMOTE_HEIGHT * ratio / 8.0)) * 8
+    rc, _, err = run_user(["sh", "-c", FIT_SCRIPT, "fit", str(w), str(REMOTE_HEIGHT)], timeout=15)
+    if rc:
+        return False, "Çözünürlük değiştirilemedi: " + (err or "xrandr %s" % rc)
+    return True, "%dx%d" % (w, REMOTE_HEIGHT)
+
+
 def vnc_password():
     return read_first(VNC_SECRET, "maker")
 

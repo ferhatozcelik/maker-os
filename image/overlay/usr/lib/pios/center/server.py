@@ -510,6 +510,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.result(*network.start("forget", d))
         if p == "/api/hotspot":
             return self.result(*network.start("hotspot", d))
+        if p == "/api/vnc/fit":
+            return self.result(*system.fit_remote(d.get("width"), d.get("height")))
         if p == "/api/fan":
             return self.result(*fan.save(d))
         if p == "/api/settings/theme":

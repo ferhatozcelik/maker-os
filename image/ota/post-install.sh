@@ -35,6 +35,12 @@ if [ -f /usr/share/backgrounds/maker-os.jpg ] && [ -f "$DESKTOP_XML" ]; then
 fi
 rm -f /usr/share/backgrounds/pardus-maker.jpg
 
+# Uzak ekran hizi: pencere efektleri (compositing) kapanir. Kullanicinin
+# ayar dosyasi skel'den kopyalandigi icin burada da guncellenir.
+XFWM_XML="$(getent passwd "$DEVICE_USER" | cut -d: -f6)/.config/xfce4/xfconf/xfce-perchannel-xml/xfwm4.xml"
+[ -f "$XFWM_XML" ] && sed -i 's|name="use_compositing" type="bool" value="true"|name="use_compositing" type="bool" value="false"|' "$XFWM_XML"
+command -v dconf >/dev/null && dconf update 2>/dev/null
+
 # Proje adi MakerOS oldu: varsayilan cihaz adi pardus-maker ise maker-os
 # olur (adres http://maker-os.local/). Kullanicinin verdigi ada dokunulmaz.
 if [ "$(cat /etc/hostname 2>/dev/null)" = pardus-maker ]; then

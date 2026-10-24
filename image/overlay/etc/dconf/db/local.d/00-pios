@@ -1,10 +1,11 @@
-# Plank dock: her zaman gorunur, ortada, buyutme efektli (macOS benzeri).
+# Plank dock: her zaman gorunur, ortada. Buyutme efekti kapali: fare
+# gezdikce surekli cizim yapar, Pi'de ve uzak ekranda akiciligi dusurur.
 [net/launchpad/plank/docks/dock1]
 position='bottom'
 alignment='center'
 hide-mode=0
 icon-size=56
-zoom-enabled=true
+zoom-enabled=false
 zoom-percent=155
 theme='Default'
 show-dock-item=false

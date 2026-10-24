@@ -1,5 +1,13 @@
 # Değişiklik günlüğü
 
+## 1.0.1
+
+Uzak ekran (Merkez → Ekran) daha hızlı ve tarayıcıyı tam kaplar.
+
+- **Tam kaplama:** ekran açılınca masaüstü tarayıcı penceresinin oranına geçer (720 piksel yükseklik); siyah boşluk kalmaz. Pi'ye monitör takılıysa monitörün çözünürlüğü korunur
+- **Daha akıcı görüntü:** uzak ekran 720p'de çalışır (1080p'ye göre her karede 2,25 kat az piksel); pencere efektleri (compositing) ve dock büyütme animasyonu kapalı; fare ve klavye olayları gecikmesiz iletilir (`TCP_NODELAY`); LAN için düşük sıkıştırma
+- Kurulu cihazlarda pencere efektleri OTA ile kapatılır
+
 ## 1.0.0
 
 İlk sürümün kapsamı. Donanım doğrulaması kullanılan Pi modeliyle birlikte

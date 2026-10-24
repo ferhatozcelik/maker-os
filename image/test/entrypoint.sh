@@ -16,7 +16,7 @@ sleep 1
 sleep 1
 su - maker -c "NO_AT_BRIDGE=1 DISPLAY=:0 XDG_RUNTIME_DIR=/run/user/1000 LANG=tr_TR.UTF-8 dbus-launch --exit-with-session startxfce4" >/tmp/xfce.log 2>&1 &
 x11vnc -display :0 -localhost -forever -shared -rfbauth /etc/pios/vnc.pass -rfbport 5900 \
-  -repeat -threads -nonap -pointer_mode 4 -defer 10 -wait 33 -speeds lan -cursor arrow \
+  -repeat -threads -nonap -pointer_mode 4 -defer 10 -wait 33 -speeds lan -cursor arrow -xrandr resize \
   -quiet -bg -o /tmp/x11vnc.log
 websockify 127.0.0.1:6080 localhost:5900 >/tmp/novnc.log 2>&1 &
 echo "MakerOS test: http://localhost:8080/  (maker / maker)"

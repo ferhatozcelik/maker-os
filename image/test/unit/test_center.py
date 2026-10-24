@@ -16,6 +16,7 @@ import camera
 import common
 import fan
 import network
+import system
 
 
 class NetworkTests(unittest.TestCase):
@@ -124,6 +125,28 @@ class NetworkTests(unittest.TestCase):
     def test_utf8_ssid_limit(self):
         with self.assertRaises(network.NetworkError):
             network.connect({'ssid': 'ğ' * 17})
+
+
+class RemoteFitTests(unittest.TestCase):
+    def test_monitor_attached_keeps_resolution(self):
+        with patch.object(system, 'monitor_attached', return_value=True), patch.object(system, 'run_user') as cmd:
+            ok, _ = system.fit_remote(2000, 1037)
+        self.assertFalse(ok)
+        cmd.assert_not_called()
+
+    def test_browser_ratio_at_720p(self):
+        with patch.object(system, 'monitor_attached', return_value=False), patch.object(system, 'run_user', return_value=(0, '', '')) as cmd:
+            self.assertEqual(system.fit_remote(2000, 1037), (True, '1392x720'))
+            self.assertEqual(cmd.call_args.args[0][-2:], ['1392', '720'])
+            # Cok genis/dar pencere 21:9 ve 4:3 ile sinirlanir.
+            self.assertEqual(system.fit_remote(5000, 500)[1], '1680x720')
+            self.assertEqual(system.fit_remote(500, 900)[1], '960x720')
+
+    def test_invalid_size_rejected(self):
+        with patch.object(system, 'run_user') as cmd:
+            self.assertFalse(system.fit_remote('x', 10)[0])
+            self.assertFalse(system.fit_remote(100, 50)[0])
+        cmd.assert_not_called()
 
 
 class FanTests(unittest.TestCase):

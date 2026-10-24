@@ -11,14 +11,14 @@
 <p align="center"><strong>Flash the SD card. Power on the Pi. Connect from a browser.</strong></p>
 
 <p align="center">
-  <a href="https://github.com/ferhatozcelik/maker-os/releases/tag/v1.0.0"><img src="https://img.shields.io/badge/release-v1.0.0-c8102e" alt="Release v1.0.0"></a>
+  <a href="https://github.com/ferhatozcelik/maker-os/releases/latest"><img src="https://img.shields.io/github/v/release/ferhatozcelik/maker-os?label=release&color=c8102e" alt="Latest release"></a>
   <img src="https://img.shields.io/badge/Raspberry%20Pi-4%20%7C%20400%20%7C%203B%2B-c8102e" alt="Raspberry Pi 4, 400, 3B+">
   <img src="https://img.shields.io/badge/base-Pardus%2021%20arm64-c8102e" alt="Base: Pardus 21 arm64">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-c8102e" alt="GPL-3.0 license"></a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/ferhatozcelik/maker-os/releases/tag/v1.0.0">Download</a> ·
+  <a href="https://github.com/ferhatozcelik/maker-os/releases/latest">Download</a> ·
   <a href="#setup-guide">Setup guide</a> ·
   <a href="#features">Features</a> ·
   <a href="#building-from-source">Build</a> ·
@@ -62,7 +62,7 @@ See the [screenshot gallery](docs/screenshots.md).
 
 ## Download
 
-[Release 1.0.0](https://github.com/ferhatozcelik/maker-os/releases/tag/v1.0.0): `maker-os-<version>.img.xz` (Raspberry Pi 4 / 400 / 3B+, 64-bit).
+[Latest release](https://github.com/ferhatozcelik/maker-os/releases/latest): `maker-os-<version>.img.xz` (Raspberry Pi 4 / 400 / 3B+, 64-bit).
 Verify it with `sha256sum -c maker-os-*.img.xz.sha256`.
 
 The user interface is in Turkish; the desktop language and keyboard layout can
@@ -86,7 +86,7 @@ be changed under **Center → Dil ve Klavye** (Language and Keyboard).
 
 ## Setup guide
 
-1. Download the `.img.xz` from the [release page](https://github.com/ferhatozcelik/maker-os/releases/tag/v1.0.0) (16 GB+ card recommended) and write it with [Raspberry Pi Imager](https://www.raspberrypi.com/software/) → **Use custom**. Do **not** use Imager's OS customisation. balenaEtcher also works.
+1. Download the `.img.xz` from the [release page](https://github.com/ferhatozcelik/maker-os/releases/latest) (16 GB+ card recommended) and write it with [Raspberry Pi Imager](https://www.raspberrypi.com/software/) → **Use custom**. Do **not** use Imager's OS customisation. balenaEtcher also works.
 2. Optional: copy `wifi-example.txt` on the `bootfs` partition to `wifi.txt` and fill in `SSID` and `PAROLA` (password).
 3. Power on the Pi. On first boot the root partition grows to fill the card and SSH host keys are generated (~1 min).
 4. Connect:

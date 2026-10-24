@@ -29,6 +29,10 @@ def serve(handler):
         up.sendall(("\r\n".join(lines) + "\r\n\r\n").encode("latin-1"))
         up.settimeout(None)
         client.settimeout(None)
+        # Fare/klavye olaylari kucuk paketlerdir: Nagle beklemesi (~40 ms)
+        # olmadan hemen gonderilsin.
+        for sock in (client, up):
+            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         # WebSocket istemcisi 101 yanitini almadan veri gondermez; rfile
         # tamponunda bekleyen bayt olmaz, dogrudan sokete gecilir.
         socks = [client, up]
