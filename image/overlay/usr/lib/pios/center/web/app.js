@@ -1111,20 +1111,25 @@ async function landscape() {
 // Uzak masaustu tarayici alaninin oranina gecer (siyah bosluk kalmaz);
 // monitor takiliysa sunucu cozunurlugu degistirmez.
 let fitKey = "";
-function fitScreen() {
+// Boyut degisince sunucu x11vnc'yi yeniden baslatir; baglanti kopar ve
+// asagidaki yeniden baglanma yeni boyutla temiz bir goruntu alir.
+async function fitScreen() {
   const el = $("#screen"), w = el.clientWidth, h = el.clientHeight;
   const key = (w / h).toFixed(2);
   if (el.hidden || !w || !h || key === fitKey) return;
   fitKey = key;
-  api("/api/vnc/fit", { width: w, height: h }).catch(() => { /* olcekleme yine calisir */ });
+  try { await api("/api/vnc/fit", { width: w, height: h }, 20000); }
+  catch { /* olcekleme yine calisir */ }
 }
 let fitTimer = 0;
 window.addEventListener("resize", () => { clearTimeout(fitTimer); fitTimer = setTimeout(fitScreen, 600); });
 async function openScreen() {
   $("#app").hidden = true; $("#screen").hidden = false;
   if (touch) landscape();
-  fitScreen();
-  if (rfb) return;
+  if (rfb) { fitScreen(); return; }
+  // Once cozunurluk, sonra baglanti: ilk kare dogru boyutta gelir.
+  await fitScreen();
+  if (rfb || $("#screen").hidden) return;
   const { password, path } = await api("/api/vnc");
   const [{ default: RFB }, ks, kd] = await Promise.all([import("/novnc/core/rfb.js"),
     import("/novnc/core/input/keysym.js"), import("/novnc/core/input/keysymdef.js")]);
@@ -1145,12 +1150,13 @@ async function openScreen() {
     rfb.qualityLevel = 6;
     rfb.addEventListener("connect", () => {
       $("#screenState").textContent = "bağlı";
+      requestAnimationFrame(rescale);
       try { rfb.focus(); } catch { /* yok */ }
     });
     rfb.addEventListener("disconnect", e => {
       $("#screenState").textContent = e.detail.clean ? "bağlantı kapandı" : "bağlantı koptu, yeniden deneniyor…";
       rfb = null;
-      if (!e.detail.clean && location.hash === "#ekran") setTimeout(connect, 2000);
+      if (!e.detail.clean && location.hash === "#ekran") setTimeout(connect, 1500);
     });
     rfb.addEventListener("credentialsrequired", () => rfb.sendCredentials({ password: prompt("Uzak ekran parolası:") || "" }));
   };

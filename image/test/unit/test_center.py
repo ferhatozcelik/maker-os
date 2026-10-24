@@ -135,12 +135,22 @@ class RemoteFitTests(unittest.TestCase):
         cmd.assert_not_called()
 
     def test_browser_ratio_at_720p(self):
-        with patch.object(system, 'monitor_attached', return_value=False), patch.object(system, 'run_user', return_value=(0, '', '')) as cmd:
+        with patch.object(system, 'monitor_attached', return_value=False), patch.object(system, 'run_user', return_value=(0, 'same\n', '')) as cmd:
             self.assertEqual(system.fit_remote(2000, 1037), (True, '1392x720'))
             self.assertEqual(cmd.call_args.args[0][-2:], ['1392', '720'])
             # Cok genis/dar pencere 21:9 ve 4:3 ile sinirlanir.
             self.assertEqual(system.fit_remote(5000, 500)[1], '1680x720')
             self.assertEqual(system.fit_remote(500, 900)[1], '960x720')
+
+    def test_changed_mode_restarts_vnc(self):
+        with patch.object(system, 'monitor_attached', return_value=False), patch.object(system, 'run_user', return_value=(0, '', '')), patch.object(system.os.path, 'isdir', return_value=True), patch.object(system, 'run', return_value=(0, '', '')) as root:
+            self.assertTrue(system.fit_remote(2000, 1037)[0])
+        root.assert_called_once_with(['systemctl', 'restart', 'pios-vnc.service'], timeout=20)
+
+    def test_same_mode_keeps_vnc(self):
+        with patch.object(system, 'monitor_attached', return_value=False), patch.object(system, 'run_user', return_value=(0, 'same\n', '')), patch.object(system, 'run') as root:
+            self.assertTrue(system.fit_remote(2000, 1037)[0])
+        root.assert_not_called()
 
     def test_invalid_size_rejected(self):
         with patch.object(system, 'run_user') as cmd:

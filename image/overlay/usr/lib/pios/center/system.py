@@ -464,6 +464,8 @@ FIT_SCRIPT = r"""
 out=$(xrandr --current | awk '/ connected/ {print $1; exit}')
 [ -n "$out" ] || exit 3
 name="pios-${1}x${2}"
+cur=$(xrandr --current | awk '/ connected/ {f=1; next} f && /\*/ {print $1; exit}')
+[ "$cur" = "$name" ] && { echo same; exit 0; }
 if ! xrandr --current | grep -q "^ *$name "; then
   ml=$(cvt "$1" "$2" 60 | sed -n 's/^Modeline "[^"]*" *//p')
   xrandr --newmode "$name" $ml && xrandr --addmode "$out" "$name" || exit 4
@@ -495,10 +497,16 @@ def fit_remote(width, height):
     # Oran 4:3 ile 21:9 arasi; genislik 8'in kati (cvt bunu bekler).
     ratio = min(max(width / height, 4 / 3), 21 / 9)
     w = int(round(REMOTE_HEIGHT * ratio / 8.0)) * 8
-    rc, _, err = run_user(["sh", "-c", FIT_SCRIPT, "fit", str(w), str(REMOTE_HEIGHT)], timeout=15)
+    rc, out, err = run_user(["sh", "-c", FIT_SCRIPT, "fit", str(w), str(REMOTE_HEIGHT)], timeout=15)
     if rc:
         return False, "Çözünürlük değiştirilemedi: " + (err or "xrandr %s" % rc)
-    return True, "%dx%d" % (w, REMOTE_HEIGHT)
+    if out.strip() == "same":
+        return True, "%dx%d" % (w, REMOTE_HEIGHT)
+    # x11vnc canli boyut degisikliginde siyah/eksik kare verebiliyor: yeniden
+    # baslatilir, tarayici yeni boyutla temiz baglanir (~2 sn).
+    if os.path.isdir("/run/systemd/system"):
+        run(["systemctl", "restart", "pios-vnc.service"], timeout=20)
+    return True, "%dx%d yeniden" % (w, REMOTE_HEIGHT)
 
 
 def vnc_password():

@@ -1,5 +1,9 @@
 # Değişiklik günlüğü
 
+## 1.0.2
+
+- **Uzak ekran siyah/kesik görüntü düzeltmesi:** Ekran açılınca önce çözünürlük tarayıcıya uydurulur, bağlantı sonra kurulur. Boyut değişirse x11vnc yeniden başlatılır ve tarayıcı yeni boyutla temiz bağlanır (~1,5 sn); canlı boyut değişikliğinden kaynaklanan siyah ekran ve alttan kesilen dock giderildi. Oran aynıysa hiçbir şey değişmez
+
 ## 1.0.1
 
 Uzak ekran (Merkez → Ekran) daha hızlı ve tarayıcıyı tam kaplar.
