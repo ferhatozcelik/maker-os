@@ -18,7 +18,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 UPLOAD=1
 [[ "${1:-}" == --yerel ]] && UPLOAD=0
-REPO="${PIOS_GITHUB_REPO:-$(cd "$ROOT" && gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null || echo ferhatozcelik/pardus-maker)}"
+REPO="${PIOS_GITHUB_REPO:-$(cd "$ROOT" && gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null || echo ferhatozcelik/maker-os)}"
 OUT="$ROOT/image/out/depo"
 
 if (( UPLOAD )); then
@@ -46,7 +46,7 @@ if (( UPLOAD )); then
   echo "== 3/3 GitHub Release: $ID =="
   # On surum: OTA'nin "son yayin" denetimi bunu imaj yayini sanmaz.
   gh release create "$ID" --repo "$REPO" --prerelease --title "Paket deposu $ID" \
-    --notes "Pardus Maker paket deposu (vendor/sync.sh). Build bu dosyalari vendor/depo.lock ile dogrulayarak kullanir; elle indirmeniz gerekmez." \
+    --notes "MakerOS paket deposu (vendor/sync.sh). Build bu dosyalari vendor/depo.lock ile dogrulayarak kullanir; elle indirmeniz gerekmez." \
     "$OUT/$ID".tar.xz.part*
   echo
   echo "Depo yuklendi. Sonraki adim:"

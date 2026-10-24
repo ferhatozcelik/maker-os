@@ -59,7 +59,7 @@ class OtaTests(unittest.TestCase):
         build_bundle(bundle, version, files, hook)
         data = bundle.read_bytes()
         bundle.unlink()
-        name = 'pardus-maker-%s-ota.tar.xz' % version
+        name = 'maker-os-%s-ota.tar.xz' % version
         release = {'tag_name': 'v' + version, 'body': 'notlar', 'html_url': 'https://example/rel',
                    'assets': [{'name': name, 'size': len(data), 'browser_download_url': 'u/bundle'},
                               {'name': name + '.sha256', 'size': 90, 'browser_download_url': 'u/sha'}]}

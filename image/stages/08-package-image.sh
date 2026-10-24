@@ -20,7 +20,7 @@ done
 BOOT_SIZE_MIB="${PIOS_BOOT_SIZE_MIB:-512}"
 BOOT_START_MIB=4
 VERSION="$(cat "$PIOS_WORK/build-version")"
-OUT_IMG="$PIOS_OUT/pardus-maker-$VERSION.img"
+OUT_IMG="$PIOS_OUT/maker-os-$VERSION.img"
 PART_DIR="$PIOS_WORK/parts"
 mkdir -p "$PIOS_OUT" "$PART_DIR"
 

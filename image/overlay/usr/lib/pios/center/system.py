@@ -540,7 +540,7 @@ def set_remote(on):
 
 
 # --- Guncellemeler -----------------------------------------------------------
-# Sistem paketleri dis depolardan degil, Pardus Maker surumleriyle (ota.py)
+# Sistem paketleri dis depolardan degil, MakerOS surumleriyle (ota.py)
 # guncellenir; cihazda apt kaynagi yoktur (bkz. vendor/README.md).
 
 

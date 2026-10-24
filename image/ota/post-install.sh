@@ -29,8 +29,19 @@ rm -f /boot/firmware/pardus-durum.txt
 # Varsayilan arka plani hala kullanan kullanicida yenisine gec (kendi
 # resmini secen kullanicinin ayarina dokunulmaz; oturum yenilenince gorunur).
 DESKTOP_XML="$(getent passwd "$DEVICE_USER" | cut -d: -f6)/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml"
-if [ -f /usr/share/backgrounds/pardus-maker.jpg ] && [ -f "$DESKTOP_XML" ]; then
-  sed -i 's|/usr/share/backgrounds/pardus-yuzyil.svg|/usr/share/backgrounds/pardus-maker.jpg|g' "$DESKTOP_XML"
+if [ -f /usr/share/backgrounds/maker-os.jpg ] && [ -f "$DESKTOP_XML" ]; then
+  sed -i -e 's|/usr/share/backgrounds/pardus-yuzyil.svg|/usr/share/backgrounds/maker-os.jpg|g' \
+    -e 's|/usr/share/backgrounds/pardus-maker.jpg|/usr/share/backgrounds/maker-os.jpg|g' "$DESKTOP_XML"
+fi
+rm -f /usr/share/backgrounds/pardus-maker.jpg
+
+# Proje adi MakerOS oldu: varsayilan cihaz adi pardus-maker ise maker-os
+# olur (adres http://maker-os.local/). Kullanicinin verdigi ada dokunulmaz.
+if [ "$(cat /etc/hostname 2>/dev/null)" = pardus-maker ]; then
+  echo maker-os > /etc/hostname
+  sed -i 's/\bpardus-maker\b/maker-os/g' /etc/hosts
+  hostname maker-os 2>/dev/null || true
+  echo "cihaz adi: pardus-maker -> maker-os (yeniden baslatinca gecerli)"
 fi
 
 if [ -d /run/systemd/system ]; then

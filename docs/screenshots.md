@@ -6,13 +6,13 @@ terminali gerçekten çalışır; API yanıtları veya ekran içerikleri taklit 
 Masaüstü tarayıcı alanı 1440 × 1000, telefon görünümü 390 × 844 pikseldir.
 Telefon görüntüleri tarayıcının mobil emülasyonuyla alınmıştır.
 
-## Pardus Maker Merkezi
+## MakerOS Merkezi
 
 Cihaz durumu, sistem bilgileri ve yönetim bölümleri. Docker ortamında
 çekirdek, bellek ve ağ bilgileri Raspberry Pi yerine konteynerin çalıştığı
 Linux ortamını yansıtır.
 
-![Pardus Maker Merkezi genel bakış](screenshots/center.png)
+![MakerOS Merkezi genel bakış](screenshots/center.png)
 
 ## Telefon: Wi-Fi ve ağ
 
@@ -55,6 +55,6 @@ cd image
 ```
 
 Merkez: <http://localhost:8080/> · kullanıcı: `maker` · parola: `maker`.
-Konteyner arka planda çalışır. Günlükler: `docker logs pardus-maker-test`.
-Durdurmak için: `docker stop pardus-maker-test`; tekrar başlatmak için:
-`docker start pardus-maker-test`.
+Konteyner arka planda çalışır. Günlükler: `docker logs maker-os-test`.
+Durdurmak için: `docker stop maker-os-test`; tekrar başlatmak için:
+`docker start maker-os-test`.

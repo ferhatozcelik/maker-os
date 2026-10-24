@@ -230,7 +230,7 @@ def action(plugin_id, operation):
             return False, 'Eklenti kimliği klasörle uyuşmuyor.'
         uv = shutil.which('uv')
         if not uv:
-            return False, 'uv bulunamadı. Pardus Maker geliştirme araçlarını kurun.'
+            return False, 'uv bulunamadı. MakerOS geliştirme araçlarını kurun.'
         env = session_env()
         cmd = ['systemd-run', '--unit=' + unit, '--service-type=exec',
                '--property=User=' + USER, '--property=WorkingDirectory=' + root,

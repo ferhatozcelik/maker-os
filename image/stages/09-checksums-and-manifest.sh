@@ -12,7 +12,7 @@ BASE="$(basename "$OUT_IMG" .img)"
 
 echo "== manifest =="
 {
-  echo "pardus-maker $VERSION"
+  echo "maker-os $VERSION"
   echo "taban      : Pardus $PARDUS_SUITE ($PARDUS_ARCH)"
   echo "kernel     : $(cat "$PIOS_WORK/kernel-version")"
   echo "rpi-fw     : raspberrypi/firmware@$(depo_version RPI_FIRMWARE_REF) ($RPI_FIRMWARE_BRANCH)"

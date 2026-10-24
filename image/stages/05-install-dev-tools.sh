@@ -4,7 +4,7 @@
 #  - Node.js LTS (Codex/Gemini gibi npm tabanli agent CLI'lari icin)
 #  - VS Code (arm64)
 # Agent CLI'lari (Claude Code, Codex, Gemini, Antigravity) imaja gomulmez;
-# hesap gerektirdikleri icin Pardus Maker Merkezi > Agent'lar'dan kurulur.
+# hesap gerektirdikleri icin MakerOS Merkezi > Agent'lar'dan kurulur.
 #
 # Build modunda her sey vendor deposundan gelir (uv --offline, Python
 # arsivleri yerel aynadan, surumler vendor/versions.env ve
@@ -158,7 +158,7 @@ in_chroot node --version
 echo "== VS Code (arm64) =="
 # Yarim kalmis bir onceki build'den kalan dpkg islemlerini tamamla.
 in_chroot dpkg --configure -a
-# Cihaz paketleri yalnizca Pardus Maker surumleriyle (OTA) gunceller;
+# Cihaz paketleri yalnizca MakerOS surumleriyle (OTA) gunceller;
 # Microsoft deposu eklenmez.
 echo "code code/add-microsoft-repo boolean false" | in_chroot debconf-set-selections
 if is_sync; then

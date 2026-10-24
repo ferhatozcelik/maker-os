@@ -3,7 +3,9 @@
 #  1. /boot/firmware/wifi.txt varsa (istege bagli) Wi-Fi profili olarak
 #     eklenir ve parola iceren dosya silinir.
 #  2. Ethernet/Wi-Fi ile varsayilan rota bekleme suresi icinde olusmazsa
-#     wlan0 uzerinde "Pardus-Maker-XXXX" erisim noktasi acilir.
+#     once yakindaki aglar taranir (liste /run/pios/wifi-scan.txt), sonra
+#     wlan0 uzerinde sifresiz "MakerOS" kurulum agi acilir. Baglanan
+#     telefonda kurulum sayfasi kendiliginden acilir (Merkez /kurulum).
 #  3. Bulunan adresler /boot/firmware/pardus-status.txt dosyasina yazilir
 #     (SD kart bilgisayara takilarak okunabilir).
 set -u
@@ -18,7 +20,8 @@ BOOT=/boot/firmware
 WIFI_TXT="$BOOT/wifi.txt"
 STATUS="$BOOT/pardus-status.txt"
 HOTSPOT_CON=pardus-hotspot
-HOTSPOT_PSK="${PIOS_HOTSPOT_PSK:-pardus1234}"
+HOTSPOT_SSID=MakerOS
+SCAN_CACHE=/run/pios/wifi-scan.txt
 WAIT_SECS="${PIOS_FALLBACK_WAIT:-45}"
 MODE="istemci"
 
@@ -53,27 +56,30 @@ start_hotspot() {
     log "wlan0 yok, erisim noktasi acilamiyor"
     return 1
   fi
-  if ! nmcli -t -f NAME con show | grep -Fxq "$HOTSPOT_CON"; then
-    suffix="$(tr -d ':' < /sys/class/net/wlan0/address | tail -c 5 | tr 'a-f' 'A-F')"
-    nmcli con add type wifi ifname wlan0 con-name "$HOTSPOT_CON" autoconnect no \
-      ssid "Pardus-Maker-$suffix" mode ap 802-11-wireless.band bg 802-11-wireless.channel 6 \
-      ipv4.method shared ipv4.addresses 10.42.0.1/24 ipv6.method ignore \
-      wifi-sec.key-mgmt wpa-psk wifi-sec.proto rsn wifi-sec.pairwise ccmp \
-      wifi-sec.group ccmp wifi-sec.psk "$HOTSPOT_PSK" >/dev/null
-  fi
+  # Erisim noktasi acikken radyo tarayamaz: kurulum sayfasinin listesi simdi alinir.
+  nmcli radio wifi on >/dev/null 2>&1
+  nmcli --wait 25 -t -f IN-USE,SSID,SIGNAL,SECURITY device wifi list ifname wlan0 --rescan yes \
+    > "$SCAN_CACHE.tmp" 2>/dev/null && mv "$SCAN_CACHE.tmp" "$SCAN_CACHE"
+  log "$(grep -c . "$SCAN_CACHE" 2>/dev/null || echo 0) ag bulundu"
+  # Eski surumlerin profili (Pardus-Maker-XXXX, sifreli) her acilista yenilenir.
+  nmcli con delete "$HOTSPOT_CON" >/dev/null 2>&1
+  nmcli con add type wifi ifname wlan0 con-name "$HOTSPOT_CON" autoconnect no \
+    ssid "$HOTSPOT_SSID" mode ap 802-11-wireless.band bg 802-11-wireless.channel 6 \
+    ipv4.method shared ipv4.addresses 10.42.0.1/24 ipv6.method ignore >/dev/null
   nmcli con up "$HOTSPOT_CON" >/dev/null && MODE="erisim-noktasi"
 }
 
 write_status() {
   {
-    echo "Pardus Maker - ag durumu"
+    echo "MakerOS - ag durumu"
     echo "Zaman      : $(date '+%Y-%m-%d %H:%M:%S')"
     echo "Surum      : $(cat /etc/pios-build-version 2>/dev/null)"
     echo "Ana makine : $(hostname).local"
     echo "Mod        : $MODE"
     if [ "$MODE" = "erisim-noktasi" ]; then
-      echo "Wi-Fi agi  : $(nmcli -g 802-11-wireless.ssid con show "$HOTSPOT_CON" 2>/dev/null)"
-      echo "Wi-Fi sifre: $HOTSPOT_PSK"
+      echo "Wi-Fi agi  : $HOTSPOT_SSID (sifresiz)"
+      echo "Kurulum    : telefonu $HOTSPOT_SSID agina baglayin; kurulum sayfasi acilir"
+      echo "             (acilmazsa http://10.42.0.1/kurulum)"
     fi
     echo
     echo "IPv4 adresleri:"

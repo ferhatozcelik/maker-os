@@ -1,4 +1,4 @@
-# Pardus Maker Merkezi ortak yardimcilari: komut calistirma, masaustu
+# MakerOS Merkezi ortak yardimcilari: komut calistirma, masaustu
 # oturumunda kullanici olarak calistirma, arka plan isleri (jobs).
 import itertools
 import os

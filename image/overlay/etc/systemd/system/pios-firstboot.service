@@ -1,5 +1,5 @@
 [Unit]
-Description=Pardus Maker ilk acilis hazirligi (bolum genisletme, SSH anahtarlari)
+Description=MakerOS ilk acilis hazirligi (bolum genisletme, SSH anahtarlari)
 ConditionPathExists=!/var/lib/pios/firstboot-done
 After=local-fs.target
 Before=ssh.service lightdm.service

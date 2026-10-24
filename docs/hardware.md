@@ -78,7 +78,7 @@ Terminalden: `arecord -l`, `aplay -l`, `arecord -d 5 kayit.wav`.
 | Wi-Fi | Merkez → Wi-Fi ve Ağ; veya karta `wifi.txt` |
 | Okul/kurum ağı (eduroam vb.) | Ağ "kurumsal (802.1X)" görünür; kullanıcı adı ve parola sorulur (PEAP/MSCHAPv2) |
 | Gizli ağ | Wi-Fi ve Ağ → Gizli ağ… |
-| Ağ yok | 45 sn sonra `Pardus-Maker-XXXX` erişim noktası (parola `pardus1234`, adres 10.42.0.1) |
+| Ağ yok | 45 sn sonra şifresiz `MakerOS` kurulum ağı; kurulum sayfası kendiliğinden açılır (10.42.0.1/kurulum) |
 
 Pi'de tek Wi-Fi radyosu vardır: bir ağa bağlanınca erişim noktası kapanır.
 Wi-Fi ülke kodu `TR` olarak ayarlıdır (`cmdline.txt`).

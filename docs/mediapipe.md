@@ -1,7 +1,7 @@
 # MediaPipe örnekleri
 
 [MediaPipe](https://github.com/google-ai-edge/mediapipe), Google'ın cihaz
-üzerinde çalışan görüntü işleme ve yapay zeka kütüphanesidir. Pardus Maker,
+üzerinde çalışan görüntü işleme ve yapay zeka kütüphanesidir. MakerOS,
 Raspberry Pi kamerasıyla doğrudan çalışan 7 hazır proje şablonu ve bunların
 modellerini imajla birlikte getirir; internet olmadan da kurulup çalışır.
 
@@ -24,7 +24,7 @@ uv run main.py --genislik 1280 --yukseklik 720
 ```
 
 Sonuç Pi'nin ekranında bir pencerede (`q` veya `Esc` ile çıkılır) ve
-`http://pardus-maker.local:8000/` adresinde canlı görünür; telefondan da
+`http://maker-os.local:8000/` adresinde canlı görünür; telefondan da
 açılabilir. Terminalden `Ctrl+C` ile durdurulur.
 
 Tek resim veya resim klasörü analizinde web yayını açılmaz: her resim

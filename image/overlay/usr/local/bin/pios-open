@@ -1,5 +1,5 @@
 #!/bin/sh
-# Pardus Maker Merkezi'nin bir bolumunu Chromium uygulama penceresinde acar.
+# MakerOS Merkezi'nin bir bolumunu Chromium uygulama penceresinde acar.
 # Kullanim: pios-open [genel|wifi|python|projeler|agent|terminal|kamera|usb|gpio|...]
 # Pencere ekranin ~%70'i boyutunda ve ortada acilir (tam ekran degil).
 SECTION="${1:-genel}"

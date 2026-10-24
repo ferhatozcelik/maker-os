@@ -73,8 +73,8 @@ echo "== apt dizini =="
   mkdir -p "dists/$PARDUS_SUITE/main/binary-arm64"
   apt-ftparchive packages pool > "dists/$PARDUS_SUITE/main/binary-arm64/Packages" 2>/dev/null
   gzip -9kn "dists/$PARDUS_SUITE/main/binary-arm64/Packages"
-  apt-ftparchive -o APT::FTPArchive::Release::Origin="Pardus Maker" \
-    -o APT::FTPArchive::Release::Label="Pardus Maker" \
+  apt-ftparchive -o APT::FTPArchive::Release::Origin="MakerOS" \
+    -o APT::FTPArchive::Release::Label="MakerOS" \
     -o APT::FTPArchive::Release::Suite="$PARDUS_SUITE" \
     -o APT::FTPArchive::Release::Codename="$PARDUS_SUITE" \
     -o APT::FTPArchive::Release::Architectures="arm64 all" \
@@ -113,7 +113,7 @@ echo "== paketleniyor ($DEPO_ID) =="
 tar -C "$NEW" -cf - . | xz -T0 -6 | split -b 1900M -d -a 2 - "$PIOS_OUT/depo/$DEPO_ID.tar.xz.part"
 { echo "# vendor/sync.sh tarafindan uretilir; build bu parcalari indirip dogrular."
   echo "id=$DEPO_ID"
-  echo "url=https://github.com/${PIOS_GITHUB_REPO:-ferhatozcelik/pardus-maker}/releases/download/$DEPO_ID"
+  echo "url=https://github.com/${PIOS_GITHUB_REPO:-ferhatozcelik/maker-os}/releases/download/$DEPO_ID"
   for p in "$PIOS_OUT/depo/$DEPO_ID".tar.xz.part*; do
     echo "part=$(sha256sum "$p" | cut -d' ' -f1) $(basename "$p")"
   done; } > "$LOCKS/depo.lock"

@@ -60,18 +60,18 @@ jobs:
         run: |
           V="${{ steps.v.outputs.version }}"
           {
-            echo "Pardus Maker $V — Raspberry Pi için hazır kurulu Pardus imajı."
+            echo "MakerOS $V — Raspberry Pi için hazır kurulu Pardus imajı."
             echo
             # CHANGELOG'daki "## $V" bolumu
             awk -v v="## $V" '$0 == v {on=1; next} /^## / && on {exit} on' CHANGELOG.md
             echo
             echo "## Kurulum"
             echo "- **Kurulu cihaz:** Merkez → Güncellemeler → Güncelle (önce yedek alınır; onaylayınca yedek silinir)."
-            echo "- **Yeni kart:** \`pardus-maker-$V.img.xz\` dosyasını Raspberry Pi Imager → *Use custom* ile en az 16 GB karta yazın."
+            echo "- **Yeni kart:** \`maker-os-$V.img.xz\` dosyasını Raspberry Pi Imager → *Use custom* ile en az 16 GB karta yazın."
             echo
-            echo "Doğrulama: \`shasum -a 256 -c pardus-maker-$V.img.xz.sha256\`"
+            echo "Doğrulama: \`shasum -a 256 -c maker-os-$V.img.xz.sha256\`"
             echo
-            echo "İlk giriş: \`http://pardus-maker.local/\` — \`maker\` / \`maker\` (ilk iş parolayı değiştirin)."
+            echo "İlk giriş: \`http://maker-os.local/\` — \`maker\` / \`maker\` (ilk iş parolayı değiştirin)."
           } > "$RUNNER_TEMP/notes.md"
           cat "$RUNNER_TEMP/notes.md"
 
@@ -81,7 +81,7 @@ jobs:
           V="${{ steps.v.outputs.version }}"
           cd image/out
           ls -lh
-          gh release create "v$V" --target "$GITHUB_SHA" --title "Pardus Maker $V" \
+          gh release create "v$V" --target "$GITHUB_SHA" --title "MakerOS $V" \
             --notes-file "$RUNNER_TEMP/notes.md" --latest \
-            "pardus-maker-$V.img.xz" "pardus-maker-$V.img.xz.sha256" "pardus-maker-$V.img.sha256" \
-            "pardus-maker-$V.manifest.txt" "pardus-maker-$V-ota.tar.xz" "pardus-maker-$V-ota.tar.xz.sha256"
+            "maker-os-$V.img.xz" "maker-os-$V.img.xz.sha256" "maker-os-$V.img.sha256" \
+            "maker-os-$V.manifest.txt" "maker-os-$V-ota.tar.xz" "maker-os-$V-ota.tar.xz.sha256"

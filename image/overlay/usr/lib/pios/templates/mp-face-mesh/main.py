@@ -3,7 +3,7 @@ kirpmalarini sayar, gulumsemeyi ve agiz acikligini gosterir
 (blendshape degerleri). Ornek fikir: goz kirpinca GPIO ile bir sey yapmak.
 
 Calistirma:  uv run main.py
-Web yayini:  http://pardus-maker.local:8000/
+Web yayini:  http://maker-os.local:8000/
 """
 from pios_camera import Gosterici, Kamera, arguman_ayristirici, analiz, calisma_modu, performans_ayarla
 

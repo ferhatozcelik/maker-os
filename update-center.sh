@@ -3,7 +3,7 @@
 # Yalnız paket üret: ./update-center.sh --package
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")" && pwd)"
-TARGET="${1:-maker@pardus-maker.local}"
+TARGET="${1:-maker@maker-os.local}"
 STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT
 mkdir -p "$STAGE/usr/lib/pios" "$ROOT/image/out"
@@ -18,7 +18,7 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 /usr/bin/python3 -c 'import sys; assert sys.version_info >= (3,9), "Python 3.9 veya sonrası gerekli"'
 /usr/bin/python3 -m compileall -q "$HERE/usr/lib/pios/center"
 /usr/bin/python3 -m compileall -q "$HERE/usr/lib/pios/templates"
-[[ -d /usr/lib/pios/center ]] || { echo 'Pardus Maker Merkezi bulunamadı.'; exit 1; }
+[[ -d /usr/lib/pios/center ]] || { echo 'MakerOS Merkezi bulunamadı.'; exit 1; }
 BACKUP="$(mktemp -d /var/backups/pios-center.XXXXXXXX)"
 cp -a /usr/lib/pios/center "$BACKUP/center"
 if [[ -d /usr/lib/pios/templates ]]; then
@@ -54,13 +54,13 @@ echo "Merkez ve MediaPipe şablonları güncellendi. Önceki sürüm: $BACKUP"
 echo 'Mevcut kişisel projeler değiştirilmedi. Optimize örnekler için yeni proje oluşturun.'
 echo 'Tarayıcı sayfasını yenileyin. Fan ayarlarını kaydettikten sonra Pi’yi yeniden başlatın.'
 INSTALL
-ARCHIVE="$ROOT/image/out/pardus-maker-center-update.tar.gz"
+ARCHIVE="$ROOT/image/out/maker-os-center-update.tar.gz"
 COPYFILE_DISABLE=1 tar --exclude='__pycache__' --exclude='*.pyc' -czf "$ARCHIVE" -C "$STAGE" .
 printf 'Güncelleme paketi: %s\n' "$ARCHIVE"
 [[ "$TARGET" == --package ]] && exit 0
 [[ "$TARGET" =~ ^[a-zA-Z0-9_.@:-]+$ && "$TARGET" != -* ]] || { echo 'Geçersiz SSH hedefi.' >&2; exit 1; }
-REMOTE_DIR="$(ssh -o ConnectTimeout=8 "$TARGET" 'mktemp -d /tmp/pardus-maker-update.XXXXXXXX')"
-[[ "$REMOTE_DIR" =~ ^/tmp/pardus-maker-update\.[a-zA-Z0-9]+$ ]] || { echo 'Uzak geçici klasör doğrulanamadı.' >&2; exit 1; }
+REMOTE_DIR="$(ssh -o ConnectTimeout=8 "$TARGET" 'mktemp -d /tmp/maker-os-update.XXXXXXXX')"
+[[ "$REMOTE_DIR" =~ ^/tmp/maker-os-update\.[a-zA-Z0-9]+$ ]] || { echo 'Uzak geçici klasör doğrulanamadı.' >&2; exit 1; }
 scp "$ARCHIVE" "$TARGET:$REMOTE_DIR/update.tar.gz"
 # sudo parolası için TTY gerekir; arşiv ayrı SCP bağlantısıyla gönderildi.
 ssh -t "$TARGET" "tar -xzf '$REMOTE_DIR/update.tar.gz' -C '$REMOTE_DIR' && sudo bash '$REMOTE_DIR/install-update.sh' && rm -rf '$REMOTE_DIR'"

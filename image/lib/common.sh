@@ -12,7 +12,7 @@ PIOS_OUT="${PIOS_OUT:-$IMAGE_DIR/out}"
 PIOS_CACHE="${PIOS_CACHE:-$PIOS_WORK/cache}"
 ROOTFS_DIR="${ROOTFS_DIR:-$PIOS_WORK/rootfs}"
 
-PIOS_HOSTNAME="${PIOS_HOSTNAME:-pardus-maker}"
+PIOS_HOSTNAME="${PIOS_HOSTNAME:-maker-os}"
 PIOS_USER="${PIOS_USER:-maker}"
 PIOS_PASSWORD="${PIOS_PASSWORD:-maker}"
 # Masaustu cozunurlugu (monitor olmasa da). 1280x720: uzak ekran (VNC) Pi'de

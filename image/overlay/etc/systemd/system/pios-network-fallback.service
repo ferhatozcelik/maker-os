@@ -1,5 +1,5 @@
 [Unit]
-Description=Pardus Maker ekransiz ag (wifi.txt, yedek erisim noktasi)
+Description=MakerOS ekransiz ag (wifi.txt, yedek erisim noktasi)
 After=NetworkManager.service pios-firstboot.service
 Wants=NetworkManager.service
 

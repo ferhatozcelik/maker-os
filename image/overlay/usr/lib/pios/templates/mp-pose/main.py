@@ -3,7 +3,7 @@ kol kaldirma tekrarlarini sayar. Kameraya tum vucudunuz gorunecek kadar
 uzakta durun (yaklasik 2-3 m).
 
 Calistirma:  uv run main.py
-Web yayini:  http://pardus-maker.local:8000/
+Web yayini:  http://maker-os.local:8000/
 """
 from pios_camera import Gosterici, Kamera, arguman_ayristirici, analiz, calisma_modu, performans_ayarla
 

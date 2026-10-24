@@ -105,7 +105,7 @@ fi
 
 echo "== config.txt / cmdline.txt yaziliyor =="
 cat > "$BOOT_DIR/config.txt" <<'CFG'
-# Pardus Maker - Raspberry Pi 4 / 400 / 3B+ (arm64)
+# MakerOS - Raspberry Pi 4 / 400 / 3B+ (arm64)
 arm_64bit=1
 kernel=kernel8.img
 

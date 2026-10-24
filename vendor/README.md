@@ -1,6 +1,6 @@
 # Paket deposu (vendor)
 
-Pardus Maker'ın imajı ve cihazları dış depolara bağlı değildir. İmaja giren her
+MakerOS'un imajı ve cihazları dış depolara bağlı değildir. İmaja giren her
 paket ve dosya (Pardus/Debian paketleri, Raspberry Pi çekirdeği ve kamera yığını,
 VS Code, Node.js, Python sürümleri, AI ortamının Python paketleri, MediaPipe
 modelleri, xterm.js) **kendi paket depomuzdan** gelir. Depoyu ne zaman
@@ -10,7 +10,7 @@ yenileyeceğinize siz karar verirsiniz.
 | --- | --- |
 | `vendor/sync.sh` (siz çalıştırırsınız) | Pardus, Raspberry Pi, Microsoft, Node.js, PyPI, PyTorch, GitHub, npm, Google |
 | Build (GitHub Actions ve yerel) | Yalnızca bu reponun `depo-…` Release'i (`vendor/depo.lock`) |
-| Cihaz | Hiçbir paket deposuna bağlanmaz; paketler Pardus Maker sürümleriyle (OTA) gelir |
+| Cihaz | Hiçbir paket deposuna bağlanmaz; paketler MakerOS sürümleriyle (OTA) gelir |
 
 ## Dosyalar
 
@@ -74,7 +74,7 @@ Mevcut değişiklikler (`overrides/`) ve build filtreleri:
 
 ## Sınırlar
 
-- OTA geri alma Pardus Maker dosyalarını eski haline getirir; kurulan `.deb`
+- OTA geri alma MakerOS dosyalarını eski haline getirir; kurulan `.deb`
   paketlerini eski sürüme indirmez.
 - Cihazlar güvenlik yamalarını, siz `sync.sh` çalıştırıp yeni sürüm
   yayınladığınızda alır.

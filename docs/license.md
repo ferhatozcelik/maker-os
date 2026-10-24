@@ -7,7 +7,7 @@ hukuktur; gerektiğinde somut dağıtım için uzman görüşü alınmalıdır.
 
 ## Projenin kendi kaynakları
 
-Pardus Maker için geliştirilen özgün kaynaklar `GPL-3.0-or-later` kapsamındadır;
+MakerOS için geliştirilen özgün kaynaklar `GPL-3.0-or-later` kapsamındadır;
 tam metin [LICENSE](../LICENSE) dosyasındadır. Başka bir projeden alınan
 kodun mevcut telif ve lisans bildirimleri korunur. Bu deponun lisansı üçüncü
 taraf kodun lisansını değiştirmez.
@@ -44,10 +44,10 @@ iznin alındığını beyan etmez.
 
 ## Markalar ve bağımsızlık
 
-Pardus Maker bağımsız bir topluluk çalışmasıdır. TÜBİTAK, Pardus projesi
+MakerOS bağımsız bir topluluk çalışmasıdır. TÜBİTAK, Pardus projesi
 veya Raspberry Pi Ltd tarafından çıkarılmış ya da onaylanmış bir ürün
 olduğu iddia edilmez. Projeye özgü destek, bu deponun
-[Issues](https://github.com/ferhatozcelik/pardus-maker/issues) bölümündedir.
+[Issues](https://github.com/ferhatozcelik/maker-os/issues) bölümündedir.
 Pardus'un resmî projesi için [pardus.org.tr](https://pardus.org.tr/hakkimizda/)
 ziyaret edilebilir.
 

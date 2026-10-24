@@ -1,5 +1,5 @@
 [Unit]
-Description=Pardus Maker Merkezi (web: ayarlar, Python, agent, GPIO, uzak ekran; port 80)
+Description=MakerOS Merkezi (web: ayarlar, Python, agent, GPIO, uzak ekran; port 80)
 After=network.target NetworkManager.service
 
 [Service]

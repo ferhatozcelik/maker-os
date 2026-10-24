@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-# Pardus Maker Merkezi (port 80): Ayarlar, Python Yoneticisi, Agent
+# MakerOS Merkezi (port 80): Ayarlar, Python Yoneticisi, Agent
 # Yoneticisi, GPIO Pinleri, Kamera, USB aygitlari, web terminali ve uzak
 # ekran icin tek web uygulamasi.
 #
@@ -118,7 +118,7 @@ def _int(v):
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "PardusMakerMerkezi"
+    server_version = "MakerOSMerkezi"
     _body_read = True
     # Kalici baglanti: sayfa ve yoklama istekleri ayni TCP baglantisini (ve
     # is parcacigini) kullanir. Bosta kalan baglanti 60 sn sonra kapanir.
@@ -284,7 +284,7 @@ class Handler(BaseHTTPRequestHandler):
         return self.send_json({"job": jid})
 
     def ota_action(self, what):
-        """Pardus Maker surum guncellemesi. Kurulum ve geri alma Merkez'i
+        """MakerOS surum guncellemesi. Kurulum ve geri alma Merkez'i
         yeniden baslattigi icin ayri surecte calisir; arayuz /api/ota'yi yoklar."""
         st = ota.status()["status"]
         try:
@@ -311,6 +311,27 @@ class Handler(BaseHTTPRequestHandler):
         except ota.OtaError as e:
             return self.result(False, str(e))
         return self.send_json({"error": "bulunamadi"}, 404)
+
+    def redirect(self, location):
+        self.send_response(302)
+        self.send_header("Location", location)
+        self.send_header("Content-Length", "0")
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+
+    # --- Kurulum agi (MakerOS, captive portal) ----------------------------
+    # Ag yokken acilan sifresiz kurulum aginda telefonun baglanti denetimi
+    # (baska alan adlari) kurulum sayfasina yonlenir. Kurulum sayfasi ve
+    # uclari girissizdir; yalnizca kurulum agina bagli istemcilere aciktir.
+
+    def _captive(self):
+        host = (self.headers.get("Host") or "").rsplit(":", 1)[0].strip("[]").lower()
+        name = os.uname().nodename.lower()
+        return host not in (network.HOTSPOT_IP, "localhost", "127.0.0.1", "::1", name, name + ".local") \
+            and network.hotspot_on()
+
+    def _setup_client(self):
+        return self.client_address[0].startswith("10.42.0.") and network.hotspot_on()
 
     def result(self, ok, msg=""):
         return self.send_json({"ok": bool(ok), "message": msg}, 200 if ok else 400)
@@ -351,6 +372,16 @@ class Handler(BaseHTTPRequestHandler):
             if not terminal.take_ticket(query.get("ticket", [""])[0]):
                 return self.send_json({"error": "gecersiz bilet"}, 403)
             return terminal.serve(self)
+        if self._captive():
+            return self.redirect("http://%s/kurulum" % network.HOTSPOT_IP)
+        if p == "/kurulum":
+            return self.send_file(WEB_DIR, "setup.html")
+        if p == "/api/setup":
+            if not self._setup_client():
+                return self.send_json({"available": False})
+            return self.send_json({"available": True, "ssid": network.HOTSPOT_SSID,
+                                   "host": os.uname().nodename, "networks": network.cached_networks(),
+                                   "operation": network.operation()})
         # ?t= ile masaustu acilisi cerezi burada yazilir; sayfa herkese aciktir.
         authed = self.try_auth(query)
         if p in ("/", "/index.html"):
@@ -442,6 +473,18 @@ class Handler(BaseHTTPRequestHandler):
         p = url.path
         if p == "/api/login":
             return self.handle_login()
+        if p in ("/api/setup/connect", "/api/setup/scan"):
+            if not self._setup_client():
+                return self.send_json({"error": "Kurulum ağı kapalı."}, 403)
+            if self.headers.get("X-Pios") != "1":
+                return self.send_json({"error": "gecersiz istek"}, 403)
+            d = self._read_json(65536)
+            if d is None:
+                return
+            if p == "/api/setup/scan":
+                return self.result(*network.start("scan", {}))
+            return self.result(*network.start("connect", {"ssid": str(d.get("ssid", "")),
+                                                          "password": str(d.get("password", ""))}))
         if not self.try_auth(parse_qs(url.query)):
             return self.deny()
         if self.headers.get("X-Pios") != "1":

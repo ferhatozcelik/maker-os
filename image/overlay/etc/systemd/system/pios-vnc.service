@@ -1,5 +1,5 @@
 [Unit]
-Description=Pardus Maker uzak masaustu (x11vnc, ekran :0)
+Description=MakerOS uzak masaustu (x11vnc, ekran :0)
 After=lightdm.service
 Wants=lightdm.service
 

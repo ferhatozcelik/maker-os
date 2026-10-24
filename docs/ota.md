@@ -1,6 +1,6 @@
 # Kablosuz güncelleme (OTA)
 
-Kurulu bir Pardus Maker, SD kartı yeniden yazmadan yeni sürüme yükseltilir.
+Kurulu bir MakerOS, SD kartı yeniden yazmadan yeni sürüme yükseltilir.
 Güncellemeyi her zaman kullanıcı başlatır; cihaz yalnızca haber verir.
 
 ## Nasıl çalışır
@@ -9,7 +9,7 @@ Güncellemeyi her zaman kullanıcı başlatır; cihaz yalnızca haber verir.
    GitHub'daki son yayını (`releases/latest`) sorgular. Yeni sürüm varsa Pi'nin
    masaüstünde bildirim, Merkez'de uyarı görünür. Merkez → Güncellemeler →
    **Denetle** ile elle de denetlenir.
-2. **Kurulum** (Güncelle düğmesi): `pardus-maker-X.Y.Z-ota.tar.xz` indirilir,
+2. **Kurulum** (Güncelle düğmesi): `maker-os-X.Y.Z-ota.tar.xz` indirilir,
    yayındaki `.sha256` ile doğrulanır, açılır.
 3. **Yedek:** üzerine yazılacak her dosya `/var/lib/pios/ota/backup/` altına
    alınır; yeni oluşan dosyalar kaydedilir.

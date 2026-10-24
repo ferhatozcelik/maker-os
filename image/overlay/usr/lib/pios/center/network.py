@@ -7,9 +7,16 @@ import threading
 import time
 from contextlib import contextmanager
 
-from common import read_first, run
+from common import run
 
 HOTSPOT = "pardus-hotspot"
+# Kurulum agi: sifresiz; baglanan telefonda kurulum sayfasi (captive portal)
+# kendiliginden acilir. Ag yokken network-fallback.sh acar.
+HOTSPOT_SSID = "MakerOS"
+HOTSPOT_IP = "10.42.0.1"
+# Son tarama (nmcli terse ciktisi). Erisim noktasi acikken radyo tarayamaz;
+# kurulum sayfasi bu listeyi gosterir. network-fallback.sh de ayni dosyaya yazar.
+SCAN_CACHE = "/run/pios/wifi-scan.txt"
 _lock = threading.Lock()
 _state_lock = threading.Lock()
 _state = {"status": "idle", "kind": "", "message": "", "networks": [], "updated": 0}
@@ -94,15 +101,30 @@ def is_hotspot(iface):
 
 def ensure_hotspot(iface):
     if any(p["name"] == HOTSPOT for p in profiles()):
-        return
-    suffix = read_first("/sys/class/net/%s/address" % iface).replace(":", "")[-4:].upper() or "0000"
-    password = os.environ.get("PIOS_HOTSPOT_PSK", "pardus1234")
+        # Eski surumlerin profili (Pardus-Maker-XXXX, sifreli) yenisiyle degisir.
+        rc, out, _ = nm(["-g", "802-11-wireless.ssid,802-11-wireless-security.key-mgmt",
+                         "connection", "show", HOTSPOT])
+        lines = out.splitlines() + ["", ""]
+        if rc == 0 and lines[0] == HOTSPOT_SSID and not lines[1]:
+            return
+        checked(["connection", "delete", "id", HOTSPOT], "Eski erişim noktası profili silinemedi.")
     checked(["connection", "add", "type", "wifi", "ifname", iface, "con-name", HOTSPOT,
-             "autoconnect", "no", "ssid", "Pardus-Maker-" + suffix, "mode", "ap",
+             "autoconnect", "no", "ssid", HOTSPOT_SSID, "mode", "ap",
              "802-11-wireless.band", "bg", "802-11-wireless.channel", "6",
-             "ipv4.method", "shared", "ipv4.addresses", "10.42.0.1/24", "ipv6.method", "ignore",
-             "wifi-sec.key-mgmt", "wpa-psk", "wifi-sec.proto", "rsn", "wifi-sec.psk", password],
-            "Erişim noktası profili oluşturulamadı.", secrets=(password,))
+             "ipv4.method", "shared", "ipv4.addresses", HOTSPOT_IP + "/24", "ipv6.method", "ignore"],
+            "Erişim noktası profili oluşturulamadı.")
+
+
+_hotspot_cache = [0.0, False]
+
+
+def hotspot_on():
+    """Kurulum agi acik mi (5 sn onbellekli; her HTTP isteginde nmcli calismasin)."""
+    now = time.time()
+    if now - _hotspot_cache[0] > 5:
+        rc, out, _ = run(["ip", "-4", "-o", "addr", "show"], timeout=5)
+        _hotspot_cache[:] = [now, rc == 0 and (" %s/" % HOTSPOT_IP) in out]
+    return _hotspot_cache[1]
 
 
 def _stage(message):
@@ -146,7 +168,7 @@ def _worker(kind, data):
         time.sleep(1)
         with exclusive():
             if kind == "scan":
-                result = scan(bool(data.get("interrupt")))
+                result = scan()
                 with _state_lock:
                     _state["networks"] = result
                 message = "%s ağ bulundu." % len(result)
@@ -173,40 +195,58 @@ def _worker(kind, data):
         _lock.release()
 
 
-def scan(interrupt=False):
+def parse_scan(out, known=()):
+    known = set(known)
+    nets = {}
+    for line in out.splitlines():
+        p = split(line)
+        if len(p) != 4 or not p[1]:
+            continue
+        used, ssid, signal, security = p
+        entry = {"ssid": ssid, "signal": int(signal) if signal.isdigit() else 0,
+                 "secure": security not in ("", "--"), "enterprise": "802.1X" in security,
+                 "active": used == "*", "saved": ssid in known}
+        if ssid not in nets or entry["signal"] > nets[ssid]["signal"]:
+            entry["active"] = entry["active"] or nets.get(ssid, {}).get("active", False)
+            nets[ssid] = entry
+        elif entry["active"]:
+            nets[ssid]["active"] = True
+    return sorted(nets.values(), key=lambda x: (not x["active"], -x["signal"]))
+
+
+def cached_networks():
+    """Son taramanin sonucu (kurulum agi acikken radyo tarayamaz)."""
+    try:
+        with open(SCAN_CACHE, encoding="utf-8", errors="replace") as f:
+            out = f.read()
+    except OSError:
+        return []
+    return [n for n in parse_scan(out) if n["ssid"] != HOTSPOT_SSID]
+
+
+def scan():
+    # Tek radyo: erisim noktasi acikken tarama icin birkac saniye kapatilir,
+    # sonra kendiliginden geri acilir (bagli telefon kisa sure kopar).
     iface = device()
     ap = is_hotspot(iface)
-    if ap and not interrupt:
-        raise NetworkError("Erişim noktası açıkken bu Wi-Fi radyosu tarama yapamayabilir. "
-                           "‘Erişim noktasını duraklat ve tara’ seçeneğini kullanın; "
-                           "tarama sonunda erişim noktası yeniden açılır. Ağ adı biliniyorsa elle bağlanabilirsiniz.")
     try:
         if ap:
-            _stage("Erişim noktası duraklatılıyor; tarama sonunda yeniden açılacak.")
+            _stage("%s birkaç saniye kapanıyor; tarama sonunda geri açılacak." % HOTSPOT_SSID)
             checked(["connection", "down", "id", HOTSPOT], "Erişim noktası duraklatılamadı.")
             time.sleep(2)
         checked(["radio", "wifi", "on"], "Wi-Fi radyosu açılamadı. rfkill engelini kontrol edin.")
         _stage("Yakındaki Wi-Fi ağları taranıyor…")
         out = checked(["-t", "-f", "IN-USE,SSID,SIGNAL,SECURITY", "device", "wifi", "list",
                        "ifname", iface, "--rescan", "yes"], "Wi-Fi taraması başarısız oldu.", 25)
-        known = set(saved())
-        nets = {}
-        for line in out.splitlines():
-            p = split(line)
-            if len(p) != 4 or not p[1]:
-                continue
-            used, ssid, signal, security = p
-            entry = {"ssid": ssid, "signal": int(signal) if signal.isdigit() else 0,
-                     "secure": security not in ("", "--"), "enterprise": "802.1X" in security,
-                     "active": used == "*", "saved": ssid in known}
-            if ssid not in nets or entry["signal"] > nets[ssid]["signal"]:
-                entry["active"] = entry["active"] or nets.get(ssid, {}).get("active", False)
-                nets[ssid] = entry
-            elif entry["active"]:
-                nets[ssid]["active"] = True
-        return sorted(nets.values(), key=lambda x: (not x["active"], -x["signal"]))
+        try:
+            os.makedirs(os.path.dirname(SCAN_CACHE), exist_ok=True)
+            with open(SCAN_CACHE, "w", encoding="utf-8") as f:
+                f.write(out)
+        except OSError:
+            pass
+        return [n for n in parse_scan(out, saved()) if n["ssid"] != HOTSPOT_SSID]
     finally:
-        if ap and interrupt:
+        if ap:
             checked(["connection", "up", "id", HOTSPOT],
                     "Tarama sonrası erişim noktası açılamadı. Ethernet veya yerel ekran üzerinden kontrol edin.", 30)
 

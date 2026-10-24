@@ -1,7 +1,7 @@
 # Üçüncü taraf bileşenler ve lisanslar
 
-Pardus Maker'ın kendi kaynak kodu (build betikleri, `image/overlay/` altındaki
-yapılandırma, Pardus Maker Merkezi ve örnek projeler) **GNU GPL v3 veya
+MakerOS'un kendi kaynak kodu (build betikleri, `image/overlay/` altındaki
+yapılandırma, MakerOS Merkezi ve örnek projeler) **GNU GPL v3 veya
 sonrası** ile lisanslanmıştır; bkz. [`LICENSE`](LICENSE).
 
 İmaj oluşturulurken aşağıdaki bileşenler kendi lisanslarıyla indirilip imaja
@@ -33,7 +33,7 @@ kullanım koşulları geçerlidir.
 
 ## Marka ve dağıtım notları
 
-Pardus Maker bağımsız bir topluluk projesidir; TÜBİTAK, Pardus projesi veya
+MakerOS bağımsız bir topluluk projesidir; TÜBİTAK, Pardus projesi veya
 Raspberry Pi Ltd adına geliştirilmez ve bu kuruluşların onayını, ortaklığını
 veya resmî desteğini iddia etmez. Pardus adı ve görsel kimliğine ilişkin
 haklar ilgili hak sahiplerine aittir. Raspberry Pi is a trademark of

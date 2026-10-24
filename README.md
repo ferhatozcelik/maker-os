@@ -1,24 +1,24 @@
 <p align="center">
-  <a href="https://github.com/ferhatozcelik/pardus-maker">
-    <img src="docs/assets/pardus-maker-logo.svg" alt="Pardus Maker logosu" width="100">
+  <a href="https://github.com/ferhatozcelik/maker-os">
+    <img src="docs/assets/maker-os-logo.svg" alt="MakerOS logosu" width="100">
   </a>
 </p>
 
-<h1 align="center">Pardus Maker</h1>
+<h1 align="center">MakerOS</h1>
 
 <p align="center">Raspberry Pi için kurulumsuz, hazır kurulu Pardus: öğrenciler, yapıcılar ve yapay zeka projeleri.</p>
 
 <p align="center"><strong>SD karta yaz. Pi'yi aç. Tarayıcıdan bağlan.</strong></p>
 
 <p align="center">
-  <a href="https://github.com/ferhatozcelik/pardus-maker/releases/tag/v1.0.0"><img src="https://img.shields.io/badge/sürüm-v1.0.0-c8102e" alt="Sürüm v1.0.0"></a>
+  <a href="https://github.com/ferhatozcelik/maker-os/releases/tag/v1.0.0"><img src="https://img.shields.io/badge/sürüm-v1.0.0-c8102e" alt="Sürüm v1.0.0"></a>
   <img src="https://img.shields.io/badge/Raspberry%20Pi-4%20%7C%20400%20%7C%203B%2B-c8102e" alt="Raspberry Pi 4, 400, 3B+">
   <img src="https://img.shields.io/badge/taban-Pardus%2021%20arm64-c8102e" alt="Taban: Pardus 21 arm64">
   <a href="LICENSE"><img src="https://img.shields.io/badge/lisans-GPL--3.0-c8102e" alt="GPL-3.0 lisansı"></a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/ferhatozcelik/pardus-maker/releases/tag/v1.0.0">İndir</a> ·
+  <a href="https://github.com/ferhatozcelik/maker-os/releases/tag/v1.0.0">İndir</a> ·
   <a href="#kurulum-rehberi">Kurulum rehberi</a> ·
   <a href="#özellikler">Özellikler</a> ·
   <a href="#kaynaktan-derleme">Kaynaktan derleme</a> ·
@@ -35,12 +35,12 @@
 
 <table align="center">
   <tr>
-    <th align="center">Pardus Maker Merkezi</th>
+    <th align="center">MakerOS Merkezi</th>
     <th align="center">Telefon · Wi-Fi</th>
     <th align="center">Telefon · Terminal</th>
   </tr>
   <tr>
-    <td align="center" valign="top"><img src="docs/screenshots/center.png" alt="Pardus Maker Merkezi genel bakış sayfası" width="420"></td>
+    <td align="center" valign="top"><img src="docs/screenshots/center.png" alt="MakerOS Merkezi genel bakış sayfası" width="420"></td>
     <td align="center" valign="top"><img src="docs/screenshots/phone-wifi.png" alt="Telefonda Wi-Fi ve ağ ayarları" width="190"></td>
     <td align="center" valign="top"><img src="docs/screenshots/phone-terminal.png" alt="Telefonda web terminali ve ek tuş çubuğu" width="190"></td>
   </tr>
@@ -62,8 +62,8 @@ Tüm görüntüler için [ekran görüntüsü galerisine](docs/screenshots.md) b
 
 ## İndir
 
-[Sürüm 1.0.0](https://github.com/ferhatozcelik/pardus-maker/releases/tag/v1.0.0): `pardus-maker-<sürüm>.img.xz` (Raspberry Pi 4 / 400 / 3B+, 64 bit).
-İndirdikten sonra `sha256sum -c pardus-maker-*.img.xz.sha256` ile doğrulayın.
+[Sürüm 1.0.0](https://github.com/ferhatozcelik/maker-os/releases/tag/v1.0.0): `maker-os-<sürüm>.img.xz` (Raspberry Pi 4 / 400 / 3B+, 64 bit).
+İndirdikten sonra `sha256sum -c maker-os-*.img.xz.sha256` ile doğrulayın.
 
 ## Özellikler
 
@@ -71,8 +71,8 @@ Tüm görüntüler için [ekran görüntüsü galerisine](docs/screenshots.md) b
 | --- | --- |
 | Taban | Pardus 21 "Yirmibir" (Debian 11) arm64 + güvenlik güncellemeleri, Raspberry Pi'nin güncel çekirdeği (`-v8+`); tüm paketler kendi depomuzdan ([vendor](vendor/README.md)) |
 | Masaüstü | XFCE, macOS benzeri: üst çubuk + Plank dock, Pardus **100. Yıl** teması (açık/koyu), Chromium, VS Code, Dosyalar, Terminal |
-| Pardus Maker Merkezi | Tek web uygulaması (port 80), telefona uyumlu: ayarlar, ağ, tarih-saat, dil-klavye, Python, projeler, agent'lar, terminal, kamera, USB, GPIO, uzak ekran |
-| Ağ | Ethernet (durum, hız), Wi-Fi tarama, gizli ağ, okul/kurum ağı (WPA2-Enterprise, eduroam), kayıtlı ağlar; ağ yoksa `Pardus-Maker-XXXX` erişim noktası |
+| MakerOS Merkezi | Tek web uygulaması (port 80), telefona uyumlu: ayarlar, ağ, tarih-saat, dil-klavye, Python, projeler, agent'lar, terminal, kamera, USB, GPIO, uzak ekran |
+| Ağ | Ethernet (durum, hız), Wi-Fi tarama, gizli ağ, okul/kurum ağı (WPA2-Enterprise, eduroam), kayıtlı ağlar; ağ yoksa şifresiz `MakerOS` kurulum ağı ve kurulum sayfası |
 | Web terminali | Tarayıcıda gerçek kabuk (xterm.js), telefon için Esc/Tab/Ctrl/ok tuşları; root değil, `maker` kullanıcısı |
 | Kamera | Pi kamera modülleri (libcamera, picamera2) ve USB kameralar: canlı görüntü, tam çözünürlükte fotoğraf, galeri |
 | MediaPipe | Kamerayla çalışan 7 hazır proje: el takibi, jest ile LED (GPIO), yüz, poz/egzersiz sayacı, nesne algılama, arka plan ayırma, yüz ağı. Modeller imajda, internet gerekmez |
@@ -81,7 +81,7 @@ Tüm görüntüler için [ekran görüntüsü galerisine](docs/screenshots.md) b
 | İzleme ve soğutma | Türkçe Görev Yöneticisi: CPU, RAM, işlemler, anlık ağ aktarımı ve toplam sayaçlar; GPIO kontrollü fan için sıcaklık eşikleri |
 | Python eklentileri | Genel Python proje şablonu, ZIP içe aktarma, uygulama listesi, başlat/durdur ve çalışma günlüğü; [eklenti rehberi](docs/plugins.md) |
 | Agent'lar | Claude Code, Codex CLI, Gemini CLI, OpenCode, Antigravity, Ollama: Merkez'den kur, güncelle, başlat |
-| Uzak erişim | Web (masaüstü + tüm ayarlar), VNC (5900), SSH, mDNS (`pardus-maker.local`) |
+| Uzak erişim | Web (masaüstü + tüm ayarlar), VNC (5900), SSH, mDNS (`maker-os.local`) |
 
 Bilinçli olarak **yok**: ofis paketi, e-posta, görüntüleyiciler gibi genel
 masaüstü uygulamaları. Hedef: öğrenci, DIY ve yapay zeka projeleri için hızlı
@@ -100,7 +100,7 @@ gereklidir). Yazma sırasında macOS kullanıcı parolanız istenir.
 
 Grafik arayüzle yazmak için:
 
-1. [Sürüm sayfasından](https://github.com/ferhatozcelik/pardus-maker/releases/tag/v1.0.0) `.img.xz` dosyasını indirin. 16 GB veya daha büyük bir kart önerilir.
+1. [Sürüm sayfasından](https://github.com/ferhatozcelik/maker-os/releases/tag/v1.0.0) `.img.xz` dosyasını indirin. 16 GB veya daha büyük bir kart önerilir.
 2. [Raspberry Pi Imager](https://www.raspberrypi.com/software/)'da **İşletim sistemi → Özel imaj kullan** (Use custom) ile dosyayı seçin. Imager'ın "işletim sistemi özelleştirme" ayarlarını **kullanmayın**. balenaEtcher da olur.
 3. Yazma ve doğrulama bitene kadar bekleyin.
 
@@ -117,8 +117,8 @@ Pi açılınca ağı ekler ve parola içeren dosyayı siler.
 
 | Durum | Adres |
 | --- | --- |
-| Ethernet kablosu takılı veya `wifi.txt` var | `http://pardus-maker.local/` |
-| Ağ yok | ~45 sn sonra `Pardus-Maker-XXXX` Wi-Fi ağı açılır (parola `pardus1234`) → `http://10.42.0.1/` |
+| Ethernet kablosu takılı veya `wifi.txt` var | `http://maker-os.local/` |
+| Ağ yok | ~45 sn sonra şifresiz `MakerOS` Wi-Fi ağı açılır; bağlanınca kurulum sayfası kendiliğinden açılır (açılmazsa `http://10.42.0.1/kurulum`) → ağınızı seçip parolasını girin |
 | Monitör takılı | Masaüstü doğrudan açılır; Merkez dock'taki simgelerden |
 
 Giriş ekranında kullanıcı `maker`, parola `maker`. Ağdan ilk girişte masaüstü açılır;
@@ -145,7 +145,7 @@ uv run main.py --kaynak video.mp4  # kamera yoksa video dosyası
 ```
 
 Sonuç Pi'nin ekranında bir pencerede ve telefondan
-`http://pardus-maker.local:8000/` adresinde canlı görünür. Kamera aynı anda
+`http://maker-os.local:8000/` adresinde canlı görünür. Kamera aynı anda
 tek uygulamada açılabilir; örnek çalışırken Merkez'deki Kamera sayfasını kapatın.
 
 | Örnek | Ne yapar | Donanım |
@@ -172,7 +172,7 @@ tek uygulamada açılabilir; örnek çalışırken Merkez'deki Kamera sayfasın�
 Çalışan Pi'deki Merkez'i SD kartı silmeden güncellemek için:
 
 ```bash
-./update-center.sh pardus@pardus-maker.local   # cihazın IP adresi de kullanılabilir
+./update-center.sh maker@maker-os.local   # cihazın IP adresi de kullanılabilir
 ```
 
 Betik eski dosyaları yedekler ve Merkez servisini yeniden başlatır.
@@ -184,7 +184,7 @@ Apple Silicon Mac'te (arm64, qemu gerekmez) veya arm64 Linux'ta Docker ile:
 ```bash
 colima start --arch aarch64 --cpu 6 --memory 8 --disk 60   # yalnızca macOS
 cd image
-./build-docker.sh          # tüm aşamalar → image/out/pardus-maker-<sürüm>.img.xz
+./build-docker.sh          # tüm aşamalar → image/out/maker-os-<sürüm>.img.xz
 ./build-docker.sh 06       # yapılandırmadan devam et (06–09)
 ./test/run-test.sh         # imajın kök dosya sistemini Docker'da çalıştır
 ```
@@ -212,7 +212,7 @@ göre daha yavaş olabilir.
 | --- | --- |
 | Build hattı | [`image/stages/`](image/stages/), [`image/lib/`](image/lib/) |
 | Kök dosya sistemine kopyalanan dosyalar | [`image/overlay/`](image/overlay/) |
-| Pardus Maker Merkezi (Python 3.9 stdlib + web arayüzü) | [`image/overlay/usr/lib/pios/center/`](image/overlay/usr/lib/pios/center/) |
+| MakerOS Merkezi (Python 3.9 stdlib + web arayüzü) | [`image/overlay/usr/lib/pios/center/`](image/overlay/usr/lib/pios/center/) |
 | MediaPipe örnek projeleri | [`image/overlay/usr/lib/pios/templates/`](image/overlay/usr/lib/pios/templates/) |
 | Docker test konteyneri | [`image/test/`](image/test/) |
 | Belgeler: mimari, Merkez API'si, donanım, MediaPipe, sorun giderme, kararlar | [`docs/`](docs/README.md) |
@@ -222,7 +222,7 @@ ve sürümler arasında sabit tutulur.
 
 ## Lisans ve marka açıklaması
 
-Pardus Maker için bu depoda geliştirilen özgün kaynak kodu, build betikleri,
+MakerOS için bu depoda geliştirilen özgün kaynak kodu, build betikleri,
 yapılandırmalar ve örnekler **GNU Genel Kamu Lisansı sürüm 3 veya sonraki
 herhangi bir sürüm** (`GPL-3.0-or-later`) kapsamında sunulur. Kullanma,
 inceleme, değiştirme ve yeniden dağıtma hakları ile bunların koşulları
@@ -237,11 +237,11 @@ korunmalı; kaynak kodu sağlama yükümlülükleri bileşen ve dağıtım biçi
 göre yerine getirilmelidir. Yalnızca bu depoya veya üst projenin ana
 sayfasına bağlantı vermek her durumda yeterli değildir.
 
-**Pardus Maker bağımsız bir topluluk projesidir.** TÜBİTAK'ın veya Pardus
+**MakerOS bağımsız bir topluluk projesidir.** TÜBİTAK'ın veya Pardus
 projesinin resmî bir sürümü, ürünü ya da hizmeti değildir; bu kuruluşlar
 adına geliştirilmez. Bir ortaklık, sponsorluk, sertifikasyon, onay veya
 resmî destek ilişkisi iddia edilmez. Projeye özgü hata ve destek talepleri
-bu deponun [Issues](https://github.com/ferhatozcelik/pardus-maker/issues)
+bu deponun [Issues](https://github.com/ferhatozcelik/maker-os/issues)
 bölümüne iletilmelidir.
 
 Pardus adı ve görsel kimliğine ilişkin haklar ilgili hak sahiplerine aittir.

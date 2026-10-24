@@ -11,7 +11,7 @@ set -eu
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR="$(dirname "$SCRIPT_DIR")"
 
-docker build -t pardus-maker-builder -f "$SCRIPT_DIR/Dockerfile.builder" "$SCRIPT_DIR"
+docker build -t maker-os-builder -f "$SCRIPT_DIR/Dockerfile.builder" "$SCRIPT_DIR"
 docker volume create pios-work >/dev/null
 
 docker run --rm --privileged \
@@ -26,4 +26,4 @@ docker run --rm --privileged \
   ${PIOS_SYNC:+-e PIOS_SYNC="$PIOS_SYNC"} \
   ${PIOS_STOP_AFTER:+-e PIOS_STOP_AFTER="$PIOS_STOP_AFTER"} \
   ${PIOS_GITHUB_REPO:+-e PIOS_GITHUB_REPO="$PIOS_GITHUB_REPO"} \
-  pardus-maker-builder /workspace/image/build.sh "$@"
+  maker-os-builder /workspace/image/build.sh "$@"

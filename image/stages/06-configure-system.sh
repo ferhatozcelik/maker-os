@@ -1,7 +1,7 @@
 #!/bin/sh
 # overlay/ dosyalarini rootfs'e yerlestirir ve sistemi ayarlar:
 # otomatik oturumlu macOS benzeri masaustu (ust cubuk + Plank dock, Pardus
-# 100. Yil temasi), Pardus Maker Merkezi (port 80), VNC, ekransiz ag,
+# 100. Yil temasi), MakerOS Merkezi (port 80), VNC, ekransiz ag,
 # ilk acilis isleri, SD kart/ARM optimizasyonlari.
 set -eu
 
@@ -111,7 +111,7 @@ cp -a "$ROOTFS_DIR/etc/skel/.config" "$USER_HOME/"
 # Terminal: renkli istem, git dali, alias'lar, "yardim" komutu, PATH.
 for rc in "$ROOTFS_DIR/etc/skel/.bashrc" "$USER_HOME/.bashrc"; do
   grep -q '/usr/lib/pios/bashrc' "$rc" 2>/dev/null || \
-    printf '\n# Pardus Maker\n[ -f /usr/lib/pios/bashrc ] && . /usr/lib/pios/bashrc\n' >> "$rc"
+    printf '\n# MakerOS\n[ -f /usr/lib/pios/bashrc ] && . /usr/lib/pios/bashrc\n' >> "$rc"
 done
 mkdir -p "$USER_HOME/.config/autostart" "$USER_HOME/Projects"
 # Ekran kilidi/ekran koruyucu yok (otomatik oturum + uzak ekran).

@@ -8,7 +8,7 @@ Devre: GPIO17 -> 330 ohm direnc -> LED (+) ; LED (-) -> GND (pin 9).
 GPIO yoksa (bilgisayarda calistirma) yalnizca ekranda gosterir.
 
 Calistirma:  uv run main.py
-Web yayini:  http://pardus-maker.local:8000/
+Web yayini:  http://maker-os.local:8000/
 """
 from pios_camera import Gosterici, Kamera, arguman_ayristirici, analiz, calisma_modu, performans_ayarla, resim_kaynagi
 

@@ -19,13 +19,27 @@ import network
 
 
 class NetworkTests(unittest.TestCase):
-    def test_missing_hotspot_profile_created_for_recovery(self):
-        with patch.object(network, 'profiles', return_value=[]), patch.object(network, 'read_first', return_value='aa:bb:cc:dd:12:34'), patch.object(network, 'checked') as checked:
+    def test_missing_hotspot_profile_created_open(self):
+        with patch.object(network, 'profiles', return_value=[]), patch.object(network, 'checked') as checked:
             network.ensure_hotspot('wlan0')
         args = checked.call_args.args[0]
-        self.assertIn('Pardus-Maker-1234', args)
+        self.assertIn('MakerOS', args)
         self.assertIn('10.42.0.1/24', args)
         self.assertIn(network.HOTSPOT, args)
+        self.assertFalse([a for a in args if a.startswith('wifi-sec')])
+
+    def test_old_hotspot_profile_replaced(self):
+        old = [{'name': network.HOTSPOT, 'uuid': 'u', 'type': '802-11-wireless'}]
+        with patch.object(network, 'profiles', return_value=old), patch.object(network, 'nm', return_value=(0, 'Pardus-Maker-1234\nwpa-psk', '')), patch.object(network, 'checked') as checked:
+            network.ensure_hotspot('wlan0')
+        self.assertEqual(checked.call_args_list[0].args[0], ['connection', 'delete', 'id', network.HOTSPOT])
+        self.assertIn('MakerOS', checked.call_args.args[0])
+
+    def test_current_hotspot_profile_kept(self):
+        cur = [{'name': network.HOTSPOT, 'uuid': 'u', 'type': '802-11-wireless'}]
+        with patch.object(network, 'profiles', return_value=cur), patch.object(network, 'nm', return_value=(0, 'MakerOS\n', '')), patch.object(network, 'checked') as checked:
+            network.ensure_hotspot('wlan0')
+        checked.assert_not_called()
 
     def test_missing_networkmanager_returns_diagnostics(self):
         with patch.object(network, 'nm', return_value=(10, '', 'NetworkManager is not running')):
@@ -48,11 +62,14 @@ class NetworkTests(unittest.TestCase):
         self.assertTrue(nets[1]['enterprise'])
         self.assertIn('wlan1', cmd.call_args.args[0])
 
-    def test_ap_scan_requires_explicit_interrupt(self):
-        with patch.object(network, 'device', return_value='wlan0'), patch.object(network, 'is_hotspot', return_value=True), patch.object(network, 'checked') as cmd:
-            with self.assertRaisesRegex(network.NetworkError, 'duraklat'):
-                network.scan(False)
-            cmd.assert_not_called()
+    def test_ap_scan_pauses_restores_and_caches(self):
+        rows = ':Ev:70:WPA2\n:MakerOS:99:--'
+        with tempfile.TemporaryDirectory() as d, patch.object(network, 'SCAN_CACHE', d + '/scan.txt'), patch.object(network, 'device', return_value='wlan0'), patch.object(network, 'is_hotspot', return_value=True), patch.object(network, 'saved', return_value=[]), patch.object(network.time, 'sleep'), patch.object(network, 'checked', side_effect=['', '', rows, '']) as cmd:
+            nets = network.scan()
+            self.assertEqual([n['ssid'] for n in nets], ['Ev'])
+            self.assertEqual(cmd.call_args_list[0].args[0], ['connection', 'down', 'id', network.HOTSPOT])
+            self.assertEqual(cmd.call_args.args[0], ['connection', 'up', 'id', network.HOTSPOT])
+            self.assertEqual([n['ssid'] for n in network.cached_networks()], ['Ev'])
 
     def test_failed_scan_restores_hotspot(self):
         def command(args, *rest, **kwargs):
@@ -61,7 +78,7 @@ class NetworkTests(unittest.TestCase):
             return ''
         with patch.object(network, 'device', return_value='wlan0'), patch.object(network, 'is_hotspot', return_value=True), patch.object(network.time, 'sleep'), patch.object(network, 'checked', side_effect=command) as cmd:
             with self.assertRaisesRegex(network.NetworkError, 'meşgul'):
-                network.scan(True)
+                network.scan()
             self.assertEqual(cmd.call_args.args[0], ['connection', 'up', 'id', network.HOTSPOT])
 
     def test_wrong_password_restores_previous_network_and_redacts(self):
@@ -231,6 +248,32 @@ class ApiTests(unittest.TestCase):
             handler.rfile = io.BytesIO(raw)
             handler.headers['Content-Length'] = str(len(raw))
         return handler
+
+    def test_setup_requires_hotspot_client(self):
+        h = self.handler('/api/setup/connect', {'ssid': 'Ev', 'password': 'parola123'})
+        with patch.object(network, 'hotspot_on', return_value=True), patch.object(network, 'start') as start:
+            h.do_POST()
+            start.assert_not_called()
+        self.assertEqual(h.send_json.call_args.args[1], 403)
+        h = self.handler('/api/setup/connect', {'ssid': 'Ev', 'password': 'parola123'})
+        h.client_address = ('10.42.0.23', 5555)
+        with patch.object(network, 'hotspot_on', return_value=True), patch.object(network, 'start', return_value=(True, 'ok')) as start:
+            h.do_POST()
+            start.assert_called_once_with('connect', {'ssid': 'Ev', 'password': 'parola123'})
+
+    def test_captive_redirects_foreign_host_only_in_hotspot(self):
+        h = self.handler('/generate_204')
+        h.headers['Host'] = 'connectivitycheck.gstatic.com'
+        h.redirect = Mock()
+        with patch.object(network, 'hotspot_on', return_value=True):
+            h.do_GET()
+        h.redirect.assert_called_once_with('http://10.42.0.1/kurulum')
+        h = self.handler('/api/wifi')
+        h.headers['Host'] = 'router.lan'
+        h.redirect = Mock()
+        with patch.object(network, 'hotspot_on', return_value=False), patch.object(network, 'operation', return_value={}):
+            h.do_GET()
+        h.redirect.assert_not_called()
 
     def test_scan_is_async_and_get_is_readonly(self):
         h = self.handler('/api/wifi/scan', {'interrupt': True})

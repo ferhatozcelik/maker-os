@@ -98,7 +98,7 @@ echo "deb [signed-by=/usr/share/keyrings/raspberrypi-archive-keyring.gpg] $RPI_A
   > "$ROOTFS_DIR/etc/apt/sources.list.d/raspberrypi-kamera.list"
 mkdir -p "$ROOTFS_DIR/etc/apt/preferences.d"
 cat > "$ROOTFS_DIR/etc/apt/preferences.d/50-pios-raspberrypi" <<'CFG'
-# Pardus Maker: RPi deposundan yalnizca kamera yigini kurulur.
+# MakerOS: RPi deposundan yalnizca kamera yigini kurulur.
 Package: libcamera* python3-libcamera python3-picamera2 python3-kms++ libkms++* python3-pidng python3-simplejpeg python3-v4l2 python3-piexif
 Pin: origin archive.raspberrypi.com
 Pin-Priority: 500
@@ -116,8 +116,8 @@ cat > "$ROOTFS_DIR/tmp/rpk/DEBIAN/control" <<'CFG'
 Package: raspberrypi-kernel
 Version: 1:1.20990101-pios1
 Architecture: all
-Maintainer: Pardus Maker <pardus-maker@localhost>
-Description: Pardus Maker - kernel raspberrypi/firmware ile ayrica kurulur (yer tutucu)
+Maintainer: MakerOS <maker-os@localhost>
+Description: MakerOS - kernel raspberrypi/firmware ile ayrica kurulur (yer tutucu)
 CFG
 in_chroot dpkg-deb --build /tmp/rpk /tmp/rpk.deb >/dev/null
 in_chroot dpkg -i /tmp/rpk.deb

@@ -1,4 +1,4 @@
-"""Pardus Maker OTA: GitHub surumlerinden sistem guncellemesi.
+"""MakerOS OTA: GitHub surumlerinden sistem guncellemesi.
 
 Akis (kullanici baslatir):
   denetle -> indir + sha256 -> ac -> yedekle -> kur -> kurulum kancasi ->
@@ -11,7 +11,7 @@ yarida kalirsa (elektrik kesintisi) acilista boot-check yedekten geri doner.
 
 Paket bicimi (image/stages/10-ota-bundle.sh uretir):
   ota.json        {"format": 1, "version": "1.0.1", "kernel": "6.18.57-v8+"}
-  root/...        Pardus Maker katmani (/usr/lib/pios, servisler, ayarlar...)
+  root/...        MakerOS katmani (/usr/lib/pios, servisler, ayarlar...)
   kernel/boot/... cekirdek, DTB, overlay'ler, acilis yazilimi
   kernel/modules/ /lib/modules/<surum>
   hooks/post-install.sh, enable.txt, packages.txt
@@ -30,7 +30,7 @@ import urllib.error
 import urllib.request
 
 ROOT = os.environ.get("PIOS_OTA_ROOT", "/")
-REPO = os.environ.get("PIOS_OTA_REPO", "ferhatozcelik/pardus-maker")
+REPO = os.environ.get("PIOS_OTA_REPO", "ferhatozcelik/maker-os")
 # PIOS_OTA_API: yalnizca test (Docker'da sahte yayin sunucusu).
 API = os.environ.get("PIOS_OTA_API") or "https://api.github.com/repos/%s/releases/latest" % REPO
 FORMAT = 1
@@ -143,7 +143,7 @@ def _notify(title, body):
     """Pi'nin masaustunde bildirim (Merkez'de ayrica acilir pencere var)."""
     try:
         from common import spawn_user
-        spawn_user(["notify-send", "-i", "pios-center", "-a", "Pardus Maker", title, body])
+        spawn_user(["notify-send", "-i", "pios-center", "-a", "MakerOS", title, body])
     except Exception:  # bildirim istege bagli
         pass
 
@@ -151,7 +151,7 @@ def _notify(title, body):
 # --- GitHub ---------------------------------------------------------------------
 
 def _get(url, timeout=20):
-    req = urllib.request.Request(url, headers={"User-Agent": "pardus-maker-ota",
+    req = urllib.request.Request(url, headers={"User-Agent": "maker-os-ota",
                                                "Accept": "application/vnd.github+json"})
     return urllib.request.urlopen(req, timeout=timeout)
 
@@ -166,8 +166,8 @@ def check():
         return status()
     latest = str(rel.get("tag_name", "")).lstrip("v")
     assets = {a.get("name"): a for a in rel.get("assets", []) if isinstance(a, dict)}
-    bundle = assets.get("pardus-maker-%s-ota.tar.xz" % latest)
-    digest = assets.get("pardus-maker-%s-ota.tar.xz.sha256" % latest)
+    bundle = assets.get("maker-os-%s-ota.tar.xz" % latest)
+    digest = assets.get("maker-os-%s-ota.tar.xz.sha256" % latest)
     prev = load_state()
     s = save_state(checked=time.time(), check_error="", latest=latest,
                    notes=str(rel.get("body") or "")[:4000], page=rel.get("html_url", ""),
@@ -177,7 +177,7 @@ def check():
                    size=int(bundle.get("size") or 0) if bundle else 0)
     if s.get("installable") and is_newer(latest, current_version()) and prev.get("notified") != latest:
         save_state(notified=latest)
-        _notify("Yeni Pardus Maker sürümü: %s" % latest, "Merkez → Güncellemeler'den kurabilirsiniz.")
+        _notify("Yeni MakerOS sürümü: %s" % latest, "Merkez → Güncellemeler'den kurabilirsiniz.")
     return status()
 
 
@@ -324,7 +324,7 @@ def _stage_kernel(xdir, kver, created):
     with open(os.path.join(BOOT, "config.txt")) as f:
         config = f.read()
     with open(os.path.join(BOOT, "tryboot.txt"), "w") as f:
-        f.write(config.rstrip("\n") + "\n\n# Pardus Maker OTA: yeni cekirdek bir kez denenir.\n[all]\nos_prefix=pios-ota/\n")
+        f.write(config.rstrip("\n") + "\n\n# MakerOS OTA: yeni cekirdek bir kez denenir.\n[all]\nos_prefix=pios-ota/\n")
 
 
 def _busy():
@@ -439,10 +439,10 @@ def _apply():
     if kernel == "staged":
         save_state(status="reboot", progress=95, kernel_version=kver, kernel=kernel, trial=False,
                    stage="Yeni çekirdeği denemek için yeniden başlatın.")
-        _notify("Pardus Maker %s kuruldu" % target, "Yeni çekirdeği denemek için yeniden başlatın.")
+        _notify("MakerOS %s kuruldu" % target, "Yeni çekirdeği denemek için yeniden başlatın.")
     else:
         save_state(status="confirm", progress=100, kernel=kernel, stage="Kuruldu; onayınız bekleniyor.")
-        _notify("Pardus Maker %s kuruldu" % target, "Merkez'de onaylayın; yedek ve geçici dosyalar silinir.")
+        _notify("MakerOS %s kuruldu" % target, "Merkez'de onaylayın; yedek ve geçici dosyalar silinir.")
     log("Kurulum tamamlandı: %s -> %s" % (old, target))
 
 

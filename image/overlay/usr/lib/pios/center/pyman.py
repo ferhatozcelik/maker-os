@@ -38,7 +38,7 @@ UV_ENV = dict(os.environ, UV_PYTHON_INSTALL_DIR=INSTALL_DIR, UV_PYTHON_BIN_DIR=B
               UV_NO_PROGRESS="1", PATH="/usr/local/bin:/usr/bin:/bin")
 
 TEMPLATES = {
-    "bos": {"title": "Boş proje", "deps": [], "main": 'print("Merhaba Pardus Maker!")\n'},
+    "bos": {"title": "Boş proje", "deps": [], "main": 'print("Merhaba MakerOS!")\n'},
     "gpio": {
         "title": "GPIO / elektronik",
         "deps": ["gpiozero", "RPi.GPIO", "smbus2"],
@@ -62,7 +62,7 @@ TEMPLATES = {
         "deps": ["flask"],
         "main": (
             "from flask import Flask\n\napp = Flask(__name__)\n\n\n"
-            "@app.route('/')\ndef index():\n    return 'Merhaba Pardus Maker!'\n\n\n"
+            "@app.route('/')\ndef index():\n    return 'Merhaba MakerOS!'\n\n\n"
             "if __name__ == '__main__':\n    app.run(host='0.0.0.0', port=5000)\n"),
     },
     # Kamera ile calisan MediaPipe ornekleri (/usr/lib/pios/templates).

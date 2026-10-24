@@ -3,7 +3,7 @@ kac parmagin acik oldugunu sayar.
 
 Calistirma:  uv run main.py            (Pi kamera veya USB kamera)
              uv run main.py --kaynak el.mp4
-Web yayini:  http://pardus-maker.local:8000/
+Web yayini:  http://maker-os.local:8000/
 """
 from pios_camera import Gosterici, Kamera, arguman_ayristirici, analiz, calisma_modu, performans_ayarla
 

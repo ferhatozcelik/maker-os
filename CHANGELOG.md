@@ -7,9 +7,11 @@ raporlanmalıdır; Docker testi kamera, Wi-Fi ve GPIO desteğini doğrulamaz.
 
 ### Temel
 
+- **MakerOS:** Pardus tabanlı maker işletim sistemi; cihaz adresi `http://maker-os.local/`, imaj `maker-os-<sürüm>.img.xz`
 - **Taban:** Pardus 21 "Yirmibir" arm64, Raspberry Pi çekirdeği 6.18 (`-v8+`), XFCE + Plank, Pardus 100. Yıl teması
-- **Pardus Maker Merkezi:** telefon uyumlu tek web uygulaması (port 80)
-  - Wi-Fi ve ağ: Ethernet durumu, gizli ağ, WPA2-Enterprise, kayıtlı ağlar, yedek erişim noktası
+- **MakerOS Merkezi:** telefon uyumlu tek web uygulaması (port 80)
+  - Wi-Fi ve ağ: Ethernet durumu, gizli ağ, WPA2-Enterprise, kayıtlı ağlar
+  - Wi-Fi kurulumu: ağ yoksa şifresiz `MakerOS` ağı açılır; bağlanan telefonda kurulum sayfası kendiliğinden açılır (ağ seç, parola gir, bağlan). Ağ listesi kurulum ağı açılmadan önce taranır
   - Tarih ve saat: saat dilimi, NTP, tarayıcının saatini kullanma
   - Dil ve klavye: sistem dili, Türkçe Q/F ve diğer düzenler, Alt+Shift ile ikinci düzen
   - Web terminali (xterm.js, PTY, tek kullanımlık bilet, telefon tuş çubuğu)
@@ -19,11 +21,11 @@ raporlanmalıdır; Docker testi kamera, Wi-Fi ve GPIO desteğini doğrulamaz.
   - Uzak ekran: telefonda yatay tam ekran, ekran klavyesi
   - Python, projeler, hazır AI ortamı, agent yöneticisi, GPIO
 - **MediaPipe örnekleri:** el takibi, jest ile LED, yüz, poz, nesne, arka plan ayırma, yüz ağı; modeller imajda
-- **Masaüstü:** uygulama menüsü kaldırıldı, uygulamalar dock'ta; yeni Pardus Maker arka planı (Türkiye haritası, maker ikonları)
+- **Masaüstü:** uygulama menüsü kaldırıldı, uygulamalar dock'ta; yeni MakerOS arka planı (Türkiye haritası, maker ikonları)
 
 ### Güncelleme ve dağıtım
 
-- **Kablosuz güncelleme (OTA):** Merkez → Güncellemeler yeni Pardus Maker sürümünü GitHub'dan denetler (6 saatte bir ve elle) ve haber verir; kurulumu kullanıcı başlatır. Önce üzerine yazılacak dosyaların yedeği alınır; Merkez yeni sürümle açılmazsa kendiliğinden geri dönülür. Yeni çekirdek Pi'nin `tryboot` özelliğiyle bir kez denenir. Kurulumdan sonra açılan pencerede onaylayınca yedek ve geçici dosyalar silinir; "Geri al" önceki sürüme döner. Ayrıntılar: `docs/ota.md`
+- **Kablosuz güncelleme (OTA):** Merkez → Güncellemeler yeni MakerOS sürümünü GitHub'dan denetler (6 saatte bir ve elle) ve haber verir; kurulumu kullanıcı başlatır. Önce üzerine yazılacak dosyaların yedeği alınır; Merkez yeni sürümle açılmazsa kendiliğinden geri dönülür. Yeni çekirdek Pi'nin `tryboot` özelliğiyle bir kez denenir. Kurulumdan sonra açılan pencerede onaylayınca yedek ve geçici dosyalar silinir; "Geri al" önceki sürüme döner. Ayrıntılar: `docs/ota.md`
 - **Kullanıcı ve parola:** `maker` / `maker` (ilk iş değiştirin). Merkez kullanıcıyı cihazdan okur
 - **Uzak ekran:** varsayılan masaüstü 1280×720; x11vnc kararlı 30 FPS (33 ms yoklama, bekleme modu kapalı); tam ekran ve yön değişiminde görüntü hemen yeniden sığdırılır
 - **Sistem güncellemesi:** Pardus deposu ve VS Code; süren apt işine bağlanır, apt kilidi için bekler

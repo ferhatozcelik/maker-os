@@ -1,4 +1,4 @@
-// Pardus Maker Merkezi - tek sayfalik arayuz (Ayarlar, Python, Agent'lar, Terminal, GPIO,
+// MakerOS Merkezi - tek sayfalik arayuz (Ayarlar, Python, Agent'lar, Terminal, GPIO,
 // Kamera, USB, Ekran). Telefonda ust cubuk + cekmece menu ile calisir.
 const $ = (s, r = document) => r.querySelector(s);
 const esc = t => String(t ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -284,18 +284,18 @@ async function renderWifi(el) {
       <div class="net-op" id="netOp" hidden><div class="hrow"><span id="netState" class="badge">Hazır</span></div><pre id="netMessage"></pre></div>
     </section>
     <h2 class="hrow">Wi-Fi ağları<span class="sp"></span><button class="btn primary" id="scan">Tara</button><button class="btn" id="manual">Elle bağlan</button></h2>
-    ${s.hotspot ? '<p class="hint">Erişim noktası açık. Tarama için duraklatma gerekir; telefon bağlantısı geçici kesilir ve tarama sonunda erişim noktası geri açılır.</p><button class="btn" id="apScan">Erişim noktasını duraklat ve tara</button>' : ""}
+    ${s.hotspot ? '<p class="hint">MakerOS kurulum ağı açık. Telefondan kurulum için MakerOS ağına bağlanın; kurulum sayfası kendiliğinden açılır.</p>' : ""}
     <div class="list network-list" id="nets"><div class="empty">Henüz tarama yapılmadı. Ağ adını biliyorsanız elle bağlanabilirsiniz.</div></div>
     <h2>Kayıtlı ağlar</h2><div class="list">${n.saved.length ? n.saved.map((name, i) => row(esc(name), "Kaydedilmiş parola ile bağlan veya parolayı yeniden gir",
       `<div class="btns"><button class="btn" data-saved="${i}">Bağlan</button><button class="btn" data-edit="${i}">Parola değiştir</button><button class="btn danger" data-forget="${i}">Unut</button></div>`)).join("") : '<div class="empty">Kayıtlı ağ yok</div>'}</div>
     <h2>Etkin bağlantılar</h2><div class="list">${s.connections.map(c => row(esc(c.name), esc(c.device))).join("")}
-      ${row("Pardus-Maker erişim noktası", "Ağ yokken yerel bağlantı · 10.42.0.1", sw("hs", s.hotspot))}
+      ${row("MakerOS kurulum ağı", "Şifresiz · ağ yokken kendiliğinden açılır · 10.42.0.1", sw("hs", s.hotspot))}
       ${e ? row("Ethernet", esc(e.ip || "Adres yok") + (e.gateway ? " · Ağ geçidi: " + esc(e.gateway) : "")) : ""}</div>
     <h2 class="hrow">Ağ tanılama<span class="sp"></span><button class="btn" id="diag">Ayrıntıları göster</button><button class="btn" id="netRefresh">Yenile</button></h2>
     <pre id="netDiag" class="diagnostics" hidden></pre>
     <p class="hint">Anlık aktarım hızı ve alınan/gönderilen toplam veri için <a href="#etkinlik">Görev Yöneticisi</a>.</p>`;
   let lastUpdated = 0, seenRunning = false, refreshing = false;
-  const controls = busy => el.querySelectorAll("#scan, #manual, #apScan, [data-net], [data-saved], [data-edit], [data-forget], #hs").forEach(b => b.disabled = busy);
+  const controls = busy => el.querySelectorAll("#scan, #manual, [data-net], [data-saved], [data-edit], [data-forget], #hs").forEach(b => b.disabled = busy);
   // Durum kutusu yalnızca bir işlem sürerken veya başarısız olduğunda görünür.
   const showOp = (state, message, visible) => {
     const notice = $("#netNotice", el), op = $("#netOp", el);
@@ -344,11 +344,11 @@ async function renderWifi(el) {
       if (seenRunning && op.status === "ok" && op.kind !== "scan" && !refreshing) { refreshing = true; route(); }
     } catch (error) {
       if (!el.isConnected) return;
-      showOp("Cihaza ulaşılamıyor", "Ağ geçişi sırasında bağlantı kesilmiş olabilir. Telefonunuzu hedef ağa veya Pardus-Maker ağına bağlayın. Bu sayfa yeniden deneyecek.\n\n" + error.message, true);
+      showOp("Cihaza ulaşılamıyor", "Ağ geçişi sırasında bağlantı kesilmiş olabilir. Telefonunuzu hedef ağa veya MakerOS ağına bağlayın. Bu sayfa yeniden deneyecek.\n\n" + error.message, true);
     }
   };
-  $("#scan", el).onclick = () => s.hotspot ? toast("Erişim noktasını duraklat ve tara düğmesini kullanın.") : begin("/api/wifi/scan", {});
-  if ($("#apScan", el)) $("#apScan", el).onclick = () => confirm("Tarama sırasında Pardus-Maker bağlantısı kesilecek, ardından geri açılacak. Devam edilsin mi?") && begin("/api/wifi/scan", { interrupt: true });
+  // Tek radyo: kurulum agi aciksa tarama icin birkac saniye kapanip geri acilir.
+  $("#scan", el).onclick = () => (!s.hotspot || confirm("Tarama sırasında MakerOS ağı birkaç saniye kapanıp geri açılacak. Devam edilsin mi?")) && begin("/api/wifi/scan", {});
   $("#manual", el).onclick = async () => {
     const values = await ask("Ağ bilgilerini girin", [{ id: "ssid", label: "Ağ adı (SSID)" },
       { id: "password", label: "Parola (açık ağda boş bırakın)", type: "password" },
@@ -462,7 +462,7 @@ async function renderDil(el) {
         `<select id="kb">${Object.entries(l.keyboards).map(([k, t]) => `<option value="${k}" ${k === l.keyboard ? "selected" : ""}>${esc(t)}</option>`).join("")}</select>`)}
       ${row("İkinci düzen: İngilizce (ABD)", "Alt+Shift ile düzenler arasında geçiş", sw("kbs", l.switch))}
     </div>
-    <p class="hint">Pardus Maker Merkezi'nin arayüzü Türkçedir. Klavye düzeni Pi'ye takılı klavye içindir; telefon/bilgisayardaki klavye uzak ekranda kendi düzeniyle yazar.</p>`;
+    <p class="hint">MakerOS Merkezi'nin arayüzü Türkçedir. Klavye düzeni Pi'ye takılı klavye içindir; telefon/bilgisayardaki klavye uzak ekranda kendi düzeniyle yazar.</p>`;
   $("#loc", el).onchange = async e => {
     e.target.disabled = true; toast("Dil hazırlanıyor…", 15000);
     if (await act("/api/language", { locale: e.target.value }) && confirm("Masaüstü şimdi yeniden başlatılsın mı? Açık pencereler kapanır."))
@@ -499,7 +499,7 @@ async function renderSaat(el) {
       ${row("Şimdi eşitle", "Saat sunucusuna yeniden bağlanır", '<button class="btn" id="sync">Eşitle</button>')}
     </div>
     <h2>Elle ayarla</h2><div class="list">
-      ${row("Bu cihazın saatini kullan", "İnternet yokken (ör. Pardus-Maker erişim noktasında) telefon/bilgisayarın saatini Pi'ye aktarır",
+      ${row("Bu cihazın saatini kullan", "İnternet yokken (ör. MakerOS kurulum ağında) telefon/bilgisayarın saatini Pi'ye aktarır",
         '<button class="btn primary" id="usemine">Uygula</button>')}
       ${row("Tarih ve saat", "Otomatik saat kapatılır",
         `<div class="btns"><input type="date" id="md"><input type="time" id="mt" step="1"><button class="btn" id="mset">Ayarla</button></div>`)}
@@ -617,7 +617,7 @@ async function renderGuncelleme(el) {
         '<button class="btn primary" id="otaGo">Güncelle</button>');
     else if (newer && !o.installable && o.latest) state = row(`${esc(o.latest)} yayınlandı`,
         "Bu sürüm için kablosuz güncelleme paketi yok; SD kartı yeniden yazın.", o.page ? `<a class="btn" href="${esc(o.page)}" target="_blank" rel="noopener">Sürüm sayfası</a>` : "");
-    else state = row('Pardus Maker güncel <span class="badge ok">✓</span>', "Son denetim: " + fmtTime(o.checked));
+    else state = row('MakerOS güncel <span class="badge ok">✓</span>', "Son denetim: " + fmtTime(o.checked));
     const info = [o.status === "error" && o.message ? `<pre class="error-inline">${esc(o.message)}</pre>` : "",
                   o.status !== "error" && o.message ? `<p class="hint">${esc(o.message)}</p>` : "",
                   o.check_error ? `<p class="hint">${esc(o.check_error)}</p>` : ""].join("");
@@ -626,14 +626,14 @@ async function renderGuncelleme(el) {
     // Yeniden çizimde kullanıcının açtığı/kapattığı bölümler korunur.
     const opened = {};
     el.querySelectorAll("details[data-k]").forEach(x => opened[x.dataset.k] = x.open);
-    el.innerHTML = `<h1>Güncellemeler</h1><p class="lead">Pardus Maker ve tüm sistem paketleri tek sürümle güncellenir.</p>
-      <h2>Pardus Maker</h2><div class="list">
+    el.innerHTML = `<h1>Güncellemeler</h1><p class="lead">MakerOS ve tüm sistem paketleri tek sürümle güncellenir.</p>
+      <h2>MakerOS</h2><div class="list">
         ${row("Yüklü sürüm", "", `<span class="v">${esc(o.current || "—")}</span>`)}
         ${state}
         ${busy ? "" : row("Yeni sürümü denetle", "GitHub'daki son yayınla karşılaştırır; 6 saatte bir kendiliğinden denetlenir", '<button class="btn" id="otaCheck">Denetle</button>')}
       </div>${info}${notes}
       ${logText && (busy || o.status === "error") ? `<details class="ota-notes" data-k="log" ${busy ? "open" : ""}><summary>Günlük</summary><pre id="otaLog">${esc(logText)}</pre></details>` : ""}
-      <p class="hint">Sistem paketleri (Pardus, çekirdek, VS Code, Chromium…) Pardus Maker sürümleriyle birlikte gelir; ayrıca güncellenmez.
+      <p class="hint">Sistem paketleri (Pardus, çekirdek, VS Code, Chromium…) MakerOS sürümleriyle birlikte gelir; ayrıca güncellenmez.
         Python sürümleri <a href="#python">Python</a>, yapay zeka ajanları <a href="#agent">Agent'lar</a> bölümünden güncellenir.</p>`;
     el.querySelectorAll("details[data-k]").forEach(x => { if (x.dataset.k in opened) x.open = opened[x.dataset.k]; });
     const log = $("#otaLog", el);
@@ -641,7 +641,7 @@ async function renderGuncelleme(el) {
     shownLog = logText;
     const on = (id, fn) => { const b = $("#" + id, el); if (b) b.onclick = fn; };
     on("otaCheck", async e => { e.target.disabled = true; e.target.textContent = "Denetleniyor…"; await act("/api/ota/check", {}, "Denetlendi"); draw(); });
-    on("otaGo", async () => { if (confirm(`Pardus Maker ${o.latest} kurulsun mu? Önce yedek alınır.`) && await act("/api/ota/start", {})) draw(); });
+    on("otaGo", async () => { if (confirm(`MakerOS ${o.latest} kurulsun mu? Önce yedek alınır.`) && await act("/api/ota/start", {})) draw(); });
     on("otaOk", () => otaDecide("confirm", draw));
     on("otaBack", () => otaDecide("rollback", draw));
     on("otaBoot", () => otaDecide("reboot", draw));
@@ -667,11 +667,11 @@ async function otaWatch() {
   const key = o.status + ":" + o.current + ":" + o.latest;
   const d = $("#dlg");
   if (otaAsked === key || d.open || o.rolling) return;
-  if (o.status === "available" && current !== "guncelleme") { otaAsked = key; toast(`Yeni Pardus Maker sürümü: ${o.latest} — Güncellemeler'den kurabilirsiniz`, 6000); return; }
+  if (o.status === "available" && current !== "guncelleme") { otaAsked = key; toast(`Yeni MakerOS sürümü: ${o.latest} — Güncellemeler'den kurabilirsiniz`, 6000); return; }
   if (o.status !== "confirm" && o.status !== "reboot") return;
   otaAsked = key;
   const reboot = o.status === "reboot";
-  d.innerHTML = `<form method="dialog"><h3>Pardus Maker ${esc(o.current)} kuruldu</h3>
+  d.innerHTML = `<form method="dialog"><h3>MakerOS ${esc(o.current)} kuruldu</h3>
     <p class="note">${reboot ? "Yeni çekirdeği denemek için Pi'yi yeniden başlatın. Açılmazsa kapatıp açın; eski çekirdekle başlar."
       : esc(o.stage || "") + " Her şey yolundaysa onaylayın: yedek ve geçici dosyalar silinir. Sorun varsa geri alın."}</p>
     <div class="dlg-foot"><button class="btn" value="later">Sonra</button><button class="btn" value="rollback">Geri al</button>
@@ -1061,7 +1061,7 @@ async function renderTerminal(el) {
   el.innerHTML = `<div class="term-head"><h1>Terminal</h1><span class="badge" id="tstate">—</span><span class="sp"></span>
     <button class="btn" id="tnew" title="Kabuğu kapatıp yenisini açar">Yeni oturum</button></div>`;
   try { await loadXterm(); }
-  catch { el.innerHTML += '<p class="lead">Terminal bileşeni (xterm.js) bulunamadı. Pardus Maker imajını yeniden oluşturun.</p>'; return; }
+  catch { el.innerHTML += '<p class="lead">Terminal bileşeni (xterm.js) bulunamadı. MakerOS imajını yeniden oluşturun.</p>'; return; }
   if (!termBox) {
     termBox = document.createElement("div"); termBox.id = "termBox";
     termBox.innerHTML = `<div id="termEl"></div><div class="keys">${TERM_KEYS.map(([t], i) => `<button data-k="${i}">${t}</button>`).join("")}</div>`;

@@ -21,9 +21,9 @@ chroot_umount
 trap - EXIT
 
 # Cihaz disaridaki depolara (Pardus, Raspberry Pi, Microsoft) baglanmaz:
-# paketler yalnizca Pardus Maker surumleriyle (OTA) gelir. Bkz. vendor/README.md
+# paketler yalnizca MakerOS surumleriyle (OTA) gelir. Bkz. vendor/README.md
 cat > "$ROOTFS_DIR/etc/apt/sources.list" <<'CFG'
-# Pardus Maker: sistem paketleri Pardus Maker surumleriyle (Merkez >
+# MakerOS: sistem paketleri MakerOS surumleriyle (Merkez >
 # Guncellemeler, OTA) guncellenir. Bu cihaz dis depolara baglanmaz.
 CFG
 rm -f "$ROOTFS_DIR"/etc/apt/sources.list.d/* "$ROOTFS_DIR/etc/apt/preferences.d/50-pios-raspberrypi" \

@@ -1,10 +1,10 @@
-# Pardus Maker belgeleri
+# MakerOS belgeleri
 
 | Belge | İçerik |
 | --- | --- |
 | [Ekran görüntüleri](screenshots.md) | Docker üzerinde çalışan güncel arayüzün masaüstü ve telefon görünümleri |
 | [Mimari](architecture.md) | İmajın katmanları, açılış akışı, servisler, dizinler, güvenlik modeli |
-| [Pardus Maker Merkezi](center.md) | Web uygulamasının bölümleri ve HTTP/WebSocket API'si |
+| [MakerOS Merkezi](center.md) | Web uygulamasının bölümleri ve HTTP/WebSocket API'si |
 | [Kablosuz güncelleme (OTA)](ota.md) | Yeni sürümü denetleme, yedekli kurulum, çekirdek denemesi, onay ve geri alma; yayın hazırlama |
 | [Donanım rehberi](hardware.md) | Kamera, ekranlar, USB, GPIO, ses ve ağ bağlantıları |
 | [MediaPipe örnekleri](mediapipe.md) | Hazır projeler, kendi projenizi yazma, `pios_camera` yardımcısı |

@@ -1,6 +1,6 @@
 #!/bin/sh
 # OTA paketi: kurulu cihazlarin SD karti yeniden yazmadan yukseltilmesi icin
-# Pardus Maker katmani + cekirdek (bkz. overlay/usr/lib/pios/center/ota.py).
+# MakerOS katmani + cekirdek (bkz. overlay/usr/lib/pios/center/ota.py).
 #   root/          overlay'deki tum yollar (06'nin isledigi halleriyle) ve
 #                  build'de uretilenler (/usr/share/pios, surum damgasi)
 #   kernel/boot/   cekirdek, DTB, overlay'ler, acilis yazilimi (config.txt ve
@@ -19,11 +19,11 @@ require_rootfs
 VERSION="$(cat "$PIOS_WORK/build-version")"
 KVER="$(cat "$PIOS_WORK/kernel-version")"
 STAGE="$PIOS_WORK/ota"
-OUT="$PIOS_OUT/pardus-maker-$VERSION-ota.tar.xz"
+OUT="$PIOS_OUT/maker-os-$VERSION-ota.tar.xz"
 rm -rf "$STAGE"
 mkdir -p "$STAGE/root" "$STAGE/kernel/boot" "$STAGE/kernel/modules" "$STAGE/hooks" "$STAGE/debs"
 
-echo "== Pardus Maker katmani =="
+echo "== MakerOS katmani =="
 LIST="$STAGE/files.txt"
 ( cd "$OVERLAY_DIR" && find . \( -type f -o -type l \) ! -name .DS_Store ! -name '*.pyc' ! -path '*/__pycache__/*' \
     | sed 's|^\./||' | grep -v '^boot/firmware/' )  > "$LIST"

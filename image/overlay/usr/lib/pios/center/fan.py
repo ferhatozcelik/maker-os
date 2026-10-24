@@ -54,15 +54,15 @@ def save(data):
         lines = [l for l in system._read_config() if not re.match(r"^\s*dtoverlay=gpio-fan(?:,|\s*$)", l)]
         # Eski yönetilen bloğu çıkar; ayarları koşulsuz [all] kapsamına ekle.
         try:
-            start = lines.index("# Pardus Maker fan begin")
-            end = lines.index("# Pardus Maker fan end", start)
+            start = lines.index("# MakerOS fan begin")
+            end = lines.index("# MakerOS fan end", start)
             del lines[start:end + 1]
         except ValueError:
             pass
         if mode != "unmanaged":
-            lines += ["# Pardus Maker fan begin", "[all]",
+            lines += ["# MakerOS fan begin", "[all]",
                       "dtoverlay=gpio-fan,gpiopin=%s,temp=%s,hyst=%s" % (pin, on * 1000 if mode == "auto" else 0,
                                                                         (on - off) * 1000 if mode == "auto" else 0),
-                      "# Pardus Maker fan end"]
+                      "# MakerOS fan end"]
         system._write_config(lines)
     return True, "Fan ayarları kaydedildi. Uygulanması için Raspberry Pi’yi yeniden başlatın."

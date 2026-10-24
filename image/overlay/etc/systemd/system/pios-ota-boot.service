@@ -1,5 +1,5 @@
 [Unit]
-Description=Pardus Maker guncelleme acilis denetimi (cekirdek denemesi, yarim kalan kurulum)
+Description=MakerOS guncelleme acilis denetimi (cekirdek denemesi, yarim kalan kurulum)
 After=local-fs.target
 Before=pios-center.service
 

@@ -5,7 +5,7 @@ veya kod.
 
 ## Hata bildirimi
 
-[Issues](https://github.com/ferhatozcelik/pardus-maker/issues) sayfasında yeni
+[Issues](https://github.com/ferhatozcelik/maker-os/issues) sayfasında yeni
 bir kayıt açın ve şunları ekleyin:
 
 - Pi modeli ve bellek miktarı, kullanılan imaj sürümü (**Merkez → Genel → Sürüm**)

@@ -1,6 +1,6 @@
 # Mimari
 
-Pardus Maker, Raspberry Pi için **hazır kurulu** bir Pardus imajıdır: kurulum
+MakerOS, Raspberry Pi için **hazır kurulu** bir Pardus imajıdır: kurulum
 sihirbazı yoktur, SD karta yazılıp açıldığında otomatik oturumlu masaüstü ve
 web yönetimi çalışır durumdadır.
 
@@ -10,7 +10,7 @@ web yönetimi çalışır durumdadır.
 ┌──────────────────────────────────────────────────────────────────────┐
 │ Kullanıcı: tarayıcı (telefon/bilgisayar) · Pi'nin monitörü · SSH     │
 ├──────────────────────────────────────────────────────────────────────┤
-│ Pardus Maker Merkezi (port 80: panel + ekran)     x11vnc (5900)        │
+│ MakerOS Merkezi (port 80: panel + ekran)     x11vnc (5900)        │
 │  ayarlar · terminal · kamera · USB · GPIO · Python · agent'lar        │
 ├──────────────────────────────────────────────────────────────────────┤
 │ XFCE + Plank (LightDM otomatik oturum, kullanıcı: pardus)            │
@@ -60,7 +60,8 @@ azaltmak için `noatime`, journald sınırı ve kapatılmış zamanlayıcılar k
    anahtarlarını üretir.
 3. **`pios-network-fallback.service`**: `bootfs/wifi.txt` varsa Wi-Fi
    profili olarak ekler ve dosyayı siler; 45 sn içinde varsayılan rota
-   oluşmazsa `Pardus-Maker-XXXX` erişim noktasını (10.42.0.1) açar; adresleri
+   oluşmazsa yakındaki ağları tarar, sonra şifresiz `MakerOS` kurulum ağını (10.42.0.1) açar.
+   Bağlanan telefonda kurulum sayfası (`/kurulum`, captive portal) kendiliğinden açılır; adresleri
    `bootfs/pardus-status.txt` dosyasına yazar.
 4. **`pios-center.service`**: Merkez'i port 80'de başlatır ve
    `/run/pios/token` dosyasına yerel giriş jetonunu yazar.
@@ -71,7 +72,7 @@ azaltmak için `noatime`, journald sınırı ve kapatılmış zamanlayıcılar k
 
 | Birim | İş | Port |
 | --- | --- | --- |
-| `pios-center.service` | Pardus Maker Merkezi (root, Python 3.9 stdlib) | 80 |
+| `pios-center.service` | MakerOS Merkezi (root, Python 3.9 stdlib) | 80 |
 | `pios-vnc.service` | x11vnc, ekran `:0` | 5900 |
 | `pios-novnc.service` | websockify (Merkez > Ekran bunu port 80 üzerinden `/api/vnc/ws` ile aktarır) | 127.0.0.1:6080 (dışarı kapalı) |
 | `pios-network-fallback.service` | Ağ yedeği ve durum dosyası | — |
@@ -116,4 +117,5 @@ betikler ve servisler arasında ortak kullanılır.
   sistem diski çıkarılamaz.
 - **Sınırlar:** Varsayılan parola (`maker`) tüm imajlarda aynıdır ve ilk iş
   değiştirilmelidir. Web ve VNC trafiği şifrelenmez; yalnızca güvenilir yerel
-  ağda kullanılmalıdır. Erişim noktası parolası (`pardus1234`) de ortaktır.
+  ağda kullanılmalıdır. `MakerOS` kurulum ağı şifresizdir; yalnızca cihazın hiçbir ağa
+  bağlanamadığı sürece açık kalır ve kurulum sayfası yalnızca Wi-Fi ayarlarını değiştirir.

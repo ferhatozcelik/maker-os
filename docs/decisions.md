@@ -1,6 +1,6 @@
 # Teknik kararlar
 
-Bu belge, Pardus Maker'ın neden bu şekilde kurulduğunu ve Pardus 21 tabanının
+Bu belge, MakerOS'un neden bu şekilde kurulduğunu ve Pardus 21 tabanının
 getirdiği kısıtlara karşı alınan kararları kaydeder.
 
 ## Taban: Pardus 21 "Yirmibir" arm64

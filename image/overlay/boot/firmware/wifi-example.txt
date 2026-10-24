@@ -3,9 +3,9 @@
 # Dosya ilk acilista okunur, Wi-Fi profili eklenir ve guvenlik icin silinir.
 #
 # Bu dosya olmadan da sistem calisir: Ethernet kablosu takiliysa oradan
-# IP alir; hicbir ag yoksa "Pardus-Maker-XXXX" adli Wi-Fi agi acar
-# (sifre: pardus1234) ve web paneline (ekran + kontrol) http://10.42.0.1/
-# adresinden ulasilir.
+# IP alir; hicbir ag yoksa sifresiz "MakerOS" Wi-Fi agini acar. Telefonu
+# bu aga baglayinca kurulum sayfasi kendiliginden acilir (acilmazsa
+# http://10.42.0.1/kurulum); aginizi secip parolasini girin.
 
 SSID=EvAgimin-Adi
 PAROLA=wifi-sifresi

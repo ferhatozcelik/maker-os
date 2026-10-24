@@ -4,7 +4,7 @@ calistirabilir (--alarm).
 
 Calistirma:  uv run main.py
              uv run main.py --alarm          (kisi gorulunce GPIO17)
-Web yayini:  http://pardus-maker.local:8000/
+Web yayini:  http://maker-os.local:8000/
 """
 from pios_camera import Gosterici, Kamera, arguman_ayristirici, analiz, calisma_modu, performans_ayarla
 

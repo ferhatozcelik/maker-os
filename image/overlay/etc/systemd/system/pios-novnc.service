@@ -1,5 +1,5 @@
 [Unit]
-Description=Pardus Maker tarayicidan masaustu (websockify, yalnizca 127.0.0.1:6080; Merkez > Ekran port 80 uzerinden aktarir)
+Description=MakerOS tarayicidan masaustu (websockify, yalnizca 127.0.0.1:6080; Merkez > Ekran port 80 uzerinden aktarir)
 After=pios-vnc.service network.target
 Wants=pios-vnc.service
 

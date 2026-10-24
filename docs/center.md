@@ -1,4 +1,4 @@
-# Pardus Maker Merkezi
+# MakerOS Merkezi
 
 Merkez, Pi'nin tüm ayarlarını ve geliştirme araçlarını tek bir web
 uygulamasında toplar. Backend yalnızca Python 3.9 standart kütüphanesiyle
@@ -10,8 +10,8 @@ JavaScript modülüdür (`web/`). Dış CDN kullanılmaz; Pi internetsizken de �
 | Nereden | Nasıl |
 | --- | --- |
 | Pi'nin masaüstü | Dock'taki Ayarlar, Python, Agent'lar, Kamera, GPIO simgeleri (`pios-open <bölüm>`, Chromium uygulama penceresi, parola sorulmaz) |
-| Aynı ağdaki telefon/bilgisayar | `http://pardus-maker.local/` veya `http://<IP>/`, giriş ekranında `pardus` ve parola |
-| Erişim noktası | `Pardus-Maker-XXXX` ağına bağlanıp `http://10.42.0.1/` |
+| Aynı ağdaki telefon/bilgisayar | `http://maker-os.local/` veya `http://<IP>/`, giriş ekranında `pardus` ve parola |
+| Kurulum ağı | Şifresiz `MakerOS` ağına bağlanın; kurulum sayfası kendiliğinden açılır (`http://10.42.0.1/kurulum`) |
 
 Ağdan açıldığında önce Merkez'in giriş sayfası gelir (tarayıcı Basic Auth
 penceresi kullanılmaz). Girişten sonra oturum `pios_t` çereziyle tutulur;
@@ -52,9 +52,9 @@ durum değiştiren istekler `POST`, `Content-Type: application/json` ve
 ile izlenir.
 
 ```bash
-curl -u maker:PAROLA http://pardus-maker.local/api/status
+curl -u maker:PAROLA http://maker-os.local/api/status
 curl -u maker:PAROLA -H 'X-Pios: 1' -H 'Content-Type: application/json' \
-     -d '{"timezone":"Europe/Istanbul"}' http://pardus-maker.local/api/time/timezone
+     -d '{"timezone":"Europe/Istanbul"}' http://maker-os.local/api/time/timezone
 ```
 
 | Uç nokta | Yöntem | Açıklama |
@@ -66,7 +66,8 @@ curl -u maker:PAROLA -H 'X-Pios: 1' -H 'Content-Type: application/json' \
 | `/api/settings/theme`, `/api/settings/hostname`, `/api/settings/password`, `/api/settings/resolution`, `/api/settings/interface`, `/api/settings/remote` | POST | Ayarlar |
 | `/api/network` | GET | Ethernet, kayıtlı ağlar, internet/DNS, NetworkManager durumu |
 | `/api/wifi`, `/api/network/operation` | GET | Son ağ işlemi: `status`, `kind`, `message`, `updated`, `networks`; GET tarama başlatmaz |
-| `/api/wifi/scan` | POST | Arka planda tarama; erişim noktasını geçici durdurmak için `{interrupt: true}` |
+| `/api/wifi/scan` | POST | Arka planda tarama; kurulum ağı açıksa birkaç saniye kapatılıp geri açılır |
+| `/kurulum`, `/api/setup`, `/api/setup/connect`, `/api/setup/scan` | GET/POST | Girişsiz Wi-Fi kurulumu; yalnızca kurulum ağı açıkken ve ona bağlı istemcilere |
 | `/api/network/diagnostics` | GET | NetworkManager, radyo, aygıt ve rfkill tanılaması |
 | `/api/activity` | GET | İki saniyede bir alınan ortak CPU/RAM/işlem/ağ örneği; ilk yanıt `ready: false` olabilir |
 | `/api/fan` | GET/POST | Fan ayarları ve çalışan sürücü / `{mode: auto\|always\|unmanaged, pin, on_c, off_c}` |
@@ -110,13 +111,13 @@ Donanımsız kontroller: depo kökünden
 
 ### Çalışan Pi'yi SD kartı silmeden güncelleme
 
-Mac/Linux'ta depo kökünden `./update-center.sh pardus@pardus-maker.local`
+Mac/Linux'ta depo kökünden `./update-center.sh maker@maker-os.local`
 çalıştırın; IP adresi de verilebilir. Betik paketi SSH/SCP ile gönderir,
 mevcut Merkez'i Pi'de `/var/backups/pios-center.*` altında yedekler ve
 servisi yeniden başlatır. Servis başlamazsa eski dosyaları geri yükler.
 Wi-Fi ve kullanıcı ayarları korunur. Yalnız paket üretmek için
 `./update-center.sh --package` kullanın; çıktı
-`image/out/pardus-maker-center-update.tar.gz` olur. İmaj dosyaları bu
+`image/out/maker-os-center-update.tar.gz` olur. İmaj dosyaları bu
 işlemle güncellenmez. Tarayıcıyı yenileyin; fan ayarları için ayrıca
 Pi'yi yeniden başlatın.
 
@@ -151,9 +152,9 @@ Merkez'i değiştirip denemek için kök dosya sistemini yeniden üretmek gerekm
 
 ```bash
 cd image && ./test/run-test.sh                         # bir kez
-docker cp overlay/usr/lib/pios/center/. pardus-maker-test:/usr/lib/pios/center/
-docker exec pardus-maker-test sh -c 'pkill -f center/server.py'
-docker exec -d pardus-maker-test /usr/bin/python3 -I /usr/lib/pios/center/server.py
+docker cp overlay/usr/lib/pios/center/. maker-os-test:/usr/lib/pios/center/
+docker exec maker-os-test sh -c 'pkill -f center/server.py'
+docker exec -d maker-os-test /usr/bin/python3 -I /usr/lib/pios/center/server.py
 ```
 
 Sistem servisleri `/usr/bin/python3` (3.9) ile çalışır; kullanıcı `PATH`'indeki

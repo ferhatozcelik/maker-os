@@ -1,5 +1,5 @@
 [Unit]
-Description=Pardus Maker yeni surum denetimi (acilistan 10 dk sonra, sonra 6 saatte bir)
+Description=MakerOS yeni surum denetimi (acilistan 10 dk sonra, sonra 6 saatte bir)
 
 [Timer]
 OnBootSec=10min

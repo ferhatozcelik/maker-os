@@ -1,9 +1,9 @@
-# Pardus Maker etkilesimli kabuk ayarlari (~/.bashrc tarafindan yuklenir).
+# MakerOS etkilesimli kabuk ayarlari (~/.bashrc tarafindan yuklenir).
 # Terminal pencereleri login kabugu olmadigindan PATH/alias'lar burada da
 # tanimlanir.
 [ -f /etc/profile.d/pios.sh ] && . /etc/profile.d/pios.sh
 
-# Renkli ve okunakli komut satiri: [ai] pardus@pardus-maker ~/Projects/demo (main) $
+# Renkli ve okunakli komut satiri: [ai] maker@maker-os ~/Projects/demo (main) $
 __pios_git() {
   local b
   b=$(git symbolic-ref --short HEAD 2>/dev/null) || return
@@ -30,12 +30,12 @@ alias projeler='cd ~/Projects'
 alias guncelle='pios-open guncelleme >/dev/null 2>&1 & disown'
 alias sicaklik='awk "{printf \"CPU: %.1f °C\n\", \$1/1000}" /sys/class/thermal/thermal_zone0/temp'
 
-# Pardus Maker Merkezi bolumlerini acar: merkez [python|agent|gpio|wifi|...]
+# MakerOS Merkezi bolumlerini acar: merkez [python|agent|gpio|wifi|...]
 merkez() { pios-open "${1:-genel}" >/dev/null 2>&1 & disown; }
 
 yardim() {
   cat <<'TXT'
-Pardus Maker - sik kullanilan komutlar
+MakerOS - sik kullanilan komutlar
   python3 / python      varsayilan (en guncel) Python
   ai-env                hazir AI ortamini etkinlestir (torch, opencv, onnxruntime...)
   deactivate            sanal ortamdan cik
@@ -47,7 +47,7 @@ Pardus Maker - sik kullanilan komutlar
   pinout                GPIO pin semasi (ai-env icinde)
   i2cdetect -y 1        I2C aygitlarini tara
   sicaklik              CPU sicakligi
-  guncelle              Pardus Maker guncellemeleri (Merkez)
+  guncelle              MakerOS guncellemeleri (Merkez)
 TXT
 }
 
@@ -55,7 +55,7 @@ TXT
 if [ -z "$PIOS_WELCOMED" ] && [ ! -e "$HOME/.pios-quiet" ] && [ -t 1 ]; then
   export PIOS_WELCOMED=1
   __ip=$(hostname -I 2>/dev/null | awk '{print $1}')
-  printf '\e[1;31mPardus Maker\e[0m  %s.local%s  ·  %s  ·  komutlar icin \e[1myardim\e[0m\n\n' \
+  printf '\e[1;31mMakerOS\e[0m  %s.local%s  ·  %s  ·  komutlar icin \e[1myardim\e[0m\n\n' \
     "$(hostname)" "${__ip:+ ($__ip)}" "$(python3 --version 2>/dev/null)"
   unset __ip
 fi

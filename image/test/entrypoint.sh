@@ -19,5 +19,5 @@ x11vnc -display :0 -localhost -forever -shared -rfbauth /etc/pios/vnc.pass -rfbp
   -repeat -threads -nonap -pointer_mode 4 -defer 10 -wait 33 -speeds lan -cursor arrow \
   -quiet -bg -o /tmp/x11vnc.log
 websockify 127.0.0.1:6080 localhost:5900 >/tmp/novnc.log 2>&1 &
-echo "Pardus Maker test: http://localhost:8080/  (maker / maker)"
+echo "MakerOS test: http://localhost:8080/  (maker / maker)"
 wait

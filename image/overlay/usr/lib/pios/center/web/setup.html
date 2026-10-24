@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MakerOS Kurulum</title>
+<!-- MakerOS kurulum agi (captive portal): girissiz, tek adim Wi-Fi kurulumu.
+     Telefonun "aga giris yap" penceresinde acilir; harici dosya kullanmaz. -->
+<style>
+  :root { --bg: #f5f5f7; --card: #fff; --fg: #1d1d1f; --muted: #6e6e73; --line: #e3e3e8; --accent: #e30a17; --sel: #fdecee; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1e1e20; --card: #2a2a2d; --fg: #f2f2f7; --muted: #98989f; --line: #3a3a3e; --sel: #3a2224; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.45 system-ui, -apple-system, "Noto Sans", sans-serif; }
+  main { max-width: 440px; margin: 0 auto; padding: 24px 16px calc(32px + env(safe-area-inset-bottom)); }
+  h1 { font-size: 24px; margin: 0 0 4px; }
+  .lead { color: var(--muted); margin: 0 0 18px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .net { display: flex; align-items: center; gap: 12px; width: 100%; padding: 14px 16px; border: 0; border-top: 1px solid var(--line);
+         background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+  .net:first-child { border-top: 0; }
+  .net.on { background: var(--sel); }
+  .net b { flex: 1; font-weight: 500; overflow-wrap: anywhere; }
+  .net small { color: var(--muted); }
+  .bars { display: inline-flex; align-items: flex-end; gap: 2px; height: 14px; }
+  .bars i { width: 4px; background: var(--line); border-radius: 1px; }
+  .bars i.f { background: var(--fg); }
+  form { margin-top: 16px; display: grid; gap: 10px; }
+  label { font-size: 14px; color: var(--muted); }
+  input { width: 100%; padding: 13px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: inherit; font: inherit; }
+  .btn { padding: 13px 16px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: inherit; font: inherit; font-weight: 600; cursor: pointer; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn:disabled { opacity: .5; }
+  .links { display: flex; justify-content: space-between; gap: 12px; margin-top: 12px; }
+  .links button { background: none; border: 0; color: var(--accent); font: inherit; padding: 6px 0; cursor: pointer; }
+  .msg { padding: 12px 14px; border-radius: 10px; margin: 0 0 14px; background: var(--card); border: 1px solid var(--line); white-space: pre-line; }
+  .msg.err { border-color: var(--accent); }
+  .empty { padding: 18px 16px; color: var(--muted); }
+  .done { text-align: center; padding: 24px 8px; }
+  .done code { font-size: 18px; font-weight: 600; }
+</style>
+</head>
+<body>
+<main id="app"><p class="lead">Yükleniyor…</p></main>
+<script>
+"use strict";
+const app = document.getElementById("app");
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+const post = (path, body) => fetch(path, { method: "POST", headers: { "Content-Type": "application/json", "X-Pios": "1" }, body: JSON.stringify(body) })
+  .then(r => r.json().then(j => (r.ok ? j : Promise.reject(new Error(j.message || j.error || "İstek başarısız")))));
+const bars = s => `<span class="bars">${[25, 50, 75].map((t, i) => `<i class="${s >= t ? "f" : ""}" style="height:${6 + i * 4}px"></i>`).join("")}</span>`;
+// Emoji fontu olmayan cihazlarda da gorunsun diye kilit SVG olarak cizilir.
+const lock = '<svg width="12" height="14" viewBox="0 0 12 14" aria-label="Şifreli" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="1" y="6" width="10" height="7" rx="1.5"/><path d="M3.5 6V4a2.5 2.5 0 0 1 5 0v2"/></svg>';
+let state = null, chosen = null, manual = false;
+
+async function load() {
+  try { state = await (await fetch("/api/setup", { cache: "no-store" })).json(); }
+  catch { return setTimeout(load, 3000); }
+  render();
+}
+
+function render(notice) {
+  const s = state;
+  if (!s.available) {
+    app.innerHTML = `<h1>MakerOS</h1><p class="lead">Kurulum ağı kapalı; cihaz bir ağa bağlı.</p>
+      <p class="msg">Cihazın paneli: <a href="/">Merkez'i aç</a></p>`;
+    return;
+  }
+  const op = s.operation || {};
+  const failed = op.kind === "connect" && op.status === "error"
+    ? `<p class="msg err">Son bağlantı denemesi başarısız oldu. Parolayı kontrol edip yeniden deneyin.\n\n${esc(op.message.split("\n")[0])}</p>` : "";
+  const list = s.networks.length
+    ? s.networks.map((n, i) => `<button class="net${chosen && chosen.ssid === n.ssid ? " on" : ""}" data-i="${i}">
+        <b>${esc(n.ssid)}</b><small>${n.secure ? lock : ""}</small>${bars(n.signal)}</button>`).join("")
+    : `<div class="empty">Ağ bulunamadı. Listeyi yenileyin veya ağ adını elle yazın.</div>`;
+  const needsPassword = manual || (chosen && chosen.secure);
+  app.innerHTML = `<h1>Wi-Fi kurulumu</h1>
+    <p class="lead">MakerOS'un bağlanacağı Wi-Fi ağını seçin.</p>
+    ${notice ? `<p class="msg">${esc(notice)}</p>` : ""}${failed}
+    ${manual ? "" : `<div class="card">${list}</div>`}
+    ${chosen || manual ? `<form id="f">
+      ${manual ? `<label for="ssid">Ağ adı</label><input id="ssid" autocomplete="off" autocapitalize="none" required>` : ""}
+      ${needsPassword ? `<label for="pw">${manual ? "Parola (açık ağda boş bırakın)" : `“${esc(chosen.ssid)}” parolası`}</label>
+        <input id="pw" type="password" autocomplete="current-password" ${manual ? "" : "required minlength=8"}>` : ""}
+      <button class="btn primary">Bağlan</button></form>` : ""}
+    <div class="links"><button id="refresh">Listeyi yenile</button>
+      <button id="toggle">${manual ? "Listeden seç" : "Ağ listede yok"}</button></div>`;
+  app.querySelectorAll(".net").forEach(b => b.onclick = () => { chosen = s.networks[b.dataset.i]; render(); const pw = document.getElementById("pw"); if (pw) pw.focus(); });
+  document.getElementById("toggle").onclick = () => { manual = !manual; chosen = null; render(); };
+  document.getElementById("refresh").onclick = refresh;
+  const f = document.getElementById("f");
+  if (f) f.onsubmit = ev => { ev.preventDefault(); connect(); };
+}
+
+async function connect() {
+  const ssid = manual ? document.getElementById("ssid").value.trim() : chosen.ssid;
+  const pw = document.getElementById("pw");
+  if (!ssid) return;
+  app.querySelector(".btn.primary").disabled = true;
+  try { await post("/api/setup/connect", { ssid, password: pw ? pw.value : "" }); }
+  catch (e) { return render(e.message); }
+  const host = esc(state.host) + ".local";
+  app.innerHTML = `<div class="done"><h1>Bağlanılıyor…</h1>
+    <p class="lead">MakerOS “${esc(ssid)}” ağına bağlanıyor. Bu kurulum ağı birazdan kapanacak.</p>
+    <p class="msg">1. Telefonunuzu <b>${esc(ssid)}</b> ağına bağlayın.<br>2. Tarayıcıda şu adresi açın:<br><code>http://${host}/</code></p>
+    <p class="lead">Bağlantı başarısız olursa MakerOS ağı yaklaşık bir dakika içinde yeniden açılır; ona bağlanıp tekrar deneyin.</p></div>`;
+}
+
+async function refresh() {
+  try { await post("/api/setup/scan", {}); }
+  catch (e) { return render(e.message); }
+  app.innerHTML = `<h1>Ağlar taranıyor…</h1><p class="lead">MakerOS ağı birkaç saniye kapanıp yeniden açılacak. Telefonunuz kendiliğinden yeniden bağlanır; bu sayfa açık kalsın.</p>`;
+  const started = Date.now();
+  const poll = async () => {
+    try {
+      const s = await (await fetch("/api/setup", { cache: "no-store" })).json();
+      if (s.available && s.operation.kind === "scan" && s.operation.status !== "running") { state = s; chosen = null; return render(); }
+    } catch { /* ag yeniden aciliyor */ }
+    if (Date.now() - started < 90000) setTimeout(poll, 3000);
+    else load();
+  };
+  setTimeout(poll, 5000);
+}
+
+load();
+</script>
+</body>
+</html>

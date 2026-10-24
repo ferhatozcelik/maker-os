@@ -6,7 +6,7 @@
   "dosya sistemi yok" deniyorsa yazma işlemi yarım kalmıştır: imajı Raspberry
   Pi Imager ile **Use custom** seçerek yeniden yazın ve doğrulamanın
   bitmesini bekleyin.
-- İndirilen dosyayı doğrulayın: `sha256sum -c pardus-maker-*.img.xz.sha256`.
+- İndirilen dosyayı doğrulayın: `sha256sum -c maker-os-*.img.xz.sha256`.
 - Resmi 5V/3A güç kaynağı kullanın; zayıf kablo veya adaptör açılışı engeller.
 - Pi 5 henüz desteklenmez.
 - Kök bölüm ilk açılışta kartın tamamına genişler. Kartı bilgisayarda
@@ -14,11 +14,12 @@
 
 ## Pi'nin adresini bulamıyorum
 
-1. `http://pardus-maker.local/` açılmıyorsa (bazı Windows ve Android
+1. `http://maker-os.local/` açılmıyorsa (bazı Windows ve Android
    sürümleri `.local` adlarını çözmez) modemin bağlı cihazlar listesinden IP'ye bakın.
 2. Kartı bilgisayara takıp `bootfs/pardus-status.txt` dosyasını açın:
    ana makine adı, mod (istemci/erişim noktası) ve IP adresleri yazar.
-3. Ağ yoksa 45 sn sonra `Pardus-Maker-XXXX` erişim noktası açılır → `http://10.42.0.1/`.
+3. Ağ yoksa 45 sn sonra şifresiz `MakerOS` ağı açılır. Telefonu bağlayın; kurulum sayfası
+   kendiliğinden açılır (açılmazsa `http://10.42.0.1/kurulum`). Ağınızı seçip parolasını girin.
 
 ## Wi-Fi'ye bağlanmıyor
 

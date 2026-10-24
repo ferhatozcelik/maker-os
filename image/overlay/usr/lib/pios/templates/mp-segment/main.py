@@ -5,7 +5,7 @@ degistirir (goruntulu gorusme efekti).
 Calistirma:  uv run main.py                       (bulanik)
              uv run main.py --mod renk
              uv run main.py --mod resim --resim arka.jpg
-Web yayini:  http://pardus-maker.local:8000/
+Web yayini:  http://maker-os.local:8000/
 """
 from pios_camera import Gosterici, Kamera, arguman_ayristirici, analiz, calisma_modu, performans_ayarla
 
