@@ -1,0 +1,1 @@
+{"id":"kamera-foto","order":5,"category":"kamera","icon":"camera","title":{"tr":"Kamera fotoğrafı","en":"Camera photo"},"desc":{"tr":"Raspberry Pi kamera modülüyle (veya USB kamera) fotoğraf çeker.","en":"Takes a photo with the Raspberry Pi camera module (or a USB camera)."},"deps":[],"needs":["camera"]}

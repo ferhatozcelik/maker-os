@@ -1,0 +1,73 @@
+[package]
+name = "makerd"
+description = "MakerOS arka uç hizmeti: makerd (web API), makerd-priv (dar root yardımcı), makerd-user (kullanıcı hizmeti)"
+version = "2.0.0"
+edition = "2024"
+# Buildroot 2026.02 host-rust sürümü. Bağımlılıklar bu sürümle derlenebilir
+# olanlardan seçilir (resolver 3: MSRV'ye duyarlı çözümleme).
+rust-version = "1.88"
+license = "GPL-3.0-or-later"
+publish = false
+resolver = "3"
+autobins = false
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "makerd"
+path = "src/bin/makerd.rs"
+
+[[bin]]
+name = "makerd-priv"
+path = "src/bin/makerd-priv.rs"
+
+[[bin]]
+name = "makerd-user"
+path = "src/bin/makerd-user.rs"
+
+[dependencies]
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "io-util", "time", "sync", "signal", "process", "fs"] }
+tokio-util = { version = "0.7", features = ["io"] }
+axum = { version = "0.8", default-features = false, features = ["http1", "tokio", "ws", "query", "json"] }
+hyper = { version = "1", features = ["client", "http1"] }
+hyper-util = { version = "0.1", features = ["client-legacy", "http1", "tokio"] }
+http-body-util = "0.1"
+bytes = "1"
+futures-util = { version = "0.3", default-features = false, features = ["std"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["raw_value"] }
+zbus = { version = "5", default-features = false, features = ["tokio"] }
+nix = { version = "0.30", features = ["term", "process", "signal", "fs", "hostname", "ioctl", "user", "socket", "feature"] }
+libc = "0.2"
+sha2 = "0.10"
+hmac = "0.12"
+rand = "0.9"
+base64 = "0.22"
+hex = "0.4"
+regex = { version = "1", default-features = false, features = ["std", "perf"] }
+jiff = { version = "0.2", features = ["serde"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt", "std", "json"] }
+ureq = { version = "3", default-features = false, features = ["rustls"] }
+zip = { version = "2", default-features = false, features = ["deflate"] }
+jpeg-encoder = "0.6"
+gpiocdev = "0.7"
+include_dir = "0.7"
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+
+[profile.release]
+opt-level = "s"
+lto = "fat"
+codegen-units = 1
+panic = "unwind"
+strip = true
+debug = false
+
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+opt-level = 1

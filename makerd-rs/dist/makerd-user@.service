@@ -1,0 +1,30 @@
+# Kullanıcı başına terminal hizmeti: makerd-user@<kullanıcı>.service (User=%i).
+# makerd-priv user.create bunu "systemctl enable --now" ile açar; elle:
+#   systemctl enable --now makerd-user@ayse.service
+# makerd'nin kum havuzu dışında çalışır: terminalde sudo çalışır (NoNewPrivileges YOK).
+[Unit]
+Description=MakerOS kullanıcı hizmeti (%i): web terminali
+After=systemd-tmpfiles-setup.service systemd-user-sessions.service
+Before=makerd.service
+
+[Service]
+Type=notify
+User=%i
+# Kullanıcının birincil grubu ve /etc/group'taki ek grupları (wheel, video, gpio...) kullanılır.
+WorkingDirectory=~
+ExecStart=/usr/bin/makerd-user --socket-dir /run/makeros/user --allow-user maker
+Restart=always
+RestartSec=2
+Slice=user.slice
+# Kabuklar bu birimin cgroup'unda çalışır; durdurulunca hepsi kapanır.
+KillMode=control-group
+# İsteğe bağlı: logind oturumu ve /run/user/UID için (pam_systemd gerekir):
+#PAMName=login
+UMask=0022
+Environment=LANG=C.UTF-8
+# Kasıtlı olarak NoNewPrivileges/ProtectSystem/MemoryDenyWriteExecute yok: bu
+# kullanıcının kendi oturumudur (sudo, podman, Node JIT çalışmalı).
+OOMScoreAdjust=100
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,11 @@
+{
+  "id": "benim-eklentim",
+  "name": "Benim Eklentim",
+  "version": "1.0.0",
+  "description": "MakerOS için kendi Python uygulamam.",
+  "author": "",
+  "entrypoint": "main.py",
+  "web_port": 8765,
+  "icon": "icon.svg",
+  "args": []
+}

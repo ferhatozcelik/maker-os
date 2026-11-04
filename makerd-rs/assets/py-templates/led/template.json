@@ -1,0 +1,1 @@
+{"id":"led","order":2,"category":"donanim","icon":"lightbulb","title":{"tr":"LED yak-söndür","en":"Blink an LED"},"desc":{"tr":"GPIO17'ye (fiziksel pin 11) bağlı LED'i yakıp söndürür. Pi 4 ve Pi 5.","en":"Blinks an LED on GPIO17 (physical pin 11). Pi 4 and Pi 5."},"deps":["gpiozero"],"needs":["gpio"]}
