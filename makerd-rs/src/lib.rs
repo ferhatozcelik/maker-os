@@ -16,10 +16,10 @@ pub mod dbus;
 pub mod events;
 pub mod flags;
 pub mod gpio;
-// pub mod httpd; // Go'dan taşınacak
+pub mod httpd;
 pub mod jobs;
 pub mod logging;
-// pub mod mock; // Go'dan taşınacak
+pub mod mock;
 pub mod network;
 pub mod notify;
 pub mod ota;
