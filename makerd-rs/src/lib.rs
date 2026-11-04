@@ -20,7 +20,7 @@ pub mod gpio;
 pub mod jobs;
 pub mod logging;
 // pub mod mock; // Go'dan taşınacak
-// pub mod network; // Go'dan taşınacak
+pub mod network;
 pub mod notify;
 // pub mod ota; // Go'dan taşınacak
 pub mod plugins;
