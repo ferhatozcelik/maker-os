@@ -92,20 +92,20 @@ compositor'dan gelen pencereler `wm.adopt(app, view)` ile yönetime alınır.
 
 ## İlk açılış sihirbazı (`setup/`)
 
-Adımlar: **Hoş geldiniz** (dil; sihirbaz seçilen dile anında geçer) → **Bölge ve klavye** (saat dilimi araması, tarayıcının
-saat dilimi listede varsa önceden seçili; klavye dilden tahmin edilir) → **Wi-Fi** (yalnız `wifi_needed`; ağ seç + parola,
-gizli ağ, yeniden tara, atla) → **Hesap** (ad soyaddan kullanıcı adı önerisi, parola gücü 0–4, en az `min_password` karakter, tekrar) →
-**Bilgisayar adı** (`<ad>.local`) → **Gizlilik** (telemetri yok, veriler cihazda) → `POST /setup/complete` → **Bitti** → masaüstü.
-Ön/geri geçiş yalnız transform/opacity; Enter = Devam, Esc = Geri. Telefonda (MakerOS erişim noktası → captive portal `/`)
-kart tam ekran olur; Wi-Fi seçildiyse cihazın ağ değiştireceği ve `http://<ad>.local` adresi bildirilir. Metinler `i18n/*.js`
-içinde `su.*`. `POST /setup/complete` oturum çerezi verir; kabuk `location.replace("/")` ile doğrudan masaüstüne geçer
-(seçilen dil sayfayla birlikte yüklenir). `409` → "zaten kurulu" + giriş ekranı.
+Tek adım: **Wi-Fi** (her zaman gösterilir; ağ seç + parola, gizli ağ, yeniden tara; varsayılan seçim "Şimdilik atla",
+düğme "Atla" / "Bağlan ve devam et") → `POST /setup/complete` → **Bitti** → masaüstü. Hesap, dil, klavye, saat dilimi ve cihaz adı
+sorulmaz: varsayılan yönetici `makeros` / `makeros` (`DEFAULT_USER`; `maker` makerd hizmet hesabıdır), dil/klavye `defaults`,
+saat dilimi tarayıcınınki (listede varsa) ya da `defaults`, cihaz adı `GET /setup` önerisi (`makeros-xxxx`). Hepsi sonradan
+Ayarlar'dan değiştirilir; Bitti ekranı ağ adresini, kullanıcı adını ve parolayı gösterip parolanın değiştirilmesini önerir.
+Pi'nin kendi ekranı `/auth/local` ile otomatik oturum açar. Telefonda (MakerOS erişim noktası → captive portal `/`) kart tam
+ekran olur; Wi-Fi seçildiyse cihazın ağ değiştireceği ve `http://<ad>.local` adresi bildirilir. Metinler `i18n/*.js` içinde
+`su.*`. `POST /setup/complete` oturum çerezi verir; kabuk `location.replace("/")` ile doğrudan masaüstüne geçer. `409` →
+"zaten kurulu" + giriş ekranı.
 
 API (docs/v2/api.md → "İlk açılış kurulumu"; sahte uygulama: `dev-server.mjs --fresh`, gerçek: `MAKERD_MOCK_FRESH=1 makerd --mock`):
 `GET /setup` → `{hostname, defaults:{lang,keymap,timezone}, languages:[{id,name}], keymaps:[{id,name}], timezones[], online, wifi_needed, hotspot, min_password}`;
 Wi-Fi adımına girilince `POST /setup/wifi/scan` (kimliksiz); `POST /setup/complete {user,password,fullname?,hostname,timezone,lang,keymap,wifi?:{ssid,password?,hidden?}}`
-→ `{user,admin,job?,warnings?}` + çerez (`warnings` Bitti ekranında gösterilir). Parola alt sınırı `min_password`'dan gelir (makerd: 6).
-Varsayılanlar: dil/klavye/saat dilimi `defaults`; tarayıcının saat dilimi listede varsa o seçilir.
+→ `{user,admin,job?,warnings?}` + çerez (`warnings` Bitti ekranında gösterilir).
 
 ## Tercihler (`GET/PUT /prefs`)
 

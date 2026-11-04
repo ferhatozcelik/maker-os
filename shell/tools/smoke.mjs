@@ -64,76 +64,42 @@ const next = async () => { await clickSel(".su-next"); await sleep(520); };
 
 // ------------------------------------------------------------ M2: ilk açılış sihirbazı (--fresh)
 if (FRESH) {
-  // telefon (erişim noktası → captive portal "/")
+  // telefon (erişim noktası → captive portal "/"): yalnız Wi-Fi adımı
   await cdp("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
   await cdp("Page.navigate", { url: URL0 + "/?ui=desktop" }); await sleep(1800);
-  ok(await step() === "welcome", "telefon: sihirbaz açıldı (welcome)");
-  await shot("m2-01-phone-welcome");
-  await next(); ok(await step() === "region", "telefon: bölge adımı"); await shot("m2-02-phone-region");
-  await next();
-  if (await step() === "wifi") {
-    await sleep(1200); // POST /setup/wifi/scan
-    await js(`document.querySelector('.su-nets .su-opt')?.click()`); await sleep(200);
-    await shot("m2-03-phone-wifi");
-    await js(`[...document.querySelectorAll('.su-opt')].at(-1).click()`); await sleep(100); // atla
-    await next();
-  }
-  await shot("m2-04-phone-account");
+  ok(await step() === "wifi", "telefon: sihirbaz Wi-Fi adımıyla açıldı");
+  await sleep(1200); // POST /setup/wifi/scan
+  await shot("m2-01-phone-wifi");
   // sihirbaz tamamlanmadığı için sunucu durumu değişmedi; masaüstü akışı aynı kurulumsuz cihazda
   await cdp("Emulation.clearDeviceMetricsOverride");
-  // masaüstü / HDMI: tam akış
+  // masaüstü / HDMI: Wi-Fi → Bitti
   await cdp("Page.navigate", { url: URL0 + "/?ui=desktop&fx=lite" }); await sleep(1800);
-  ok(await step() === "welcome", "sihirbaz: hoş geldiniz");
-  await shot("m2-05-welcome");
-  await js(`[...document.querySelectorAll('.su-opt')].find(b => b.dataset.v?.startsWith("en"))?.click()`); await sleep(400);
-  ok(await js(`document.querySelector('.su-page h1').textContent`) === "Welcome to MakerOS", "sihirbaz: dil anında İngilizce");
-  await js(`[...document.querySelectorAll('.su-opt')].find(b => b.dataset.v?.startsWith("tr"))?.click()`); await sleep(400);
-  ok(/hoş geldiniz/.test(await js(`document.querySelector('.su-page h1').textContent`)), "sihirbaz: Türkçeye dönüş");
-  await next();
-  await typeIn(".su-search", "berlin"); await sleep(200);
-  await clickSel(".su-tz .su-opt"); await sleep(200);
-  await shot("m2-06-region");
-  await next();
-  let wifiSsid = null;
-  if (await step() === "wifi") {
-    await sleep(1500); // POST /setup/wifi/scan
-    ok(await js(`document.querySelectorAll('.su-nets .su-opt').length > 2`), "Wi-Fi: POST /setup/wifi/scan listesi");
-    wifiSsid = await js(`(() => { const b = [...document.querySelectorAll('.su-nets .su-opt')].find(b => b.querySelector('.su-sig svg') && b.textContent && b.querySelectorAll('.su-sig svg').length === 2); b?.click(); return b?.querySelector('b').textContent || null; })()`);
-    await sleep(200);
-    if (wifiSsid) {
-      await next(); ok(await step() === "wifi" && /8/.test(await js(`document.querySelector('.su-err').textContent`)), "Wi-Fi: kısa parola reddedildi");
-      await typeIn(".su-pw input", "atolye-2026"); await sleep(100);
-    }
-    await shot("m2-07-wifi");
-    await next();
-  } else console.log("ℹ wifi_needed=false → Wi-Fi adımı atlandı");
-  ok(await step() === "account", "sihirbaz: hesap");
-  await typeIn('.su-field input[autocomplete=name]', "Ada Yılmaz"); await sleep(100);
-  ok(await js(`document.querySelector('.su-field input[autocomplete=username]').value`) === "ada", "kullanıcı adı ad soyaddan türetildi (ada)");
-  await typeIn('.su-field input[autocomplete=new-password]', "maker"); await sleep(100);
-  await next(); ok(await step() === "account", "hesap: zayıf/kısa parola reddedildi");
-  USER = "ada"; PASS = "Kurulum-2026!";
-  await typeIn('.su-field input[autocomplete=new-password]', PASS);
-  await js(`document.querySelectorAll('.su-field input[autocomplete=new-password]')[1].focus()`); await cdp("Input.insertText", { text: PASS }); await sleep(150);
-  ok(+(await js(`document.querySelector('.su-meter').dataset.s`)) >= 3, "parola gücü göstergesi (iyi/güçlü)");
-  await shot("m2-08-account");
-  await next(); ok(await step() === "computer", "sihirbaz: bilgisayar adı");
-  await typeIn(".su-field input", "atolye-pi"); await sleep(100);
-  await shot("m2-09-computer");
-  await next(); ok(await step() === "privacy", "sihirbaz: gizlilik");
-  await shot("m2-10-privacy");
+  ok(await step() === "wifi", "sihirbaz: Wi-Fi");
+  ok(await js(`!!document.querySelector('.su-opt.on') && [...document.querySelectorAll('.su-opt')].at(-1).classList.contains('on')`), "Wi-Fi: varsayılan seçim 'Şimdilik atla'");
+  ok(await js(`document.querySelector('.su-next').textContent`) === "Atla", "Wi-Fi: düğme 'Atla'");
+  await sleep(1500); // POST /setup/wifi/scan
+  ok(await js(`document.querySelectorAll('.su-nets .su-opt').length > 2`), "Wi-Fi: POST /setup/wifi/scan listesi");
+  const wifiSsid = await js(`(() => { const b = [...document.querySelectorAll('.su-nets .su-opt')].find(b => b.querySelectorAll('.su-sig svg').length === 2); b?.click(); return b?.querySelector('b').textContent || null; })()`);
+  await sleep(200);
+  if (wifiSsid) {
+    await next(); ok(await step() === "wifi" && /8/.test(await js(`document.querySelector('.su-err').textContent`)), "Wi-Fi: kısa parola reddedildi");
+    await shot("m2-02-wifi");
+  }
+  await js(`[...document.querySelectorAll('.su-opt')].at(-1).click()`); await sleep(100); // atla
+  USER = "makeros"; PASS = "makeros";
   await clickSel(".su-next"); await sleep(1800);
-  ok(await step() === "done", "sihirbaz: kurulum tamamlandı");
-  await shot("m2-11-done");
+  ok(await step() === "done", "sihirbaz: Wi-Fi atlandı, kurulum tamamlandı");
+  ok(/makeros/.test(await js(`document.querySelector('.su-summary').textContent`)), "bitti: varsayılan kullanıcı/parola gösteriliyor");
+  await shot("m2-03-done");
   const ses = await js(`fetch("/api/v1/session").then(r => r.json())`);
-  ok(ses.user === "ada" && ses.setup_done === true, `oturum çerezi: ${JSON.stringify(ses)}`);
+  ok(ses.user === "makeros" && ses.setup_done === true, `oturum çerezi: ${JSON.stringify(ses)}`);
   const sys = await js(`fetch("/api/v1/system").then(r => r.json())`);
-  ok(sys.hostname === "atolye-pi", `bilgisayar adı uygulandı (${sys.hostname})`);
+  ok(/^makeros/.test(sys.hostname), `önerilen cihaz adı uygulandı (${sys.hostname})`);
   ok(typeof sys.cpu?.usage_pct === "number", "/system cpu.usage_pct mevcut");
   ok((await js(`fetch("/api/v1/setup").then(r => r.status)`)) === 409, "GET /setup → 409 (kurulum bitti)");
   await clickSel(".su-next"); await sleep(2500);
   ok(await js(`!document.querySelector('#setup') && document.querySelector('#lock').hidden && !!document.querySelector('.dock-inner')`), "sihirbaz → masaüstü (giriş istemeden)");
-  await shot("m2-12-first-desktop");
+  await shot("m2-04-first-desktop");
 }
 const run = async (theme, fx) => {
   await cdp("Page.navigate", { url: `${URL0}/?ui=desktop&fx=${fx}` }); await sleep(1200);

@@ -121,7 +121,7 @@ MakerOS, Raspberry Pi 4 Model B ve Raspberry Pi 400 (64 bit) üzerinde çalış�
 1. SD kartı Raspberry Pi’ye takıp gücü verin.
 2. Ethernet kablosu takılıysa veya `wifi.txt` ayarlandıysa bilgisayar ya da telefon tarayıcısından **http://makeros.local/** adresini açın.
 3. Kablo veya `wifi.txt` yoksa telefonunuzdan şifresiz **`MakerOS`** Wi-Fi ağına bağlanın. Kurulum sayfası kendiliğinden açılır (açılmazsa tarayıcıdan `http://10.42.0.1/kurulum` adresine gidin).
-4. İlk açılış sihirbazında bölge ve klavye düzenini, gerekirse Wi-Fi ağını seçin; yönetici hesabınızı ve cihaz adını oluşturun. Güvenlik için varsayılan parola yoktur.
+4. İlk açılış sihirbazında Wi-Fi ağını seçin ya da bu adımı atlayın. Cihaz varsayılan **`makeros` / `makeros`** hesabıyla kurulur; Pi'nin kendi ekranı otomatik oturum açar. Başka bir bilgisayardan bu bilgilerle girip parolayı **Ayarlar → Kullanıcı**'dan değiştirin.
 
 ### 3. Ekran ve Web görünümlerini kullanın
 
