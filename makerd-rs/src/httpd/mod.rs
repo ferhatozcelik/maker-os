@@ -78,6 +78,8 @@ pub struct Deps {
     pub screen: Option<Arc<screen::Manager>>,
     pub browser: Option<Arc<browser::Manager>>,
     pub update: Option<Arc<ota::Updater>>,
+    /// Eklenti kataloğu (mağaza); None ise /plugins/catalog 503.
+    pub catalog: Option<Arc<crate::catalog::Catalog>>,
 }
 
 pub struct Server {
@@ -182,6 +184,8 @@ impl Server {
             .route("/api/v1/gpio/{n}", post(user::gpio_set))
             .route("/api/v1/plugins", get(user::plugin_list))
             .route("/api/v1/plugins/template.zip", get(user::plugin_template))
+            .route("/api/v1/plugins/catalog", get(user::catalog_list))
+            .route("/api/v1/plugins/catalog/{id}/install", post(user::catalog_install))
             .route("/api/v1/plugins/import", post(user::plugin_import))
             .route("/api/v1/plugins/{id}/export.zip", get(user::plugin_export))
             .route("/api/v1/plugins/{id}/asset/{*path}", get(user::plugin_asset))

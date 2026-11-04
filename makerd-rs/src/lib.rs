@@ -12,6 +12,7 @@ pub mod apps;
 pub mod auth;
 pub mod browser;
 pub mod camera;
+pub mod catalog;
 pub mod dbus;
 pub mod events;
 pub mod flags;

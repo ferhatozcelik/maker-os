@@ -41,6 +41,7 @@ zbus = { version = "5", default-features = false, features = ["tokio"] }
 nix = { version = "0.30", features = ["term", "process", "signal", "fs", "hostname", "ioctl", "user", "socket", "feature", "net"] }
 libc = "0.2"
 sha2 = "0.10"
+sha1 = "0.10"
 hmac = "0.12"
 rand = "0.9"
 base64 = "0.22"

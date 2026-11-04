@@ -82,3 +82,14 @@ export function setFavicon(href) {
   if (!l) { l = document.createElement("link"); l.rel = "icon"; document.head.append(l); }
   if (l.getAttribute("href") !== href) { l.type = href.startsWith("data:image/svg") || href.endsWith(".svg") ? "image/svg+xml" : ""; l.href = href; }
 }
+
+// Widget'ın eklenti süreci hazır mı: çalışmıyorsa başlatır, widget adresi 200 dönene kadar bekler (en çok ~20 sn).
+// Hazır olmadan iframe açılırsa 503 sayfası görünür ve "load" yine tetiklenir; bu yüzden önce yoklanır.
+export async function widgetReady(w, start) {
+  if (!w.running) { try { await start(w.plugin); } catch { /* başlatılamadı */ } }
+  for (let i = 0; i < 40; i++) {
+    try { if ((await fetch(w.url, { cache: "no-store", credentials: "same-origin" })).ok) return true; } catch { /* yok */ }
+    await new Promise(r => setTimeout(r, 500));
+  }
+  return false;
+}

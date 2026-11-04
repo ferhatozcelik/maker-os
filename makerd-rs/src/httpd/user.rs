@@ -407,6 +407,26 @@ pub async fn plugin_delete(State(s): State<S>, h: HeaderMap, Path(id): Path<Stri
     Ok(no_content())
 }
 
+fn catalog(s: &Server) -> ApiResult<Arc<crate::catalog::Catalog>> {
+    s.d.catalog.clone().ok_or_else(|| ApiError::unavailable("Eklenti kataloğu kapalı."))
+}
+
+/// Mağaza: katalogdaki eklentiler + kurulu sürümler. `?refresh=1` önbelleği atlar.
+pub async fn catalog_list(State(s): State<S>, h: HeaderMap, Query(q): Q) -> R {
+    let sess = session_of(&s, &h)?;
+    let refresh = q.get("refresh").is_some_and(|v| v == "1" || v == "true");
+    Ok(json(&catalog(&s)?.list(agent(&s)?.as_ref(), &sess.user, refresh).await?))
+}
+
+/// Katalogdan kur veya güncelle.
+pub async fn catalog_install(State(s): State<S>, h: HeaderMap, Path(id): Path<String>) -> R {
+    let sess = session_of(&s, &h)?;
+    let (c, a) = (catalog(&s)?, agent(&s)?);
+    let work = c.install(a.as_ref(), &sess.user, &id);
+    tokio::time::timeout(Duration::from_secs(180), work).await.unwrap_or_else(|_| Err(ApiError::unavailable("İndirme zaman aşımına uğradı.")))
+        .map(|m| json(&m))
+}
+
 /// Eklenti içindeki statik görsel (tema duvar kâğıdı, logo, işaret).
 pub async fn plugin_asset(State(s): State<S>, h: HeaderMap, Path((id, rel)): Path<(String, String)>) -> R {
     let sess = session_of(&s, &h)?;

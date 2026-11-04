@@ -6,7 +6,7 @@ import { t } from "/shell/js/i18n.js";
 import { icon } from "/shell/js/icons.js";
 import { get, post, Events, bus } from "/shell/js/api.js";
 import { prefs, pref, isDark, syncPrefs } from "/shell/js/prefs.js";
-import { wallURL, brand, themeById, setFavicon } from "/shell/js/themes.js";
+import { wallURL, brand, themeById, setFavicon, widgetReady } from "/shell/js/themes.js";
 import { APPS, loadApps, SCREEN } from "/shell/js/apps.js";
 import { watchThemeStatus } from "/shell/js/status.js";
 import { registerSW } from "/shell/js/pwa.js";
@@ -31,7 +31,7 @@ function wall() {
   document.querySelectorAll("img.brand-logo").forEach(i => { i.src = b.logo; }); // temaya özel logo
   setFavicon(b.favicon);
 }
-prefs.on("change", k => { wall(); if (k === "look") setTimeout(() => { renderNav(); renderTabbar(); }); });
+prefs.on("change", k => { wall(); if (k === "look") setTimeout(() => { renderNav(); renderTabbar(); if (cur === "home") renderHome(); }); });
 
 const short = id => id.replace(/^makeros\./, "");
 const apps = () => APPS.filter(a => a.kind === "web" && !HIDDEN.has(a.id));
@@ -98,36 +98,48 @@ addEventListener("message", e => {
 });
 
 // --- ana sayfa ---------------------------------------------------------------
-// Etkin temanın widget'ı (ör. KHS kapı durumu): öğe yeniden kullanılır, her yenilemede yüklenmez.
-let widgetEl = null;
-function widgetCard() {
+// İskelet bir kez kurulur; sistem olayında (2 sn) yalnız istatistikler yenilenir. Widget iframe'i DOM'dan hiç
+// sökülmez (sökülürse tarayıcı onu baştan yükler → titreme). Uygulama ızgarası yalnız liste değişince çizilir.
+let homeParts = null, gridKey = "", widgetEl = null;
+function renderWidget(sec) {
   const w = themeById(pref("look")).widget;
-  if (!w) return "";
-  if (!widgetEl || widgetEl.dataset.url !== w.url) {
-    widgetEl = h("iframe.wdg", { src: w.url, title: "widget" });
-    widgetEl.dataset.url = w.url;
-    widgetEl.style.cssText = `width:${w.w}px;height:${w.h}px`;
-  }
-  return widgetEl;
+  if (!w) { widgetEl = null; sec.replaceChildren(); return; }
+  if (widgetEl && widgetEl.dataset.url === w.url) return; // aynı widget: dokunma
+  const f = h("iframe.wdg", { title: "widget" });
+  f.dataset.url = w.url;
+  f.style.cssText = `width:${w.w}px;height:${w.h}px;opacity:0;transition:opacity .25s`;
+  widgetEl = f;
+  sec.replaceChildren(h("h3", t("web.widgets")), h("div.widgets", f));
+  widgetReady(w, id => post(`/plugins/${id}/start`)).then(() => {
+    if (widgetEl !== f) return;
+    f.onload = () => { f.style.opacity = "1"; }; // boş iframe'in ilk "load"ı sayılmaz
+    f.src = w.url;
+  });
 }
 function renderHome() {
   let home = $(".home");
-  if (!home) { home = h("div.home"); view.append(home); }
-  const s = sys, mem = s ? s.mem.used / s.mem.total : 0, disk = s ? s.disk.used / s.disk.total : 0;
+  if (!home) {
+    home = h("div.home"); view.append(home);
+    homeParts = { hero: h("div.hero"), stats: h("div.stats"), wsec: h("div.wsec"), grid: h("div.grid") };
+    home.append(homeParts.hero, homeParts.stats, homeParts.wsec, h("h3", t("web.apps")), homeParts.grid);
+  }
+  const P = homeParts, s = sys, mem = s ? s.mem.used / s.mem.total : 0, disk = s ? s.disk.used / s.disk.total : 0;
   const ip = netIP();
   const stat = (ic, k, n, frac, sub) => h("div.stat", h("div.k", h("span", { html: icon(ic, 14, 2) }), k), h("div.n", n, sub ? h("small", " / " + sub) : ""), frac != null ? h("div.bar", h("i", { style: `width:${Math.round(frac * 100)}%` })) : "");
-  home.replaceChildren(
-    h("div.hero", h("h2", t("web.hello", { user: me?.user || "" })), h("p", s ? `${s.model} · MakerOS ${s.os.version}` : "MakerOS")),
-    h("div.stats",
-      stat("cpu", t("web.cpu"), s ? `%${Math.round(s.cpu.usage_pct ?? s.cpu.load[0] * 25)}` : "—", s ? (s.cpu.usage_pct ?? 0) / 100 : null),
-      stat("thermometer", t("web.temp"), s?.cpu.temp_c != null ? `${s.cpu.temp_c.toFixed(1)} °C` : "—", s ? Math.min(1, (s.cpu.temp_c || 0) / 85) : null),
-      stat("memory-stick", t("web.mem"), s ? bytes(s.mem.used) : "—", s ? mem : null, s && bytes(s.mem.total)),
-      stat("hard-drive", t("web.disk"), s ? bytes(s.disk.used) : "—", s ? disk : null, s && bytes(s.disk.total)),
-      stat("network", t("web.ip"), ip || t("web.offline")),
-      stat("clock", t("web.uptime"), s ? duration(s.uptime_s) : "—")),
-    ...(widgetCard() ? [h("h3", t("web.widgets")), h("div.widgets", widgetCard())] : []),
-    h("h3", t("web.apps")),
-    h("div.grid", ...sorted(apps()).map(a => h("a.tile", { href: "#" + short(a.id) }, h("img", { src: a.icon, alt: "" }), a.name))));
+  P.hero.replaceChildren(h("h2", t("web.hello", { user: me?.user || "" })), h("p", s ? `${s.model} · MakerOS ${s.os.version}` : "MakerOS"));
+  P.stats.replaceChildren(
+    stat("cpu", t("web.cpu"), s ? `%${Math.round(s.cpu.usage_pct ?? s.cpu.load[0] * 25)}` : "—", s ? (s.cpu.usage_pct ?? 0) / 100 : null),
+    stat("thermometer", t("web.temp"), s?.cpu.temp_c != null ? `${s.cpu.temp_c.toFixed(1)} °C` : "—", s ? Math.min(1, (s.cpu.temp_c || 0) / 85) : null),
+    stat("memory-stick", t("web.mem"), s ? bytes(s.mem.used) : "—", s ? mem : null, s && bytes(s.mem.total)),
+    stat("hard-drive", t("web.disk"), s ? bytes(s.disk.used) : "—", s ? disk : null, s && bytes(s.disk.total)),
+    stat("network", t("web.ip"), ip || t("web.offline")),
+    stat("clock", t("web.uptime"), s ? duration(s.uptime_s) : "—"));
+  renderWidget(P.wsec);
+  const list = sorted(apps()), key = list.map(a => a.id + "|" + a.name + "|" + a.icon).join(",");
+  if (key !== gridKey) {
+    gridKey = key;
+    P.grid.replaceChildren(...list.map(a => h("a.tile", { href: "#" + short(a.id) }, h("img", { src: a.icon, alt: "" }), a.name)));
+  }
 }
 let net = null;
 const netIP = () => (net?.ifaces || []).flatMap(i => i.ipv4 || [])[0]?.split("/")[0] || "";

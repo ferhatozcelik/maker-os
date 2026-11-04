@@ -186,3 +186,19 @@ süreç içinde bir PTY açılır.
 
 wayvnc hiçbir zaman dış ağa açılmaz; kimlik doğrulama yalnız makerd oturumudur.
 Kabuk uygulaması: `makeros.screen` (`/shell/apps/screen/`, noVNC 1.7 `core/rfb.js`).
+
+## Eklenti mağazası (2026-11-05)
+
+Kaynak: [`ferhatozcelik/makeros-plugins`](https://github.com/ferhatozcelik/makeros-plugins) deposunun `plugins/<id>/`
+klasörleri; derleme/yayın adımı yoktur. makerd `--plugin-catalog sahip/depo[@dal]` (varsayılan `ferhatozcelik/makeros-plugins@main`;
+boş: kapalı → 503). Liste: dalın commit'i (`/repos/…/branches/<dal>`) + o commit'in ağacı (`git/trees/<sha>?recursive=1`),
+her eklentinin `plugin.json`'u ve simgesi raw.githubusercontent.com'dan **commit adresiyle** okunur (dal önbelleği sorun olmaz).
+Her dosya ağaçtaki git blob özetiyle (SHA-1) denetlenir. 10 dk önbellek.
+
+- `GET /plugins/catalog[?refresh=1]` → `{source, repo_url, plugins:[{id,name,version,description,author?,icon,tags[],size,url,installed,update}]}`.
+  `icon` data: URI (svg/png/webp, ≤ 32 KB) ya da boş; `url` GitHub'daki klasör; `installed` kurulu sürüm ya da `null`;
+  `update` depodaki sürüm daha yeniyse `true`. Geçersiz klasörler (id ≠ klasör adı, eksik `pyproject.toml`/başlangıç dosyası) listelenmez.
+  Ulaşılamazsa veya GitHub istek sınırı dolarsa `503 unavailable`.
+- `POST /plugins/catalog/{id}/install` → kurulan `plugin.json`. Ağaç her seferinde yenilenir; klasördeki dosyalar (gizli, `.venv`,
+  `__pycache__` hariç) indirilir, boyut ve git özeti denetlenir, `/plugins/import` kurallarıyla kurulur. Çalışan eklenti yeniden başlatılır.
+  Hatalar: `404` katalogda yok, `400` dosya uyuşmazlığı/geçersiz eklenti/boyut, `503` indirme hatası veya zaman aşımı (180 sn).

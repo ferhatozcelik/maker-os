@@ -10,7 +10,8 @@ Ana makinede Node veya Chrome gerekmez; tüm araçlar kapsayıcıda çalışır,
 
 ```sh
 cd shell
-make dev            # node:24-alpine içinde dev-server → http://localhost:8090 (maker / maker), sahte API + events WS + sahte terminal
+# Tam önizleme (gerçek makerd-rs --mock; GPIO, Ajanlar, Kamera, Mağaza dahil): cd ../makerd-rs && make preview → http://localhost/
+make dev            # node:24-alpine içinde dev-server → http://localhost/ (maker / maker), sahte API + events WS + sahte terminal
 make dev-fresh      # ilk açılış: kullanıcı yok → kurulum sihirbazı
 make tokens         # tokens.json → css/tokens.css (gen-tokens.mjs kapsayıcıda)
 make smoke          # dev-server + duman testi (makeros/shell-smoke: node:24-bookworm-slim + Chromium, tools/docker/Dockerfile.smoke)

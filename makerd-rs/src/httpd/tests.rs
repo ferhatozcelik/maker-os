@@ -96,6 +96,7 @@ async fn env(fresh: bool) -> Env {
         screen: None,
         browser: None,
         update: None,
+        catalog: None,
     };
     let srv = Server::new(d, CancellationToken::new());
     let ln = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();

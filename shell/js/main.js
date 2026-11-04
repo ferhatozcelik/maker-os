@@ -5,7 +5,7 @@
 import { $, store, lazy } from "./lib.js";
 import { t } from "./i18n.js";
 import { prefs, pref, isDark, syncPrefs } from "./prefs.js";
-import { wallURL, themeById, brand, setFavicon } from "./themes.js";
+import { wallURL, themeById, brand, setFavicon, widgetReady } from "./themes.js";
 import { get, post, bus, Events } from "./api.js";
 import { APPS, appById, loadApps, SCREEN, isBrowser } from "./apps.js";
 import { keys, attach } from "./keys.js";
@@ -281,14 +281,14 @@ async function renderWidgets() {
   widgetKey = key;
   host.replaceChildren();
   if (!w) return;
-  if (!w.running) { try { await post(`/plugins/${w.plugin}/start`); } catch { /* başlatılamadı */ } await new Promise(r => setTimeout(r, 2500)); }
   const f = document.createElement("iframe");
-  Object.assign(f, { src: w.url, title: "widget", allowTransparency: true });
+  Object.assign(f, { title: "widget", allowTransparency: true });
   f.style.cssText = `width:${w.w}px;height:${w.h}px`;
-  f.addEventListener("load", () => f.classList.add("on"));
-  // İlk başlatmada sunucu henüz hazır değilse birkaç kez yeniden dene
-  let tries = 0; const retry = setInterval(() => { if (f.classList.contains("on") || ++tries > 6) return clearInterval(retry); f.src = w.url; }, 4000);
   host.append(f);
+  await widgetReady(w, id => post(`/plugins/${id}/start`));
+  if (widgetKey !== key) return;
+  f.addEventListener("load", () => f.classList.add("on")); // boş iframe'in ilk "load"ı sayılmaz
+  f.src = w.url;
 }
 addEventListener("message", e => {
   if (e.origin !== location.origin || !e.data?.mk) return;

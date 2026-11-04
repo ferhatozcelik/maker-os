@@ -24,6 +24,7 @@ const USAGE: &str = "Kullanım: makerd [bayraklar]
   --log-format BİÇİM    text|json (varsayılan text)
   --vnc ADR             yerel VNC sunucusu (wayvnc); boş: uzak masaüstü kapalı (varsayılan 127.0.0.1:5900)
   --update-repo SAHİP/AD  yazılım güncellemeleri için GitHub deposu; boş: kapalı (varsayılan ferhatozcelik/maker-os)
+  --plugin-catalog SAHİP/DEPO[@DAL]  eklenti mağazası: deponun plugins/<id>/ klasörleri; boş: kapalı (varsayılan ferhatozcelik/makeros-plugins@main)
   --version             sürümü yaz ve çık";
 
 struct Opts {
@@ -36,10 +37,11 @@ struct Opts {
     user_dir: String,
     vnc: String,
     update_repo: String,
+    plugin_catalog: String,
 }
 
 fn main() {
-    let known = ["listen", "web", "data-dir", "token-file", "priv-socket", "user-socket-dir", "log-level", "log-format", "vnc", "update-repo"];
+    let known = ["listen", "web", "data-dir", "token-file", "priv-socket", "user-socket-dir", "log-level", "log-format", "vnc", "update-repo", "plugin-catalog"];
     let f = match Flags::parse(std::env::args().skip(1), &known, &["mock", "version"]) {
         Ok(f) => f,
         Err(e) => {
@@ -77,6 +79,7 @@ fn main() {
         user_dir: f.str("user-socket-dir", term::DEFAULT_USER_DIR),
         vnc: f.str("vnc", "127.0.0.1:5900"),
         update_repo: f.str("update-repo", "ferhatozcelik/maker-os"),
+        plugin_catalog: f.str("plugin-catalog", makerd::catalog::DEFAULT_SOURCE),
     };
     // Soket devri ortam değişkenlerini temizler: çalışma zamanı kurulmadan yapılır.
     let fds = sd::listen_fds();
@@ -231,6 +234,10 @@ async fn run(o: Opts, fds: Vec<std::os::fd::OwnedFd>) -> Result<(), String> {
     // Uzak tarayıcı oturumu (MakerOS'taki "Chromium" penceresi).
     let browser_m = Arc::new(browser::Manager::new("127.0.0.1:5901", "/usr/lib/makeros/browser-session", Duration::ZERO));
 
+    let catalog = match o.plugin_catalog.as_str() {
+        "" => None,
+        src => Some(Arc::new(makerd::catalog::Catalog::new(src, makerd::VERSION)?)),
+    };
     let d = Deps {
         web_dir: o.web.clone(),
         sessions: Arc::new(auth::Manager::new()),
@@ -259,6 +266,7 @@ async fn run(o: Opts, fds: Vec<std::os::fd::OwnedFd>) -> Result<(), String> {
         screen: screen_m.clone(),
         browser: Some(browser_m.clone()),
         update,
+        catalog,
     };
     let srv = Server::new(d, stop.clone());
 

@@ -1,5 +1,5 @@
 # MakerOS kabuğu — yalnız Docker ile geliştirme/test (ana makinede node/Chrome gerekmez).
-#   make dev          sahte API'li dev-server → http://localhost:8090 (maker / maker)
+#   make dev          sahte API'li dev-server → http://localhost/ (maker / maker)
 #   make dev-fresh    aynı, ilk açılış (kurulum sihirbazı)
 #   make tokens       tokens.json → css/tokens.css
 #   make smoke        dev-server'a karşı duman testi (ekran görüntüleri: OUT)
@@ -23,8 +23,8 @@ net:
 
 dev: net
 	-@docker rm -f mk-shell-dev >/dev/null 2>&1
-	docker run -d --name mk-shell-dev --network $(NET) -p 8090:8090 -v "$(SHELL_DIR)":/shell:ro $(NODE_IMG) node /shell/tools/dev-server.mjs $(ARGS)
-	@echo "→ http://localhost:8090"
+	docker run -d --name mk-shell-dev --network $(NET) -p 80:8090 -v "$(SHELL_DIR)":/shell:ro $(NODE_IMG) node /shell/tools/dev-server.mjs $(ARGS)
+	@echo "→ http://localhost/"
 
 dev-fresh:
 	$(MAKE) dev ARGS=--fresh
