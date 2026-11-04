@@ -1,4 +1,0 @@
-# RAM'in yarisi kadar sikistirilmis takas (SD kartta takas dosyasi yok).
-ALGO=zstd
-PERCENT=50
-PRIORITY=100
