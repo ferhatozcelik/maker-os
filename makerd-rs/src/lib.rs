@@ -31,7 +31,7 @@ pub mod screen;
 pub mod sd;
 pub mod setup;
 pub mod system;
-// pub mod term; // Go'dan taşınacak
+pub mod term;
 pub mod termproc;
 pub mod uagent;
 pub mod util;
