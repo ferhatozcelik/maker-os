@@ -139,7 +139,17 @@ pub async fn dial_open(path: &Path, want_uid: Option<u32>, o: Open) -> Result<Pr
 
 /// makerd-user'da açılmış PTY dışı işlem.
 pub struct RemoteOp {
+    r: OpReader,
+    w: OpWriter,
+}
+
+/// İşlemin okuma yarısı (çıktı çerçeveleri).
+pub struct OpReader {
     r: BufReader<OwnedReadHalf>,
+}
+
+/// İşlemin yazma yarısı (girdi çerçeveleri).
+pub struct OpWriter {
     w: OwnedWriteHalf,
 }
 
@@ -152,9 +162,32 @@ pub enum OpFrame {
 impl RemoteOp {
     pub async fn dial(path: &Path, want_uid: Option<u32>, o: Open) -> Result<Self, DialError> {
         let (r, w) = dial_raw(path, want_uid, &o).await?;
-        Ok(Self { r, w })
+        Ok(Self { r: OpReader { r }, w: OpWriter { w } })
     }
 
+    /// Girdi gönderirken çıktıyı aynı anda okumak için ikiye böler.
+    pub fn split(self) -> (OpReader, OpWriter) {
+        (self.r, self.w)
+    }
+
+    pub async fn send(&mut self, b: &[u8]) -> std::io::Result<()> {
+        self.w.send(b).await
+    }
+
+    pub async fn close_input(&mut self) -> std::io::Result<()> {
+        self.w.close_input().await
+    }
+
+    pub async fn next(&mut self) -> Result<OpFrame, DialError> {
+        self.r.next().await
+    }
+
+    pub async fn drain(&mut self) -> Result<(Vec<u8>, i32), DialError> {
+        self.r.drain().await
+    }
+}
+
+impl OpWriter {
     /// Girdiyi 'd' çerçeveleri olarak gönderir.
     pub async fn send(&mut self, b: &[u8]) -> std::io::Result<()> {
         for c in b.chunks(256 << 10) {
@@ -167,7 +200,9 @@ impl RemoteOp {
     pub async fn close_input(&mut self) -> std::io::Result<()> {
         write_frame(&mut self.w, FRAME_HANGUP, &[]).await
     }
+}
 
+impl OpReader {
     /// Sonraki çıktı çerçevesi; 'e' gelirse Remote hatası.
     pub async fn next(&mut self) -> Result<OpFrame, DialError> {
         loop {
