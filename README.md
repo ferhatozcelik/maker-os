@@ -1,258 +1,122 @@
-<p align="center">
-  <a href="https://github.com/ferhatozcelik/maker-os">
-    <img src="docs/assets/maker-os-logo.svg" alt="MakerOS logosu" width="100">
-  </a>
-</p>
+# MakerOS
 
-<h1 align="center">MakerOS</h1>
+[English](README.en.md)
 
-<p align="center">Raspberry Pi için kurulumsuz, hazır kurulu Pardus: öğrenciler, yapıcılar ve yapay zeka projeleri.</p>
+**Raspberry Pi 4 için maker işletim sistemi.** Pi'yi bir monitöre bağlamadan, aynı ağdaki herhangi
+bir tarayıcıdan (bilgisayar, tablet, telefon) kullanırsınız: dosyalar, terminal, Python projeleri,
+GPIO, kamera, yapay zekâ ajanları ve Chromium tek bir web masaüstünde.
 
-<p align="center"><strong>SD karta yaz. Pi'yi aç. Tarayıcıdan bağlan.</strong></p>
+MakerOS 2, Buildroot ile Linux çekirdeği üzerine sıfırdan kurulan bağımsız bir sistemdir; salt okunur
+kök dosya sistemi, A/B bölümleri ve imzalı yazılım güncellemesi vardır. (MakerOS 1.x Pardus
+tabanlıydı; bu depo artık yalnız MakerOS 2'yi içerir. 1.x sürümleri
+[Releases](https://github.com/ferhatozcelik/maker-os/releases) sayfasında durur.)
 
-<p align="center">
-  <a href="https://github.com/ferhatozcelik/maker-os/releases/latest"><img src="https://img.shields.io/github/v/release/ferhatozcelik/maker-os?label=sürüm&color=c8102e" alt="Son sürüm"></a>
-  <img src="https://img.shields.io/badge/Raspberry%20Pi-4%20%7C%20400%20%7C%203B%2B-c8102e" alt="Raspberry Pi 4, 400, 3B+">
-  <img src="https://img.shields.io/badge/taban-Pardus%2021%20arm64-c8102e" alt="Taban: Pardus 21 arm64">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/lisans-GPL--3.0-c8102e" alt="GPL-3.0 lisansı"></a>
-</p>
+![MakerOS masaüstü: Chromium penceresi](docs/v2/screenshots/desktop.png)
 
-<p align="center">
-  <a href="https://github.com/ferhatozcelik/maker-os/releases/latest">İndir</a> ·
-  <a href="#kurulum-rehberi">Kurulum rehberi</a> ·
-  <a href="#özellikler">Özellikler</a> ·
-  <a href="#kaynaktan-derleme">Kaynaktan derleme</a> ·
-  <a href="docs/README.md">Belgeler</a> ·
-  <a href="CONTRIBUTING.md">Katkı</a>
-</p>
+| Web arayüzü | Telefonda | Yazılım güncelleme |
+|---|---|---|
+| ![Web arayüzü](docs/v2/screenshots/web.png) | ![Telefon](docs/v2/screenshots/mobile.png) | ![Güncelleme](docs/v2/screenshots/update.png) |
 
-<p align="center">
-  <a href="README.md">Türkçe</a> ·
-  <a href="README.en.md">English</a>
-</p>
-
-<br>
-
-<table align="center">
-  <tr>
-    <th align="center">MakerOS Merkezi</th>
-    <th align="center">Telefon · Wi-Fi</th>
-    <th align="center">Telefon · Terminal</th>
-  </tr>
-  <tr>
-    <td align="center" valign="top"><img src="docs/screenshots/center.png" alt="MakerOS Merkezi genel bakış sayfası" width="420"></td>
-    <td align="center" valign="top"><img src="docs/screenshots/phone-wifi.png" alt="Telefonda Wi-Fi ve ağ ayarları" width="190"></td>
-    <td align="center" valign="top"><img src="docs/screenshots/phone-terminal.png" alt="Telefonda web terminali ve ek tuş çubuğu" width="190"></td>
-  </tr>
-  <tr><th align="center" colspan="3">Uzak masaüstü (tarayıcıda)</th></tr>
-  <tr><td align="center" colspan="3"><img src="docs/screenshots/desktop.png" alt="Tarayıcıdan açılan Pardus masaüstü" width="850"></td></tr>
-</table>
-
-<table align="center">
-  <tr><th>Python ve yapay zeka ortamı</th><th>MediaPipe proje şablonları</th></tr>
-  <tr>
-    <td><img src="docs/screenshots/python.png" alt="Python sürümleri ve hazır yapay zeka ortamı" width="420"></td>
-    <td><img src="docs/screenshots/projects.png" alt="MediaPipe şablonundan el takibi projesi oluşturma" width="420"></td>
-  </tr>
-</table>
-
-Görüntüler güncel build'in Docker ortamında, masaüstü ve telefon boyutlarında çekilmiştir.
-Kamera, Wi-Fi ve GPIO'nun donanım testleri Raspberry Pi gerektirir.
-Tüm görüntüler için [ekran görüntüsü galerisine](docs/screenshots.md) bakın.
-
-## İndir
-
-[Son sürüm](https://github.com/ferhatozcelik/maker-os/releases/latest): `maker-os-<sürüm>.img.xz` (Raspberry Pi 4 / 400 / 3B+, 64 bit).
-İndirdikten sonra `sha256sum -c maker-os-*.img.xz.sha256` ile doğrulayın.
+> Ekran görüntüleri Docker önizlemesinden alınmıştır; sıcaklık, bellek, ağ gibi cihaz bilgileri
+> sahte (mock) veridir.
 
 ## Özellikler
 
-| Alan | İçerik |
-| --- | --- |
-| Taban | Pardus 21 "Yirmibir" (Debian 11) arm64 + güvenlik güncellemeleri, Raspberry Pi'nin güncel çekirdeği (`-v8+`); tüm paketler kendi depomuzdan ([vendor](vendor/README.md)) |
-| Masaüstü | XFCE, macOS benzeri: üst çubuk + Plank dock, Pardus **100. Yıl** teması (açık/koyu), Chromium, VS Code, Dosyalar, Terminal |
-| MakerOS Merkezi | Tek web uygulaması (port 80), telefona uyumlu: ayarlar, ağ, tarih-saat, dil-klavye, Python, projeler, agent'lar, terminal, kamera, USB, GPIO, uzak ekran |
-| Ağ | Ethernet (durum, hız), Wi-Fi tarama, gizli ağ, okul/kurum ağı (WPA2-Enterprise, eduroam), kayıtlı ağlar; ağ yoksa şifresiz `MakerOS` kurulum ağı ve kurulum sayfası |
-| Web terminali | Tarayıcıda gerçek kabuk (xterm.js), telefon için Esc/Tab/Ctrl/ok tuşları; root değil, `maker` kullanıcısı |
-| Kamera | Pi kamera modülleri (libcamera, picamera2) ve USB kameralar: canlı görüntü, tam çözünürlükte fotoğraf, galeri |
-| MediaPipe | Kamerayla çalışan 7 hazır proje: el takibi, jest ile LED (GPIO), yüz, poz/egzersiz sayacı, nesne algılama, arka plan ayırma, yüz ağı. Modeller imajda, internet gerekmez |
-| Python ve yapay zeka | uv ile her Python sürümü tek tıkla; hazır AI ortamı (`ai-env`): PyTorch, ONNX Runtime, LiteRT, OpenCV, Ultralytics, Jupyter Lab |
-| Donanım | GPIO (sudo'suz), I2C, SPI, UART; USB bellek bağla/güvenle çıkar, Arduino/ESP32 seri portları; HDMI 0/1, DSI dokunmatik ekran, HDMI/3.5 mm ses |
-| İzleme ve soğutma | Türkçe Görev Yöneticisi: CPU, RAM, işlemler, anlık ağ aktarımı ve toplam sayaçlar; GPIO kontrollü fan için sıcaklık eşikleri |
-| Python eklentileri | Genel Python proje şablonu, ZIP içe aktarma, uygulama listesi, başlat/durdur ve çalışma günlüğü; [eklenti rehberi](docs/plugins.md) |
-| Agent'lar | Claude Code, Codex CLI, Gemini CLI, OpenCode, Antigravity, Ollama: Merkez'den kur, güncelle, başlat |
-| Uzak erişim | Web (masaüstü + tüm ayarlar), VNC (5900), SSH, mDNS (`maker-os.local`) |
+- **İki görünüm, tek adres** (`http://makeros.local/`): pencereli **Ekran** (masaüstü, raf, pencereler)
+  ve telefona uygun **Web** arayüzü. Üstteki *Web | Ekran* düğmesiyle geçilir. Kurulabilir web
+  uygulaması (PWA) olarak ana ekrana eklenebilir.
+- **Chromium**, masaüstünde normal bir pencere olarak açılır. Pi'de çalışan gerçek tarayıcıdır; ayrı,
+  görünmez bir ekranda çizilir ve yalnız o pencere size aktarılır. Pencere kapanınca durur.
+- **Uygulamalar:** Dosyalar (`.py` dosyasına tıklayınca çalışır), Terminal (web ile Pi ekranı aynı
+  oturumu paylaşır), Python (uv ile sanal ortamlı projeler ve şablonlar; LED, buton, I2C, kamera,
+  yapay zekâ nesne tespiti), AI Ajanları (Claude Code, Codex CLI, Gemini CLI, OpenCode, Ollama),
+  Kamera, GPIO (40 pin), Eklentiler (zip içe/dışa aktarma), Etkinlik Monitörü, Ayarlar.
+- **Ekran Modu** (varsayılan kapalı): Pi'nin kendi ekranını tarayıcıda gösterir. Ayarlar › Ekran
+  Modu'ndan yönetici açar; ayrı port açılmaz, kapalıyken arka planda hiçbir şey çalışmaz. Monitör
+  bağlı değilse Pi'nin ekranı tarayıcı pencerenizin boyutuna uyar; telefonda yatay döner.
+- **Yazılım güncelleme:** Ayarlar › Genel › Yazılım güncelleme, GitHub'daki yeni sürümü bulur;
+  imzalı paketi indirip boştaki bölüme kurar ve yeniden başlatır. Yeni sürüm açılamazsa Pi önceki
+  sürüme kendiliğinden döner. Dosyalarınız ve ayarlarınız korunur.
+- **Ekransız kurulum:** Ağ yoksa Pi şifresiz `MakerOS` Wi-Fi ağını açar; telefonunuzu bağlayınca
+  kurulum sayfası kendiliğinden gelir.
+- **Temalar:** Maker, Hackerspace, Donanım, Siber güvenlik, 3B baskı; eklentiyle yeni tema
+  (örnek: Konya HackerSpace).
 
-Bilinçli olarak **yok**: ofis paketi, e-posta, görüntüleyiciler gibi genel
-masaüstü uygulamaları. Hedef: öğrenci, DIY ve yapay zeka projeleri için hızlı
-ve sade bir sistem.
+## Kurulum
 
-## Kurulum rehberi
+1. [Releases](https://github.com/ferhatozcelik/maker-os/releases) sayfasından en yeni
+   `makeros-<sürüm>-rpi4.img.xz` dosyasını indirin (`.sha256` ile doğrulayabilirsiniz).
+2. Raspberry Pi Imager ile SD karta yazın (*Use custom* / *Özel imaj kullan*). Pi Imager'ın
+   "işletim sistemi özelleştirme" ayarları MakerOS'ta kullanılmaz.
+3. *(İsteğe bağlı)* Kartın `MOSCFG` bölümündeki `wifi-example.txt` dosyasını `wifi.txt` adıyla
+   kopyalayıp ağ adını ve parolasını yazın. İlk açılışta okunur ve güvenlik için silinir.
+4. Pi'yi açın ve bir tarayıcıdan **http://makeros.local/** adresine gidin. Kablo ya da `wifi.txt`
+   yoksa telefonunuzu `MakerOS` Wi-Fi ağına bağlayın; kurulum sayfası açılır (açılmazsa
+   `http://10.42.0.1/kurulum`).
+5. İlk açılış sihirbazında bölge ve klavyeyi, gerekirse Wi-Fi ağını seçin; hesabınızı ve cihaz
+   adını belirleyin. Varsayılan parola yoktur; ilk hesap yöneticidir.
 
-### 1. SD karta yazın
+**Donanım:** Raspberry Pi 4 Model B ve Raspberry Pi 400 (aarch64). A/B güncellemesi için Pi
+önyükleyici (EEPROM) sürümü 2025-03 veya yenisi gerekir. MakerOS 1.x kurulu kartlar uzaktan
+MakerOS 2'ye geçirilemez; kart yeniden yazılmalıdır.
 
-macOS'ta proje klasöründen `./flash-sd.sh` çalıştırabilirsiniz. Betik
-`image/out/` içindeki imajı seçer, harici veya çıkarılabilir fiziksel diskleri listeler ve
-seçtiğiniz diski açık onayınızdan sonra silip imajı yazar. Yazılan veriyi
-karttan geri okuyarak SHA-256 ile doğrular ve kartı çıkarır. Farklı bir
-imaj için `./flash-sd.sh /yol/imaj.img.xz` kullanın (`.xz` için `xz`
-gereklidir). Yazma sırasında macOS kullanıcı parolanız istenir.
+## Doğrulama durumu
 
-Grafik arayüzle yazmak için:
-
-1. [Sürüm sayfasından](https://github.com/ferhatozcelik/maker-os/releases/latest) `.img.xz` dosyasını indirin. 16 GB veya daha büyük bir kart önerilir.
-2. [Raspberry Pi Imager](https://www.raspberrypi.com/software/)'da **İşletim sistemi → Özel imaj kullan** (Use custom) ile dosyayı seçin. Imager'ın "işletim sistemi özelleştirme" ayarlarını **kullanmayın**. balenaEtcher da olur.
-3. Yazma ve doğrulama bitene kadar bekleyin.
-
-### 2. (İsteğe bağlı) Evdeki Wi-Fi'ye doğrudan bağlansın
-
-Kartı bilgisayara takın, `bootfs` bölümündeki `wifi-example.txt` dosyasını
-`wifi.txt` olarak kopyalayın, `SSID` ve `PAROLA` satırlarını doldurun.
-Pi açılınca ağı ekler ve parola içeren dosyayı siler.
-
-### 3. Pi'yi açın ve bağlanın
-
-İlk açılışta kök bölüm kartın tamamına genişler ve cihaza özel SSH anahtarları
-üretilir (yaklaşık 1 dakika). Monitör, klavye veya kurulum sihirbazı gerekmez.
-
-| Durum | Adres |
-| --- | --- |
-| Ethernet kablosu takılı veya `wifi.txt` var | `http://maker-os.local/` |
-| Ağ yok | ~45 sn sonra şifresiz `MakerOS` Wi-Fi ağı açılır; bağlanınca kurulum sayfası kendiliğinden açılır (açılmazsa `http://10.42.0.1/kurulum`) → ağınızı seçip parolasını girin |
-| Monitör takılı | Masaüstü doğrudan açılır; Merkez dock'taki simgelerden |
-
-Giriş ekranında kullanıcı `maker`, parola `maker`. Ağdan ilk girişte masaüstü açılır;
-telefonda ekranı yatay çevirin. Üstteki **‹ Merkez** ile ayarlara geçilir.
-
-IP bulunamazsa kartı bilgisayara takıp `bootfs` bölümündeki
-`pardus-status.txt` dosyasına bakın.
-
-### 4. İlk iş: parolayı değiştirin
-
-Varsayılan parola tüm imajlarda aynıdır. **Merkez → Kullanıcı** bölümünden
-değiştirin; giriş, SSH, sudo, web ve uzak ekran parolası birlikte değişir.
-Web ve VNC trafiği şifrelenmez, yalnızca güvendiğiniz yerel ağda kullanın.
-
-### 5. Kamera ve MediaPipe
-
-1. Pi kapalıyken kamera kablosunu **CAMERA** yuvasına takın. **Merkez → Kamera**'da canlı görüntü gelmeli.
-2. **Merkez → Projeler → Yeni proje** bölümünde şablon olarak bir **MediaPipe** örneği seçin, örneğin "El takibi ve parmak sayma".
-3. Projeyi **Terminal** ile açıp çalıştırın:
-
-```bash
-uv run main.py                     # Pi kamera veya USB kamera, otomatik
-uv run main.py --kaynak video.mp4  # kamera yoksa video dosyası
-```
-
-Sonuç Pi'nin ekranında bir pencerede ve telefondan
-`http://maker-os.local:8000/` adresinde canlı görünür. Kamera aynı anda
-tek uygulamada açılabilir; örnek çalışırken Merkez'deki Kamera sayfasını kapatın.
-
-| Örnek | Ne yapar | Donanım |
-| --- | --- | --- |
-| El takibi | 21 eklem noktası, açık parmak sayısı | Kamera |
-| Jest ile LED | 👍 LED yakar, 👎 söndürür, ✋ buzzer | Kamera, LED (GPIO17), buzzer (GPIO27) |
-| Yüz algılama | Yüzleri çerçeveler, yeni yüzde otomatik fotoğraf | Kamera |
-| Poz | Squat ve kol kaldırma sayacı | Kamera |
-| Nesne algılama | 80 sınıf (kişi, araba, kedi...), kişi görünce alarm | Kamera, isteğe bağlı GPIO17 |
-| Arka plan ayırma | Bulanık, tek renk veya resimli arka plan | Kamera |
-| Yüz ağı | 478 nokta, göz kırpma sayacı, gülümseme | Kamera |
-
-### Donanım uyumluluğu
-
-| Model | Durum |
-| --- | --- |
-| Raspberry Pi 4 Model B (2/4/8 GB) | Hedef platform |
-| Raspberry Pi 400 | Destekleniyor |
-| Raspberry Pi 3B+ | Çalışır; yapay zeka ve MediaPipe yavaştır |
-| Raspberry Pi 5 | Henüz desteklenmiyor (farklı çekirdek ve kamera yığını) |
+Açık olmak adına: MakerOS 2'nin arayüzü, makerd ve Chromium penceresi **Docker içinde**,
+derlenmiş kök dosya sistemiyle uçtan uca test edilmiştir. Gerçek Raspberry Pi donanımında
+ölçülmüş performans verisi henüz yoktur; Docker'daki karşılaştırma için bkz.
+[docs/v2/BENCHMARK.md](docs/v2/BENCHMARK.md). İmzalı güncellemenin donanımdaki
+güç kesintisi ve bozuk paket testleri ilk sürümlerde sürmektedir. Sorunları
+[Issues](https://github.com/ferhatozcelik/maker-os/issues) sayfasına bildirin.
 
 ## Kaynaktan derleme
 
-Çalışan Pi'deki Merkez'i SD kartı silmeden güncellemek için:
+Tüm derleme ve testler Docker içinde çalışır; ana makineye araç kurulmaz.
 
 ```bash
-./update-center.sh maker@maker-os.local   # cihazın IP adresi de kullanılabilir
+./os/run-docker.sh                    # derlenmiş kök dosya sistemini Docker'da çalıştır → http://localhost/
+docker-compose up -d --build          # yalın önizleme: makerd (sahte veri) + kabuk → http://localhost/
+make -C makerd test                   # makerd testleri
+make -C shell smoke                   # kabuk duman testi (başsız Chromium)
+./os/build.sh build                   # Raspberry Pi imajı → os/out/makeros-<sürüm>-rpi4.img.xz
 ```
 
-Betik eski dosyaları yedekler ve Merkez servisini yeniden başlatır.
-Tarayıcıyı yenileyin. Bu işlem mevcut `.img` dosyasını değiştirmez;
-fan yapılandırması ayrıca Pi'nin yeniden başlatılmasını gerektirir.
+Chromium paketi derlemeden önce bir kez hazırlanır:
+`docker run --rm -v "$PWD/os/chromium":/s:ro -v "$PWD/os/out":/out debian:trixie sh /s/build-bundle.sh`
 
-Apple Silicon Mac'te (arm64, qemu gerekmez) veya arm64 Linux'ta Docker ile:
+İmzalı güncelleme paketi (`.raucb`) yalnız imza anahtarı varsa üretilir
+(`os/keys/rauc-key.pem`, depoya girmez). Sürümler GitHub Actions ile yayınlanır:
+`os/VERSION` artırılıp `main`'e gönderildiğinde imaj ve paket derlenir, Release oluşturulur
+(bkz. [.github/workflows/release.yml](.github/workflows/release.yml)).
 
-```bash
-colima start --arch aarch64 --cpu 6 --memory 8 --disk 60   # yalnızca macOS
-cd image
-./build-docker.sh          # tüm aşamalar → image/out/maker-os-<sürüm>.img.xz
-./build-docker.sh 06       # yapılandırmadan devam et (06–09)
-./test/run-test.sh         # imajın kök dosya sistemini Docker'da çalıştır
-```
-
-Docker testi: `http://localhost:8080/` (`maker` / `maker`). Konteynerde HDMI
-yerine Xvfb kullanılır (varsayılan `1600x900`; `PIOS_RESOLUTION` ile değiştirilir).
-Wi-Fi, kamera, GPIO ve güç işlemleri çalışmaz; uzak ekran gerçek Pi + LAN’a
-göre daha yavaş olabilir.
-
-| Aşama | İş |
-| --- | --- |
-| `01-pin-base` | Pardus deposu ve raspberrypi/firmware commit'ini sabitler |
-| `02-build-rootfs` | debootstrap minbase (arm64) |
-| `03-add-hw-packages` | Çekirdek, modüller, DTB/overlay, Wi-Fi/BT donanım yazılımı, `config.txt` |
-| `04-install-desktop` | XFCE, Chromium, Pardus temaları, kamera yığını (libcamera), ffmpeg, udisks2, `maker` kullanıcısı |
-| `05-install-dev-tools` | uv, en güncel Python, AI ortamı, Node.js LTS, VS Code |
-| `06-configure-system` | overlay, xterm.js ve MediaPipe modelleri (sabit sürüm + sha256), Merkez, VNC, servisler |
-| `07-cleanup` | apt önbelleği, SSH anahtarları, machine-id temizliği |
-| `08-package-image` | Döngü aygıtı kullanmadan imaj: `mkfs.ext4 -d` + mtools + sfdisk |
-| `09-checksums-and-manifest` | `.img.xz`, sha256, paket/sürüm manifesti |
-
-## Klasörler
-
-| Parça | Klasör |
-| --- | --- |
-| Build hattı | [`image/stages/`](image/stages/), [`image/lib/`](image/lib/) |
-| Kök dosya sistemine kopyalanan dosyalar | [`image/overlay/`](image/overlay/) |
-| MakerOS Merkezi (Python 3.9 stdlib + web arayüzü) | [`image/overlay/usr/lib/pios/center/`](image/overlay/usr/lib/pios/center/) |
-| MediaPipe örnek projeleri | [`image/overlay/usr/lib/pios/templates/`](image/overlay/usr/lib/pios/templates/) |
-| Docker test konteyneri | [`image/test/`](image/test/) |
-| Belgeler: mimari, Merkez API'si, donanım, MediaPipe, sorun giderme, kararlar | [`docs/`](docs/README.md) |
-
-Sistem içi servis ve yol adları (`pios-*`, `/usr/lib/pios`) teknik kimliktir
-ve sürümler arasında sabit tutulur.
+| Klasör | İçerik |
+|---|---|
+| `os/` | Buildroot dış ağacı: defconfig, kart dosyaları, paketler, imaj betikleri |
+| `makerd/` | Arka uç hizmeti (Go): API, terminal, dosyalar, güncelleme, Ekran Modu |
+| `shell/` | Web kabuğu: masaüstü, Web arayüzü, uygulamalar (bağımlılıksız JS) |
+| `docs/v2/` | Plan, API, yol haritası, karşılaştırma |
+| `bench/` | Karşılaştırma betikleri ve ham veriler |
+| `makerd-rs/`, `wm/` | Uzun vadeli Rust çalışmaları (henüz imajda kullanılmıyor) |
 
 ## Lisans ve marka açıklaması
 
-MakerOS için bu depoda geliştirilen özgün kaynak kodu, build betikleri,
-yapılandırmalar ve örnekler **GNU Genel Kamu Lisansı sürüm 3 veya sonraki
-herhangi bir sürüm** (`GPL-3.0-or-later`) kapsamında sunulur. Kullanma,
-inceleme, değiştirme ve yeniden dağıtma hakları ile bunların koşulları
-[`LICENSE`](LICENSE) dosyasındaki lisans metninde yer alır.
+MakerOS için bu depoda geliştirilen özgün kaynak kodu, derleme betikleri, yapılandırmalar ve
+örnekler **GNU Genel Kamu Lisansı sürüm 3 veya sonraki herhangi bir sürüm**
+(`GPL-3.0-or-later`) kapsamında sunulur; bkz. [`LICENSE`](LICENSE).
 
-Bu lisans, imajdaki bütün yazılımların aynı lisansa sahip olduğu anlamına
-gelmez. Pardus/Debian paketleri, Linux çekirdeği, firmware, temalar, modeller
-ve diğer üçüncü taraf bileşenler kendi hak sahiplerine ve lisanslarına
-tabidir. Bileşen listesi ve kaynak bağlantıları [`NOTICE.md`](NOTICE.md)
-dosyasındadır. Yeniden dağıtımda ilgili lisans ve telif bildirimleri
-korunmalı; kaynak kodu sağlama yükümlülükleri bileşen ve dağıtım biçimine
-göre yerine getirilmelidir. Yalnızca bu depoya veya üst projenin ana
-sayfasına bağlantı vermek her durumda yeterli değildir.
+Bu lisans, imajdaki bütün yazılımların aynı lisansa sahip olduğu anlamına gelmez. Linux çekirdeği,
+Raspberry Pi açılış yazılımı, Chromium, WPE WebKit, Mesa ve diğer üçüncü taraf bileşenler kendi hak
+sahiplerine ve lisanslarına tabidir. Bileşen listesi ve kaynak bağlantıları
+[`NOTICE.md`](NOTICE.md) dosyasındadır. Yeniden dağıtımda ilgili lisans ve telif bildirimleri
+korunmalı; kaynak kodu sağlama yükümlülükleri bileşen ve dağıtım biçimine göre yerine
+getirilmelidir.
 
-**MakerOS bağımsız bir topluluk projesidir.** TÜBİTAK'ın veya Pardus
-projesinin resmî bir sürümü, ürünü ya da hizmeti değildir; bu kuruluşlar
-adına geliştirilmez. Bir ortaklık, sponsorluk, sertifikasyon, onay veya
-resmî destek ilişkisi iddia edilmez. Projeye özgü hata ve destek talepleri
-bu deponun [Issues](https://github.com/ferhatozcelik/maker-os/issues)
-bölümüne iletilmelidir.
+**MakerOS bağımsız bir topluluk projesidir.** Raspberry Pi Ltd adına geliştirilmez; bir ortaklık,
+sponsorluk, sertifikasyon, onay veya resmî destek ilişkisi iddia edilmez.
+**Raspberry Pi is a trademark of Raspberry Pi Ltd.** Bu belgelerdeki marka atıfları yalnız hedef
+donanımı tanımlamak içindir; yazılım lisansı marka veya logo kullanım izni vermez. Bkz.
+[Raspberry Pi marka kuralları](https://www.raspberrypi.com/trademark-rules/). Varsayılan eklentideki
+Konya HackerSpace adı ve işaretine ilişkin haklar Konya HackerSpace'e aittir.
 
-Pardus adı ve görsel kimliğine ilişkin haklar ilgili hak sahiplerine aittir.
-**Raspberry Pi is a trademark of Raspberry Pi Ltd.** Bu belgelerdeki marka
-atıfları kullanılan tabanı ve hedef donanımı tanımlamak içindir. Yazılım
-lisansı marka veya logo kullanım izni vermez; bu açıklama da böyle bir izin
-yerine geçmez. Proje adı, logolar ve temalardaki marka kullanımları ilgili
-hak sahiplerinin koşullarına ayrıca tabidir; bkz.
-[Raspberry Pi marka kuralları](https://www.raspberrypi.com/trademark-rules/).
-
-Yazılım, yürürlükteki hukukun izin verdiği ölçüde, lisanslarda belirtilen
-şekilde **olduğu gibi ve garanti verilmeksizin** sunulur. Bu açıklama,
-emredici hukuk kurallarından doğan hakları sınırlamaz ve hukuki uygunluk
-belgesi değildir. Ayrıntılar: [lisans ve dağıtım notları](docs/license.md).
+Yazılım, yürürlükteki hukukun izin verdiği ölçüde, lisanslarda belirtilen şekilde **olduğu gibi ve
+garanti verilmeksizin** sunulur. Bu açıklama hukuki uygunluk belgesi değildir.

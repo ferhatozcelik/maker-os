@@ -1,0 +1,16 @@
+// makerd (yetkisiz, "maker" kullanicisi) sistem hizmetlerini D-Bus uzerinden yonetebilsin.
+polkit.addRule(function(action, subject) {
+	if (subject.user !== "maker")
+		return polkit.Result.NOT_HANDLED;
+	var id = action.id;
+	if (id.indexOf("org.freedesktop.hostname1.") === 0 ||
+	    id.indexOf("org.freedesktop.timedate1.") === 0 ||
+	    id.indexOf("org.freedesktop.locale1.") === 0 ||
+	    id.indexOf("org.freedesktop.NetworkManager.") === 0 ||
+	    id.indexOf("org.freedesktop.login1.reboot") === 0 ||
+	    id.indexOf("org.freedesktop.login1.power-off") === 0 ||
+	    id.indexOf("org.freedesktop.udisks2.filesystem-mount") === 0 ||
+	    id.indexOf("de.pengutronix.rauc.") === 0)
+		return polkit.Result.YES;
+	return polkit.Result.NOT_HANDLED;
+});

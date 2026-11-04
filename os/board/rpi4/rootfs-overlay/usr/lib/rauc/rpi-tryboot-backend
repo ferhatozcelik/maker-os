@@ -1,0 +1,122 @@
+#!/bin/sh
+# RAUC ozel onyukleyici arka ucu: Raspberry Pi firmware tryboot + autoboot.txt
+# (Bootlin "Safe updates using RAUC on Raspberry Pi 5" tasarimi, Pi 4 icin).
+#
+# RAUC cagrilari:
+#   get-primary              -> A|B   (autoboot.txt [all] boot_partition)
+#   set-primary <A|B>        yeni slotu [tryboot] olarak hazirla; [all]'a DOKUNMA
+#   get-state <A|B>          -> good|bad
+#   set-state <A|B> good|bad good + su an tryboot ile o slottaysak: [all]'i ona cevir
+#   get-current              -> A|B   (cekirdek komut satiri makeros.slot=)
+#
+# Akis: rauc install -> set-primary B -> makerd "systemctl reboot '0 tryboot'"
+#  -> firmware [tryboot] bolumunden (B) acar -> boot-complete -> mark-good
+#  -> set-state B good -> [all]=B. Deneme acilisi takilir/coker ise bekci kopek
+#  sifirlar; tryboot bayragi tek seferlik oldugu icin firmware [all]'a (A) doner.
+#
+# TODO(M6): donanimda guc kesintisi / bozuk paket / panik testleri; vcmailbox
+# ile tryboot bayragini dogrudan yazma (reboot argumani yerine) degerlendirilecek.
+set -eu
+
+MOSCFG=/boot/moscfg
+AUTOBOOT="${MOSCFG}/autoboot.txt"
+STATE_DIR=/data/rauc
+PENDING="${STATE_DIR}/tryboot-pending"
+
+part_of() { case "$1" in A) echo 2 ;; B) echo 3 ;; *) echo "bilinmeyen slot: $1" >&2; exit 1 ;; esac; }
+slot_of() { case "$1" in 2) echo A ;; 3) echo B ;; *) echo "bilinmeyen bolum: $1" >&2; exit 1 ;; esac; }
+
+ensure_mounted() {
+	# x-systemd.automount: erisim baglar.
+	ls "${MOSCFG}" >/dev/null 2>&1 || true
+	[ -f "${AUTOBOOT}" ] || { echo "autoboot.txt yok (${AUTOBOOT})" >&2; exit 1; }
+}
+
+# autoboot.txt'den [bolum] icindeki boot_partition degerini oku
+read_part() {
+	awk -v sec="[$1]" '
+		/^\[/ { cur=$0; next }
+		cur==sec && /^boot_partition=/ { sub(/^boot_partition=/, ""); print; exit }
+	' "${AUTOBOOT}" | tr -d '\r'
+}
+
+write_autoboot() {
+	all="$1"; try="$2"
+	tmp="${MOSCFG}/autoboot.tmp"
+	cat > "${tmp}" <<EOT
+# MakerOS A/B secici - rpi-tryboot-backend tarafindan yazildi
+[all]
+tryboot_a_b=1
+boot_partition=${all}
+[tryboot]
+boot_partition=${try}
+EOT
+	sync "${tmp}" 2>/dev/null || sync
+	mv -f "${tmp}" "${AUTOBOOT}"
+	sync
+}
+
+in_tryboot() {
+	f=/proc/device-tree/chosen/bootloader/tryboot
+	[ -r "$f" ] || return 1
+	[ "$(od -An -tu4 --endian=big "$f" 2>/dev/null | tr -d ' ')" = 1 ]
+}
+
+current() {
+	for arg in $(cat /proc/cmdline); do
+		case "${arg}" in
+		makeros.slot=a) echo A; return ;;
+		makeros.slot=b) echo B; return ;;
+		esac
+	done
+	echo "makeros.slot bulunamadi" >&2; exit 1
+}
+
+mkdir -p "${STATE_DIR}"
+cmd="${1:-}"
+case "${cmd}" in
+get-primary)
+	ensure_mounted
+	slot_of "$(read_part all)"
+	;;
+set-primary)
+	ensure_mounted
+	target="$(part_of "$2")"
+	all="$(read_part all)"
+	if [ "${target}" = "${all}" ]; then
+		rm -f "${PENDING}"
+	else
+		write_autoboot "${all}" "${target}"
+		echo "$2" > "${PENDING}"
+	fi
+	;;
+get-state)
+	if [ -f "${STATE_DIR}/bad.$2" ]; then echo bad; else echo good; fi
+	;;
+set-state)
+	slot="$2"; state="$3"
+	case "${state}" in
+	good)
+		rm -f "${STATE_DIR}/bad.${slot}"
+		if [ "$(current)" = "${slot}" ] && in_tryboot; then
+			ensure_mounted
+			other="$(read_part all)"
+			write_autoboot "$(part_of "${slot}")" "${other}"
+			rm -f "${PENDING}"
+		fi
+		;;
+	bad)
+		: > "${STATE_DIR}/bad.${slot}"
+		[ "$(cat "${PENDING}" 2>/dev/null)" = "${slot}" ] && rm -f "${PENDING}"
+		;;
+	*) echo "gecersiz durum: ${state}" >&2; exit 1 ;;
+	esac
+	;;
+get-current)
+	current
+	;;
+*)
+	echo "kullanim: $0 get-primary|set-primary S|get-state S|set-state S good|bad|get-current" >&2
+	exit 1
+	;;
+esac

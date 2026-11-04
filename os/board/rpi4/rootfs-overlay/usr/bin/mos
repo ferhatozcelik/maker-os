@@ -1,0 +1,98 @@
+#!/bin/sh
+# mos - MakerOS komut satiri araci (M1 iskeleti).
+#
+#   mos box [ad]            Debian arm64 gelistirici kutusunu olustur/gir
+#   mos box rm [ad]         kutuyu sil
+#   mos box ls              kutulari listele
+#   mos version             surum bilgisi
+#   mos status              kisa sistem durumu
+#
+# Kutu: rootless podman; $HOME paylasilir, /dev/gpiochip*, i2c, spi, video ve
+# seri aygitlar gecirilir. Ogrenci kutuda 'sudo apt install gcc ...' yapar,
+# host salt-okunur ve temiz kalir (ChromeOS Crostini deseni).
+set -eu
+
+BOX_IMAGE="${MOS_BOX_IMAGE:-docker.io/library/debian:trixie}"
+BOX_PREFIX=mosbox-
+
+die() { echo "mos: $*" >&2; exit 1; }
+
+box_devices() {
+	for d in /dev/gpiochip* /dev/i2c-* /dev/spidev* /dev/video* /dev/media* \
+	         /dev/ttyUSB* /dev/ttyACM* /dev/ttyAMA* /dev/serial0 /dev/dma_heap/*; do
+		[ -e "$d" ] && printf -- '--device=%s ' "$d"
+	done
+}
+
+box_create() {
+	name="$1"
+	echo "mos: '${name}' kutusu olusturuluyor (${BOX_IMAGE})..."
+	# shellcheck disable=SC2046
+	podman create --name "${BOX_PREFIX}${name}" \
+		--hostname "${name}-box" \
+		--userns=keep-id \
+		--group-add keep-groups \
+		--security-opt label=disable \
+		--network host \
+		--volume "${HOME}:${HOME}" \
+		--volume /run/user/"$(id -u)":/run/user/"$(id -u)" \
+		--env HOME="${HOME}" --env USER="$(id -un)" \
+		--env WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-}" \
+		--env XDG_RUNTIME_DIR="/run/user/$(id -u)" \
+		--workdir "${HOME}" \
+		$(box_devices) \
+		--label makeros.box=1 \
+		--user root \
+		"${BOX_IMAGE}" sleep infinity >/dev/null
+	podman start "${BOX_PREFIX}${name}" >/dev/null
+	# Ilk kurulum: kullanici + sudo (kutu icinde root -> parolasiz sudo).
+	podman exec "${BOX_PREFIX}${name}" sh -c "
+		set -e
+		export DEBIAN_FRONTEND=noninteractive
+		apt-get update -qq && apt-get install -y -qq sudo ca-certificates less nano >/dev/null
+		getent group $(id -g) >/dev/null || groupadd -g $(id -g) $(id -gn)
+		id -u $(id -un) >/dev/null 2>&1 || useradd -M -d ${HOME} -u $(id -u) -g $(id -g) -s /bin/bash $(id -un)
+		echo '$(id -un) ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/mosbox
+	"
+	echo "mos: hazir. Cikmak icin 'exit'; tekrar girmek icin 'mos box ${name}'."
+}
+
+box_enter() {
+	name="$1"
+	if ! podman container exists "${BOX_PREFIX}${name}"; then
+		box_create "${name}"
+	fi
+	podman start "${BOX_PREFIX}${name}" >/dev/null 2>&1 || true
+	exec podman exec -it --user "$(id -u):$(id -g)" --workdir "${PWD}" \
+		"${BOX_PREFIX}${name}" /bin/bash -l
+}
+
+cmd="${1:-help}"
+[ $# -gt 0 ] && shift
+case "${cmd}" in
+box)
+	sub="${1:-debian}"
+	case "${sub}" in
+	ls)  podman ps -a --filter label=makeros.box=1 --format '{{.Names}}\t{{.Status}}\t{{.Image}}' ;;
+	rm)  podman rm -f "${BOX_PREFIX}${2:-debian}" ;;
+	*)   box_enter "${sub}" ;;
+	esac
+	;;
+version)
+	. /usr/lib/os-release
+	echo "${PRETTY_NAME} (${BUILD_ID:-?}) cekirdek $(uname -r)"
+	;;
+status)
+	. /usr/lib/os-release
+	echo "${PRETTY_NAME}  slot=$(sed -n 's/.*makeros.slot=\([ab]\).*/\1/p' /proc/cmdline)"
+	[ -e /run/makeros/volatile ] && echo "UYARI: gecici mod (DATA baglanamadi)"
+	free -h | sed -n 1,3p
+	df -h /data 2>/dev/null | tail -n1
+	;;
+help|-h|--help)
+	sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'
+	;;
+*)
+	die "bilinmeyen komut: ${cmd} (mos help)"
+	;;
+esac

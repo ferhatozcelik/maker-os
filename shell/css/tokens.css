@@ -1,0 +1,154 @@
+/* ÜRETİLDİ — elle düzenlemeyin. Kaynak: shell/tokens.json, betik: shell/tools/gen-tokens.mjs */
+:root {
+  --font-sans: "Inter", "Inter Variable", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "DejaVu Sans Mono", Menlo, monospace;
+  --fs-caption: 11px;
+  --fs-footnote: 12px;
+  --fs-body: 13px;
+  --fs-title3: 15px;
+  --fs-title2: 17px;
+  --fs-title1: 22px;
+  --fs-large: 26px;
+  --lh: 1.3;
+  --radius-4: 4px;
+  --radius-6: 6px;
+  --radius-8: 8px;
+  --radius-12: 12px;
+  --radius-16: 16px;
+  --radius-22: 22px;
+  --space-2: 2px;
+  --space-4: 4px;
+  --space-8: 8px;
+  --space-12: 12px;
+  --space-16: 16px;
+  --space-24: 24px;
+  --space-32: 32px;
+  --dur-fast: 140ms;
+  --dur-med: 240ms;
+  --dur-slow: 350ms;
+  --ease-out: cubic-bezier(.2,.8,.2,1);
+  --ease-in: cubic-bezier(.4,0,1,1);
+  --mk-menubar-height: 28px;
+  --mk-dock-icon: 52px;
+  --mk-dock-pad: 6px;
+  --mk-window-radius: 12px;
+  --mk-titlebar-height: 38px;
+  --mk-traffic-size: 12px;
+  --mk-traffic-gap: 8px;
+  --mk-traffic-close: #f2555a;
+  --mk-traffic-min: #f5b83d;
+  --mk-traffic-zoom: #3fc35a;
+  --mk-control-sm: 22px;
+  --mk-control-md: 28px;
+  --mk-control-lg: 34px;
+  --bg: #ececf0;
+  --bg-window: #f7f7f9;
+  --bg-content: #ffffff;
+  --bg-sidebar: #e9e9ee;
+  --bg-elevated: #ffffff;
+  --bg-hover: rgba(0,0,0,.06);
+  --bg-active: rgba(0,0,0,.1);
+  --bg-field: #ffffff;
+  --bg-control: #ffffff;
+  --text: #1d1d21;
+  --text-2: #5f5f68;
+  --text-3: #9a9aa3;
+  --separator: rgba(0,0,0,.1);
+  --border: rgba(0,0,0,.14);
+  --shadow-window: 0 18px 50px rgba(0,0,0,.22), 0 0 0 .5px rgba(0,0,0,.22);
+  --shadow-window-inactive: 0 8px 26px rgba(0,0,0,.14), 0 0 0 .5px rgba(0,0,0,.16);
+  --shadow-pop: 0 10px 32px rgba(0,0,0,.2), 0 0 0 .5px rgba(0,0,0,.16);
+  --material-bar: rgba(246,246,250,.62);
+  --material-bar-solid: #f0f0f4;
+  --material-pop: rgba(248,248,252,.78);
+  --material-pop-solid: #f7f7fa;
+  --material-hud: rgba(240,240,246,.72);
+  --material-tint: rgba(255,255,255,.42);
+  --highlight: inset 0 .5px 0 rgba(255,255,255,.7);
+  --success: #2fa84a;
+  --warning: #d98a00;
+  --danger: #d93542;
+  --term-bg: #1b1b1f;
+  --term-fg: #e6e6ea;
+  --accent: #f07a1a;
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --bg: #1c1c1f;
+  --bg-window: #262629;
+  --bg-content: #1e1e21;
+  --bg-sidebar: #2b2b2f;
+  --bg-elevated: #323236;
+  --bg-hover: rgba(255,255,255,.07);
+  --bg-active: rgba(255,255,255,.12);
+  --bg-field: #1c1c1f;
+  --bg-control: #4a4a4f;
+  --text: #efeff3;
+  --text-2: #a9a9b2;
+  --text-3: #6e6e77;
+  --separator: rgba(255,255,255,.09);
+  --border: rgba(255,255,255,.14);
+  --shadow-window: 0 18px 54px rgba(0,0,0,.55), 0 0 0 .5px rgba(255,255,255,.14);
+  --shadow-window-inactive: 0 8px 28px rgba(0,0,0,.4), 0 0 0 .5px rgba(255,255,255,.1);
+  --shadow-pop: 0 10px 34px rgba(0,0,0,.5), 0 0 0 .5px rgba(255,255,255,.14);
+  --material-bar: rgba(30,30,34,.55);
+  --material-bar-solid: #232327;
+  --material-pop: rgba(40,40,44,.74);
+  --material-pop-solid: #2c2c30;
+  --material-hud: rgba(36,36,40,.7);
+  --material-tint: rgba(20,20,24,.38);
+  --highlight: inset 0 .5px 0 rgba(255,255,255,.12);
+  --success: #3cc15a;
+  --warning: #f0a020;
+  --danger: #ff5a63;
+  --term-bg: #151518;
+  --term-fg: #e6e6ea;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1c1c1f;
+    --bg-window: #262629;
+    --bg-content: #1e1e21;
+    --bg-sidebar: #2b2b2f;
+    --bg-elevated: #323236;
+    --bg-hover: rgba(255,255,255,.07);
+    --bg-active: rgba(255,255,255,.12);
+    --bg-field: #1c1c1f;
+    --bg-control: #4a4a4f;
+    --text: #efeff3;
+    --text-2: #a9a9b2;
+    --text-3: #6e6e77;
+    --separator: rgba(255,255,255,.09);
+    --border: rgba(255,255,255,.14);
+    --shadow-window: 0 18px 54px rgba(0,0,0,.55), 0 0 0 .5px rgba(255,255,255,.14);
+    --shadow-window-inactive: 0 8px 28px rgba(0,0,0,.4), 0 0 0 .5px rgba(255,255,255,.1);
+    --shadow-pop: 0 10px 34px rgba(0,0,0,.5), 0 0 0 .5px rgba(255,255,255,.14);
+    --material-bar: rgba(30,30,34,.55);
+    --material-bar-solid: #232327;
+    --material-pop: rgba(40,40,44,.74);
+    --material-pop-solid: #2c2c30;
+    --material-hud: rgba(36,36,40,.7);
+    --material-tint: rgba(20,20,24,.38);
+    --highlight: inset 0 .5px 0 rgba(255,255,255,.12);
+    --success: #3cc15a;
+    --warning: #f0a020;
+    --danger: #ff5a63;
+    --term-bg: #151518;
+    --term-fg: #e6e6ea;
+    color-scheme: dark;
+  }
+}
+:root { --on-accent: #fff; }
+:root[data-accent="lime"] { --on-accent: #0c0f1a; }
+:root[data-accent="blue"] { --accent: #1a7cf5; }
+:root[data-accent="purple"] { --accent: #9b55e0; }
+:root[data-accent="pink"] { --accent: #e64d97; }
+:root[data-accent="red"] { --accent: #e0354b; }
+:root[data-accent="orange"] { --accent: #f07a1a; }
+:root[data-accent="yellow"] { --accent: #e8b416; }
+:root[data-accent="green"] { --accent: #3cb44f; }
+:root[data-accent="teal"] { --accent: #14a38b; }
+:root[data-accent="cyan"] { --accent: #12b3d1; }
+:root[data-accent="lime"] { --accent: #c8f53c; }
+:root[data-accent="graphite"] { --accent: #8a8a90; }

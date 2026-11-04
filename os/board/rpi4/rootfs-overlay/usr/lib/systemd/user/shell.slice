@@ -1,0 +1,9 @@
+[Unit]
+Description=MakerOS kabuk dilimi (compositor + kabuk tarayicisi; korunur)
+Before=slices.target
+
+[Slice]
+MemoryLow=256M
+CPUWeight=200
+IOWeight=200
+ManagedOOMPreference=avoid

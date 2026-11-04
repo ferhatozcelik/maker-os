@@ -1,0 +1,40 @@
+# MakerOS 2 - Raspberry Pi 4 / 400 (arm64)
+# Her BOOT_A/BOOT_B bolumunde ayni dosya bulunur. Varsayilan hiz asirtma YOK.
+arm_64bit=1
+kernel=kernel8.img
+auto_initramfs=0
+disable_splash=1
+boot_delay=0
+initial_turbo=60
+
+# Grafik: cekirdek KMS, makul CMA (ekran + kamera + H.264 kodek)
+dtoverlay=vc4-kms-v3d,cma-256
+max_framebuffers=2
+disable_fw_kms_setup=1
+disable_overscan=1
+hdmi_enable_4kp60=0
+
+# Donanim algilama
+camera_auto_detect=1
+display_auto_detect=1
+
+# Maker arayuzleri (Ayarlar'dan makerd-priv ile degistirilir)
+dtparam=i2c_arm=on
+dtparam=spi=on
+dtparam=audio=on
+# enable_uart=1 Pi 4'te VPU saatini kilitler; hata ayiklama imajinda acilir.
+enable_uart=0
+dtparam=act_led_trigger=mmc0
+# dtoverlay=disable-bt
+# dtoverlay=gpio-fan,gpiopin=14,temp=65000
+
+[pi4]
+arm_boost=1
+# Performans modu (istege bagli, makerd-priv yazar; sogutma + tryboot testi sart):
+# arm_freq=2000
+# gpu_freq=750
+# over_voltage=6
+
+[all]
+# Kullanici/Ayarlar degisiklikleri (makerd-priv tarafindan yonetilir)
+include makeros-user.txt

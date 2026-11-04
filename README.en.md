@@ -1,164 +1,103 @@
-<p align="center">
-  <a href="https://github.com/ferhatozcelik/maker-os">
-    <img src="docs/assets/maker-os-logo.svg" alt="MakerOS logo" width="100">
-  </a>
-</p>
+# MakerOS
 
-<h1 align="center">MakerOS</h1>
+[Türkçe](README.md)
 
-<p align="center">Ready-to-use Pardus for Raspberry Pi, no installation: for students, makers and AI projects.</p>
+**A maker operating system for the Raspberry Pi 4.** Use the Pi without a monitor from any
+browser on the same network (computer, tablet, phone): files, terminal, Python projects, GPIO,
+camera, AI agents and Chromium in one web desktop.
 
-<p align="center"><strong>Flash the SD card. Power on the Pi. Connect from a browser.</strong></p>
+MakerOS 2 is an independent system built from scratch with Buildroot on the Linux kernel, with a
+read-only root file system, A/B partitions and signed software updates. (MakerOS 1.x was based on
+Pardus; this repository now contains MakerOS 2 only. The 1.x releases remain on the
+[Releases](https://github.com/ferhatozcelik/maker-os/releases) page.)
 
-<p align="center">
-  <a href="https://github.com/ferhatozcelik/maker-os/releases/latest"><img src="https://img.shields.io/github/v/release/ferhatozcelik/maker-os?label=release&color=c8102e" alt="Latest release"></a>
-  <img src="https://img.shields.io/badge/Raspberry%20Pi-4%20%7C%20400%20%7C%203B%2B-c8102e" alt="Raspberry Pi 4, 400, 3B+">
-  <img src="https://img.shields.io/badge/base-Pardus%2021%20arm64-c8102e" alt="Base: Pardus 21 arm64">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-c8102e" alt="GPL-3.0 license"></a>
-</p>
+![MakerOS desktop: Chromium window](docs/v2/screenshots/desktop.png)
 
-<p align="center">
-  <a href="https://github.com/ferhatozcelik/maker-os/releases/latest">Download</a> ·
-  <a href="#setup-guide">Setup guide</a> ·
-  <a href="#features">Features</a> ·
-  <a href="#building-from-source">Build</a> ·
-  <a href="docs/README.md">Docs (Turkish)</a> ·
-  <a href="CONTRIBUTING.md">Contributing</a>
-</p>
+| Web interface | On a phone | Software update |
+|---|---|---|
+| ![Web interface](docs/v2/screenshots/web.png) | ![Phone](docs/v2/screenshots/mobile.png) | ![Update](docs/v2/screenshots/update.png) |
 
-<p align="center">
-  <a href="README.md">Türkçe</a> ·
-  <a href="README.en.md">English</a>
-</p>
-
-<br>
-
-<table align="center">
-  <tr>
-    <th align="center">MakerOS Center</th>
-    <th align="center">Phone · Wi-Fi</th>
-    <th align="center">Phone · Terminal</th>
-  </tr>
-  <tr>
-    <td align="center" valign="top"><img src="docs/screenshots/center.png" alt="MakerOS Center overview" width="420"></td>
-    <td align="center" valign="top"><img src="docs/screenshots/phone-wifi.png" alt="Wi-Fi and network settings on a phone" width="190"></td>
-    <td align="center" valign="top"><img src="docs/screenshots/phone-terminal.png" alt="Web terminal with extra key bar on a phone" width="190"></td>
-  </tr>
-  <tr><th align="center" colspan="3">Remote desktop (in the browser)</th></tr>
-  <tr><td align="center" colspan="3"><img src="docs/screenshots/desktop.png" alt="Pardus desktop opened from a browser" width="850"></td></tr>
-</table>
-
-<table align="center">
-  <tr><th>Python and AI environment</th><th>MediaPipe project templates</th></tr>
-  <tr>
-    <td><img src="docs/screenshots/python.png" alt="Python versions and ready AI environment" width="420"></td>
-    <td><img src="docs/screenshots/projects.png" alt="Creating a hand tracking project from a MediaPipe template" width="420"></td>
-  </tr>
-</table>
-
-Screenshots show the current build running in Docker, with desktop and phone viewports.
-Camera, Wi-Fi and GPIO require a Raspberry Pi for hardware testing.
-See the [screenshot gallery](docs/screenshots.md).
-
-## Download
-
-[Latest release](https://github.com/ferhatozcelik/maker-os/releases/latest): `maker-os-<version>.img.xz` (Raspberry Pi 4 / 400 / 3B+, 64-bit).
-Verify it with `sha256sum -c maker-os-*.img.xz.sha256`.
-
-The user interface is in Turkish; the desktop language and keyboard layout can
-be changed under **Center → Dil ve Klavye** (Language and Keyboard).
+> Screenshots are from the Docker preview; device data such as temperature, memory and network
+> are mock values.
 
 ## Features
 
-| Area | Contents |
-| --- | --- |
-| Base | Pardus 21 "Yirmibir" (Debian 11) arm64 + Pardus security repository, current Raspberry Pi kernel (`-v8+`) |
-| Desktop | XFCE in a macOS-like layout (top bar + Plank dock), Pardus **100th Year** theme (light/dark), Chromium, VS Code, Files, Terminal |
-| MakerOS Center | One phone-friendly web app (port 80): settings, network, date/time, language/keyboard, Python, projects, agents, terminal, camera, USB, GPIO, remote desktop |
-| Network | Ethernet (status, speed), Wi-Fi scan, hidden networks, WPA2-Enterprise (eduroam), saved networks; falls back to the open `MakerOS` setup Wi-Fi with a setup page |
-| Web terminal | A real shell in the browser (xterm.js) with Esc/Tab/Ctrl/arrow keys for phones; runs as `maker`, not root |
-| Camera | Raspberry Pi camera modules (libcamera, picamera2) and USB webcams: live view, full-resolution photos, gallery |
-| MediaPipe | 7 ready-made camera projects: hand tracking, gesture-controlled LED (GPIO), faces, pose/exercise counter, object detection, background segmentation, face mesh. Models are bundled, no internet needed |
-| Python and AI | Any Python version in one click with uv; ready AI environment (`ai-env`): PyTorch, ONNX Runtime, LiteRT, OpenCV, Ultralytics, Jupyter Lab |
-| Hardware | GPIO without sudo, I2C, SPI, UART; mount/safely eject USB drives, Arduino/ESP32 serial ports; HDMI 0/1, DSI touch display, HDMI/3.5 mm audio |
-| Agents | Claude Code, Codex CLI, Gemini CLI, OpenCode, Antigravity, Ollama: install, update and launch from the Center |
-| Remote access | Web (desktop + all settings), VNC (5900), SSH, mDNS (`maker-os.local`) |
+- **Two views, one address** (`http://makeros.local/`): the windowed **Screen** (desktop, dock,
+  windows) and the phone-friendly **Web** interface, switched with *Web | Screen* at the top.
+  Installable as a web app (PWA).
+- **Chromium** opens as a normal window on the desktop. It is the real browser running on the Pi,
+  drawn on a separate invisible display; only that window is streamed to you. It stops when closed.
+- **Apps:** Files (click a `.py` file to run it), Terminal (shared session between the web and the
+  Pi's screen), Python (uv projects with virtual environments and templates: LED, button, I2C,
+  camera, AI object detection), AI Agents (Claude Code, Codex CLI, Gemini CLI, OpenCode, Ollama),
+  Camera, GPIO (40-pin), Plugins (zip import/export), Activity Monitor, Settings.
+- **Screen Mode** (off by default) shows the Pi's own screen in the browser. An administrator turns
+  it on in Settings › Screen Mode; no extra port is opened and nothing runs in the background while
+  it is off. Without a monitor the Pi's screen fits your browser window; on phones it turns landscape.
+- **Software update:** Settings › General › Software update finds a new release on GitHub, downloads
+  the signed package, installs it to the spare partition and restarts. If the new version fails to
+  start, the Pi returns to the previous one automatically. Your files and settings are kept.
+- **Headless setup:** with no network the Pi opens an open `MakerOS` Wi-Fi; connect your phone and
+  the setup page appears.
+- **Themes:** Maker, Hackerspace, Hardware, Cybersecurity, 3D printing; more via plugins.
 
-## Setup guide
+## Installation
 
-1. Download the `.img.xz` from the [release page](https://github.com/ferhatozcelik/maker-os/releases/latest) (16 GB+ card recommended) and write it with [Raspberry Pi Imager](https://www.raspberrypi.com/software/) → **Use custom**. Do **not** use Imager's OS customisation. balenaEtcher also works.
-2. Optional: copy `wifi-example.txt` on the `bootfs` partition to `wifi.txt` and fill in `SSID` and `PAROLA` (password).
-3. Power on the Pi. On first boot the root partition grows to fill the card and SSH host keys are generated (~1 min).
-4. Connect:
-   - Ethernet or `wifi.txt`: `http://maker-os.local/`
-   - No network: after ~45 s join the open `MakerOS` Wi-Fi; the setup page opens by itself (otherwise `http://10.42.0.1/kurulum`) → pick your network, enter its password
-5. Log in as `maker` / `maker` and change the password first under **Center → Kullanıcı** (User). Web and VNC traffic is not encrypted; use them on a trusted local network only.
+1. Download the latest `makeros-<version>-rpi4.img.xz` from
+   [Releases](https://github.com/ferhatozcelik/maker-os/releases) (verify with `.sha256`).
+2. Write it to an SD card with Raspberry Pi Imager (*Use custom*). Imager's OS customisation
+   settings are not used by MakerOS.
+3. *(Optional)* On the card's `MOSCFG` partition, copy `wifi-example.txt` to `wifi.txt` and fill in
+   your network name and password. It is read on first boot and deleted for safety.
+4. Power on the Pi and open **http://makeros.local/** in a browser. Without a cable or `wifi.txt`,
+   join the `MakerOS` Wi-Fi with your phone; the setup page opens (or `http://10.42.0.1/kurulum`).
+5. In the first-boot wizard choose region and keyboard, Wi-Fi if needed, then create your account
+   and set the device name. There is no default password; the first account is the administrator.
 
-### Camera and MediaPipe
+**Hardware:** Raspberry Pi 4 Model B and Raspberry Pi 400 (aarch64). A/B updates need Pi bootloader
+(EEPROM) 2025-03 or newer. Cards running MakerOS 1.x cannot be updated to MakerOS 2 over the air;
+re-flash the card.
 
-Plug the camera into the **CAMERA** connector while the Pi is off, then create a
-project under **Center → Projeler** with one of the **MediaPipe** templates and
-run it:
+## Verification status
 
-```bash
-uv run main.py                       # Pi camera or USB camera, detected automatically
-uv run main.py --kaynak video.mp4    # use a video file instead
-```
-
-The result is shown in a window on the Pi and live at
-`http://maker-os.local:8000/` on your phone.
-
-### Hardware support
-
-| Model | Status |
-| --- | --- |
-| Raspberry Pi 4 Model B | Target platform |
-| Raspberry Pi 400 | Supported |
-| Raspberry Pi 3B+ | Works; AI and MediaPipe are slow |
-| Raspberry Pi 5 | Not supported yet |
+To be transparent: the MakerOS 2 interface, makerd and the Chromium window have been tested end to
+end **in Docker** with the built root file system. There is no performance data measured on real
+Raspberry Pi hardware yet; for the Docker comparison see
+[docs/v2/BENCHMARK.md](docs/v2/BENCHMARK.md). Power-loss and corrupt-package tests of the signed
+update on hardware are ongoing in the first releases. Please report problems on
+[Issues](https://github.com/ferhatozcelik/maker-os/issues).
 
 ## Building from source
 
-On an Apple Silicon Mac (arm64, no qemu) or arm64 Linux with Docker:
+All builds and tests run in Docker; nothing is installed on the host.
 
 ```bash
-colima start --arch aarch64 --cpu 6 --memory 8 --disk 60   # macOS only
-cd image
-./build-docker.sh          # all stages → image/out/maker-os-<version>.img.xz
-./build-docker.sh 06       # resume at configuration; also runs stages 07–09
-./test/run-test.sh         # run the image's root filesystem in Docker → http://localhost:8080/
+./os/run-docker.sh                    # run the built root file system in Docker → http://localhost/
+docker-compose up -d --build          # plain preview: makerd (mock data) + shell → http://localhost/
+make -C makerd test                   # makerd tests
+make -C shell smoke                   # shell smoke test (headless Chromium)
+./os/build.sh build                   # Raspberry Pi image → os/out/makeros-<version>-rpi4.img.xz
 ```
 
-See the [Turkish README](README.md#kaynaktan-derleme) for the stage list.
+The signed update package (`.raucb`) is produced only when the signing key is present
+(`os/keys/rauc-key.pem`, never committed). Releases are published by GitHub Actions: bump
+`os/VERSION` and push to `main`; the image and package are built and a Release is created
+(see [.github/workflows/release.yml](.github/workflows/release.yml)).
 
 ## License and trademarks
 
-Original code, build scripts, configuration and examples developed in this
-repository are licensed under the **GNU General Public License, version 3
-or any later version** (`GPL-3.0-or-later`). See [`LICENSE`](LICENSE) for the
-permissions and conditions for use, modification and redistribution.
+The original source code, build scripts, configuration and examples developed in this repository
+are provided under the **GNU General Public License version 3 or any later version**
+(`GPL-3.0-or-later`); see [`LICENSE`](LICENSE). This does not mean all software in the image has
+the same license: the Linux kernel, Raspberry Pi firmware, Chromium, WPE WebKit, Mesa and other
+third-party components belong to their owners and licenses; see [`NOTICE.md`](NOTICE.md).
 
-Third-party packages, the kernel, firmware, themes and models retain their
-own licenses and ownership. See [`NOTICE.md`](NOTICE.md) for components and
-source references. Redistributors must preserve the relevant notices and
-meet the source provision requirements of each applicable license. A link
-to this repository or an upstream homepage alone may not meet those requirements.
+**MakerOS is an independent community project.** It is not developed on behalf of Raspberry Pi Ltd
+and claims no partnership, sponsorship, certification, endorsement or official support.
+**Raspberry Pi is a trademark of Raspberry Pi Ltd.** References to the trademark only identify the
+target hardware; the software license grants no trademark or logo rights. See the
+[Raspberry Pi trademark rules](https://www.raspberrypi.com/trademark-rules/). All rights to the
+Konya HackerSpace name and mark used in the default plugin belong to Konya HackerSpace.
 
-**MakerOS is an independent community project.** It is not an official
-TÜBİTAK or Pardus release, product or service, and does not claim affiliation,
-sponsorship, certification, approval or official support. Project-specific
-issues belong in this repository's
-[issue tracker](https://github.com/ferhatozcelik/maker-os/issues).
-
-Rights in the Pardus name and visual identity remain with their respective
-holders. **Raspberry Pi is a trademark of Raspberry Pi Ltd.** Brand references
-identify the software base and target hardware. Software licenses do not
-grant trademark permissions, and this notice does not replace any required
-permission. Names, logos and branded themes remain subject to the relevant
-holders' terms, including the
-[Raspberry Pi trademark rules](https://www.raspberrypi.com/trademark-rules/).
-
-Software is provided **as is, without warranty**, to the extent permitted by
-applicable law and under the applicable licenses. This notice does not
-limit mandatory statutory rights or certify legal compliance. See the
-[detailed licensing notes (Turkish)](docs/license.md).
+The software is provided **as is, without warranty**, to the extent permitted by applicable law and
+as stated in the licenses.

@@ -1,0 +1,15 @@
+[Unit]
+Description=MakerOS DATA bolumunu kart boyutuna buyut
+DefaultDependencies=no
+After=local-fs.target
+Before=sysinit.target shutdown.target
+Conflicts=shutdown.target
+RequiresMountsFor=/data
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/lib/makeros/growdata
+
+[Install]
+WantedBy=sysinit.target

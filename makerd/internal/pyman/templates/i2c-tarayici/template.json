@@ -1,0 +1,1 @@
+{"id":"i2c-tarayici","order":4,"category":"donanim","icon":"cpu","title":{"tr":"I2C tarayıcı","en":"I2C scanner"},"desc":{"tr":"I2C veri yolundaki sensörlerin adreslerini listeler (SDA pin 3, SCL pin 5).","en":"Lists sensor addresses on the I2C bus (SDA pin 3, SCL pin 5)."},"deps":["smbus2"],"needs":["i2c"]}

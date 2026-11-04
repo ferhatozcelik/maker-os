@@ -1,87 +1,156 @@
-# main'e her push'ta Raspberry Pi imaji build edilir. VERSION dosyasindaki
-# surumun yayini yoksa imaj, OTA paketi ve ozetler dogrudan GitHub Release'e
-# yuklenir (Actions artifact kullanilmaz). Yayin zaten varsa build yalnizca
-# test amaclidir. Cihazlar yeni yayini OTA ile gorur (Merkez > Guncellemeler).
-name: Imaj ve surum
+# MakerOS 2: test + Raspberry Pi imaji + imzali guncelleme paketi + GitHub Release.
+#
+# main'e her push'ta os/VERSION'daki surum henuz yayinlanmamissa:
+#   imaj (makeros-<surum>-rpi4.img.xz) ve RAUC paketi (makeros-<surum>-rpi4.raucb) derlenir,
+#   v<surum> etiketli Release olusturulur. Cihazlar paketi Ayarlar > Genel > Yazilim guncelleme ile kurar.
+# Surum zaten yayindaysa yalnizca testler calisir (yeni surum icin os/VERSION'i artirin).
+#
+# Gerekli sir (Settings > Secrets and variables > Actions):
+#   MAKEROS_RAUC_KEY  imza anahtari (PEM; rauc-key.pem dosyasinin tamami). Acik sertifikasi depoda:
+#                     os/board/rpi4/rootfs-overlay/etc/rauc/keyring.pem. Sir yoksa surum YAYINLANMAZ
+#                     (imzasiz paketi cihazlar kurmaz).
+#
+# Sure: ilk derleme (arac zinciri, WPE WebKit, Mesa, cekirdek) GitHub'in 6 saatlik is sinirina
+# yaklasabilir. dl/ ve ccache basarisiz iste de onbellege yazilir; zaman asiminda "Re-run" ile
+# ikinci deneme onceden derlenenleri onbellekten alir ve cok daha kisa surer.
+name: MakerOS 2 surum
 
 on:
   push:
     branches: [main]
-    paths-ignore: ["docs/**", "README.md", "README.en.md", "CONTRIBUTING.md", "NOTICE.md"]
+    paths-ignore: ["**.md", "docs/**"]
   workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: image-build
+  group: makeros-release
   cancel-in-progress: false
 
 jobs:
-  build:
-    # arm64: chroot icinde emulasyon (qemu) gerekmez, build birkac kat hizli.
+  test:
     runs-on: ubuntu-24.04-arm
-    timeout-minutes: 340
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: makerd testleri (Docker)
+        run: make -C makerd test
+
+  image:
+    needs: test
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 355
     env:
       GH_TOKEN: ${{ github.token }}
+      BR_DIR: ${{ github.workspace }}/../br
     steps:
       - uses: actions/checkout@v4
 
       - name: Surum
         id: v
         run: |
-          VERSION="$(tr -d ' \r\n' < VERSION)"
-          echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' || { echo "::error::VERSION gecersiz: $VERSION"; exit 1; }
+          VERSION="$(tr -d ' \r\n' < os/VERSION)"
+          echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' || { echo "::error::os/VERSION gecersiz: $VERSION"; exit 1; }
           if gh release view "v$VERSION" >/dev/null 2>&1; then
             echo "release=0" >> "$GITHUB_OUTPUT"
-            echo "::notice::v$VERSION zaten yayinda; yalnizca test build'i. Yeni surum icin VERSION'i artirin."
+            echo "::notice::v$VERSION zaten yayinda; derleme atlandi. Yeni surum icin os/VERSION'i artirin."
           else
             echo "release=1" >> "$GITHUB_OUTPUT"
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Birim testleri
-        run: python3 -m unittest discover -s image/test/unit
+      - name: Imza anahtari
+        if: steps.v.outputs.release == '1'
+        env:
+          KEY: ${{ secrets.MAKEROS_RAUC_KEY }}
+        run: |
+          if [ -z "$KEY" ]; then
+            echo "::error::MAKEROS_RAUC_KEY sirri yok: imzali guncelleme paketi uretilemez, surum yayinlanmadi."
+            exit 1
+          fi
+          mkdir -p os/keys
+          printf '%s\n' "$KEY" > os/keys/rauc-key.pem
+          # Derleyici kap 'builder' (uid 1000) olarak okur; is makinesi tek kullanimliktir.
+          chmod 644 os/keys/rauc-key.pem
+          openssl pkey -in os/keys/rauc-key.pem -noout
+          # Anahtar depodaki acik sertifikayla eslesmeli (yoksa cihazlar paketi reddeder).
+          a=$(openssl pkey -in os/keys/rauc-key.pem -pubout | sha256sum)
+          b=$(openssl x509 -in os/board/rpi4/rootfs-overlay/etc/rauc/keyring.pem -pubkey -noout | sha256sum)
+          [ "$a" = "$b" ] || { echo "::error::MAKEROS_RAUC_KEY, keyring.pem ile eslesmiyor"; exit 1; }
 
       - name: Disk alani
+        if: steps.v.outputs.release == '1'
         run: |
-          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL /usr/local/share/boost || true
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache /usr/local/share/boost /usr/share/swift || true
           docker system prune -af >/dev/null || true
           df -h /
 
-      - name: Imaj build
+      - name: Onbellek (indirmeler + ccache) geri yukle
+        if: steps.v.outputs.release == '1'
+        id: cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ${{ env.BR_DIR }}/dl
+            ${{ env.BR_DIR }}/ccache
+          key: br-${{ hashFiles('os/configs/*', 'os/build.sh') }}-${{ github.run_id }}
+          restore-keys: |
+            br-${{ hashFiles('os/configs/*', 'os/build.sh') }}-
+            br-
+
+      - name: Chromium paketi (Debian trixie arm64)
+        if: steps.v.outputs.release == '1'
+        run: |
+          mkdir -p os/out
+          docker run --rm -v "$PWD/os/chromium":/s:ro -v "$PWD/os/out":/out debian:trixie sh /s/build-bundle.sh
+          ls -la os/out
+
+      - name: Imaj ve guncelleme paketi (Buildroot)
+        if: steps.v.outputs.release == '1'
         env:
-          PIOS_BUILD_VERSION: ${{ steps.v.outputs.version }}
-          PIOS_COMPRESS: ${{ steps.v.outputs.release }}
-        run: ./image/build-docker.sh
+          MAKEROS_VOLUME: ${{ env.BR_DIR }}
+          MAKEROS_HEAVY_JOBS: "2"
+        run: |
+          mkdir -p "$BR_DIR" && chmod 777 "$BR_DIR"
+          sudo chmod -R a+rwX "$BR_DIR" || true
+          ./os/build.sh build
+          ls -la os/out
+          test -f "os/out/makeros-${{ steps.v.outputs.version }}-rpi4.img.xz"
+          test -f "os/out/makeros-${{ steps.v.outputs.version }}-rpi4.raucb"
+
+      - name: Onbellegi kaydet (basarisiz iste de)
+        if: always() && steps.v.outputs.release == '1'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ${{ env.BR_DIR }}/dl
+            ${{ env.BR_DIR }}/ccache
+          key: br-${{ hashFiles('os/configs/*', 'os/build.sh') }}-${{ github.run_id }}
+
+      - name: Anahtari sil
+        if: always()
+        run: rm -f os/keys/rauc-key.pem
 
       - name: Surum notlari
         if: steps.v.outputs.release == '1'
         run: |
           V="${{ steps.v.outputs.version }}"
-          {
-            echo "MakerOS $V — Raspberry Pi için hazır kurulu Pardus imajı."
-            echo
-            # CHANGELOG'daki "## $V" bolumu
-            awk -v v="## $V" '$0 == v {on=1; next} /^## / && on {exit} on' CHANGELOG.md
-            echo
-            echo "## Kurulum"
-            echo "- **Kurulu cihaz:** Merkez → Güncellemeler → Güncelle (önce yedek alınır; onaylayınca yedek silinir)."
-            echo "- **Yeni kart:** \`maker-os-$V.img.xz\` dosyasını Raspberry Pi Imager → *Use custom* ile en az 16 GB karta yazın."
-            echo
-            echo "Doğrulama: \`shasum -a 256 -c maker-os-$V.img.xz.sha256\`"
-            echo
-            echo "İlk giriş: \`http://maker-os.local/\` — \`maker\` / \`maker\` (ilk iş parolayı değiştirin)."
-          } > "$RUNNER_TEMP/notes.md"
-          cat "$RUNNER_TEMP/notes.md"
+          awk -v v="## $V" '$0==v{f=1;next} /^## /{f=0} f' CHANGELOG.md > notes.md
+          [ -s notes.md ] || echo "MakerOS $V" > notes.md
+          cat >> notes.md <<EOF
 
-      - name: GitHub Release
+          ---
+          **Kurulum:** \`makeros-$V-rpi4.img.xz\` dosyasini Raspberry Pi Imager ile SD karta yazin (Raspberry Pi 4/400).
+          **Guncelleme:** MakerOS 2 cihazlari Ayarlar › Genel › Yazilim guncelleme ile kurar (\`.raucb\`, imzali).
+          MakerOS 1.x (Pardus tabanli) cihazlar uzaktan guncellenemez; SD kart yeniden yazilmalidir.
+          EOF
+
+      - name: Release
         if: steps.v.outputs.release == '1'
         run: |
           V="${{ steps.v.outputs.version }}"
-          cd image/out
-          ls -lh
-          gh release create "v$V" --target "$GITHUB_SHA" --title "MakerOS $V" \
-            --notes-file "$RUNNER_TEMP/notes.md" --latest \
-            "maker-os-$V.img.xz" "maker-os-$V.img.xz.sha256" "maker-os-$V.img.sha256" \
-            "maker-os-$V.manifest.txt" "maker-os-$V-ota.tar.xz" "maker-os-$V-ota.tar.xz.sha256"
+          gh release create "v$V" \
+            "os/out/makeros-$V-rpi4.img.xz" "os/out/makeros-$V-rpi4.img.xz.sha256" \
+            "os/out/makeros-$V-rpi4.raucb" "os/out/makeros-$V-rpi4.raucb.sha256" \
+            --title "MakerOS $V" --notes-file notes.md --target "$GITHUB_SHA"

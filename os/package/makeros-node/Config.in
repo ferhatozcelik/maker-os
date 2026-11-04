@@ -1,0 +1,10 @@
+config BR2_PACKAGE_MAKEROS_NODE
+	bool "makeros-node"
+	depends on BR2_aarch64
+	depends on BR2_TOOLCHAIN_USES_GLIBC
+	depends on !BR2_PACKAGE_NODEJS
+	help
+	  Resmi Node.js v24 LTS linux-arm64 ikilisi (nodejs.org), derleme
+	  yerine (~45 dk tasarruf). /opt/node, /usr/bin/{node,npm,npx}.
+
+	  https://nodejs.org/

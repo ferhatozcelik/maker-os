@@ -1,0 +1,10 @@
+config BR2_PACKAGE_CHROMIUM_BIN
+	bool "chromium-bin"
+	depends on BR2_aarch64
+	depends on BR2_TOOLCHAIN_USES_GLIBC
+	help
+	  Chromium web tarayıcı (Debian trixie arm64 derlemesi, kütüphaneleriyle
+	  /opt/chromium altında). Paket os/chromium/build-bundle.sh ile Docker
+	  içinde üretilir; glibc imajınkidir. Wayland (labwc) üzerinde çalışır.
+
+	  https://www.chromium.org

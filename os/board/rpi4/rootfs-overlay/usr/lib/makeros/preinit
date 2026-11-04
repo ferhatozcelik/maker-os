@@ -1,0 +1,89 @@
+#!/bin/sh
+# MakerOS preinit (PID 1, systemd'den once; initramfs yok).
+#
+# Kok EROFS salt-okunurdur. Bu betik:
+#   1. DATA bolumunu (/data, ext4) denetler ve baglar,
+#   2. /etc uzerine overlayfs kurar (ust katman /data/overlay/etc),
+#   3. /var, /home, /opt/data, /usr/local icin gereken dizinleri hazirlar
+#      (baglamalari systemd fstab ile yapar),
+#   4. systemd'yi exec eder.
+# DATA baglanamazsa sistem yine acilir: /data tmpfs olur (gecici mod) ve
+# /run/makeros/volatile isareti birakilir; makerd bunu arayuzde gosterir.
+#
+# Cekirdek komut satiri:
+#   root=PARTUUID=4d4f5332-05  -> DATA = 4d4f5332-07 (ayni disk imzasi)
+#   makeros.data=/dev/xxx      -> DATA aygitini elle belirt (istege bagli)
+#   makeros.volatile=1         -> DATA'yi hic baglama (kurtarma/test)
+
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
+export PATH
+
+log() { echo "makeros-preinit: $*" > /dev/kmsg 2>/dev/null || echo "makeros-preinit: $*"; }
+
+mountpoint -q /proc || mount -t proc -o nosuid,nodev,noexec proc /proc
+mountpoint -q /sys  || mount -t sysfs -o nosuid,nodev,noexec sysfs /sys
+mountpoint -q /dev  || mount -t devtmpfs -o mode=0755,nosuid devtmpfs /dev
+mountpoint -q /run  || mount -t tmpfs -o mode=0755,nosuid,nodev,size=20% tmpfs /run
+mkdir -p /run/makeros
+
+CMDLINE="$(cat /proc/cmdline)"
+DATA_DEV=""
+VOLATILE=0
+for arg in ${CMDLINE}; do
+	case "${arg}" in
+	root=PARTUUID=*)
+		uuid="${arg#root=PARTUUID=}"
+		DATA_DEV="/dev/disk/by-partuuid/${uuid%-*}-07"
+		DATA_UUID="${uuid%-*}-07"
+		;;
+	makeros.data=*) DATA_DEV="${arg#makeros.data=}"; DATA_UUID="" ;;
+	makeros.volatile=1) VOLATILE=1 ;;
+	esac
+done
+
+# udev henuz yok: /dev/disk/by-partuuid bulunmaz, blkid ile coz.
+if [ -n "${DATA_UUID:-}" ]; then
+	i=0
+	DATA_DEV=""
+	while [ $i -lt 50 ]; do
+		DATA_DEV="$(blkid -l -o device -t PARTUUID="${DATA_UUID}" 2>/dev/null)"
+		[ -n "${DATA_DEV}" ] && break
+		sleep 0.1
+		i=$((i + 1))
+	done
+fi
+
+data_ok=0
+if [ "${VOLATILE}" != 1 ] && [ -n "${DATA_DEV}" ] && [ -b "${DATA_DEV}" ]; then
+	# -p: yalnizca guvenli onarimlar. 0/1 = temiz/onarildi, 2 = yeniden baslat.
+	e2fsck -p "${DATA_DEV}" > /run/makeros/e2fsck.log 2>&1
+	rc=$?
+	if [ $rc -ge 4 ]; then
+		log "DATA e2fsck hatasi ($rc), -y ile onariliyor"
+		e2fsck -y "${DATA_DEV}" >> /run/makeros/e2fsck.log 2>&1
+	fi
+	if mount -t ext4 -o noatime,lazytime,commit=60,errors=remount-ro "${DATA_DEV}" /data; then
+		data_ok=1
+	else
+		log "DATA (${DATA_DEV}) baglanamadi"
+	fi
+else
+	log "DATA bolumu bulunamadi (${DATA_DEV:-yok})"
+fi
+
+if [ $data_ok != 1 ]; then
+	mount -t tmpfs -o mode=0755,size=25% tmpfs /data
+	: > /run/makeros/volatile
+	log "GECICI MOD: degisiklikler yeniden baslatinca kaybolur"
+fi
+
+mkdir -p /data/overlay/etc/upper /data/overlay/etc/work \
+         /data/overlay/var/upper /data/overlay/var/work \
+         /data/home /data/opt /data/usr-local /data/rauc
+
+if ! mount -t overlay overlay \
+	-o lowerdir=/etc,upperdir=/data/overlay/etc/upper,workdir=/data/overlay/etc/work /etc; then
+	log "/etc overlay kurulamadi; /etc salt-okunur kaliyor"
+fi
+
+exec /usr/lib/systemd/systemd "$@"

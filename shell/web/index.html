@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="tr" data-ui="web">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="theme-color" content="#1c1d21">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>MakerOS</title>
+<link rel="icon" type="image/svg+xml" href="/shell/icons/logo.svg">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/shell/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="MakerOS">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="preload" href="/shell/vendor/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/shell/css/tokens.css">
+<link rel="stylesheet" href="/shell/css/kit.css">
+<link rel="stylesheet" href="/shell/web/web.css">
+</head>
+<body>
+<aside class="side">
+  <div class="brand"><img class="brand-logo" src="/shell/icons/logo.svg" alt="" width="34" height="34"><div><b>MakerOS</b><small class="host"></small></div></div>
+  <nav class="nav"></nav>
+  <div class="me"><span class="avatar"></span><span class="who"></span><button class="btn icon sm b-out"></button></div>
+</aside>
+<div class="scrim"></div>
+<main class="main">
+  <header class="top">
+    <button class="btn icon sm b-menu"></button>
+    <h1 class="ttl"></h1>
+    <div class="chips"></div>
+    <div class="mode seg"><button class="on" data-m="web"></button><button data-m="screen"></button></div>
+  </header>
+  <section class="view"></section>
+  <nav class="tabbar" aria-label="Sekmeler"></nav>
+</main>
+<script type="module" src="/shell/web/web.js"></script>
+</body>
+</html>

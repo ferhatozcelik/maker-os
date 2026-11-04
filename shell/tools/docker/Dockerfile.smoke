@@ -1,0 +1,9 @@
+# Başsız Chromium + Node: shell/tools/smoke.mjs bu kapsayıcıda çalışır (ana makinede Chrome/Node yok).
+#   docker build -f shell/tools/docker/Dockerfile.smoke -t makeros/shell-smoke:dev shell/tools/docker
+FROM node:24-bookworm-slim
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends chromium fonts-dejavu-core ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+ENV CHROME=/usr/bin/chromium CHROME_NO_SANDBOX=1
+WORKDIR /shell
+ENTRYPOINT ["node", "/shell/tools/smoke.mjs"]

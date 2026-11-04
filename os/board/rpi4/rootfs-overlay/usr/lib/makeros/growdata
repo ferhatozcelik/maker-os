@@ -1,0 +1,34 @@
+#!/bin/sh
+# DATA bolumunu (p7) ve onu iceren genisletilmis bolumu (p4) kartin sonuna
+# kadar buyutur, ardindan ext4'u cevrimici genisletir. Her acilista calisir;
+# zaten tam boyuttaysa hicbir sey yapmaz (idempotent).
+set -u
+log() { echo "makeros-growdata: $*"; }
+
+DATA_SRC="$(findmnt -n -o SOURCE /data 2>/dev/null)"
+[ -b "${DATA_SRC}" ] || { log "/data blok aygiti degil (gecici mod?), atlaniyor"; exit 0; }
+
+name="$(basename "${DATA_SRC}")"
+disk="/dev/$(basename "$(readlink -f "/sys/class/block/${name}/..")")"
+partn="$(cat "/sys/class/block/${name}/partition")"
+[ "${partn}" = 7 ] || { log "beklenmeyen DATA bolum no: ${partn}"; exit 0; }
+
+disk_sectors="$(cat "/sys/class/block/$(basename "${disk}")/size")"
+start="$(cat "/sys/class/block/${name}/start")"
+size="$(cat "/sys/class/block/${name}/size")"
+end=$((start + size))
+# 16 MiB'den az bos alan varsa buyutmeye degmez.
+if [ $((disk_sectors - end)) -lt 32768 ]; then
+	log "DATA zaten tam boyut"
+else
+	log "DATA buyutuluyor (${disk} bolum 4 ve 7)"
+	# Once genisletilmis bolum, sonra mantiksal bolum. sfdisk kullanimdaki
+	# disk icin BLKPG ile yalnizca degisen bolumleri cekirdege bildirir.
+	echo ",+" | sfdisk --no-reread --force -N 4 "${disk}" >/dev/null 2>&1 || log "p4 buyutulemedi"
+	echo ",+" | sfdisk --no-reread --force -N 7 "${disk}" >/dev/null 2>&1 || log "p7 buyutulemedi"
+	partx -u -n 4:7 "${disk}" 2>/dev/null || true
+fi
+
+# Dosya sistemi bolumden kucukse cevrimici buyut.
+resize2fs "${DATA_SRC}" 2>&1 | sed 's/^/makeros-growdata: /'
+exit 0

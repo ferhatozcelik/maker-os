@@ -1,0 +1,8 @@
+[Unit]
+Description=MakerOS uygulama dilimi (kullanici uygulamalari, terminaller)
+Before=slices.target
+
+[Slice]
+MemoryHigh=2200M
+ManagedOOMMemoryPressure=kill
+ManagedOOMMemoryPressureLimit=50%

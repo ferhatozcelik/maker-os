@@ -1,0 +1,10 @@
+# MakerOS uzak tarayıcı oturumu (MakerOS'taki "Chromium" penceresi). makerd ihtiyaç olunca başlatır,
+# pencere kapanınca durdurur. Ayrı, monitörsüz labwc + Chromium + wayvnc (yalnız 127.0.0.1:5901).
+[Unit]
+Description=MakerOS uzak tarayıcı oturumu (Chromium)
+
+[Service]
+Type=simple
+Slice=apps.slice
+ExecStart=/usr/lib/makeros/browser-session
+Restart=no

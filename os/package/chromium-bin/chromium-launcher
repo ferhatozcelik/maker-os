@@ -1,0 +1,17 @@
+#!/bin/sh
+# MakerOS Chromium başlatıcı (os/package/chromium-bin): Wayland (labwc), imajın kendi Mesa yığını (V3D/VC4).
+# Paket yalnız Chromium'un kendi bağımlılıklarını taşır; Wayland/EGL/GBM/Mesa sistemden gelir
+# (paketteki eski libwayland, sistem libEGL'i ile çakışıyordu: wl_display_dispatch_queue_timeout).
+D=/opt/chromium
+export LD_LIBRARY_PATH="$D/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+export GDK_PIXBUF_MODULE_FILE="$D/lib/gdk-pixbuf/loaders.cache" GSETTINGS_SCHEMA_DIR="$D/share/glib-2.0/schemas" XDG_DATA_DIRS="$D/share:${XDG_DATA_DIRS:-/usr/share}"
+# systemd-run ile açılan birimde XDG_SESSION_TYPE yok; "auto" o zaman X11'e düşüp çıkıyor → Wayland açıkça.
+: "${XDG_RUNTIME_DIR:=/run/user/$(id -u)}"; export XDG_RUNTIME_DIR
+if [ -z "$WAYLAND_DISPLAY" ] && [ -S "$XDG_RUNTIME_DIR/wayland-0" ]; then export WAYLAND_DISPLAY=wayland-0; fi
+if [ -n "$WAYLAND_DISPLAY" ]; then set -- --ozone-platform=wayland "$@"; else set -- --ozone-platform-hint=auto "$@"; fi
+# Chromium root altında korumalı alan olmadan açılmaz (yalnız Docker önizlemesi; Pi'de "maker" kullanıcısı).
+# --test-type: "desteklenmeyen --no-sandbox" uyarı şeridini gizler (yalnız bu Docker durumunda).
+[ "$(id -u)" = 0 ] && set -- --no-sandbox --test-type --user-data-dir=/root/.config/chromium "$@"
+# Pi 4 (4 GB): az süreç, düşük bellek.
+exec "$D/chromium" --renderer-process-limit=4 --disk-cache-size=104857600 --no-default-browser-check --no-first-run \
+  --password-store=basic "$@"

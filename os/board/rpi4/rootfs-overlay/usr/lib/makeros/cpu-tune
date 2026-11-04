@@ -1,0 +1,20 @@
+#!/bin/sh
+# CPU frekans yoneticisi (v1 cpu-tune.sh'den).
+# Varsayilan: cekirdek varsayilani schedutil. /etc/makeros/cpu-governor
+# dosyasi 'ondemand' iceriyorsa Raspberry Pi OS ayarlari uygulanir:
+#  - up_threshold=50        : yuk %50'yi gecince en yuksek frekansa cik
+#  - sampling_rate=100000   : 100 ms'de bir olc
+#  - sampling_down_factor=50: yuksek frekansta 5 sn kal
+set -u
+GOV="$(cat /etc/makeros/cpu-governor 2>/dev/null || echo schedutil)"
+for policy in /sys/devices/system/cpu/cpufreq/policy*; do
+	[ -w "$policy/scaling_governor" ] && echo "$GOV" > "$policy/scaling_governor" 2>/dev/null
+done
+OD=/sys/devices/system/cpu/cpufreq/ondemand
+if [ "$GOV" = ondemand ] && [ -d "$OD" ]; then
+	echo 50 > "$OD/up_threshold"
+	echo 100000 > "$OD/sampling_rate"
+	echo 50 > "$OD/sampling_down_factor"
+fi
+echo "makeros-cpu: $(cat /sys/devices/system/cpu/cpufreq/policy0/scaling_governor 2>/dev/null)," \
+  "en fazla $(($(cat /sys/devices/system/cpu/cpufreq/policy0/scaling_max_freq 2>/dev/null || echo 0) / 1000)) MHz"

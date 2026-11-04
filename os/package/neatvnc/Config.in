@@ -1,0 +1,12 @@
+config BR2_PACKAGE_NEATVNC
+	bool "neatvnc"
+	depends on BR2_TOOLCHAIN_HAS_THREADS # aml
+	select BR2_PACKAGE_AML
+	select BR2_PACKAGE_PIXMAN
+	select BR2_PACKAGE_ZLIB
+	select BR2_PACKAGE_LIBDRM
+	help
+	  VNC sunucu kutuphanesi. jpeg-turbo varsa Tight/JPEG, ffmpeg +
+	  GBM varsa Pi 4 donanim H.264 (V4L2 M2M) kodlamasi acilir.
+
+	  https://github.com/any1/neatvnc

@@ -1,0 +1,13 @@
+[Unit]
+Description=MakerOS AI dilimi (Python AI / MediaPipe / LLM; once oldurulur)
+Before=slices.target
+
+[Slice]
+MemoryHigh=1600M
+MemoryMax=1900M
+MemorySwapMax=1G
+CPUWeight=50
+CPUQuota=300%
+ManagedOOMMemoryPressure=kill
+ManagedOOMMemoryPressureLimit=40%
+ManagedOOMPreference=omit

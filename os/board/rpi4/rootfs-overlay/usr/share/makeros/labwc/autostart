@@ -1,0 +1,9 @@
+#!/bin/sh
+# labwc acildiginda: sanal ekran varsa 1280x720 yap, web kabugu baslat. Ekran Modu (wayvnc)
+# varsayilan KAPALI: yalniz Ayarlar'dan acildiysa (makerd /var/lib/makerd/screen-mode) baslar.
+if command -v wlr-randr >/dev/null 2>&1 && wlr-randr | grep -q '^VIRTUAL-1'; then
+	wlr-randr --output VIRTUAL-1 --custom-mode 1280x720@30Hz || true
+fi
+systemctl --user import-environment WAYLAND_DISPLAY XDG_RUNTIME_DIR 2>/dev/null
+[ -e /var/lib/makerd/screen-mode ] && systemctl --user start makeros-vnc.service 2>/dev/null &
+exec /usr/lib/makeros/kiosk-browser

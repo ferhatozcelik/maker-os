@@ -1,0 +1,15 @@
+[Unit]
+Description=MakerOS zram takas alani (zstd, RAM'in %%50'si)
+DefaultDependencies=no
+Before=swap.target
+After=systemd-modules-load.service
+Conflicts=shutdown.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/lib/makeros/zram-setup start
+ExecStop=/usr/lib/makeros/zram-setup stop
+
+[Install]
+WantedBy=swap.target

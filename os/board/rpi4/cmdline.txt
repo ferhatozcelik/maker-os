@@ -1,0 +1,1 @@
+console=tty3 root=PARTUUID=@ROOT_PARTUUID@ rootfstype=erofs ro rootwait init=/usr/lib/makeros/preinit makeros.slot=@SLOT@ quiet loglevel=3 logo.nologo vt.global_cursor_default=0 systemd.show_status=auto rd.udev.log_level=3 fsck.mode=skip zswap.enabled=0 transparent_hugepage=madvise cfg80211.ieee80211_regdom=TR

@@ -1,0 +1,7 @@
+config BR2_PACKAGE_MAKEROS_FIRSTBOOT
+	bool "makeros-firstboot"
+	depends on BR2_INIT_SYSTEMD
+	help
+	  Ilk acilista bir kez calisan hazirlik: cihaza ozel ana makine adi
+	  (makeros-XXXX), SSH host anahtarlari, /data dizinleri. Kullanici ve
+	  parola kurulum sihirbazinda (makerd-priv) olusturulur.

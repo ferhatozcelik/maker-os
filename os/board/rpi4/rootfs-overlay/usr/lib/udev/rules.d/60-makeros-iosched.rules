@@ -1,0 +1,4 @@
+# SD kart: BFQ (v1). Agir yazma sirasinda masaustu okumalari one alinir.
+ACTION=="add|change", KERNEL=="mmcblk[0-9]", ATTR{queue/scheduler}="bfq"
+# USB SSD: mq-deadline
+ACTION=="add|change", KERNEL=="sd[a-z]", ATTR{queue/rotational}=="0", ATTR{queue/scheduler}="mq-deadline"

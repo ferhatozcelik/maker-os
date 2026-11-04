@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Etkinlik Monitörü</title>
+<link rel="icon" type="image/svg+xml" href="/shell/icons/logo.svg">
+<link rel="stylesheet" href="/shell/css/tokens.css">
+<link rel="stylesheet" href="/shell/css/kit.css">
+<link rel="stylesheet" href="/shell/css/app.css">
+<style>
+body { background: var(--bg-window); }
+.top { display: flex; align-items: center; gap: 8px; padding: calc(var(--tb) + 4px) 16px 10px; flex: none; }
+html[data-embed=window] .top { padding-top: 6px; height: var(--tb); padding-left: 90px; margin-bottom: 4px; }
+.top .grow { flex: 1; }
+.top input { width: 180px; height: 26px; }
+.graphs { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; padding: 0 16px 12px; flex: none; }
+.card { background: var(--bg-content); border: .5px solid var(--separator); border-radius: 12px; padding: 10px 12px 6px; min-width: 0; }
+.card .k { display: flex; justify-content: space-between; color: var(--text-2); font-size: var(--fs-footnote); font-weight: 500; }
+.card .n { font-size: var(--fs-title2); font-weight: 650; font-variant-numeric: tabular-nums; color: var(--text); }
+.card canvas { width: 100%; height: 46px; display: block; margin-top: 4px; }
+.tablewrap { flex: 1; min-height: 0; overflow: auto; margin: 0 16px 14px; background: var(--bg-content); border: .5px solid var(--separator); border-radius: 12px; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th { position: sticky; top: 0; background: var(--bg-content); text-align: left; font-weight: 600; color: var(--text-2); font-size: var(--fs-footnote);
+  padding: 7px 10px; border-bottom: .5px solid var(--separator); white-space: nowrap; cursor: default; }
+th.sort { color: var(--text); }
+th.num, td.num { text-align: right; }
+td { padding: 5px 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 240px; }
+tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg-hover) 50%, transparent); }
+tbody tr.sel td { background: var(--accent); color: var(--on-accent); }
+.slice { font-size: var(--fs-caption); color: var(--text-2); }
+tr.sel .slice { color: rgba(255,255,255,.8); }
+.status { padding: 0 18px 10px; color: var(--text-2); font-size: var(--fs-footnote); flex: none; }
+@media (max-width: 699px) { .top input { width: 120px; } .graphs { grid-template-columns: 1fr 1fr; } td.hide-s, th.hide-s { display: none; } .tablewrap { margin: 0 8px 10px; } }
+</style>
+</head>
+<body>
+<div class="top"><div class="grow"></div><input type="search" id="q"><button class="btn sm" id="kill" disabled></button></div>
+<div class="graphs" id="graphs"></div>
+<div class="tablewrap"><table><thead><tr id="head"></tr></thead><tbody id="rows"></tbody></table></div>
+<div class="status" id="status"></div>
+<script type="module" src="/shell/apps/activity/activity.js"></script>
+</body>
+</html>

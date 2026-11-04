@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dosyalar</title>
+<link rel="icon" type="image/svg+xml" href="/shell/icons/logo.svg">
+<link rel="stylesheet" href="/shell/css/tokens.css">
+<link rel="stylesheet" href="/shell/css/kit.css">
+<link rel="stylesheet" href="/shell/css/app.css">
+<style>
+.crumbs { display: flex; align-items: center; gap: 2px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.crumbs button { border: 0; background: none; padding: 3px 6px; border-radius: 6px; color: var(--text-2); white-space: nowrap; font-weight: 500; }
+.crumbs button:last-child { color: var(--text); }
+.crumbs button:hover { background: var(--bg-hover); }
+.list { background: var(--bg-content); border: .5px solid var(--separator); border-radius: 12px; overflow: hidden; }
+.it { display: grid; grid-template-columns: 28px 1fr 90px 140px 30px; align-items: center; gap: 8px; padding: 6px 10px; min-height: 38px; }
+.it + .it { border-top: .5px solid var(--separator); }
+.it:hover { background: var(--bg-hover); }
+.it .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.it .sz, .it .tm { color: var(--text-2); font-size: var(--fs-footnote); font-variant-numeric: tabular-nums; text-align: right; }
+.it .mn { border: 0; background: none; color: var(--text-2); border-radius: 6px; height: 26px; }
+.it .mn:hover { background: var(--bg-active); }
+.drop { outline: 2px dashed var(--accent); outline-offset: -6px; }
+.prev img { max-width: 100%; max-height: 60vh; border-radius: 8px; display: block; margin: 0 auto; }
+.prev pre { max-height: 60vh; overflow: auto; background: var(--bg-content); padding: 10px; border-radius: 8px; font: 12px/1.45 var(--font-mono); user-select: text; }
+.menu2 { position: fixed; z-index: 40; background: var(--bg-elevated); border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,.25); padding: 4px; min-width: 160px; }
+.menu2 button { display: flex; width: 100%; gap: 8px; align-items: center; border: 0; background: none; padding: 6px 10px; border-radius: 6px; text-align: left; }
+.menu2 button:hover { background: var(--accent); color: var(--on-accent); }
+@media (max-width: 600px) { .it { grid-template-columns: 28px 1fr 30px; } .it .sz, .it .tm { display: none; } }
+</style>
+</head>
+<body>
+<div class="bar2"><button class="btn icon sm b-up"></button><div class="crumbs grow"></div>
+  <button class="btn sm b-mk"></button><label class="btn sm primary b-up2"><input type="file" multiple hidden></label></div>
+<div class="wrap"><div class="list"></div><p class="note n-hint"></p></div>
+<script type="module" src="/shell/apps/files/files.js"></script>
+</body>
+</html>

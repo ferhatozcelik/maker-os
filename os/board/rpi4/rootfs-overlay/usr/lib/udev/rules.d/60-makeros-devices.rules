@@ -1,0 +1,19 @@
+# MakerOS: masaustu kullanicisi (gruplar) sudo olmadan donanima erissin.
+# GPIO / I2C / SPI (v1 60-pios-gpio.rules)
+SUBSYSTEM=="gpio", KERNEL=="gpiochip*", GROUP="gpio", MODE="0660"
+KERNEL=="gpiomem", GROUP="gpio", MODE="0660"
+SUBSYSTEM=="i2c-dev", GROUP="i2c", MODE="0660"
+SUBSYSTEM=="spidev", GROUP="spi", MODE="0660"
+# PWM: dtoverlay=pwm-2chan -> /sys/class/pwm/pwmchip0 (export sonrasi da)
+SUBSYSTEM=="pwm", ACTION=="add|change", RUN+="/bin/sh -c 'chgrp -R gpio /sys%p && chmod -R g+w /sys%p'"
+# Kamera / VideoCore / medya (v1 60-pios-camera.rules)
+SUBSYSTEM=="dma_heap", GROUP="video", MODE="0660"
+KERNEL=="vchiq", GROUP="video", MODE="0660"
+KERNEL=="vcsm-cma", GROUP="video", MODE="0660"
+KERNEL=="vcio", GROUP="video", MODE="0660"
+SUBSYSTEM=="media", GROUP="video", MODE="0660"
+SUBSYSTEM=="video4linux", GROUP="video", MODE="0660"
+# Seri: USB-seri donusturucular ve Arduino'lar
+SUBSYSTEM=="tty", KERNEL=="ttyUSB[0-9]*|ttyACM[0-9]*", GROUP="dialout", MODE="0660"
+# Watchdog yalnizca root (systemd)
+KERNEL=="watchdog*", GROUP="root", MODE="0600"

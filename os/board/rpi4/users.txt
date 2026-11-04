@@ -1,0 +1,16 @@
+# Buildroot makeusers tablosu: kullanici uid grup gid parola ev kabuk gruplar aciklama
+# 'maker' = makerd HIZMET hesabi (giris yok). Insan kullanici (UID 1000, wheel)
+# ilk acilis sihirbazinda makerd-priv user.create ile olusturulur.
+maker 999 maker 999 * /var/lib/makerd /sbin/nologin video,gpio,i2c,spi,dialout,netdev,input,render MakerOS hizmet hesabi (makerd)
+- - wheel -1 * - - - Yoneticiler (sudo)
+- - video -1 * - - - Video/kamera
+- - gpio -1 * - - - GPIO erisimi
+- - i2c -1 * - - - I2C erisimi
+- - spi -1 * - - - SPI erisimi
+- - dialout -1 * - - - Seri portlar
+- - input -1 * - - - Giris aygitlari
+- - render -1 * - - - DRI render dugumleri
+- - audio -1 * - - - Ses
+- - plugdev -1 * - - - Cikarilabilir aygitlar
+- - netdev -1 * - - - Ag yonetimi
+- - bluetooth -1 * - - - Bluetooth

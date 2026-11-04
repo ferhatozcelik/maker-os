@@ -1,0 +1,26 @@
+# Raspberry Pi seri takma adlari: Raspberry Pi OS raspberrypi-sys-mods
+# 99-com.rules mantigiyla ayni. serial0 = GPIO14/15 baslik UART'i,
+# serial1 = Bluetooth UART'i (aygit agacindaki aliases/{serial0,serial1,
+# bluetooth,console} dugumlerine gore). 'strings' (binutils) hedefte yok;
+# yerine NUL karakterleri 'tr' ile siliniyor.
+KERNEL=="ttyAMA[0-9]*|ttyS[0-9]*", PROGRAM="/bin/sh -c '\
+	ALIASES=/proc/device-tree/aliases; \
+	TTYNODE=$$(readlink /sys/class/tty/%k/device/of_node | sed 's/base/:/' | cut -d: -f2); \
+	if [ -e $$ALIASES/bluetooth ] && [ $$TTYNODE/bluetooth = $$(tr -d \"\\000\" < $$ALIASES/bluetooth) ]; then \
+		echo 1; \
+	elif [ -e $$ALIASES/console ]; then \
+		if [ $$TTYNODE = $$(tr -d \"\\000\" < $$ALIASES/console) ]; then \
+			echo 0; \
+		else \
+			exit 1; \
+		fi; \
+	elif [ $$TTYNODE = $$(tr -d \"\\000\" < $$ALIASES/serial0) ]; then \
+		echo 0; \
+	elif [ $$TTYNODE = $$(tr -d \"\\000\" < $$ALIASES/serial1) ]; then \
+		echo 1; \
+	else \
+		exit 1; \
+	fi \
+'", SYMLINK+="serial%c"
+
+KERNEL=="ttyAMA[0-9]*|ttyS[0-9]*", GROUP="dialout", MODE="0660"

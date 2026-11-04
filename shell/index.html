@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="theme-color" content="#1c1c1f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>MakerOS</title>
+<link rel="icon" type="image/svg+xml" href="/shell/icons/logo.svg">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/shell/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="MakerOS">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="preload" href="/shell/vendor/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/shell/css/tokens.css">
+<link rel="stylesheet" href="/shell/css/kit.css">
+<link rel="stylesheet" href="/shell/css/shell.css">
+<link rel="modulepreload" href="/shell/js/main.js">
+</head>
+<body>
+<div id="desktop" aria-hidden="true"></div>
+<div id="widgets" class="desktop-only"></div>
+<div id="windows"></div>
+<div id="snap" hidden></div>
+<div id="home" class="mobile-only"></div>
+<div id="mstatus" class="mobile-only"></div>
+<header id="menubar" class="mat-bar desktop-only"></header>
+<nav id="dock" class="desktop-only" aria-label="Raf"></nav>
+<button id="homebar" class="mobile-only" aria-label="Ana ekran"><span></span></button>
+<aside id="nc" class="mat-pop"></aside>
+<div id="toasts"></div>
+<div id="hud"></div>
+<div id="overlays"></div>
+<div id="popups"></div>
+<div id="lock" hidden></div>
+<div id="boot"><img class="brand-logo" src="/shell/icons/logo.svg" alt="" width="72" height="72"><p id="boot-msg"></p></div>
+<script type="module" src="/shell/js/main.js"></script>
+</body>
+</html>

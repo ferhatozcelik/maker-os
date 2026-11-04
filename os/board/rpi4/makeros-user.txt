@@ -1,0 +1,2 @@
+# MakerOS kullanici ayarlari. Bu dosyayi Ayarlar uygulamasi yonetir.
+# Elle duzenlenebilir; config.txt sonunda 'include' ile okunur.

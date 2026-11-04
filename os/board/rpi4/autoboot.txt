@@ -1,0 +1,9 @@
+# MakerOS A/B secici (MOSCFG bolumu). Pi EEPROM >= 2025-03 gerekir.
+# [all] = kalici (kanitlanmis) slot; [tryboot] = tek seferlik deneme slotu.
+# RAUC tryboot arka ucu (usr/lib/rauc/rpi-tryboot-backend) bu dosyayi
+# atomik olarak yeniden yazar; [all] yalnizca "mark-good" sonrasi degisir.
+[all]
+tryboot_a_b=1
+boot_partition=2
+[tryboot]
+boot_partition=3

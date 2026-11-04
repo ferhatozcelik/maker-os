@@ -1,0 +1,22 @@
+/* Oturum açma / kilit ekranı ve iletişim kutuları — tembel yüklenir. */
+/* iletişim kutusu */
+.dlg-wrap { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(0,0,0,.18); }
+.dlg { width: 300px; padding: 22px 18px 16px; border-radius: 14px; text-align: center; display: grid; justify-items: center; gap: 6px; box-shadow: var(--shadow-pop), var(--highlight); }
+.dlg p { margin: 4px 0 8px; }
+.dlg-btns { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; width: 100%; margin-top: 6px; }
+
+.lk-clock { position: absolute; top: 9vh; text-align: center; text-shadow: 0 2px 12px rgba(0,0,0,.25); }
+.lk-time { font-size: clamp(64px, 11vw, 112px); font-weight: 600; letter-spacing: -.03em; line-height: 1; font-variant-numeric: tabular-nums; }
+.lk-date { font-size: var(--fs-title2); font-weight: 500; margin-top: 8px; text-transform: capitalize; }
+.lk-card { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 18vh; width: 260px; }
+.lk-avatar { width: 84px; height: 84px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.22); margin-bottom: 4px; overflow: hidden; }
+.lk-avatar img { width: 84px; height: 84px; }
+.lk-name { font-size: var(--fs-title2); font-weight: 600; }
+.lk-sub { color: rgba(255,255,255,.78); margin-bottom: 6px; }
+.lk-field { position: relative; width: 100%; }
+.lk-field input { width: 100%; height: 34px; border-radius: 17px; border: .5px solid rgba(255,255,255,.35); background: rgba(255,255,255,.2); color: #fff; padding: 0 40px 0 14px; }
+.lk-field input::placeholder { color: rgba(255,255,255,.7); }
+.lk-go { position: absolute; right: 4px; top: 4px; width: 26px; height: 26px; border-radius: 50%; border: 0; background: rgba(255,255,255,.3); color: #fff; display: grid; place-items: center; padding: 0; }
+.lk-msg { min-height: 1.3em; color: #ffd5d8; font-weight: 500; text-align: center; margin: 0; }
+.lk-other { border: 0; background: none; color: rgba(255,255,255,.8); }
+

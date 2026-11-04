@@ -1,0 +1,8 @@
+#!/bin/sh
+# Docker uyumlu CLI: tum komutlar podman'a yonlendirilir (podman-docker gibi).
+# 'docker compose' icin podman compose saglayicisi gerekir (M5: docker-compose
+# veya podman-compose kutuda/uv ile).
+[ -e /etc/containers/nodocker ] || [ -n "${PODMAN_DOCKER_QUIET:-}" ] || \
+	[ -e "${HOME}/.config/containers/nodocker" ] || \
+	echo "Emulate Docker CLI using podman. Bu mesaji gizlemek icin: touch ~/.config/containers/nodocker" >&2
+exec /usr/bin/podman "$@"

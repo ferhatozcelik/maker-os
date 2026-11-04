@@ -1,0 +1,22 @@
+#!/bin/sh
+# zram takas: RAM'in %50'si (Pi 4 4 GB -> ~1.9 GB), zstd, oncelik 100.
+# Buildroot'ta zram-generator yok; bkz. research/03 §5.1, §9.2.
+set -eu
+case "${1:-start}" in
+start)
+	[ -e /sys/block/zram0 ] || modprobe zram num_devices=1 2>/dev/null || true
+	[ -e /sys/block/zram0 ] || { echo "zram yok"; exit 0; }
+	if grep -q '^/dev/zram0' /proc/swaps; then exit 0; fi
+	echo zstd > /sys/block/zram0/comp_algorithm 2>/dev/null || echo lz4 > /sys/block/zram0/comp_algorithm
+	mem_kb="$(awk '/^MemTotal:/{print $2}' /proc/meminfo)"
+	echo $((mem_kb * 512)) > /sys/block/zram0/disksize
+	mkswap -q /dev/zram0
+	swapon -p 100 -d /dev/zram0
+	# MGLRU: yogun bellek baskisinda takilmalari onler.
+	[ -w /sys/kernel/mm/lru_gen/min_ttl_ms ] && echo 1000 > /sys/kernel/mm/lru_gen/min_ttl_ms
+	;;
+stop)
+	swapoff /dev/zram0 2>/dev/null || true
+	echo 1 > /sys/block/zram0/reset 2>/dev/null || true
+	;;
+esac

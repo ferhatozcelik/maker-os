@@ -1,0 +1,115 @@
+#!/bin/sh
+# MakerOS ekransiz ag erisimi (v1 network-fallback.sh'den tasindi):
+#  1. MOSCFG bolumunde wifi.txt varsa Wi-Fi profili olarak eklenir ve parola
+#     iceren dosya silinir.
+#  2. Ethernet/Wi-Fi ile varsayilan rota bekleme suresi icinde olusmazsa once
+#     yakindaki aglar taranir (/run/makeros/wifi-scan.txt), sonra wlan0
+#     uzerinde sifresiz "MakerOS" kurulum agi acilir (NM shared, 10.42.0.1).
+#     NM'nin dnsmasq'i her alan adini Pi'ye yonlendirir
+#     (dnsmasq-shared.d/makeros-captive.conf); telefon kurulum sayfasini acar.
+#  3. Bulunan adresler MOSCFG/makeros-status.txt dosyasina yazilir (SD kart
+#     bilgisayara takilarak okunabilir).
+set -u
+
+# makerd'nin ag degisikligiyle ilk acilis erisim noktasi yarismasin.
+if [ "${MAKEROS_NETWORK_LOCKED:-}" != 1 ]; then
+	mkdir -p /run/makeros
+	exec flock -w 120 /run/makeros/network.lock env MAKEROS_NETWORK_LOCKED=1 "$0" "$@"
+fi
+
+CFG=/boot/moscfg
+WIFI_TXT="$CFG/wifi.txt"
+STATUS="$CFG/makeros-status.txt"
+HOTSPOT_CON=makeros-hotspot
+HOTSPOT_SSID=MakerOS
+SCAN_CACHE=/run/makeros/wifi-scan.txt
+WAIT_SECS="${MAKEROS_FALLBACK_WAIT:-45}"
+MODE="istemci"
+
+log() { echo "makeros-network: $*"; }
+
+# MOSCFG automount: erisim bolumu baglar (x-systemd.automount).
+ls "$CFG" >/dev/null 2>&1 || log "MOSCFG erisilemiyor"
+
+import_wifi_txt() {
+	[ -f "$WIFI_TXT" ] || return 0
+	ssid="$(sed -n 's/^[[:space:]]*SSID[[:space:]]*=[[:space:]]*//p' "$WIFI_TXT" | head -n1 | tr -d '\r')"
+	psk="$(sed -n 's/^[[:space:]]*PAROLA[[:space:]]*=[[:space:]]*//p' "$WIFI_TXT" | head -n1 | tr -d '\r')"
+	country="$(sed -n 's/^[[:space:]]*ULKE[[:space:]]*=[[:space:]]*//p' "$WIFI_TXT" | head -n1 | tr -d '\r')"
+	if [ -z "$ssid" ]; then
+		log "wifi.txt icinde SSID yok, yok sayiliyor"
+		return 0
+	fi
+	[ -n "$country" ] && iw reg set "$country" 2>/dev/null
+	nmcli -t -f NAME con show | grep -Fxq "$ssid" && nmcli con delete "$ssid" >/dev/null 2>&1
+	if [ -n "$psk" ]; then
+		nmcli con add type wifi ifname wlan0 con-name "$ssid" ssid "$ssid" \
+			wifi-sec.key-mgmt wpa-psk wifi-sec.psk "$psk" connection.autoconnect yes >/dev/null
+	else
+		nmcli con add type wifi ifname wlan0 con-name "$ssid" ssid "$ssid" connection.autoconnect yes >/dev/null
+	fi
+	log "wifi.txt'den '$ssid' profili eklendi"
+	rm -f "$WIFI_TXT"
+	sync
+	nmcli con up "$ssid" >/dev/null 2>&1 || true
+}
+
+has_uplink() {
+	ip -4 route show default 2>/dev/null | grep -q .
+}
+
+start_hotspot() {
+	if ! ip link show wlan0 >/dev/null 2>&1; then
+		log "wlan0 yok, erisim noktasi acilamiyor"
+		return 1
+	fi
+	# Erisim noktasi acikken radyo tarayamaz: kurulum sayfasinin listesi simdi alinir.
+	nmcli radio wifi on >/dev/null 2>&1
+	nmcli --wait 25 -t -f IN-USE,SSID,SIGNAL,SECURITY device wifi list ifname wlan0 --rescan yes \
+		> "$SCAN_CACHE.tmp" 2>/dev/null && mv "$SCAN_CACHE.tmp" "$SCAN_CACHE"
+	log "$(grep -c . "$SCAN_CACHE" 2>/dev/null || echo 0) ag bulundu"
+	nmcli con delete "$HOTSPOT_CON" >/dev/null 2>&1
+	nmcli con add type wifi ifname wlan0 con-name "$HOTSPOT_CON" autoconnect no \
+		ssid "$HOTSPOT_SSID" mode ap 802-11-wireless.band bg 802-11-wireless.channel 6 \
+		ipv4.method shared ipv4.addresses 10.42.0.1/24 ipv6.method ignore >/dev/null
+	nmcli con up "$HOTSPOT_CON" >/dev/null && MODE="erisim-noktasi"
+}
+
+write_status() {
+	{
+		echo "MakerOS - ag durumu"
+		echo "Zaman      : $(date '+%Y-%m-%d %H:%M:%S')"
+		echo "Surum      : $(cat /etc/makeros-version 2>/dev/null)"
+		echo "Ana makine : $(hostname).local"
+		echo "Mod        : $MODE"
+		if [ "$MODE" = "erisim-noktasi" ]; then
+			echo "Wi-Fi agi  : $HOTSPOT_SSID (sifresiz)"
+			echo "Kurulum    : telefonu $HOTSPOT_SSID agina baglayin; kurulum sayfasi acilir"
+			echo "             (acilmazsa http://10.42.0.1/)"
+		fi
+		echo
+		echo "IPv4 adresleri:"
+		ip -4 -o addr show scope global | awk '{print "  " $2 ": " $4}'
+		echo
+		echo "Web kabuk : http://$(hostname).local/  veya  http://<IP>/"
+	} > "$STATUS.tmp" 2>/dev/null && mv "$STATUS.tmp" "$STATUS"
+}
+
+import_wifi_txt
+
+i=0
+while [ "$i" -lt "$WAIT_SECS" ]; do
+	has_uplink && break
+	sleep 1
+	i=$((i + 1))
+done
+
+if has_uplink; then
+	log "ag baglantisi var, erisim noktasina gerek yok"
+else
+	log "$WAIT_SECS sn icinde ag yok; erisim noktasi aciliyor"
+	start_hotspot || log "erisim noktasi acilamadi"
+fi
+
+write_status
+log "durum $STATUS dosyasina yazildi"

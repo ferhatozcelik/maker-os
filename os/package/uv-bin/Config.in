@@ -1,0 +1,9 @@
+config BR2_PACKAGE_UV_BIN
+	bool "uv-bin"
+	depends on BR2_aarch64
+	depends on BR2_TOOLCHAIN_USES_GLIBC
+	help
+	  Astral uv (onceden derlenmis aarch64 glibc ikilisi): Python surum
+	  ve sanal ortam yoneticisi. /usr/bin/uv, /usr/bin/uvx.
+
+	  https://github.com/astral-sh/uv
