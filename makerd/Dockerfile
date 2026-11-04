@@ -8,7 +8,7 @@ COPY . .
 ARG VERSION=2.0.0-dev
 RUN CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.Version=${VERSION}" -o /out/makerd ./cmd/makerd
 
-FROM alpine:3.22
+FROM alpine:3.24
 # tzdata: mock saat dilimleri; busybox sh: web terminal.
 RUN apk add --no-cache tzdata \
  && adduser -D -u 1000 -s /bin/sh maker \
