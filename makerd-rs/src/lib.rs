@@ -23,10 +23,10 @@ pub mod logging;
 // pub mod network; // Go'dan taşınacak
 pub mod notify;
 // pub mod ota; // Go'dan taşınacak
-// pub mod plugins; // Go'dan taşınacak
+pub mod plugins;
 pub mod prefs;
 pub mod privsep;
-// pub mod pyman; // Go'dan taşınacak
+pub mod pyman;
 pub mod screen;
 pub mod sd;
 pub mod setup;

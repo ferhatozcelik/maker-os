@@ -1,0 +1,409 @@
+//! Python sürümleri (uv) ve şablonlu Python projeleri. Web arayüzü (makerd →
+//! makerd-user) ve `mos` CLI (süreç içi) aynı kodu kullanır; tüm durum
+//! kullanıcının ev dizinindedir (~/Projeler, uv önbelleği). Uzun işler
+//! (kurulum, çalıştırma) terminal oturumunda görünür çalışır: bu modül yalnız
+//! komutu üretir, çalıştıran taraf onu bir oturuma bağlar.
+
+use crate::apierr::{ApiError, ApiResult};
+use crate::termproc::fsops::Listing;
+use crate::termproc::Open;
+use crate::uagent::{self, Agent};
+use include_dir::{include_dir, Dir};
+use serde::{Deserialize, Serialize};
+use std::collections::{HashMap, HashSet};
+
+static TEMPLATES: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/assets/py-templates");
+
+/// Kullanıcının proje kökü (ev dizinine göre).
+pub const PROJECTS_DIR: &str = "Projeler";
+/// İmajdaki Python (libcamera, picamera2, gpiozero, lgpio burada).
+pub const SYSTEM_PYTHON: &str = "/usr/bin/python3";
+
+/// İki dilli metin.
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct Text {
+    #[serde(default)]
+    pub tr: String,
+    #[serde(default)]
+    pub en: String,
+}
+
+/// Proje şablonu.
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct Template {
+    pub id: String,
+    #[serde(default)]
+    pub order: i32,
+    #[serde(default)]
+    pub category: String,
+    #[serde(default)]
+    pub icon: String,
+    #[serde(default)]
+    pub title: Text,
+    #[serde(default)]
+    pub desc: Text,
+    #[serde(default)]
+    pub deps: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub needs: Vec<String>,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub run: String,
+}
+
+/// Gömülü şablonlar (sıralı).
+pub fn templates() -> Vec<Template> {
+    let mut out: Vec<Template> = TEMPLATES
+        .dirs()
+        .filter_map(|d| {
+            let id = d.path().file_name()?.to_str()?;
+            let t: Template = serde_json::from_slice(d.get_file(d.path().join("template.json"))?.contents()).ok()?;
+            (t.id == id).then_some(t)
+        })
+        .collect();
+    out.sort_by_key(|t| t.order);
+    out
+}
+
+fn template_by_id(id: &str) -> Option<Template> {
+    templates().into_iter().find(|t| t.id == id)
+}
+
+/// Proje adı: küçük harf veya rakamla başlar; en fazla 40 karakter (a-z, 0-9, - ve _).
+pub fn valid_name(n: &str) -> ApiResult<()> {
+    let b = n.as_bytes();
+    let ok = !b.is_empty()
+        && b.len() <= 40
+        && (b[0].is_ascii_lowercase() || b[0].is_ascii_digit())
+        && b.iter().all(|&c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == b'_' || c == b'-');
+    if ok { Ok(()) } else { Err(ApiError::invalid("Proje adı küçük harf veya rakamla başlamalı; en fazla 40 karakter (a-z, 0-9, - ve _).")) }
+}
+
+/// Python sürümü: "3.12" veya "3.12.7".
+pub fn valid_version(v: &str) -> ApiResult<()> {
+    let p: Vec<&str> = v.split('.').collect();
+    let num = |s: &str| (1..=2).contains(&s.len()) && s.bytes().all(|c| c.is_ascii_digit());
+    if (p.len() == 2 || p.len() == 3) && p[0] == "3" && p[1..].iter().all(|s| num(s)) {
+        Ok(())
+    } else {
+        Err(ApiError::invalid("Geçersiz Python sürümü (örnek: 3.12)."))
+    }
+}
+
+// --- Python sürümleri ------------------------------------------------------
+
+/// Kurulu veya indirilebilir bir Python.
+#[derive(Serialize, Clone, Debug, Default, PartialEq, Eq)]
+pub struct Version {
+    pub version: String,
+    pub minor: String,
+    pub installed: bool,
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub system: bool,
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub default: bool,
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub path: String,
+}
+
+#[derive(Deserialize)]
+struct UvParts {
+    #[serde(default)]
+    major: u32,
+    #[serde(default)]
+    minor: u32,
+}
+
+#[derive(Deserialize)]
+struct UvPython {
+    version: String,
+    path: Option<String>,
+    #[serde(default)]
+    implementation: String,
+    #[serde(default)]
+    variant: String,
+    version_parts: UvParts,
+}
+
+/// uv'nin kurulu ve indirilebilir CPython sürümleri (her küçük sürümün en yenisi).
+pub async fn versions(a: &dyn Agent, user: &str) -> ApiResult<Vec<Version>> {
+    let raw: Vec<UvPython> = uagent::json(a, user, "uv python list --all-versions --output-format json 2>/dev/null || uv python list --output-format json")
+        .await
+        .map_err(|e| ApiError::unavailable(format!("uv ile Python sürümleri okunamadı: {e}")))?;
+    let (def, _) = uagent::output(a, user, r#"readlink -f "$HOME/.local/bin/python3" 2>/dev/null || true"#).await?;
+    Ok(merge_versions(raw, String::from_utf8_lossy(&def).trim()))
+}
+
+fn dir2(p: &str) -> &str {
+    let up = |s: &str| -> usize { s.rfind('/').unwrap_or(0) };
+    let a = &p[..up(p)];
+    &a[..up(a)]
+}
+
+fn merge_versions(raw: Vec<UvPython>, def_path: &str) -> Vec<Version> {
+    let mut best: HashMap<String, Version> = HashMap::new();
+    let mut out = Vec::new();
+    for r in raw {
+        if r.implementation != "cpython" || (!r.variant.is_empty() && r.variant != "default") || r.version.contains(['a', 'b', 'r', 'c']) {
+            continue;
+        }
+        let minor = format!("{}.{}", r.version_parts.major, r.version_parts.minor);
+        let mut v = Version { version: r.version.clone(), minor: minor.clone(), ..Default::default() };
+        if let Some(p) = r.path {
+            v.installed = true;
+            v.system = !p.contains("/uv/python/");
+            v.default = !def_path.is_empty() && (def_path == p || def_path.starts_with(&format!("{}/", dir2(&p))));
+            v.path = p;
+            out.push(v);
+            continue;
+        }
+        if best.get(&minor).is_none_or(|b| newer(&r.version, &b.version)) {
+            best.insert(minor, v);
+        }
+    }
+    let have: HashSet<String> = out.iter().map(|v| v.minor.clone()).collect();
+    out.extend(best.into_iter().filter(|(m, _)| !have.contains(m)).map(|(_, v)| v));
+    out.sort_by(|a, b| b.installed.cmp(&a.installed).then_with(|| if newer(&a.version, &b.version) { std::cmp::Ordering::Less } else if newer(&b.version, &a.version) { std::cmp::Ordering::Greater } else { std::cmp::Ordering::Equal }));
+    out
+}
+
+fn newer(a: &str, b: &str) -> bool {
+    let parts = |s: &str| -> [u32; 3] {
+        let mut r = [0; 3];
+        for (i, p) in s.split('.').take(3).enumerate() {
+            r[i] = p.bytes().take_while(u8::is_ascii_digit).fold(0u32, |n, c| n * 10 + u32::from(c - b'0'));
+        }
+        r
+    };
+    parts(a) > parts(b)
+}
+
+/// Sürüm işlemi için terminal komutu.
+pub fn python_cmd(op: &str, version: &str) -> ApiResult<String> {
+    valid_version(version)?;
+    Ok(match op {
+        "install" => format!("uv python install {version}"),
+        "remove" => format!("uv python uninstall {version}"),
+        // python/python3 komutları ~/.local/bin altında bu sürüme bağlanır.
+        "default" => format!("uv python install --default {version} && python3 --version"),
+        _ => return Err(ApiError::invalid("Geçersiz işlem.")),
+    })
+}
+
+// --- Projeler --------------------------------------------------------------
+
+/// Proje kökündeki .makeros.json.
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Meta {
+    #[serde(default)]
+    pub template: String,
+    #[serde(default)]
+    pub python: String,
+    pub created: jiff::Timestamp,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub run: String,
+}
+
+/// Listede gösterilen proje.
+#[derive(Serialize, Clone, Debug)]
+pub struct Project {
+    pub name: String,
+    pub path: String,
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub template: String,
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub python: String,
+    pub created: jiff::Timestamp,
+    pub modified: jiff::Timestamp,
+    pub venv: bool,
+}
+
+async fn list(a: &dyn Agent, user: &str, path: &str) -> ApiResult<Listing> {
+    let raw = a.fs(user, Open { mode: "list".into(), path: path.into(), ..Default::default() }).await?;
+    Ok(serde_json::from_slice(&raw)?)
+}
+
+async fn read_meta(a: &dyn Agent, user: &str, dir: &str) -> Option<Meta> {
+    serde_json::from_slice(&uagent::read_all(a, user, &format!("{dir}/.makeros.json")).await.ok()?).ok()
+}
+
+/// ~/Projeler altındaki Python projeleri (pyproject.toml olanlar), yeniden eskiye.
+pub async fn projects(a: &dyn Agent, user: &str) -> ApiResult<Vec<Project>> {
+    let Ok(l) = list(a, user, PROJECTS_DIR).await else { return Ok(Vec::new()) }; // klasör henüz yok
+    let mut out = Vec::new();
+    for e in l.entries.iter().filter(|e| e.dir && !e.name.starts_with('.')) {
+        let dir = format!("{PROJECTS_DIR}/{}", e.name);
+        let Ok(il) = list(a, user, &dir).await else { continue };
+        let mut p = Project { name: e.name.clone(), path: format!("{}/{}", l.path, e.name), template: String::new(), python: String::new(), created: e.mtime, modified: e.mtime, venv: false };
+        let mut ok = false;
+        for f in &il.entries {
+            match f.name.as_str() {
+                "pyproject.toml" => ok = true,
+                ".venv" => p.venv = true,
+                ".makeros.json" => {
+                    if let Some(m) = read_meta(a, user, &dir).await {
+                        p.template = m.template;
+                        p.python = m.python;
+                        p.created = m.created;
+                    }
+                }
+                _ => {}
+            }
+        }
+        if ok {
+            out.push(p);
+        }
+    }
+    out.sort_by(|a, b| b.modified.cmp(&a.modified));
+    Ok(out)
+}
+
+/// TOML temel dizgesi (çift tırnaklı, kaçışlı).
+fn toml_str(s: &str) -> String {
+    let mut o = String::with_capacity(s.len() + 2);
+    o.push('"');
+    for c in s.chars() {
+        match c {
+            '"' => o.push_str("\\\""),
+            '\\' => o.push_str("\\\\"),
+            '\n' => o.push_str("\\n"),
+            '\t' => o.push_str("\\t"),
+            c if c.is_control() => o.push_str(&format!("\\u{:04X}", c as u32)),
+            c => o.push(c),
+        }
+    }
+    o.push('"');
+    o
+}
+
+fn run_cmd(r: &str) -> &str {
+    if r.is_empty() { "uv run main.py" } else { r }
+}
+
+/// Şablondan projeyi yazar ve ortamı kuracak terminal komutunu döner.
+/// python: "system" (varsayılan; kamera/GPIO kütüphaneleri hazır) veya "3.12" gibi.
+pub async fn create(a: &dyn Agent, user: &str, name: &str, tmpl_id: &str, python: &str) -> ApiResult<String> {
+    valid_name(name)?;
+    let t = template_by_id(tmpl_id).ok_or_else(|| ApiError::invalid("Şablon bulunamadı."))?;
+    let python = if python.is_empty() { "system" } else { python };
+    if python != "system" {
+        valid_version(python)?;
+    }
+    let dir = format!("{PROJECTS_DIR}/{name}");
+    if a.fs(user, Open { mode: "stat".into(), path: dir.clone(), ..Default::default() }).await.is_ok() {
+        return Err(ApiError::conflict("Bu adla bir proje zaten var."));
+    }
+    let root = TEMPLATES.get_dir(&t.id).ok_or_else(|| ApiError::internal("şablon dizini yok"))?;
+    let mut files = Vec::new();
+    collect(root, &mut files);
+    for f in files {
+        let rel = f.path().strip_prefix(&t.id).unwrap_or(f.path());
+        if rel.file_name().is_some_and(|n| n == "template.json") {
+            continue;
+        }
+        let body = String::from_utf8_lossy(f.contents()).replace("{{name}}", name);
+        uagent::write_all(a, user, &format!("{dir}/{}", rel.display()), body).await?;
+    }
+    let deps = t.deps.iter().map(|d| toml_str(d)).collect::<Vec<_>>().join(", ");
+    let pyproject = format!(
+        "[project]\nname = {}\nversion = \"0.1.0\"\ndescription = {}\nrequires-python = \">=3.11\"\ndependencies = [{deps}]\n\n[tool.uv]\npackage = false\n",
+        toml_str(name),
+        toml_str(&t.title.tr)
+    );
+    uagent::write_all(a, user, &format!("{dir}/pyproject.toml"), pyproject).await?;
+    let meta = Meta { template: t.id.clone(), python: python.into(), created: jiff::Timestamp::now(), run: t.run.clone() };
+    let mut mb = serde_json::to_vec_pretty(&meta)?;
+    mb.push(b'\n');
+    uagent::write_all(a, user, &format!("{dir}/.makeros.json"), mb).await?;
+    let _ = uagent::write_all(a, user, &format!("{dir}/.gitignore"), ".venv/\n__pycache__/\n").await;
+    let py = if python == "system" { SYSTEM_PYTHON } else { python };
+    // --system-site-packages: imajdaki libcamera/picamera2/gpiozero/lgpio/numpy projede de görünür.
+    Ok(format!(
+        "cd ~/{dir} && echo '» {name}: ortam hazırlanıyor (uv)' && uv venv --quiet --system-site-packages --python {py} && uv sync && echo && echo '✔ Hazır. Çalıştırmak için: {}'",
+        run_cmd(&t.run)
+    ))
+}
+
+fn collect<'a>(d: &'a Dir<'a>, out: &mut Vec<&'a include_dir::File<'a>>) {
+    out.extend(d.files());
+    for sub in d.dirs() {
+        collect(sub, out);
+    }
+}
+
+/// Projeyi çalıştıracak terminal komutu.
+pub async fn run_command(a: &dyn Agent, user: &str, name: &str) -> ApiResult<String> {
+    valid_name(name)?;
+    let dir = format!("{PROJECTS_DIR}/{name}");
+    let run = read_meta(a, user, &dir).await.map(|m| m.run).unwrap_or_default();
+    Ok(format!("cd ~/{dir} && {}", run_cmd(&run)))
+}
+
+/// Projeyi siler.
+pub async fn delete(a: &dyn Agent, user: &str, name: &str) -> ApiResult<()> {
+    valid_name(name)?;
+    a.fs(user, Open { mode: "remove".into(), path: format!("{PROJECTS_DIR}/{name}"), ..Default::default() }).await.map(|_| ())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::termproc::login::CmdSpec;
+    use std::sync::Arc;
+
+    #[tokio::test]
+    async fn templates_and_create() {
+        let ts = templates();
+        assert!(ts.len() >= 8 && ts[0].id == "bos", "şablonlar: {}", ts.len());
+        for t in &ts {
+            assert!(!t.title.tr.is_empty() && !t.title.en.is_empty() && !t.desc.tr.is_empty(), "{}: başlık/açıklama eksik", t.id);
+            assert!(TEMPLATES.get_file(format!("{}/main.py", t.id)).is_some(), "{}: main.py yok", t.id);
+        }
+        let home = std::env::temp_dir().join(format!("mk-py-{}", crate::util::random_hex(4)));
+        std::fs::create_dir_all(&home).unwrap();
+        let a = crate::uagent::Local {
+            command: Arc::new(|| Ok(CmdSpec { path: "/bin/sh".into(), argv0: "sh".into(), args: vec![], dir: "/".into(), env: vec![] })),
+            home: home.to_string_lossy().into_owned(),
+        };
+        let cmd = create(&a, "u", "ilk-proje", "nesne-tespiti", "system").await.unwrap();
+        assert!(cmd.contains("uv venv --quiet --system-site-packages --python /usr/bin/python3") && cmd.contains("uv sync"), "{cmd}");
+        let main = std::fs::read_to_string(home.join("Projeler/ilk-proje/main.py")).unwrap();
+        assert!(main.contains("ilk-proje") && !main.contains("{{name}}"));
+        let pp = std::fs::read_to_string(home.join("Projeler/ilk-proje/pyproject.toml")).unwrap();
+        assert!(pp.contains(r#"dependencies = ["ncnn", "opencv-python-headless"]"#), "{pp}");
+        assert_eq!(create(&a, "u", "ilk-proje", "bos", "").await.unwrap_err().code, "conflict");
+        assert_eq!(create(&a, "u", "Kötü Ad", "bos", "").await.unwrap_err().code, "invalid");
+        let ps = projects(&a, "u").await.unwrap();
+        assert_eq!(ps.len(), 1);
+        assert_eq!((ps[0].template.as_str(), ps[0].python.as_str()), ("nesne-tespiti", "system"));
+        assert_eq!(run_command(&a, "u", "ilk-proje").await.unwrap(), "cd ~/Projeler/ilk-proje && uv run main.py");
+        delete(&a, "u", "ilk-proje").await.unwrap();
+        assert!(projects(&a, "u").await.unwrap().is_empty());
+        assert!(python_cmd("install", "3.12; rm -rf /").is_err());
+        assert_eq!(python_cmd("default", "3.12").unwrap(), "uv python install --default 3.12 && python3 --version");
+        let _ = std::fs::remove_dir_all(home);
+    }
+
+    #[test]
+    fn validation_and_versions() {
+        for v in ["3.12", "3.9", "3.12.7"] {
+            assert!(valid_version(v).is_ok(), "{v}");
+        }
+        for v in ["3", "2.7", "3.123", "3.12.", "3.12.7.1", "3.x"] {
+            assert!(valid_version(v).is_err(), "{v}");
+        }
+        assert!(valid_name("a").is_ok() && valid_name("-a").is_err() && valid_name(&"a".repeat(41)).is_err());
+        assert!(newer("3.12.10", "3.12.9") && !newer("3.11.9", "3.12.0"));
+        let raw: Vec<UvPython> = serde_json::from_str(r#"[
+          {"version":"3.13.1","path":null,"implementation":"cpython","variant":"default","version_parts":{"major":3,"minor":13,"patch":1}},
+          {"version":"3.13.2","path":null,"implementation":"cpython","variant":"default","version_parts":{"major":3,"minor":13,"patch":2}},
+          {"version":"3.14.0rc1","path":null,"implementation":"cpython","variant":"default","version_parts":{"major":3,"minor":14,"patch":0}},
+          {"version":"3.13.2","path":null,"implementation":"cpython","variant":"freethreaded","version_parts":{"major":3,"minor":13,"patch":2}},
+          {"version":"3.12.7","path":"/home/m/.local/share/uv/python/cpython-3.12.7-linux/bin/python3.12","implementation":"cpython","variant":"default","version_parts":{"major":3,"minor":12,"patch":7}},
+          {"version":"3.11.2","path":"/usr/bin/python3.11","implementation":"cpython","variant":"","version_parts":{"major":3,"minor":11,"patch":2}},
+          {"version":"7.3.17","path":null,"implementation":"pypy","variant":"","version_parts":{"major":3,"minor":10,"patch":14}}
+        ]"#).unwrap();
+        let v = merge_versions(raw, "/home/m/.local/share/uv/python/cpython-3.12.7-linux/bin/python3.12");
+        let got: Vec<(&str, bool, bool, bool)> = v.iter().map(|v| (v.version.as_str(), v.installed, v.system, v.default)).collect();
+        assert_eq!(got, vec![("3.12.7", true, false, true), ("3.11.2", true, true, false), ("3.13.2", false, false, false)]);
+    }
+}

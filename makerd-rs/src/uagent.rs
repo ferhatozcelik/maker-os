@@ -56,6 +56,28 @@ pub async fn json<T: DeserializeOwned>(a: &dyn Agent, user: &str, cmd: &str) -> 
     serde_json::from_slice(&out).map_err(|e| ApiError::internal(e.to_string()))
 }
 
+/// Dosyanın tamamını okur.
+pub async fn read_all(a: &dyn Agent, user: &str, path: &str) -> ApiResult<Vec<u8>> {
+    let (tx, mut rx) = mpsc::channel::<Bytes>(16);
+    let collect = async {
+        let mut v = Vec::new();
+        while let Some(b) = rx.recv().await {
+            v.extend_from_slice(&b);
+        }
+        v
+    };
+    let (r, v) = tokio::join!(a.read(user, path, tx), collect);
+    r.map(|_| v)
+}
+
+/// İçeriği dosyaya (atomik) yazar.
+pub async fn write_all(a: &dyn Agent, user: &str, path: &str, data: impl Into<Bytes>) -> ApiResult<()> {
+    let (tx, rx) = mpsc::channel(1);
+    let _ = tx.send(Ok(data.into())).await;
+    drop(tx);
+    a.write(user, path, rx).await
+}
+
 fn fs_api(e: FsError) -> ApiError {
     ApiError::invalid(e.0)
 }
