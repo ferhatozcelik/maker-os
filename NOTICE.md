@@ -39,6 +39,7 @@ bileşenlerin özetidir; dağıtılan sürümün kendi lisans metinleri esastır
 | noVNC 1.7.0 (pako dahil) | MPL-2.0 (pako: MIT) | [github.com/novnc/noVNC](https://github.com/novnc/noVNC) |
 | xterm.js 5.5.0, @xterm/addon-fit 0.10.0 | MIT | [github.com/xtermjs/xterm.js](https://github.com/xtermjs/xterm.js) |
 | Lucide simgeleri (alt küme) | ISC | [lucide.dev](https://lucide.dev/) |
+| Simple Icons 16.36.0 (ajan logoları: Claude, Gemini, Ollama, OpenCode; logolar ilgili şirketlerin ticari markalarıdır) | CC0-1.0 | [simpleicons.org](https://simpleicons.org/) |
 | Inter, JetBrains Mono yazı tipleri | SIL OFL 1.1 | [rsms.me/inter](https://rsms.me/inter/) · [jetbrains.com/mono](https://www.jetbrains.com/lp/mono/) |
 | Go modülleri: coder/websocket, creack/pty, godbus/dbus, go-gpiocdev, golang.org/x/sys | ISC / MIT / BSD-2 / MIT / BSD-3 | `makerd/go.mod` |
 

@@ -18,7 +18,7 @@ export default {
   "py.uvHint": "Sürümler uv ile kullanıcı dizinine kurulur; sistem Python’u değişmez. “Varsayılan yap”, terminaldeki python3 komutunu bu sürüme bağlar.",
   "ag.top": "Terminalde çalışan yapay zeka kodlama ajanları ve Pi üzerinde internetsiz model çalıştırıcı. Kurulum ve çalıştırma Terminal’de görünür; web’de ve Pi ekranında aynı oturumdur.",
   "ag.cli": "Komut satırından: mos agent ls · mos agent install <id> · mos agent run <id>", "ag.refresh": "Yenile", "ag.account": "Hesap", "ag.run": "Başlat", "ag.update": "Güncelle",
-  "ag.remove": "Kaldır", "ag.removeQ": "{name} kaldırılsın mı?", "ag.install": "Kur", "ag.docs": "Belgeler",
+  "ag.remove": "Kaldır", "ag.removeQ": "{name} kaldırılsın mı?", "ag.install": "Kur", "ag.installed": "Kurulu", "ag.docs": "Belgeler",
   "pl.top": "Eklentiler, zip olarak paylaşılan küçük Python uygulamalarıdır. Şablonu indirin, düzenleyin, zip’leyip içe aktarın; “Dışa aktar” ile başkalarıyla paylaşın.",
   "pl.template": "Şablon", "pl.import": "İçe aktar (.zip)", "pl.imported": "{name} içe aktarıldı", "pl.logs": "Günlük", "pl.noLog": "(henüz çıktı yok)",
   "pl.empty": "Kurulu eklenti yok. “Şablon” ile başlayın veya bir .zip içe aktarın.", "pl.running": "çalışıyor", "pl.stopped": "durdu", "pl.open": "Aç", "pl.stop": "Durdur", "pl.start": "Başlat",

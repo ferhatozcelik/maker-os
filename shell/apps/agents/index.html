@@ -8,7 +8,16 @@
 <link rel="stylesheet" href="/shell/css/tokens.css">
 <link rel="stylesheet" href="/shell/css/kit.css">
 <link rel="stylesheet" href="/shell/css/app.css">
-<style>.ag .ico{background:linear-gradient(135deg,#8b7bff,#4c3fd6)}.ag.inst .ico{background:linear-gradient(135deg,#2fbf71,#127a52)}.ag .meta{font-size:var(--fs-caption);color:var(--text-2)}</style>
+<style>
+/* Marka renkleri (Simple Icons); bilinmeyen ajan nötr koyu karo. */
+.ag .ico{background:#2b2b30;color:#fff}
+.ag .ico.br-claude{background:#d97757}
+.ag .ico.br-gemini{background:linear-gradient(135deg,#4285f4,#8e75b2 55%,#d96570)}
+.ag .ico.br-codex,.ag .ico.br-ollama,.ag .ico.br-opencode{background:#111}
+.ag .meta{font-size:var(--fs-caption);color:var(--text-2)}
+.ag .chip{margin-left:6px;padding:1px 7px;border-radius:99px;font-size:var(--fs-caption);font-weight:500;vertical-align:1px;color:#127a52;background:rgba(47,191,113,.16)}
+@media (prefers-color-scheme:dark){.ag .ico.br-codex,.ag .ico.br-ollama,.ag .ico.br-opencode{background:#000;box-shadow:inset 0 0 0 .5px rgba(255,255,255,.25)}.ag .chip{color:#5fe0a0}}
+</style>
 </head>
 <body>
 <div class="bar2"><h1 class="h"></h1><span class="grow"></span><button class="btn sm b-re"></button></div>

@@ -18,7 +18,7 @@ export default {
   "py.uvHint": "Versions are installed with uv into your home folder; the system Python stays unchanged. “Make default” points the terminal python3 command at that version.",
   "ag.top": "AI coding agents that run in the terminal, and an offline model runner on the Pi. Install and run are visible in Terminal; the session is shared between the web and the Pi screen.",
   "ag.cli": "From the command line: mos agent ls · mos agent install <id> · mos agent run <id>", "ag.refresh": "Refresh", "ag.account": "Account", "ag.run": "Start", "ag.update": "Update",
-  "ag.remove": "Remove", "ag.removeQ": "Remove {name}?", "ag.install": "Install", "ag.docs": "Docs",
+  "ag.remove": "Remove", "ag.removeQ": "Remove {name}?", "ag.install": "Install", "ag.installed": "Installed", "ag.docs": "Docs",
   "pl.top": "Plugins are small Python apps shared as zip files. Download the template, edit it, zip it and import it; use “Export” to share with others.",
   "pl.template": "Template", "pl.import": "Import (.zip)", "pl.imported": "Imported {name}", "pl.logs": "Log", "pl.noLog": "(no output yet)",
   "pl.empty": "No plugins installed. Start with “Template” or import a .zip.", "pl.running": "running", "pl.stopped": "stopped", "pl.open": "Open", "pl.stop": "Stop", "pl.start": "Start",
