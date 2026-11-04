@@ -98,6 +98,8 @@ filename=hook.sh
 
 [image.rootfs]
 filename=rootfs.erofs
+# RAUC .erofs uzantisini taniyamiyor; slot ham blok aygiti (system.conf: type=raw).
+type=raw
 
 [image.boot]
 filename=boot.vfat
