@@ -43,7 +43,8 @@ jobs:
     timeout-minutes: 355
     env:
       GH_TOKEN: ${{ github.token }}
-      BR_DIR: ${{ github.workspace }}/../br
+      # actions/cache '..' iceren yollari reddeder; mutlak yol olmali.
+      BR_DIR: /home/runner/br
     steps:
       - uses: actions/checkout@v7
 
@@ -108,9 +109,11 @@ jobs:
 
       - name: Imaj ve guncelleme paketi (Buildroot)
         if: steps.v.outputs.release == '1'
+        # Is zaman asimindan (355) once dur ki onbellek kaydedilebilsin.
+        timeout-minutes: 320
         env:
           MAKEROS_VOLUME: ${{ env.BR_DIR }}
-          MAKEROS_HEAVY_JOBS: "2"
+          MAKEROS_HEAVY_JOBS: "4"
         run: |
           mkdir -p "$BR_DIR" && chmod 777 "$BR_DIR"
           sudo chmod -R a+rwX "$BR_DIR" || true

@@ -80,6 +80,9 @@ build_heavy() {
 	for p in ${HEAVY_PKGS}; do
 		grep -q "^BR2_PACKAGE_$(echo "${p}" | tr 'a-z-' 'A-Z_')=y" "${C_OUT}/.config" || continue
 		local j ok=0
+		# Bagimliliklar (toolchain dahil) tam paralellikle; yalnizca paketin
+		# kendisi sinirli -j ile derlenir.
+		br_make "${p}-depends"
 		for j in ${HEAVY_JOBS} 2 1; do
 			echo ">> ${p}: BR2_JLEVEL=${j} ile derleniyor"
 			if BR_JOBS="${j}" br_make "${p}"; then ok=1; break; fi
