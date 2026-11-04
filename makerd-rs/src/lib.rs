@@ -22,7 +22,7 @@ pub mod logging;
 // pub mod mock; // Go'dan taşınacak
 pub mod network;
 pub mod notify;
-// pub mod ota; // Go'dan taşınacak
+pub mod ota;
 pub mod plugins;
 pub mod prefs;
 pub mod privsep;
