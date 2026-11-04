@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: makerd testleri (Docker)
         run: make -C makerd test
 
@@ -45,7 +45,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       BR_DIR: ${{ github.workspace }}/../br
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Surum
         id: v
@@ -89,7 +89,7 @@ jobs:
       - name: Onbellek (indirmeler + ccache) geri yukle
         if: steps.v.outputs.release == '1'
         id: cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: |
             ${{ env.BR_DIR }}/dl
@@ -121,7 +121,7 @@ jobs:
 
       - name: Onbellegi kaydet (basarisiz iste de)
         if: always() && steps.v.outputs.release == '1'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: |
             ${{ env.BR_DIR }}/dl
