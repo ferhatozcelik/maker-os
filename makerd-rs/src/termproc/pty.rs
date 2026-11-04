@@ -71,7 +71,8 @@ pub fn spawn(spec: &CmdSpec, cols: u16, rows: u16) -> std::io::Result<Proc> {
     let mut child = tokio::process::Command::from(cmd).spawn()?;
     let pid = child.id().map(|p| p as i32).unwrap_or(-1);
 
-    let master = Arc::new(AsyncFd::new(master)?);
+    // SAFETY: master yalnız bu AsyncFd'ye aittir ve onunla birlikte kapanır.
+    let master = Arc::new(unsafe { AsyncFd::register(master) }?);
     let (out_tx, out_rx) = mpsc::channel::<Bytes>(64);
     let (ctl_tx, mut ctl_rx) = mpsc::unbounded_channel::<Ctl>();
     let (exit_tx, exit_rx) = watch::channel(None);

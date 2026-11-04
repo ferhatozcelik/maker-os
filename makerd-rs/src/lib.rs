@@ -30,7 +30,7 @@ pub mod pyman;
 pub mod screen;
 pub mod sd;
 pub mod setup;
-// pub mod system; // Go'dan taşınacak
+pub mod system;
 // pub mod term; // Go'dan taşınacak
 pub mod termproc;
 pub mod uagent;
