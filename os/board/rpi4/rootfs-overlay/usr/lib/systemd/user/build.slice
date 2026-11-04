@@ -1,0 +1,8 @@
+[Unit]
+Description=MakerOS derleme/kurulum dilimi (uv, pip, OTA hazirlama)
+Before=slices.target
+
+[Slice]
+MemoryHigh=800M
+CPUWeight=20
+IOWeight=20

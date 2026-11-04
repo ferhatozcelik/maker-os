@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ayarlar</title>
+<link rel="icon" type="image/svg+xml" href="/shell/icons/logo.svg">
+<link rel="stylesheet" href="/shell/css/tokens.css">
+<link rel="stylesheet" href="/shell/css/kit.css">
+<link rel="stylesheet" href="/shell/css/app.css">
+<style>
+/* Yazılım güncellemesi */
+.up-bar { height: 6px; border-radius: 3px; background: var(--bg-active); overflow: hidden; }
+.up-bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .4s ease; }
+.up-notes:empty { display: none; }
+.up-notes { margin: -4px 0 10px; padding: 10px 14px; border-radius: 10px; background: var(--bg-content); border: .5px solid var(--separator); }
+.up-h { font-weight: 600; margin-bottom: 6px; } .up-h a { font-weight: 500; color: var(--accent); }
+.up-txt { margin: 0; white-space: pre-wrap; font: inherit; font-size: var(--fs-footnote); color: var(--text-2); max-height: 180px; overflow: auto; }
+.about { display: flex; align-items: center; gap: 16px; margin: 0 0 18px; }
+.about h1 { margin: 0; }
+.themes { display: flex; gap: 14px; }
+.theme { display: grid; justify-items: center; gap: 6px; border: 0; background: none; padding: 0; font-size: var(--fs-footnote); color: var(--text-2); }
+.prev { width: 74px; height: 48px; border-radius: 8px; box-shadow: 0 0 0 .5px var(--border), 0 1px 3px rgba(0,0,0,.15); background: linear-gradient(#eee 0 22%, #fafafa 22%); }
+.prev-dark { background: linear-gradient(#333 0 22%, #1e1e21 22%); }
+.prev-auto { background: linear-gradient(90deg, #fafafa 50%, #1e1e21 50%); }
+.theme.on .prev { box-shadow: 0 0 0 3px var(--accent); }
+.theme.on { color: var(--text); font-weight: 600; }
+.accents { display: flex; gap: 8px; flex-wrap: wrap; }
+.acc { width: 20px; height: 20px; border-radius: 50%; border: 0; padding: 0; box-shadow: inset 0 0 0 .5px rgba(0,0,0,.2); }
+.acc.on { box-shadow: 0 0 0 2px var(--bg-content), 0 0 0 4px currentColor; }
+.acc[data-a=blue]{background:#1a7cf5;color:#1a7cf5}.acc[data-a=purple]{background:#9b55e0;color:#9b55e0}.acc[data-a=pink]{background:#e64d97;color:#e64d97}
+.acc[data-a=red]{background:#e0354b;color:#e0354b}.acc[data-a=orange]{background:#f08a1c;color:#f08a1c}.acc[data-a=yellow]{background:#e8b416;color:#e8b416}
+.acc[data-a=green]{background:#3cb44f;color:#3cb44f}.acc[data-a=graphite]{background:#8a8a90;color:#8a8a90}
+.acc[data-a=lime]{background:#c8f53c;color:#9cc41a}.acc[data-a=teal]{background:#14a38b;color:#14a38b}.acc[data-a=cyan]{background:#12b3d1;color:#12b3d1}.acc[data-a=orange]{background:#f07a1a;color:#f07a1a}
+h2.first { margin-top: 0; }
+.group.pad { padding: 12px; }
+.packs { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.pack { display: grid; gap: 4px; border: 0; background: none; padding: 0; text-align: left; color: var(--text); }
+.pack .thumb { aspect-ratio: 16 / 10; border-radius: 9px; background: center / cover no-repeat; box-shadow: 0 0 0 .5px var(--border), 0 1px 3px rgba(0,0,0,.18); }
+.pack.on .thumb { box-shadow: 0 0 0 3px var(--accent); }
+.pack .pn { font-weight: 600; font-size: var(--fs-subhead, 13px); margin-top: 4px; }
+.pack .pd { color: var(--text-2); font-size: var(--fs-footnote); line-height: 1.3; }
+.kt { width: 100%; border-collapse: collapse; }
+.kt th, .kt td { text-align: left; padding: 7px 12px; border-top: .5px solid var(--separator); vertical-align: top; }
+.kt th { border: 0; color: var(--text-2); font-size: var(--fs-footnote); font-weight: 600; }
+.kt td kbd { margin: 0 4px 3px 0; display: inline-block; }
+.row input:not(.switch) { width: 200px; }
+@media (max-width: 699px) { .row { flex-wrap: wrap; } .row input:not(.switch) { width: 100%; } .kt td:nth-child(2), .kt th:nth-child(2) { display: none; } }
+</style>
+</head>
+<body>
+<div class="split"><aside class="sidebar"></aside><main class="content"></main></div>
+<script type="module" src="/shell/apps/settings/settings.js"></script>
+</body>
+</html>

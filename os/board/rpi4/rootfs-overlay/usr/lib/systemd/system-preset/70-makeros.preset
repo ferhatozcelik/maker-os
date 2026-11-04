@@ -1,0 +1,35 @@
+# MakerOS hizmet on ayarlari (80-buildroot / 90-systemd'den once okunur).
+enable makeros-zram.service
+enable makeros-growdata.service
+enable makeros-cpu-tune.service
+enable makeros-firstboot.service
+enable makeros-network-fallback.service
+enable makeros-kiosk.service
+enable makeros-healthcheck.service
+enable makeros-mark-good.service
+enable makerd.service
+enable makerd-priv.socket
+enable NetworkManager.service
+enable systemd-resolved.service
+enable systemd-timesyncd.service
+enable systemd-oomd.service
+enable systemd-oomd.socket
+enable rauc.service
+enable fstrim.timer
+# SSH varsayilan kapali. TODO(M3): makerd-priv 'ssh.enable' komutu
+# (systemctl enable --now sshd + anahtar/parola politikasi).
+disable sshd.service
+# Acilisi bekletmesin:
+disable NetworkManager-wait-online.service
+disable systemd-networkd-wait-online.service
+# NM kendi dnsmasq'ini baslatir (paylasim modu):
+disable dnsmasq.service
+# logind kullaniliyor; seatd yalnizca yedek:
+disable seatd.service
+disable podman.service
+disable podman.socket
+disable podman-auto-update.timer
+disable podman-restart.service
+disable podman-clean-transient.service
+disable getty@.service
+disable serial-getty@.service

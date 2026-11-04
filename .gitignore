@@ -1,0 +1,35 @@
+# MakerOS 2 — derleme ciktilari depoya girmez (imaj ve guncelleme paketi GitHub Releases'te).
+os/out/
+*.img
+*.img.xz
+*.raucb
+*.sha256
+
+# Imza anahtari ASLA depoya girmez (yerel kopya: ~/.config/makeros-release/, CI: MAKEROS_RAUC_KEY sirri)
+os/keys/
+*.key
+*-key.pem
+
+# Go / Rust / Node derleme ciktilari
+makerd/bin/
+makerd-rs/target/
+wm/target/
+node_modules/
+
+# Yerel onizleme goruntuleri (bench/out ham olcum verisidir, depoda kalir: docs/v2/BENCHMARK.md)
+shell/.preview/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Sistem ve editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~
+
+# Rust bagimlilik onbellegi (wm gelistirme kabi)
+wm/.cache/

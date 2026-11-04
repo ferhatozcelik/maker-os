@@ -1,0 +1,7 @@
+config BR2_PACKAGE_MAKEROS_SHELL
+	bool "makeros-shell"
+	help
+	  MakerOS web masaustu kabugu (derleme adimsiz ES modulleri + Web
+	  Components). Kaynak: depodaki ../shell -> /usr/share/makeros/shell.
+	  .js/.css/.html/.svg/.json dosyalarinin gzip'li kopyalari da uretilir
+	  (makerd on-sikistirilmis dosyayi sunar).

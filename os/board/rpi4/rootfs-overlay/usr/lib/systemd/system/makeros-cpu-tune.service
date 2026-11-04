@@ -1,0 +1,13 @@
+[Unit]
+Description=MakerOS CPU frekans yoneticisi ayari
+DefaultDependencies=no
+After=systemd-modules-load.service local-fs.target
+Before=basic.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/lib/makeros/cpu-tune
+
+[Install]
+WantedBy=sysinit.target

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="tr" data-app="screen">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ekran Modu</title>
+<link rel="icon" type="image/svg+xml" href="/shell/icons/logo.svg">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/shell/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="MakerOS">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#000000">
+<link rel="stylesheet" href="/shell/css/tokens.css">
+<link rel="stylesheet" href="/shell/css/kit.css">
+<link rel="stylesheet" href="/shell/apps/screen/screen.css">
+</head>
+<body>
+<div class="rot">
+  <main class="screen"><div class="msg" hidden><p class="m-t"></p><button class="m-re" hidden></button></div></main>
+  <!-- Üstte küçük, kendiliğinden gizlenen kontrol hapı (fare üst kenara gelince / dokununca görünür). -->
+  <div class="pill" role="toolbar">
+    <button class="p-back"></button>
+    <i class="dot"></i>
+    <button class="p-keys" hidden></button>
+    <button class="p-rot" hidden></button>
+    <button class="p-full"></button>
+    <button class="p-more"></button>
+  </div>
+  <div class="menu" hidden></div>
+</div>
+<input class="kbd" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" aria-hidden="true">
+<script type="module" src="/shell/apps/screen/screen.js"></script>
+</body>
+</html>

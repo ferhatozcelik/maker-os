@@ -1,0 +1,26 @@
+config BR2_PACKAGE_LABWC
+	bool "labwc"
+	depends on !BR2_STATIC_LIBS # wlroots
+	depends on BR2_TOOLCHAIN_HAS_THREADS # wlroots
+	depends on BR2_PACKAGE_HAS_LIBEGL # wlroots
+	depends on BR2_PACKAGE_HAS_LIBGLES # wlroots
+	depends on BR2_PACKAGE_HAS_LIBGBM # wlroots
+	depends on BR2_PACKAGE_HAS_UDEV # wlroots
+	depends on BR2_USE_WCHAR # glib2, pango
+	depends on BR2_USE_MMU # glib2
+	depends on BR2_INSTALL_LIBSTDCPP # pango
+	depends on BR2_TOOLCHAIN_HAS_SYNC_4 # pango
+	select BR2_PACKAGE_WLROOTS
+	select BR2_PACKAGE_LIBXML2
+	select BR2_PACKAGE_LIBGLIB2
+	select BR2_PACKAGE_CAIRO
+	select BR2_PACKAGE_CAIRO_PNG
+	select BR2_PACKAGE_PANGO
+	select BR2_PACKAGE_LIBPNG
+	help
+	  Hafif, wlroots tabanli pencere yoneticisi (Raspberry Pi OS'un
+	  varsayilani). MakerOS'ta web kabuk (cog) tam ekran altta, yerel
+	  uygulamalar (foot, GTK, OpenCV) ustte pencere olarak calisir.
+	  wlroots protokolleri sayesinde wayvnc ile uzaktan erisilir.
+
+	  https://labwc.github.io

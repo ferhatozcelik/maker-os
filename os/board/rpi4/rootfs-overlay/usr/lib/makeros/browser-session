@@ -1,0 +1,21 @@
+#!/bin/sh
+# MakerOS uzak tarayıcı oturumu: MakerOS'taki "Chromium" penceresi için ayrı, monitörsüz bir labwc
+# (yalnız Chromium; Pi'nin kendi ekranı/monitörü etkilenmez) + wayvnc (yalnız 127.0.0.1:5901).
+# makerd başlatır/durdurur (internal/browser; systemd: makeros-browser.service). Chromium kapanınca oturum biter.
+# Boyut: pencere boyutu = sanal ekran boyutu (noVNC SetDesktopSize → wayvnc → headless çıkış).
+PORT=${MAKEROS_BROWSER_PORT:-5901}
+if [ "$1" != "--inner" ]; then
+	unset WAYLAND_DISPLAY DISPLAY
+	export WLR_BACKENDS=headless WLR_LIBINPUT_NO_DEVICES=1 XKB_DEFAULT_LAYOUT="${XKB_DEFAULT_LAYOUT:-tr}"
+	# GPU (Pi: V3D render düğümü) yoksa yazılımla çizim.
+	ls /dev/dri/renderD* >/dev/null 2>&1 || export WLR_RENDERER=pixman
+	exec /usr/bin/labwc -C /usr/share/makeros/labwc-browser -s "$0 --inner"
+fi
+G=; ls /dev/dri/renderD* >/dev/null 2>&1 && G=--gpu
+# Ayrı denetim soketi: Ekran Modu'nun wayvnc'si (wayvncctl) ile çakışmasın.
+/usr/bin/wayvnc $G --socket="$XDG_RUNTIME_DIR/wayvncctl-browser" --keyboard="${XKB_DEFAULT_LAYOUT:-tr}" --render-cursor --max-fps=30 127.0.0.1 "$PORT" &
+V=$!
+# Ayrı profil: Pi ekranındaki Chromium ile kilit çakışmasın (aynı profil ikinci örneği ona yönlendirirdi).
+/usr/bin/chromium --user-data-dir="$HOME/.config/makeros-browser" --start-maximized "${MAKEROS_BROWSER_URL:-https://duckduckgo.com/}"
+kill "$V" 2>/dev/null
+exec /usr/bin/labwc --exit

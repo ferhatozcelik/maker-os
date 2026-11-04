@@ -1,0 +1,16 @@
+# boot-complete.target'i makerd ayakta ise tetikler (RAUC mark-good onkosulu).
+[Unit]
+Description=MakerOS acilis saglik denetimi
+Before=boot-complete.target
+Requires=makerd.service
+After=makerd.service makeros-kiosk.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+# TODO(M6): gercek denetim (curl -sf http://127.0.0.1/api/v1/health)
+ExecStart=/bin/sh -c 'systemctl is-active -q makerd.service'
+
+[Install]
+RequiredBy=boot-complete.target
+WantedBy=multi-user.target

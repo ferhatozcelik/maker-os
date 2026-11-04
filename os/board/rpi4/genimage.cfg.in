@@ -1,0 +1,96 @@
+# MakerOS 2 - SD kart bolum tablosu (MBR, disk imzasi 0x4d4f5332 = "MOS2")
+#
+#  p1  MOSCFG  FAT32   64M   autoboot.txt (A/B secici), wifi.txt, durum dosyasi
+#  p2  BOOT_A  FAT32  256M   firmware + kernel8.img + DTB + config.txt (root=p5)
+#  p3  BOOT_B  FAT32  256M   ayni, cmdline.txt root=p6
+#  p4  (genisletilmis)
+#  p5  ROOT_A  EROFS  2.5G   kok dosya sistemi, slot A
+#  p6  ROOT_B  EROFS  2.5G   slot B (bos; ilk OTA ile yazilir)
+#  p7  DATA    ext4   256M   /data: /etc ust katmani, /var, /home, /opt/data
+#                            (ilk acilista kartin sonuna kadar buyutulur)
+#
+# PARTUUID'ler disk imzasindan gelir: 4d4f5332-0N (cmdline.txt/fstab bunlari kullanir).
+
+image moscfg.vfat {
+	vfat {
+		label = "MOSCFG"
+		files = {
+			"moscfg/autoboot.txt",
+			"moscfg/wifi-example.txt",
+		}
+	}
+	size = 64M
+}
+
+image boot-a.vfat {
+	vfat {
+		label = "BOOT_A"
+		files = {
+@BOOT_FILES@
+		}
+		file cmdline.txt { image = "slot-a/cmdline.txt" }
+	}
+	size = 256M
+}
+
+image boot-b.vfat {
+	vfat {
+		label = "BOOT_B"
+		files = {
+@BOOT_FILES@
+		}
+		file cmdline.txt { image = "slot-b/cmdline.txt" }
+	}
+	size = 256M
+}
+
+image data.ext4 {
+	ext4 {
+		label = "DATA"
+		use-mke2fs = true
+		features = "^metadata_csum_seed"
+		extraargs = "-m 1"
+	}
+	size = 256M
+}
+
+image @IMAGE_NAME@ {
+	hdimage {
+		partition-table-type = "mbr"
+		disk-signature = 0x4d4f5332
+		extended-partition = 4
+	}
+
+	partition moscfg {
+		partition-type = 0x0C
+		bootable = "true"
+		offset = 4M
+		image = "moscfg.vfat"
+	}
+
+	partition boot-a {
+		partition-type = 0x0C
+		image = "boot-a.vfat"
+	}
+
+	partition boot-b {
+		partition-type = 0x0C
+		image = "boot-b.vfat"
+	}
+
+	partition root-a {
+		partition-type = 0x83
+		image = "rootfs.erofs"
+		size = 2560M
+	}
+
+	partition root-b {
+		partition-type = 0x83
+		size = 2560M
+	}
+
+	partition data {
+		partition-type = 0x83
+		image = "data.ext4"
+	}
+}

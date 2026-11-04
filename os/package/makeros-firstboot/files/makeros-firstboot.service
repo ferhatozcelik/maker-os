@@ -1,0 +1,15 @@
+[Unit]
+Description=MakerOS ilk acilis hazirligi (ana makine adi, SSH anahtarlari)
+ConditionPathExists=!/var/lib/makeros/firstboot-done
+DefaultDependencies=no
+After=local-fs.target systemd-tmpfiles-setup.service
+Before=sysinit.target sshd.service makerd.service systemd-hostnamed.service
+Conflicts=shutdown.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/lib/makeros/firstboot
+
+[Install]
+WantedBy=sysinit.target

@@ -1,0 +1,55 @@
+{
+  "id": "khs",
+  "name": "Konya HackerSpace",
+  "version": "1.0.5",
+  "description": "Konya HackerSpace teması, kapı durumu (açık/kapalı) ve konyahackerspace.org uygulaması.",
+  "author": "MakerOS",
+  "entrypoint": "main.py",
+  "web_port": 8790,
+  "icon": "icon.svg",
+  "autostart": true,
+  "app": false,
+  "theme": {
+    "id": "khs",
+    "name": {
+      "tr": "Konya HackerSpace",
+      "en": "Konya HackerSpace"
+    },
+    "desc": {
+      "tr": "Mürekkep ve lime, KHS işareti; kapı durumu ve site rafta",
+      "en": "Ink and lime, KHS mark; door status and website in the dock"
+    },
+    "accent": "lime",
+    "mode": "dark",
+    "logo": "logo.svg",
+    "mark": "mark.svg",
+    "wallpaper": {
+      "dark": "wallpapers/khs-dark.svg",
+      "light": "wallpapers/khs-light.svg",
+      "dark_blur": "wallpapers/khs-dark-blur.svg",
+      "light_blur": "wallpapers/khs-light-blur.svg"
+    },
+    "apps": [
+      {
+        "id": "site",
+        "name": "Konya HackerSpace",
+        "url": "https://konyahackerspace.org/tr/",
+        "icon": "icon.svg",
+        "w": 1100,
+        "h": 720
+      }
+    ],
+    "icons": "icons/",
+    "favicon": "logo.svg"
+  },
+  "status": {
+    "api": "/api/door",
+    "label": "KHS",
+    "every": 60
+  },
+  "widget": {
+    "path": "/widget",
+    "w": 340,
+    "h": 178
+  }
+}

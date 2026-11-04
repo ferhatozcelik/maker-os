@@ -1,0 +1,28 @@
+{
+  "id": "/web",
+  "name": "MakerOS",
+  "short_name": "MakerOS",
+  "description": "Raspberry Pi için maker işletim sistemi: dosyalar, terminal, Python, GPIO, kamera ve Pi'nin ekranı.",
+  "lang": "tr",
+  "dir": "ltr",
+  "start_url": "/web",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "orientation": "any",
+  "background_color": "#16171a",
+  "theme_color": "#1c1d21",
+  "categories": ["developer", "utilities", "education"],
+  "icons": [
+    { "src": "/shell/icons/pwa-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/shell/icons/pwa-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/shell/icons/pwa-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/shell/icons/logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "Ekran Modu", "short_name": "Ekran", "url": "/shell/apps/screen/", "icons": [{ "src": "/shell/icons/pwa-192.png", "sizes": "192x192" }] },
+    { "name": "Terminal", "url": "/web#terminal", "icons": [{ "src": "/shell/icons/pwa-192.png", "sizes": "192x192" }] },
+    { "name": "Python", "url": "/web#python", "icons": [{ "src": "/shell/icons/pwa-192.png", "sizes": "192x192" }] },
+    { "name": "Dosyalar", "url": "/web#files", "icons": [{ "src": "/shell/icons/pwa-192.png", "sizes": "192x192" }] }
+  ]
+}

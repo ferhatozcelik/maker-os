@@ -1,0 +1,24 @@
+body { background: var(--term-bg); color: var(--term-fg); }
+.tabs { display: flex; align-items: flex-end; gap: 4px; flex: none; height: calc(var(--tb) + 30px); padding: 0 8px 0 8px; background: #232327; border-bottom: .5px solid #000; }
+html[data-embed=window] .tabs { height: calc(var(--tb) + 32px); padding-top: var(--tb); align-items: center; }
+.tablist { flex: 1; display: flex; gap: 4px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.tab { display: flex; align-items: center; gap: 6px; height: 26px; padding: 0 6px 0 12px; border: 0; border-radius: 7px; background: transparent; color: #a9a9b2;
+  font-size: var(--fs-footnote); font-weight: 500; max-width: 200px; min-width: 90px; flex: 0 1 auto; }
+.tab span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
+.tab:hover { background: rgba(255,255,255,.06); }
+.tab.on { background: rgba(255,255,255,.12); color: #f2f2f6; }
+.tab .x { width: 18px; height: 18px; border-radius: 4px; display: grid; place-items: center; opacity: .6; }
+.tab .x:hover { background: rgba(255,255,255,.14); opacity: 1; }
+.tab .st { width: 6px; height: 6px; border-radius: 50%; background: #6e6e77; flex: none; }
+.tab .st.ok { background: #3cc15a; }
+.tab-add { width: 26px; height: 26px; border: 0; border-radius: 7px; background: none; color: #c9c9d0; display: grid; place-items: center; flex: none; }
+.tab-add:hover { background: rgba(255,255,255,.1); }
+.terms { flex: 1; position: relative; min-height: 0; }
+.term { position: absolute; inset: 6px 4px 4px 10px; visibility: hidden; }
+.term.on { visibility: visible; }
+.xterm { height: 100%; }
+.xterm-viewport { scrollbar-width: thin; scrollbar-color: #444 transparent; }
+.xkeys { display: flex; gap: 4px; padding: 6px; background: #2a2a2d; overflow-x: auto; flex: none; scrollbar-width: none; }
+.xkeys button { flex: none; min-width: 42px; height: 36px; border: 0; border-radius: 7px; background: #3a3a3e; color: #f2f2f7; font-weight: 500; }
+.xkeys button.on { background: var(--accent); }
+.term-msg { position: absolute; inset: 0; display: grid; place-items: center; color: #a9a9b2; text-align: center; padding: 20px; }

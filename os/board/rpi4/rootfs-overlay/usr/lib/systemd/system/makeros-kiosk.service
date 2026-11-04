@@ -1,0 +1,43 @@
+# Yerel ekran: labwc (wlroots) + cog (WPE WebKit) -> web kabuk; wayvnc ile uzaktan.
+# 'maker' hizmet hesabi olarak (makerd ile ayni), logind oturumu (PAM ->
+# pam_systemd) ile seat0'da. Kurulum tamamlanmadan da calisir: makerd '/'
+# adresinde kurulum sihirbazini sunar.
+[Unit]
+Description=MakerOS yerel kabuk (labwc + cog)
+After=systemd-user-sessions.service makerd.service systemd-logind.service
+Wants=makerd.service
+Conflicts=getty@tty1.service
+After=getty@tty1.service
+ConditionPathExists=/dev/tty1
+
+[Service]
+Type=simple
+User=maker
+PAMName=makeros-kiosk
+WorkingDirectory=~
+TTYPath=/dev/tty1
+TTYReset=yes
+TTYVHangup=yes
+TTYVTDisallocate=yes
+StandardInput=tty-fail
+StandardOutput=journal
+StandardError=journal
+UtmpIdentifier=tty1
+UtmpMode=user
+Slice=shell.slice
+OOMScoreAdjust=-300
+Environment=XDG_SESSION_TYPE=wayland
+Environment=XDG_SESSION_CLASS=user
+Environment=XDG_SEAT=seat0
+Environment=XDG_VTNR=1
+# Klavye/fare takili olmasa da acilsin (ekransiz kiosk / sadece dokunmatik).
+Environment=WLR_LIBINPUT_NO_DEVICES=1
+# WebKit onbellegi makerd durum dizinine degil /var/cache'e.
+CacheDirectory=makeros-kiosk
+Environment=XDG_CACHE_HOME=/var/cache/makeros-kiosk
+ExecStart=/usr/lib/makeros/session
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=graphical.target

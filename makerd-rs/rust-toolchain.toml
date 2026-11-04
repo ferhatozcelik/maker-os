@@ -1,0 +1,5 @@
+# Docker imajı rust:1.99.1-slim-trixie ile aynı sürüm (Makefile RUST_IMAGE).
+[toolchain]
+channel = "1.99.1"
+components = ["clippy", "rustfmt"]
+profile = "minimal"

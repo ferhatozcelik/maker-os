@@ -1,0 +1,8 @@
+config BR2_PACKAGE_FONT_INTER
+	bool "font-inter"
+	select BR2_PACKAGE_FONTCONFIG
+	help
+	  Inter yazi tipi (rsms/inter, OFL-1.1): kabugun varsayilan yazi
+	  tipi. Degisken TTF -> /usr/share/fonts/inter.
+
+	  https://rsms.me/inter/

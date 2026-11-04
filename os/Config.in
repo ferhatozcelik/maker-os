@@ -1,0 +1,15 @@
+menu "MakerOS"
+
+source "$BR2_EXTERNAL_MAKEROS_PATH/package/makerd/Config.in"
+source "$BR2_EXTERNAL_MAKEROS_PATH/package/makeros-shell/Config.in"
+source "$BR2_EXTERNAL_MAKEROS_PATH/package/makeros-firstboot/Config.in"
+source "$BR2_EXTERNAL_MAKEROS_PATH/package/uv-bin/Config.in"
+source "$BR2_EXTERNAL_MAKEROS_PATH/package/makeros-node/Config.in"
+source "$BR2_EXTERNAL_MAKEROS_PATH/package/font-inter/Config.in"
+source "$BR2_EXTERNAL_MAKEROS_PATH/package/aml/Config.in"
+source "$BR2_EXTERNAL_MAKEROS_PATH/package/neatvnc/Config.in"
+source "$BR2_EXTERNAL_MAKEROS_PATH/package/wayvnc/Config.in"
+source "$BR2_EXTERNAL_MAKEROS_PATH/package/labwc/Config.in"
+source "$BR2_EXTERNAL_MAKEROS_PATH/package/chromium-bin/Config.in"
+
+endmenu

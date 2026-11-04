@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<!-- MakerOS: web kabuk (cog) altta tam ekran; yerel pencereler ustte. -->
+<labwc_config>
+  <core>
+    <decoration>server</decoration>
+    <gap>0</gap>
+    <reuseOutputMode>yes</reuseOutputMode>
+  </core>
+  <theme>
+    <cornerRadius>10</cornerRadius>
+    <titlebar><layout>close,iconify,max:</layout></titlebar>
+    <font place="ActiveWindow"><name>Inter</name><size>10</size><weight>bold</weight></font>
+    <font place="InactiveWindow"><name>Inter</name><size>10</size></font>
+  </theme>
+  <placement><policy>center</policy></placement>
+  <focus><followMouse>no</followMouse></focus>
+  <windowRules>
+    <!-- Web kabuk: dekorsuz, en altta, gorev listesinde yok. -->
+    <windowRule identifier="com.igalia.Cog*" serverDecoration="no" skipTaskbar="yes" skipWindowSwitcher="yes" ignoreFocusRequest="no">
+      <action name="ToggleAlwaysOnBottom"/>
+      <action name="Maximize"/>
+    </windowRule>
+  </windowRules>
+  <keyboard>
+    <default/>
+    <!-- Super = Cmd: pencere degistirme ve kapatma. Kabuk kisayollari (Spotlight,
+         Mission Control) cog icinde web kabukta yakalanir. -->
+    <keybind key="W-Tab"><action name="NextWindow"/></keybind>
+    <keybind key="A-Tab"><action name="NextWindow"/></keybind>
+    <keybind key="W-q"><action name="Close"/></keybind>
+  </keyboard>
+  <libinput><device category="default"><naturalScroll>no</naturalScroll><tap>yes</tap></device></libinput>
+</labwc_config>

@@ -1,0 +1,12 @@
+[Unit]
+Description=makerd yetkili yardımcı soketi
+
+[Socket]
+ListenStream=/run/makeros/priv.sock
+SocketUser=root
+SocketGroup=maker
+SocketMode=0660
+Accept=no
+
+[Install]
+WantedBy=sockets.target

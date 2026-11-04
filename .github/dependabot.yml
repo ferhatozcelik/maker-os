@@ -1,0 +1,28 @@
+# Bağımlılıkları güncel tutar: her hafta güncelleme PR'ı açılır (GitHub Actions, Go, Python, Docker).
+# Buildroot paketlerinin sürümleri os/configs ve os/package altında elle güncellenir.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }
+    groups:
+      actions: { patterns: ["*"] }
+
+  - package-ecosystem: gomod
+    directory: /makerd
+    schedule: { interval: weekly }
+    groups:
+      go: { patterns: ["*"] }
+
+  - package-ecosystem: pip
+    directories:
+      - /makerd/internal/plugins/defaults/khs
+      - /makerd/internal/plugins/template
+    schedule: { interval: weekly }
+
+  - package-ecosystem: docker
+    directories:
+      - /makerd
+      - /os/docker
+      - /bench/desktop
+    schedule: { interval: weekly }

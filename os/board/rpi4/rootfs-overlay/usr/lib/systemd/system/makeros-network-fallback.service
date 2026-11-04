@@ -1,0 +1,13 @@
+[Unit]
+Description=MakerOS ekransiz ag (wifi.txt, yedek erisim noktasi + captive portal)
+After=NetworkManager.service makeros-firstboot.service
+Wants=NetworkManager.service
+
+[Service]
+# Ag icin en fazla 45 sn bekler: acilisi (multi-user/graphical) bloklamasin.
+Type=simple
+RemainAfterExit=yes
+ExecStart=/usr/lib/makeros/network-fallback
+
+[Install]
+WantedBy=multi-user.target

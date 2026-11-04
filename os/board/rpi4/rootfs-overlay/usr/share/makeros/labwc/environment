@@ -1,0 +1,7 @@
+# Monitor takili degilse sanal (headless) ekran: Pi ekransiz da VNC ile kullanilir.
+LABWC_FALLBACK_OUTPUT=VIRTUAL-1
+XKB_DEFAULT_LAYOUT=tr
+XCURSOR_SIZE=24
+MOZ_ENABLE_WAYLAND=1
+QT_QPA_PLATFORM=wayland
+GDK_BACKEND=wayland

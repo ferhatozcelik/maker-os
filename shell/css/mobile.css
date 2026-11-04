@@ -1,0 +1,34 @@
+/* Mobil düzen (<700px) — yalnız telefonda tembel yüklenir (main.js → M.mobile). */
+html[data-layout=mobile] #home { display: flex !important; flex-direction: column; position: fixed; inset: 26px 0 0; padding: 14px 16px 30px; overflow: auto; z-index: 50; }
+html[data-layout=mobile].m-app-open #home { visibility: hidden; }
+#mstatus { position: fixed; top: 0; left: 0; right: 0; height: 26px; z-index: 9000; display: flex !important; align-items: center; justify-content: space-between; padding: 0 18px;
+  font-size: var(--fs-footnote); color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.4); }
+html[data-layout=mobile].m-app-open #mstatus { color: var(--text); text-shadow: none; background: var(--bg-window); }
+.ms-r { display: flex; align-items: center; gap: 6px; }
+.m-search { display: flex; align-items: center; justify-content: center; gap: 6px; height: 36px; border-radius: 12px; border: 0; color: #fff; margin-bottom: 22px;
+  background: rgba(255,255,255,.22); font-weight: 500; flex: none; }
+.m-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px 8px; }
+.m-app { display: flex; flex-direction: column; align-items: center; gap: 6px; border: 0; background: none; color: #fff; font-size: var(--fs-caption); font-weight: 500;
+  text-shadow: 0 1px 3px rgba(0,0,0,.5); min-width: 0; }
+.m-app span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.m-app img { width: 62px; height: 62px; filter: drop-shadow(0 3px 6px rgba(0,0,0,.25)); }
+.m-app:active img { filter: brightness(.7); }
+.m-running { margin-top: auto; padding-top: 24px; }
+.m-label { color: rgba(255,255,255,.85); font-size: var(--fs-footnote); font-weight: 600; margin-bottom: 8px; text-shadow: 0 1px 2px rgba(0,0,0,.4); }
+.m-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.m-chip { display: flex; align-items: center; border-radius: 12px; background: rgba(0,0,0,.3); color: #fff; }
+.m-chip button { border: 0; background: none; color: inherit; display: flex; align-items: center; gap: 6px; padding: 6px 4px 6px 8px; font-weight: 500; }
+.m-chip img { width: 22px; height: 22px; }
+.m-chip .m-x { padding: 6px 10px 6px 4px; opacity: .8; }
+#homebar { position: fixed; left: 0; right: 0; bottom: 0; height: 20px; z-index: 9000; border: 0; background: var(--bg-window); padding: 0; place-items: center; }
+html[data-layout=mobile] #homebar { display: grid !important; }
+html[data-layout=mobile]:not(.m-app-open) #homebar { visibility: hidden; }
+#homebar span { width: 134px; height: 5px; border-radius: 3px; background: var(--text); opacity: .8; }
+html[data-layout=mobile] mk-window { border-radius: 0; box-shadow: none !important; }
+html[data-layout=mobile] mk-window:not(.focused) { visibility: hidden; }
+html[data-layout=mobile] mk-window .tb { display: none; }
+html[data-layout=mobile] #nc { width: auto; left: 6px; top: 32px; }
+html[data-layout=mobile] #toasts { width: auto; left: 10px; top: 32px; }
+html[data-layout=mobile] .find-wrap { padding-top: 40px; }
+html[data-layout=mobile] #hud { bottom: 40px; }
+

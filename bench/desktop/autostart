@@ -1,0 +1,7 @@
+#!/bin/sh
+# Kap sürümü: kiosk-browser (cog) yerine foot; wayvnc kap ağında dinler
+# (yayınlanmaz, yalnız makerd kabına açık). Pi'de 127.0.0.1'dir.
+# Saf headless arka uçta çıkış adı HEADLESS-1 (zaten 1280x720); Pi'de DRM + fallback: VIRTUAL-1.
+for o in $(wlr-randr | awk '/^(VIRTUAL|HEADLESS)-/{print $1}'); do wlr-randr --output "$o" --custom-mode 1280x720@30Hz || true; done
+wayvnc --max-fps=30 --render-cursor 0.0.0.0 5900 &
+foot -e sh -c 'echo "MakerOS sanal masaüstü (labwc + wayvnc)"; uname -a; exec sh' &

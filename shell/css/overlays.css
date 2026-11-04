@@ -1,0 +1,47 @@
+/* Tam ekran katmanlar (Uygulamalar, Bul, değiştirici, Genel Bakış) — ilk kullanımda tembel yüklenir. */
+html.wm-ov mk-window { cursor: pointer; }
+html.wm-ov mk-window .tb, html.wm-ov mk-window .rz { pointer-events: none; }
+html.wm-ov mk-window:hover { outline: 3px solid var(--accent); outline-offset: 3px; }
+.ov-bg { position: absolute; inset: 0; z-index: 0; pointer-events: auto; background: linear-gradient(rgba(0,0,0,.38), rgba(0,0,0,.38)), var(--wall-blur) center / cover; }
+.ov-labels { position: fixed; inset: 0; z-index: 7000; pointer-events: none; }
+.ov-label { position: absolute; top: 0; left: 0; display: flex; align-items: center; gap: 6px; padding: 3px 10px 3px 4px; border-radius: 8px; color: #fff;
+  background: rgba(0,0,0,.42); font-weight: 600; white-space: nowrap; max-width: 300px; overflow: hidden; text-overflow: ellipsis; }
+.ov-label img { width: 20px; height: 20px; }
+.ov-empty { position: absolute; top: 45%; width: 100%; text-align: center; color: #fff; font-size: var(--fs-title2); font-weight: 600; }
+/* ---------- tam ekran katmanlar */
+.lp-layer { background: linear-gradient(rgba(0,0,0,.3), rgba(0,0,0,.3)), var(--wall-blur) center / cover; }
+.lp { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; padding: 60px 40px 40px; overflow: auto; }
+.lp-search { width: 260px; height: 30px !important; border-radius: 9px !important; text-align: center; background: rgba(255,255,255,.18) !important; color: #fff;
+  border: .5px solid rgba(255,255,255,.3) !important; margin-bottom: 50px; }
+.lp-search::placeholder { color: rgba(255,255,255,.75); }
+.lp-grid { display: grid; grid-template-columns: repeat(auto-fill, 128px); gap: 34px 26px; justify-content: center; width: min(1000px, 100%); }
+.lp-app { display: flex; flex-direction: column; align-items: center; gap: 8px; border: 0; background: none; color: #fff; font-weight: 500; text-shadow: 0 1px 3px rgba(0,0,0,.5); }
+.lp-app img { width: 88px; height: 88px; filter: drop-shadow(0 4px 8px rgba(0,0,0,.25)); transition: transform var(--dur-fast) var(--ease-out); }
+.lp-app:hover img { transform: scale(1.05); }
+.lp-app:active img { filter: brightness(.7); }
+.find-wrap { position: absolute; inset: 0; display: flex; justify-content: center; align-items: flex-start; padding-top: 20vh; }
+.find { width: min(680px, calc(100vw - 32px)); border-radius: 16px; box-shadow: 0 24px 70px rgba(0,0,0,.35), 0 0 0 .5px var(--border), var(--highlight); overflow: hidden; }
+.find-bar { display: flex; align-items: center; gap: 10px; padding: 0 16px; height: 54px; color: var(--text-2); }
+.find-in { flex: 1; height: 54px !important; border: 0 !important; background: none !important; box-shadow: none !important; padding: 0 !important; font-size: 21px; color: var(--text); }
+.find-res { max-height: 50vh; overflow: auto; padding: 0 8px; display: none; }
+.find.has .find-res { display: block; border-top: .5px solid var(--separator); padding: 6px 8px 8px; }
+.find-hint { display: none; padding: 6px 16px 8px; font-size: var(--fs-caption); color: var(--text-3); border-top: .5px solid var(--separator); }
+.find.has .find-hint { display: block; }
+.find-g { padding: 8px 8px 4px; font-size: var(--fs-caption); font-weight: 600; color: var(--text-2); }
+.find-row { display: flex; align-items: center; gap: 10px; width: 100%; height: 38px; padding: 0 8px; border: 0; background: none; border-radius: 8px; text-align: left; }
+.find-row img { width: 26px; height: 26px; }
+.find-ic { width: 26px; height: 26px; border-radius: 7px; display: grid; place-items: center; background: var(--bg-active); }
+.find-l { flex: 1; font-size: var(--fs-title3); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.find-row small { color: var(--text-2); }
+.find-row.sel { background: var(--accent); color: var(--on-accent); }
+.find-row.sel small { color: rgba(255,255,255,.8); }
+.find-row.sel .find-ic { background: rgba(255,255,255,.22); }
+.find-none { padding: 16px; color: var(--text-2); text-align: center; }
+.sw-wrap { position: absolute; inset: 0; display: grid; place-items: center; }
+.sw { padding: 18px 18px 12px; border-radius: 22px; box-shadow: 0 20px 60px rgba(0,0,0,.35), 0 0 0 .5px var(--border); max-width: calc(100vw - 40px); }
+.sw-row { display: flex; gap: 8px; overflow: hidden; }
+.sw-app { width: 104px; height: 104px; padding: 8px; border: 0; background: none; border-radius: 16px; flex: none; }
+.sw-app img { width: 100%; height: 100%; }
+.sw-app.sel { background: var(--bg-active); }
+.sw-name { text-align: center; margin-top: 8px; font-weight: 600; font-size: var(--fs-title3); }
+

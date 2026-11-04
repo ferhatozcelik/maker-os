@@ -1,0 +1,83 @@
+// Uygulama kaydı: GET /apps (makerd) + kabuğun yerleşik meta verisi (pencere boyutu, arama anahtarları).
+import { get } from "./api.js";
+import { t } from "./i18n.js";
+import { pref, prefs } from "./prefs.js";
+import { themeById, registerPluginThemes, themeIcon, cacheBrand } from "./themes.js";
+
+const B = "/shell/";
+// Kısa ad → yerleşik bilgiler. makerd listesinde olmasa da bu uygulamalar her zaman görünür.
+const BUILTIN = {
+  settings: { w: 880, h: 590, keys: "ayarlar sistem tercihler settings preferences system", single: true },
+  terminal: { w: 760, h: 480, keys: "terminal konsol kabuk shell bash console komut", rawCtrl: true },
+  activity: { w: 880, h: 580, keys: "etkinlik monitörü görev yöneticisi süreç işlem cpu bellek activity monitor task manager process", single: true },
+  files: { w: 820, h: 520, keys: "dosyalar dosya gezgini klasör yükle indir files folder upload download" },
+  python: { w: 900, h: 600, keys: "python proje şablon uv sanal ortam kod yapay zeka nesne tespiti project template code ai object detection" },
+  agents: { w: 880, h: 600, keys: "ai yapay zeka ajan claude codex gemini opencode ollama agent llm", single: true },
+  camera: { w: 760, h: 520, keys: "kamera fotoğraf video camera picamera rpicam" },
+  gpio: { w: 720, h: 640, keys: "gpio pin donanım elektronik led buton hardware header", single: true },
+  plugins: { w: 880, h: 580, keys: "eklenti uygulama zip içe aktar dışa aktar paylaş plugin extension import export", single: true },
+  screen: { w: 1000, h: 640, keys: "ekran modu uzak ekran masaüstü vnc ekran paylaşımı remote desktop screen viewer", single: true },
+};
+export const DEFAULT_DOCK = ["makeros.files", "chromium", "makeros.terminal", "makeros.python", "makeros.agents", "makeros.camera", "makeros.gpio", "makeros.plugins", "makeros.activity", "makeros.settings"];
+
+// Ayarlar sayfaları (kenar çubuğu + Bul + derin bağlantı #sayfa)
+export const SETTINGS_PAGES = [
+  ["wifi", "wifi", "kablosuz wireless ağ"], ["network", "network", "ethernet ip ağ hotspot erişim noktası"],
+  ["general", "info", "hakkında genel cihaz adı hostname sürüm about"], ["datetime", "clock", "tarih saat saat dilimi ntp time timezone"],
+  ["language", "languages", "dil bölge klavye düzeni language region locale"], ["keyboard", "keyboard", "klavye kısayollar shortcuts keys"],
+  ["appearance", "palette", "görünüm tema koyu açık vurgu rengi efekt bulanıklık appearance dark mode theme"],
+  ["user", "user", "kullanıcı parola şifre hesap user password"], ["power", "power", "güç yeniden başlat kapat power reboot shutdown"],
+];
+
+const short = id => id.replace(/^makeros\./, "");
+function normalize(a) {
+  const s = short(a.id), b = BUILTIN[s] || {};
+  return { kind: "web", categories: [], ...a, short: s, w: b.w || a.w || 800, h: b.h || a.h || 540, keys: (b.keys || "") + " " + a.name,
+    single: !!b.single, rawCtrl: !!b.rawCtrl, baseIcon: a.icon || `${B}icons/${s}.svg`, icon: a.icon || `${B}icons/${s}.svg` };
+}
+const builtinList = () => Object.keys(BUILTIN).map(s => normalize({ id: "makeros." + s, name: t("app." + s), url: `${B}apps/${s}/` }));
+
+// Temaya özel uygulamalar (ör. Konya HackerSpace sitesi): yalnız o tema etkinken listede ve rafta.
+const themeApps = () => (themeById(pref("look")).apps || []).map(a => ({ ...normalize({ ...a, categories: ["Theme"] }), theme: true }));
+// Simgeler etkin temanın simge paketinden (ör. KHS) gelir; yoksa yerleşik.
+const iconize = a => ({ ...a, icon: themeIcon(pref("look"), a.short === "makeros" ? a.id : a.short, a.baseIcon || a.icon) });
+const withTheme = list => [...list.filter(a => !a.theme), ...themeApps()].map(iconize);
+export let APPS = withTheme(builtinList());
+prefs.on("change", k => { if (k === "look") APPS = withTheme(APPS); });
+export const appById = id => APPS.find(a => a.id === id);
+
+// Ekran Modu durumu (GET /screen): { enabled, headless }. loadApps doldurur.
+export const SCREEN = { enabled: false, headless: true };
+const isBrowser = a => a.id === "chromium" || (a.categories || []).includes("WebBrowser");
+export { isBrowser };
+
+export async function loadApps() {
+  // Ekran Modu durumu, uygulama listesiyle paralel istenir (açılış sırayla beklemesin).
+  const screenP = get("/screen").catch(() => null);
+  try {
+    const list = await get("/apps");
+    if (Array.isArray(list) && list.length) {
+      const got = list.map(normalize), ids = new Set(got.map(a => a.id));
+      APPS = [...got, ...builtinList().filter(a => !ids.has(a.id))];
+    }
+  } catch (e) { console.warn("GET /apps:", e.message); }
+  // Web arayüzlü eklentiler uygulama gibi açılır (makerd /plugin/<id>/ yönlendirmesi).
+  try {
+    const pl = await get("/plugins");
+    registerPluginThemes(pl); // eklenti temaları (ör. Konya HackerSpace)
+    cacheBrand(pref("look")); // giriş ekranı için marka önbelleği
+    const extra = pl.filter(p => p.web_port && p.app !== false).map(p => normalize({ id: "makeros.plugin." + p.id, name: p.name, url: `/plugin/${p.id}/`, categories: ["Plugin"],
+      icon: p.icon ? `/api/v1/files/raw?path=${encodeURIComponent("~/.local/share/makeros/plugins/" + p.id + "/" + p.icon)}` : `${B}icons/plugins.svg` }));
+    APPS = [...APPS.filter(a => !a.id.startsWith("makeros.plugin.")), ...extra];
+  } catch { /* eklenti hizmeti yok */ }
+  APPS = withTheme(APPS);
+  // Ekran Modu: varsayılan kapalı (Ayarlar › Ekran Modu). Kapalıyken ya da Pi'nin kendi ekranında
+  // (cog/WPE, yerel giriş: kendini gösterirdi) hiçbir yerde listelenmez.
+  let local = /WPE|cog/i.test(navigator.userAgent);
+  try { local ||= sessionStorage.getItem("mk.local") === "1" || new URLSearchParams(location.search).get("local") === "1"; } catch { /* yok */ }
+  const sc = await screenP;
+  if (sc) Object.assign(SCREEN, sc); else SCREEN.enabled = false;
+  if (local || !SCREEN.enabled) APPS = APPS.filter(a => a.id !== "makeros.screen");
+  prefs.emit("change", "look", pref("look")); // eklenti teması etkinse duvar kâğıdı/marka/raf yenilensin
+  return APPS;
+}

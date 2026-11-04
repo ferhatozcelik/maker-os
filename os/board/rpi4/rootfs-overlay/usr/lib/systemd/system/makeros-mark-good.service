@@ -1,0 +1,16 @@
+# RAUC: yeni slot basariyla acildiysa onu kalici (primary) yap.
+# boot-complete.target'a; makerd saglikli + kritik birim hatasi yok ise ulasilir.
+# TODO(M6): saglik kontrolu (makerd /api/v1/health, network-online istege bagli).
+[Unit]
+Description=MakerOS: acilan RAUC slotunu iyi olarak isaretle
+Requires=boot-complete.target
+After=boot-complete.target makerd.service
+ConditionKernelCommandLine=makeros.slot
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/rauc status mark-good
+
+[Install]
+WantedBy=multi-user.target
