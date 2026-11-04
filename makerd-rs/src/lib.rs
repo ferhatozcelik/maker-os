@@ -8,14 +8,14 @@
 pub mod activity;
 pub mod agents;
 pub mod apierr;
-// pub mod apps; // Go'dan taşınacak
+pub mod apps;
 pub mod auth;
 pub mod browser;
-// pub mod camera; // Go'dan taşınacak
+pub mod camera;
 pub mod dbus;
 pub mod events;
 pub mod flags;
-// pub mod gpio; // Go'dan taşınacak
+pub mod gpio;
 // pub mod httpd; // Go'dan taşınacak
 pub mod jobs;
 pub mod logging;

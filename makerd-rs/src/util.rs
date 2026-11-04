@@ -145,6 +145,14 @@ pub fn getuid() -> u32 {
     nix::unistd::getuid().as_raw()
 }
 
+/// Bu süreç dosyayı okuyup yazabilir mi (access(2), R_OK|W_OK).
+pub fn can_rw(p: &Path) -> bool {
+    use std::os::unix::ffi::OsStrExt;
+    let Ok(c) = std::ffi::CString::new(p.as_os_str().as_bytes()) else { return false };
+    // SAFETY: geçerli, NUL ile biten yol.
+    unsafe { libc::access(c.as_ptr(), libc::R_OK | libc::W_OK) == 0 }
+}
+
 /// PATH içinde çalıştırılabilir dosya arar.
 pub fn look_path(name: &str) -> Option<PathBuf> {
     if name.contains('/') {
