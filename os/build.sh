@@ -180,7 +180,7 @@ case "${VOLUME}" in
 *) docker volume inspect "${VOLUME}" >/dev/null 2>&1 || docker volume create "${VOLUME}" >/dev/null ;;
 esac
 
-mkdir -p "${OS_DIR}/out"
+mkdir -p "${OS_DIR}/out" && chmod 777 "${OS_DIR}/out" 2>/dev/null || true
 
 TTY_ARGS=""
 if [ -t 0 ] && [ -t 1 ]; then

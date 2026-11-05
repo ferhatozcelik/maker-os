@@ -103,8 +103,9 @@ jobs:
       - name: Chromium paketi (Debian trixie arm64)
         if: steps.v.outputs.release == '1'
         run: |
-          mkdir -p os/out
+          mkdir -p os/out && chmod 777 os/out
           docker run --rm -v "$PWD/os/chromium":/s:ro -v "$PWD/os/out":/out debian:trixie sh /s/build-bundle.sh
+          sudo chmod -R a+rwX os/out || true
           ls -la os/out
 
       - name: Imaj ve guncelleme paketi (Buildroot)
