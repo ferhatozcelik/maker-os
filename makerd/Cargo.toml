@@ -38,22 +38,22 @@ futures-util = { version = "0.3", default-features = false, features = ["std", "
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["raw_value"] }
 zbus = { version = "5", default-features = false, features = ["tokio"] }
-nix = { version = "0.30", features = ["term", "process", "signal", "fs", "hostname", "ioctl", "user", "socket", "feature", "net"] }
+nix = { version = "0.31", features = ["term", "process", "signal", "fs", "hostname", "ioctl", "user", "socket", "feature", "net"] }
 libc = "0.2"
-sha2 = "0.10"
-sha1 = "0.10"
-hmac = "0.12"
-rand = "0.9"
-base64 = "0.22"
+sha2 = "0.11"
+sha1 = "0.11"
+hmac = "0.13"
+rand = "0.10"
+base64 = "0.23"
 hex = "0.4"
 regex = { version = "1", default-features = false, features = ["std", "perf"] }
 jiff = { version = "0.2", features = ["serde"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt", "std", "json"] }
 ureq = { version = "3", default-features = false, features = ["rustls"] }
-zip = { version = "2", default-features = false, features = ["deflate"] }
-jpeg-encoder = "0.6"
-gpiocdev = "0.7"
+zip = { version = "9", default-features = false, features = ["deflate"] }
+jpeg-encoder = "0.7"
+gpiocdev = "0.8"
 include_dir = "0.7"
 
 [lints.rust]
@@ -74,4 +74,4 @@ debug = "line-tables-only"
 opt-level = 1
 
 [dev-dependencies]
-tokio-tungstenite = "=0.29.0"
+tokio-tungstenite = "=0.30.0"

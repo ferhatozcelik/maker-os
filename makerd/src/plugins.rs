@@ -193,7 +193,7 @@ pub fn unpack(data: &[u8]) -> ApiResult<(Manifest, BTreeMap<String, Vec<u8>>)> {
         return Err(ApiError::invalid("Zip en fazla 15 MB olabilir."));
     }
     let mut zr = zip::ZipArchive::new(std::io::Cursor::new(data)).map_err(|_| ApiError::invalid("Geçerli bir zip dosyası değil."))?;
-    let names: Vec<String> = (0..zr.len()).filter_map(|i| zr.name_for_index(i).map(String::from)).collect();
+    let names: Vec<String> = (0..zr.len()).filter_map(|i| zr.name_for_index(i)?.ok().map(String::from)).collect();
     let mut prefix = String::new();
     for n in &names {
         let base = n.rsplit('/').next().unwrap_or(n);
@@ -219,7 +219,7 @@ pub fn unpack(data: &[u8]) -> ApiResult<(Manifest, BTreeMap<String, Vec<u8>>)> {
         if f.is_dir() {
             continue;
         }
-        let raw = f.name().to_string();
+        let raw = f.name().map_err(|_| ApiError::invalid("Zip dosya adı okunamadı."))?.to_string();
         if f.is_symlink() {
             return Err(ApiError::invalid(format!("Zip sembolik bağ içeremez: {raw}")));
         }

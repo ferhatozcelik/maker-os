@@ -5,7 +5,7 @@ use crate::apierr::ApiResult;
 use crate::util::random_token;
 use base64::Engine;
 use futures_util::future::BoxFuture;
-use hmac::{Hmac, Mac};
+use hmac::{Hmac, KeyInit, Mac};
 use sha2::Sha256;
 use std::collections::HashMap;
 use std::path::Path;
