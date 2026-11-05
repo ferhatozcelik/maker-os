@@ -24,7 +24,7 @@ Gereken: Docker (Mac'te colima, arm64 yerel; önerilen 6 CPU / 10 GB RAM / 80 GB
 cd os
 ./build.sh defconfig      # makeros_rpi4_defconfig'i uygula
 ./build.sh build          # tam derleme (ilk sefer ~1,5–3 saat)
-# sonuç: os/out/makeros-2.0.0-dev-rpi4.img.xz (+ .sha256)
+# sonuç: os/out/makeros-2.0.0-rpi4.img.xz (+ .sha256)
 ```
 
 Diğer komutlar:
@@ -105,7 +105,7 @@ nedeniyle); `.xz` hâli çok daha küçüktür.
 
 ```
 os/
-  build.sh  docker/Dockerfile  VERSION (2.0.0-dev)
+  build.sh  docker/Dockerfile  VERSION (2.0.0)
   external.desc  external.mk  Config.in
   configs/makeros_rpi4_defconfig
   patches/linux/linux.hash               sabit çekirdek tarball'unun sha256'sı
@@ -114,7 +114,7 @@ os/
     genimage.cfg.in  post-build.sh  post-image.sh  users.txt  wifi-example.txt
     rootfs-overlay/
       usr/lib/makeros/      preinit, growdata, zram-setup, cpu-tune,
-                            network-fallback, kiosk-browser
+                            network-fallback, kiosk-browser, browser-session
       usr/lib/systemd/      makeros-*.service, shell/apps/ai/build.slice
                             (sistem + kullanıcı), oomd, journald (volatile),
                             watchdog, resolved (mDNS), 70-makeros.preset
@@ -125,9 +125,11 @@ os/
       etc/NetworkManager/   powersave kapalı, captive dnsmasq
       etc/rauc/system.conf  etc/pam.d/makeros-kiosk  etc/subuid|subgid …
   package/
-    makerd/            golang-package, ../makerd → /usr/bin/makerd{,-priv,-user}; birimler makerd/dist'ten + polkit kuralı
+    makerd/            cargo-package (Rust), ../makerd → /usr/bin/makerd{,-priv,-user}; birimler makerd/dist'ten + polkit kuralı
     makeros-shell/     ../shell → /usr/share/makeros/shell (+ .gz ön-sıkıştırma)
     makeros-firstboot/ ilk açılış betiği + birimi
+    chromium-bin/      Debian trixie arm64 Chromium paketi + başlatıcı
+    labwc/ wayvnc/ neatvnc/ aml/  Wayland pencere yöneticisi ve VNC bileşenleri
     uv-bin/            uv 0.13.6 aarch64-gnu (sha256 sabit)
     makeros-node/      Node.js v24.22.2 linux-arm64 → /opt/node (sha256 sabit)
     font-inter/        Inter 4.1 (değişken TTF)
@@ -167,24 +169,9 @@ os/
 |---|---|
 | Bootlin hazır glibc toolchain | Yalnızca x86_64 host destekli (`depends on BR2_HOSTARCH = "x86_64"`). Arm toolchain'in başlıkları 4.20 (systemd ≥5.4 ister). → **Buildroot iç glibc toolchain'i** |
 | `rpicam-apps` | Buildroot adı `libcamera-apps` (v1.7.0) — seçildi |
-| `wayvnc` | **Yok** (neatvnc/aml de yok) → TODO: özel paket (M3/M4) |
-| `zram-generator` | **Yok** → `makeros-zram.service` + `zram-setup` |
-| `vcgencmd` / `raspberrypi-utils` / `rpi-eeprom` | **Yok** → TODO: özel paket (EEPROM güncelleme, `pinctrl`) |
-| Inter yazı tipi | Yok → `package/font-inter` |
+| `wayvnc` / `neatvnc` / `aml` / `labwc` | `package/{labwc,wayvnc,neatvnc,aml}` altında özel paketler |
+| `chromium-bin` | `os/chromium/build-bundle.sh` + `package/chromium-bin` |
+| `zram-generator` | `makeros-zram.service` + `zram-setup` |
+| Inter yazı tipi | `package/font-inter` |
 | `nodejs-bin` adı | Buildroot'taki `host-nodejs-bin` ile çakışıyor → paket adı **`makeros-node`** |
 | systemd-repart ile DATA büyütme | repart yalnızca GPT destekler; MBR için `makeros-growdata` (sfdisk + resize2fs, çevrimiçi) |
-
-## Yapılacaklar (TODO)
-
-- **M2**: Pi'de ilk açılış testi (preinit, `/etc` overlay, growdata, kiosk
-  < 10 sn), `systemd-analyze` ölçümleri; makerd birim sertleştirmesi
-  (`ProtectSystem=strict`) makerd ile birlikte.
-- **M3/M4**: wayvnc + noVNC, WPE multimedya (GStreamer) ve WebRTC kamera,
-  `vcgencmd`/`pinctrl` paketi, udisks2.
-- **M5**: `mos box` geliştirmeleri (Chromium, code-server), `docker compose`.
-- **M6 (OTA + güvenlik)**: RAUC anahtar halkası (`/etc/rauc/keyring.pem`) ve
-  imzalı `verity` paketleri (`post-image.sh` içinde bundle üretimi),
-  `rpi-tryboot-backend` donanım testleri (güç kesintisi, bozuk paket, panik),
-  gerçek sağlık denetimi (`makeros-healthcheck`), nftables varsayılan-ret
-  kuralları, isteğe bağlı kök dm-verity.
-- **M7**: CI (GitHub Actions arm64) + `make show-info` ile SBOM/CVE raporu.

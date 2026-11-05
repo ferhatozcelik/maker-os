@@ -122,6 +122,10 @@ jobs:
           test -f "os/out/makeros-${{ steps.v.outputs.version }}-rpi4.img.xz"
           test -f "os/out/makeros-${{ steps.v.outputs.version }}-rpi4.raucb"
 
+      - name: Onbellek izinlerini duzelt
+        if: always() && steps.v.outputs.release == '1'
+        run: sudo chmod -R a+rwX "$BR_DIR" || true
+
       - name: Onbellegi kaydet (basarisiz iste de)
         if: always() && steps.v.outputs.release == '1'
         uses: actions/cache/save@v6

@@ -1,8 +1,10 @@
 config BR2_PACKAGE_MAKERD
 	bool "makerd"
-	depends on BR2_PACKAGE_HOST_GO_TARGET_ARCH_SUPPORTS
+	depends on BR2_PACKAGE_HOST_RUSTC_TARGET_ARCH_SUPPORTS
 	depends on BR2_INIT_SYSTEMD
+	select BR2_PACKAGE_HOST_RUSTC
 	help
-	  MakerOS arka uc hizmeti (Go): makerd (yetkisiz, :80/:443) ve
-	  makerd-priv (soket ile etkinlesen dar root yardimcisi).
+	  MakerOS arka uc hizmeti (Rust): makerd (yetkisiz, :80/:443),
+	  makerd-priv (soket ile etkinlesen dar root yardimcisi) ve
+	  makerd-user (kullanici basina terminal hizmeti).
 	  Kaynak: depodaki ../makerd dizini (local site method).

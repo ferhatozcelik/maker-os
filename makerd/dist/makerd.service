@@ -13,7 +13,6 @@ SupplementaryGroups=video gpio i2c spi dialout netdev
 ExecStart=/usr/bin/makerd --listen :80 --web /usr/share/makeros/shell --data-dir /var/lib/makerd --log-format text
 Restart=on-failure
 RestartSec=2
-Environment=GOMEMLIMIT=48MiB GOGC=50 GOMAXPROCS=2
 StateDirectory=makerd
 StateDirectoryMode=0750
 # /run/makeros (token + priv.sock) tmpfiles.d/makeros.conf ile oluşturulur.

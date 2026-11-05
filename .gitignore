@@ -10,14 +10,13 @@ os/keys/
 *.key
 *-key.pem
 
-# Go / Rust / Node derleme ciktilari
-makerd/bin/
-makerd-rs/target/
-wm/target/
+# Rust / Node derleme ciktilari
+makerd/target/
 node_modules/
 
-# Yerel onizleme goruntuleri (bench/out ham olcum verisidir, depoda kalir: docs/v2/BENCHMARK.md)
+# Yerel onizleme goruntuleri
 shell/.preview/
+shell/.smoke/
 
 # Python
 __pycache__/
@@ -30,6 +29,3 @@ __pycache__/
 .vscode/
 *.swp
 *~
-
-# Rust bagimlilik onbellegi (wm gelistirme kabi)
-wm/.cache/

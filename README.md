@@ -71,15 +71,12 @@
 | Bileşen | Klasör |
 | --- | --- |
 | İşletim sistemi (Buildroot dış ağacı, çekirdek, paketler, imaj) | [`os/`](os/) |
-| Arka uç hizmeti (Go: API, terminal, dosyalar, OTA, Chromium oturumu) | [`makerd/`](makerd/) |
+| Arka uç hizmeti (Rust: API, terminal, dosyalar, eklenti mağazası, OTA, Chromium oturumu) | [`makerd/`](makerd/) |
 | Web masaüstü kabuğu ve sistem uygulamaları (bağımlılıksız ES modülleri) | [`shell/`](shell/) |
 | Mimari plan, API sözleşmesi, kıyaslama raporu ve yol haritası | [`docs/v2/`](docs/v2/) |
-| Sanal karşılaştırma betikleri ve ölçüm verileri | [`bench/`](bench/) |
-| Uzun vadeli Rust çalışmaları | [`makerd-rs/`](makerd-rs/), [`wm/`](wm/) |
 
 ```bash
-./os/run-docker.sh                    # derlenmiş kök dosya sistemini Docker'da çalıştır → http://localhost/
-docker compose up -d --build          # yalın önizleme: makerd (örnek veri) + kabuk → http://localhost/
+make -C makerd preview                # yerel önizleme: makerd (örnek veri) + kabuk → http://localhost/
 make -C makerd test                   # makerd birim ve entegrasyon testleri
 make -C shell smoke                   # kabuk duman testi (başsız Chromium)
 ./os/build.sh build                   # Raspberry Pi imajı → os/out/makeros-<sürüm>-rpi4.img.xz
@@ -98,7 +95,7 @@ make -C shell smoke                   # kabuk duman testi (başsız Chromium)
 | Python | `uv` ile sanal ortamlı projeler ve Python sürümleri; hazır şablonlar: LED, buton, I2C tarayıcı, kamera, web, yapay zekâ nesne tespiti |
 | AI ajanları | Claude Code, Codex CLI, Gemini CLI, OpenCode ve Ollama (yerel modeller): tek tıklamayla kur, güncelle, başlat |
 | Donanım | GPIO (40 pin), I2C, SPI, UART; Pi kamera ve USB kamera (`libcamera`) |
-| Eklentiler | Python eklentileri, zip içe/dışa aktarma, hazır şablon; eklentiyle tema, menü çubuğu göstergesi ve masaüstü kartı ekleme |
+| Eklentiler ve Mağaza | Python eklentileri, **Eklenti Mağazası** ([`makeros-plugins`](https://github.com/ferhatozcelik/makeros-plugins) deposundan tek tıkla kurulum ve güncelleme), zip içe/dışa aktarma, hazır şablon; eklentiyle tema, menü çubuğu göstergesi ve masaüstü/web kartı (widget) ekleme |
 | Yazılım güncelleme | Ayarlar › Genel: yeni sürüm GitHub’dan bulunur; imzalı RAUC paketi indirilir, doğrulanır, boştaki bölüme kurulur. Yeni sürüm açılamazsa Pi önceki sürüme kendiliğinden döner; dosyalar ve ayarlar korunur |
 | Ağ | Ethernet, Wi-Fi, gizli ağ, WPA2-Enterprise; ağ yoksa şifresiz `MakerOS` kurulum ağı ve kurulum sayfası |
 | İzleme | Etkinlik Monitörü: CPU, bellek, sıcaklık ve süreç yönetimi |
@@ -125,9 +122,8 @@ MakerOS, Raspberry Pi 4 Model B ve Raspberry Pi 400 (64 bit) üzerinde çalış�
 
 ### 3. Ekran ve Web görünümlerini kullanın
 
-- **Ekran görünümü:** Pencereli masaüstü, üst menü çubuğu, uygulama rafı, Bul (`⌘K`), Kontrol Merkezi ve Bildirim Merkezi sunar.
-- **Web görünümü:** Masaüstü pencere katmanı olmadan kenar çubuğu (telefonda alt sekme çubuğu) ile tüm sistem uygulamalarına hızlı erişim sağlar. Üst çubuktaki **Web | Ekran** düğmesiyle iki görünüm arasında anında geçiş yapabilirsiniz.
-- **Uzak Ekran (VNC):** Pi’nin yerel ekranını (`labwc` + `wayvnc`) ayrı bir port açmadan doğrudan tarayıcı içinden görüntüler ve kontrol eder.
+- **Ekran görünümü (`/`):** Pencereli masaüstü, üst menü çubuğu, uygulama rafı, masaüstü widget kartları, Chromium tarayıcı penceresi, Bul (`⌘K`), Kontrol Merkezi ve Bildirim Merkezi sunar.
+- **Web görünümü (`/web`):** Masaüstü pencere katmanı olmadan kenar çubuğu (telefonda alt sekme çubuğu) ve canlı durum kartlarıyla tüm sistem uygulamalarına hızlı erişim sağlar. Üst çubuktaki **Web | Ekran** (veya raftaki Web) düğmesiyle iki görünüm arasında anında geçiş yapabilirsiniz.
 
 ### 4. Yazılım güncellemesi (OTA)
 

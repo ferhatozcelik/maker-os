@@ -1,1 +1,0 @@
-{"id":"buton-led","order":3,"category":"donanim","icon":"circle-dot","title":{"tr":"Buton ile LED","en":"Button and LED"},"desc":{"tr":"GPIO2'deki butona basınca GPIO17'deki LED yanar.","en":"Pressing the button on GPIO2 lights the LED on GPIO17."},"deps":["gpiozero"],"needs":["gpio"]}

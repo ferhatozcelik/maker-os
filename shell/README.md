@@ -10,7 +10,7 @@ Ana makinede Node veya Chrome gerekmez; tüm araçlar kapsayıcıda çalışır,
 
 ```sh
 cd shell
-# Tam önizleme (gerçek makerd-rs --mock; GPIO, Ajanlar, Kamera, Mağaza dahil): cd ../makerd-rs && make preview → http://localhost/
+# Tam önizleme (gerçek makerd --mock; GPIO, Ajanlar, Kamera, Mağaza dahil): cd ../makerd && make preview → http://localhost/
 make dev            # node:24-alpine içinde dev-server → http://localhost/ (maker / maker), sahte API + events WS + sahte terminal
 make dev-fresh      # ilk açılış: kullanıcı yok → kurulum sihirbazı
 make tokens         # tokens.json → css/tokens.css (gen-tokens.mjs kapsayıcıda)

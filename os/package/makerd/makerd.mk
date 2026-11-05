@@ -8,26 +8,28 @@ MAKERD_VERSION = $(MAKEROS_VERSION)
 MAKERD_SITE = $(BR2_EXTERNAL_MAKEROS_PATH)/../makerd
 MAKERD_SITE_METHOD = local
 MAKERD_LICENSE = GPL-3.0-or-later
-MAKERD_GOMOD = $(or $(shell sed -n 's/^module[[:space:]]*//p' $(MAKERD_SITE)/go.mod 2>/dev/null),github.com/ferhatozcelik/maker-os/makerd)
-MAKERD_BUILD_TARGETS = cmd/makerd cmd/makerd-priv cmd/makerd-user
-MAKERD_GO_ENV = CGO_ENABLED=0
-MAKERD_LDFLAGS = -s -w -X main.Version=$(MAKEROS_VERSION)
+MAKERD_CARGO_ENV = MAKEROS_VERSION=$(MAKEROS_VERSION)
+MAKERD_CARGO_BUILD_OPTS = --bins
 
-# 'local' kaynakta Buildroot'un go vendoring adimi (download post-process)
-# calismaz. vendor/ yoksa modulleri burada (agla) indirip vendor'layalim.
-# Ayrica go.mod'daki 'go 1.26.N' satiri Buildroot'un host-go surumunden
-# (GOTOOLCHAIN=local) yeniyse derleme reddedilir; host-go surumune indir.
-define MAKERD_VENDOR_MODULES
+# 'local' kaynakta Buildroot'un cargo vendoring adimi (download post-process)
+# calismaz; derleme --offline calistigi icin bagimliliklari burada VENDOR/
+# altina indirip .cargo/config.toml olusturalim.
+define MAKERD_VENDOR_CRATES
 	cd $(@D) && \
-	if [ -n "$$(sed -n 's/^go[[:space:]]\+//p' go.mod)" ]; then \
-		$(HOST_GO_COMMON_ENV) GOFLAGS=-mod=mod $(GO_BIN) mod edit -go=$(GO_VERSION) -toolchain=none; \
-	fi && \
-	if [ ! -d vendor ]; then \
-		$(HOST_GO_COMMON_ENV) GOFLAGS=-mod=mod GOPROXY=https://proxy.golang.org,direct \
-			$(GO_BIN) mod vendor -modcacherw; \
+	if [ ! -d VENDOR ]; then \
+		mkdir -p .cargo $(BR_CARGO_HOME) && \
+		$(TARGET_MAKE_ENV) $(PKG_CARGO_ENV) \
+			cargo vendor --manifest-path Cargo.toml --locked VENDOR > .cargo/config.toml; \
 	fi
 endef
-MAKERD_PRE_BUILD_HOOKS += MAKERD_VENDOR_MODULES
+MAKERD_PRE_BUILD_HOOKS += MAKERD_VENDOR_CRATES
+
+define MAKERD_INSTALL_TARGET_CMDS
+	for b in makerd makerd-priv makerd-user; do \
+		$(INSTALL) -D -m 0755 $(@D)/target/$(RUSTC_TARGET_NAME)/release/$$b \
+			$(TARGET_DIR)/usr/bin/$$b || exit 1; \
+	done
+endef
 
 # Birimler makerd agacindan (makerd/dist) gelir; makerd 'maker' kullanicisiyla
 # calisir, /run/makeros (belirtec + priv.sock) tmpfiles ile olusur.
@@ -46,4 +48,4 @@ define MAKERD_INSTALL_INIT_SYSTEMD
 		$(TARGET_DIR)/usr/share/polkit-1/rules.d/50-makerd.rules
 endef
 
-$(eval $(golang-package))
+$(eval $(cargo-package))

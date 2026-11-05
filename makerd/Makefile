@@ -1,32 +1,37 @@
-# makerd: tüm derleme/test Docker içinde (host'ta Go gerekmez).
-GO_IMAGE ?= golang:1.26.10-alpine
-VERSION  ?= 2.0.0-dev
-LDFLAGS  := -s -w -X main.Version=$(VERSION)
-DOCKER   := docker run --rm -v "$(CURDIR)":/src -w /src \
-	-v makerd-gomod:/go/pkg/mod -v makerd-gocache:/root/.cache/go-build $(GO_IMAGE)
+# makerd (Rust) — yalnız Docker. Ana makineye Rust kurulmaz.
+#   make preview   derle + makerd --mock ve web kabuğu → http://localhost/ (maker / maker)
+#   make fresh     aynısı, ilk açılış sihirbazıyla (kullanıcı yok)
+#   make build     yalnız derle (dev profili; önbellek: mk-cargo, mk-target birimleri)
+#   make test      cargo test
+#   make stop      önizlemeyi durdur
+# JOBS: aynı anda derlenen crate sayısı (makineyi boğmamak için düşük tutulur).
+RUST_IMG ?= rust:1.88-slim-bookworm
+# Çalışma imajı: aynı Debian (glibc) + uv + Python; eklentiler ve Python yöneticisi gerçek uv ile çalışır.
+RUN_IMG  ?= ghcr.io/astral-sh/uv:python3.13-bookworm-slim
+JOBS     ?= 3
+ROOT     := $(abspath $(dir $(lastword $(MAKEFILE_LIST)))..)
+CARGO    := docker run --rm -v "$(ROOT)/makerd":/src -v mk-cargo:/usr/local/cargo/registry -v mk-target:/target \
+            -e CARGO_TARGET_DIR=/target -w /src $(RUST_IMG) cargo
 
-.PHONY: test vet fmt build-arm64 build-amd64 build image clean
+.PHONY: build test preview fresh stop logs
+build:
+	$(CARGO) build --locked --bin makerd -j $(JOBS)
 
 test:
-	$(DOCKER) sh -c 'go vet ./... && go test -count=1 ./...'
+	$(CARGO) test --locked -j $(JOBS)
 
-vet:
-	$(DOCKER) go vet ./...
+preview: build
+	-@docker rm -f mk-makerd mk-shell-dev >/dev/null 2>&1
+	docker run -d --name mk-makerd -p 80:8080 --user 1000:1000 -e HOME=/tmp/home -e MAKERD_MOCK_FRESH=$(FRESH) \
+	  -v mk-target:/target:ro -v "$(ROOT)/shell":/web:ro --tmpfs /tmp:exec,mode=1777 \
+	  $(RUN_IMG) sh -c 'mkdir -p $$HOME && exec /target/debug/makerd --mock --listen :8080 --web /web'
+	@echo "→ http://localhost/  (maker / maker)"
 
-fmt:
-	$(DOCKER) gofmt -l -w .
+fresh:
+	$(MAKE) preview FRESH=1
 
-build-arm64: ARCH=arm64
-build-amd64: ARCH=amd64
-build-arm64 build-amd64:
-	$(DOCKER) sh -c 'for c in makerd makerd-priv makerd-user; do \
-	  CGO_ENABLED=0 GOOS=linux GOARCH=$(ARCH) go build -trimpath -ldflags "$(LDFLAGS)" -o bin/linux-$(ARCH)/$$c ./cmd/$$c || exit 1; done'
-	@ls -l bin/linux-$(ARCH)/
+stop:
+	-docker rm -f mk-makerd
 
-build: build-arm64 build-amd64
-
-image:
-	docker build --build-arg VERSION=$(VERSION) -t makeros/makerd:dev .
-
-clean:
-	rm -rf bin
+logs:
+	docker logs -f mk-makerd

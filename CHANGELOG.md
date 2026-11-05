@@ -12,20 +12,23 @@ MakerOS 2'nin ilk sürümü: Buildroot ile Linux çekirdeği üzerine sıfırdan
   paketi (`makeros-<sürüm>-rpi4.raucb`) indirilir, SHA-256 ve imza doğrulanır, boştaki bölüme kurulur;
   Pi deneme açılışıyla (tryboot) yeni sürümden başlar, açılamazsa önceki sürüme döner.
   Yeni sürüm 12 saatte bir denetlenir ve bildirilir
-- **Ekransız kurulum:** `wifi.txt` ya da şifresiz `MakerOS` kurulum ağı; ilk açılış sihirbazı
-  (varsayılan parola yok)
-- **makerd** (Go): tek HTTP portundan API, WebSocket olaylar, terminal, dosyalar, kamera, GPIO,
-  Python projeleri, AI ajanları, eklentiler; kök yetkili işler dar izin listeli `makerd-priv`'de
+- **Ekransız kurulum:** `wifi.txt` ya da şifresiz `MakerOS` kurulum ağı; tek adımlı ilk açılış sihirbazı
+  (varsayılan `makeros` / `makeros` hesabı)
+- **makerd** (Rust): tek HTTP portundan API, WebSocket olaylar, terminal, dosyalar, kamera, GPIO,
+  Python projeleri, AI ajanları, eklenti mağazası (`makeros-plugins` deposundan doğrudan kurulum ve güncelleme);
+  kök yetkili işler dar izin listeli `makerd-priv`'de
 
 ### Arayüz
 
-- **Ekran** (pencereli masaüstü, raf) ve **Web** (telefona uygun) görünümleri, üstte *Web | Ekran* geçişi;
-  kurulabilir web uygulaması (PWA), telefonda alt sekme çubuğu
+- **Ekran** (pencereli masaüstü, raf, masaüstü widget kartları) ve **Web** (telefona uygun) görünümleri,
+  üstte *Web | Ekran* geçişi; kurulabilir web uygulaması (PWA), telefonda alt sekme çubuğu
 - **Chromium penceresi:** Pi'de çalışan gerçek Chromium, masaüstünde normal bir pencere olarak açılır
   (ayrı, görünmez ekran; pencereyle birlikte boyutlanır; kapanınca durur). Pi'nin kendi ekranında
   doğrudan açılır
-- Dosyalar: `.py` dosyasına tıklayınca terminalde çalışır; Bildirimler: "Bildirimleri temizle"
-- Temalar: Maker, Hackerspace, Donanım, Siber güvenlik, 3B baskı; Konya HackerSpace eklentisi
+- **Dosyalar:** `.py` dosyasına tıklayınca terminalde çalışır; Bildirimler: "Bildirimleri temizle"
+- **Eklenti Mağazası ve Temalar:** `ferhatozcelik/makeros-plugins` deposundaki eklentileri doğrudan listeleme,
+  SHA-1 doğrulamasıyla kurma ve güncelleme; Maker, Konya HackerSpace (canlı kapı durumu göstergesi ve
+  masaüstü/web widget kartı), Donanım, Siber güvenlik, 3B baskı temaları
 
 ### Doğrulama
 

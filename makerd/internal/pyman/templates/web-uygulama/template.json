@@ -1,1 +1,0 @@
-{"id":"web-uygulama","order":7,"category":"web","icon":"globe","title":{"tr":"Web uygulaması","en":"Web app"},"desc":{"tr":"Bağımlılıksız küçük web sunucusu (port 8080); eklentiye dönüştürmeye hazır.","en":"A dependency-free small web server (port 8080), ready to become a plugin."},"deps":[]}

@@ -1,1 +1,0 @@
-{"id":"bos","order":1,"category":"temel","icon":"file-code","title":{"tr":"Boş proje","en":"Empty project"},"desc":{"tr":"Sanal ortamlı, tek main.py dosyalı başlangıç.","en":"A virtual environment and a single main.py."},"deps":[]}

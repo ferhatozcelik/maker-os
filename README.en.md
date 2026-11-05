@@ -71,15 +71,12 @@
 | Piece | Folder |
 | --- | --- |
 | Operating system (Buildroot external tree, kernel, packages, image) | [`os/`](os/) |
-| Backend service (Go: API, terminal, files, OTA, Chromium session) | [`makerd/`](makerd/) |
+| Backend service (Rust: API, terminal, files, plugin store, OTA, Chromium session) | [`makerd/`](makerd/) |
 | Web desktop shell and system apps (zero-dependency ES modules) | [`shell/`](shell/) |
 | Architecture plan, API contract, benchmark report and roadmap | [`docs/v2/`](docs/v2/) |
-| Virtual benchmark scripts and measurement data | [`bench/`](bench/) |
-| Long-term Rust work | [`makerd-rs/`](makerd-rs/), [`wm/`](wm/) |
 
 ```bash
-./os/run-docker.sh                    # run the built root file system in Docker → http://localhost/
-docker compose up -d --build          # plain preview: makerd (sample data) + shell → http://localhost/
+make -C makerd preview                # local preview: makerd (sample data) + shell → http://localhost/
 make -C makerd test                   # makerd unit and integration tests
 make -C shell smoke                   # shell smoke test (headless Chromium)
 ./os/build.sh build                   # Raspberry Pi image → os/out/makeros-<version>-rpi4.img.xz
@@ -98,7 +95,7 @@ make -C shell smoke                   # shell smoke test (headless Chromium)
 | Python | `uv` projects with virtual environments and Python versions; templates: LED, button, I2C scanner, camera, web, AI object detection |
 | AI agents | Claude Code, Codex CLI, Gemini CLI, OpenCode and Ollama (local models): install, update, run |
 | Hardware | GPIO (40-pin), I2C, SPI, UART; Pi camera and USB cameras (`libcamera`) |
-| Plugins | Python plugins, zip import/export, template; plugins can add themes, menu bar indicators and desktop cards |
+| Plugins and Store | Python plugins, **Plugin Store** (one-click install and update directly from the [`makeros-plugins`](https://github.com/ferhatozcelik/makeros-plugins) repository), zip import/export, template; plugins can add themes, menu bar indicators and desktop/web widgets |
 | Software update | Settings › General finds a new release on GitHub, downloads and verifies the signed RAUC package and installs it to the spare partition. If the new version fails to start, the Pi returns to the previous one; files and settings are kept |
 | Network | Ethernet, Wi-Fi, hidden networks, WPA2-Enterprise; with no network an open `MakerOS` setup Wi-Fi and captive setup page |
 | Monitoring | Activity Monitor: CPU, memory, temperature and process management |
@@ -121,13 +118,12 @@ MakerOS runs on Raspberry Pi 4 Model B and Raspberry Pi 400 (64-bit). It can be 
 1. Insert the SD card into the Raspberry Pi and power it on.
 2. With Ethernet plugged in or `wifi.txt` configured, open **http://makeros.local/** from a browser on your computer or phone.
 3. Without Ethernet or `wifi.txt`, connect your phone to the open **`MakerOS`** Wi-Fi network. The setup page opens automatically (or visit `http://10.42.0.1/kurulum`).
-4. In the first-boot wizard choose your region and keyboard layout, select Wi-Fi if needed, and create your administrator account and device name. There is no default password.
+4. In the first-boot wizard, select a Wi-Fi network or skip this step. The device is set up with the default **`makeros` / `makeros`** administrator account and the Pi's own display signs in automatically. Sign in with these credentials from another computer and change the password under **Settings → User**.
 
 ### 3. Use Screen and Web views
 
-- **Screen view:** Full windowed desktop with menu bar, dock, Spotlight search (`⌘K`), Control Centre and Notification Centre.
-- **Web view:** Sidebar navigation (bottom tab bar on phones) for direct access to every system app without floating windows. Switch between the two at any time with the **Web | Screen** toggle in the top bar.
-- **Remote Screen (VNC):** Streams and controls the Pi’s local display (`labwc` + `wayvnc`) directly in the browser without opening an extra port.
+- **Screen view (`/`):** Full windowed desktop with menu bar, dock, desktop widgets, Chromium browser window, Spotlight search (`⌘K`), Control Centre and Notification Centre.
+- **Web view (`/web`):** Sidebar navigation (bottom tab bar on phones) and live status cards for direct access to every system app without floating windows. Switch between the two at any time with the **Web | Screen** toggle in the top bar (or the Web icon on the dock).
 
 ### 4. Software update (OTA)
 
