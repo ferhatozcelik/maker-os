@@ -5,3 +5,5 @@
 *.gpg binary
 *.tflite binary
 *.task binary
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
