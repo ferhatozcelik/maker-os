@@ -12,9 +12,10 @@ addEventListener("storage", () => apply());
 
 const $ = id => document.getElementById(id);
 const AI = "/api/v1/ai";
-const out = $("out"), input = $("in"), go = $("go"), st = $("st");
+const out = $("out"), input = $("in"), go = $("go"), st = $("st"), prog = $("prog"), stopBtn = $("stop");
 document.querySelector(".logo").innerHTML = icon("sparkles", 14, 2.2);
 go.innerHTML = icon("arrow-up", 16, 2.4);
+stopBtn.innerHTML = icon("square", 10, 2.6) + "Durdur";
 $("new").innerHTML = icon("rotate-ccw", 13, 2);
 $("close").innerHTML = icon("x", 13, 2.2);
 
@@ -34,7 +35,7 @@ $("chips").append(...CHIPS.map(([l, q]) => {
   return b;
 }));
 
-let history = [], busy = false, ctrl = null;
+let history = [], busy = false, ctrl = null, activeTasks = 0;
 
 // Kabuk widget alanının yüksekliğini içeriğe göre ayarlar.
 const size = () => parent.postMessage({ mk: "widget-size", h: Math.ceil(document.querySelector(".card").getBoundingClientRect().height) + 4 }, location.origin);
@@ -42,17 +43,58 @@ new ResizeObserver(size).observe(document.querySelector(".card"));
 const tell = m => parent.postMessage(m, location.origin);
 
 function status(cls, text) { st.className = "st " + cls; st.lastElementChild.textContent = text; }
+
+function updateWorkingUI() {
+  const working = busy || activeTasks > 0;
+  prog.hidden = !working;
+  if (working) {
+    go.classList.add("stop");
+    go.innerHTML = icon("square", 12, 2.6);
+    go.title = "Durdur";
+  } else {
+    go.classList.remove("stop");
+    go.innerHTML = icon("arrow-up", 16, 2.4);
+    go.title = "Gönder";
+  }
+}
+
+function beginTask(label = "Çalışıyor…") {
+  activeTasks++;
+  status("load", label);
+  updateWorkingUI();
+}
+
+function endTask(doneLabel = "Hazır") {
+  activeTasks = Math.max(0, activeTasks - 1);
+  if (!busy && activeTasks === 0) status("ok", doneLabel);
+  updateWorkingUI();
+}
+
+function stopAll() {
+  if (ctrl) {
+    ctrl.abort();
+    ctrl = null;
+  }
+  busy = false;
+  activeTasks = 0;
+  document.querySelectorAll(".cur").forEach(el => el.classList.remove("cur"));
+  status("ok", "Durduruldu");
+  updateWorkingUI();
+}
+
+stopBtn.onclick = stopAll;
+
 async function poll() {
   try {
     const r = await fetch(AI + "/v1/makeros/durum", { credentials: "same-origin" });
     if (!r.ok) throw new Error();
     const d = await r.json();
-    status("ok", d.llama?.loaded ? "Hazır" : "Aktif");
+    if (!busy && activeTasks === 0) status("ok", d.llama?.loaded ? "Hazır" : "Aktif");
     $("meta").textContent = d.llama?.loaded ? `MakerOS AI · RAM ${Math.round(d.llama.rss_mb)} MB` : "MakerOS AI";
-  } catch { status("ok", "Aktif"); $("meta").textContent = "MakerOS AI"; }
+  } catch { if (!busy && activeTasks === 0) status("ok", "Aktif"); $("meta").textContent = "MakerOS AI"; }
 }
 poll();
-setInterval(() => { if (!busy && document.visibilityState === "visible") poll(); }, 20000);
+setInterval(() => { if (!busy && activeTasks === 0 && document.visibilityState === "visible") poll(); }, 20000);
 
 // Çok küçük, güvenli markdown: önce HTML kaçışı, sonra kod blokları, satır içi kod ve kalın.
 const esc = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -73,13 +115,14 @@ addEventListener("storage", () => { modeSel.value = mode(); });
 const fold = s => String(s || "").toLocaleLowerCase("tr").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ı/g, "i");
 
 // Terminalde kodlama ajanı başlatır (kurulu değilse kurulumunu başlatır).
-async function launchAgent(id, label) {
-  const list = await fetch("/api/v1/agents", { credentials: "same-origin" }).then(r => r.json()).catch(() => []);
+async function launchAgent(id, label, signal) {
+  const list = await fetch("/api/v1/agents", { credentials: "same-origin", signal }).then(r => r.json()).catch(() => []);
   const ag = Array.isArray(list) ? list.find(x => x.id === id) : null;
   const act = ag && !ag.installed ? "install" : "run";
   const r = await fetch(`/api/v1/agents/${id}/${act}`, {
     method: "POST",
     credentials: "same-origin",
+    signal,
     headers: { "Content-Type": "application/json", "X-Maker": "1" },
   });
   const d = await r.json().catch(() => ({}));
@@ -107,10 +150,11 @@ function matchAction(raw) {
     return {
       label: cmd,
       desc: `Terminal'de \`${cmd}\` komutu çalıştırılıyor.`,
-      run: async () => {
+      run: async signal => {
         const r = await fetch("/api/v1/asistan/calistir", {
           method: "POST",
           credentials: "same-origin",
+          signal,
           headers: { "Content-Type": "application/json", "X-Maker": "1" },
           body: JSON.stringify({ command: cmd, onay: true, terminal: true }),
         });
@@ -136,7 +180,7 @@ function matchAction(raw) {
       return {
         label: `${a.name} başlat`,
         desc: `**${a.name}** Terminal'de başlatılıyor…`,
-        run: () => launchAgent(a.id, a.name),
+        run: signal => launchAgent(a.id, a.name, signal),
       };
     }
   }
@@ -146,8 +190,8 @@ function matchAction(raw) {
     return {
       label: "Fotoğraf çek",
       desc: "Kamera ile fotoğraf çekiliyor…",
-      run: async () => {
-        const r = await fetch("/api/v1/camera/photo", { method: "POST", credentials: "same-origin", headers: { "X-Maker": "1" } });
+      run: async signal => {
+        const r = await fetch("/api/v1/camera/photo", { method: "POST", credentials: "same-origin", signal, headers: { "X-Maker": "1" } });
         const d = await r.json().catch(() => ({}));
         if (!r.ok) throw new Error(d.error?.message || "Fotoğraf çekilemedi");
         return `Fotoğraf kaydedildi: \`${d.path || "Resimler"}\``;
@@ -188,7 +232,7 @@ function matchAction(raw) {
   }
 
   // Web adresi / site açma
-  const urlMatch = rawTrim.match(/(https?:\/\/[^\s]+|\b(?:github\.com|google\.com|youtube\.com|raspberrypi\.com| ChatGPT|claude\.ai)[^\s]*)/i);
+  const urlMatch = rawTrim.match(/(https?:\/\/[^\s]+|\b(?:github\.com|google\.com|youtube\.com|raspberrypi\.com|claude\.ai)[^\s]*)/i);
   if (urlMatch && actionVerb) {
     const rawUrl = urlMatch[1];
     const url = /^https?:\/\//i.test(rawUrl) ? rawUrl : "https://" + rawUrl;
@@ -246,11 +290,15 @@ async function runCmd(c, row, onay = false, yazilan) {
   const res = document.createElement("div"); res.className = "res";
   res.innerHTML = `<div class="rh">çalışıyor…</div>`;
   row.append(res);
+  const cmdAbort = new AbortController();
+  ctrl = cmdAbort;
+  beginTask("Komut çalışıyor…");
   try {
     const isBypass = mode() === "bypass";
     const r = await fetch("/api/v1/asistan/calistir", {
       method: "POST",
       credentials: "same-origin",
+      signal: cmdAbort.signal,
       headers: { "Content-Type": "application/json", "X-Maker": "1" },
       body: JSON.stringify({ command: c.command, onay: isBypass || onay, yazilan }),
     });
@@ -276,7 +324,12 @@ async function runCmd(c, row, onay = false, yazilan) {
     const pre = document.createElement("pre"); pre.textContent = d.cikti || "(çıktı yok)";
     res.replaceChildren(head, pre);
     out.scrollTop = out.scrollHeight;
-  } catch (e) { res.textContent = e.message || "çalıştırılamadı"; }
+  } catch (e) {
+    res.textContent = e.name === "AbortError" ? "durduruldu" : (e.message || "çalıştırılamadı");
+  } finally {
+    if (ctrl === cmdAbort) ctrl = null;
+    endTask();
+  }
 }
 
 // Onay kutusu (İzin iste modunda)
@@ -329,13 +382,18 @@ async function runActionCard(act, aEl) {
   const exec = async () => {
     row.querySelector(".conf")?.remove();
     aEl.innerHTML = md(act.desc);
+    const actAbort = new AbortController();
+    ctrl = actAbort;
+    beginTask("Çalıştırılıyor…");
     try {
-      const msg = await act.run();
+      const msg = await act.run(actAbort.signal);
       aEl.innerHTML = md(msg);
-      status("ok", "Hazır");
+      endTask("Hazır");
     } catch (e) {
-      aEl.innerHTML = md(`Hata: ${e.message || "işlem yapılamadı"}`);
-      status("off", "Hata");
+      aEl.innerHTML = md(e.name === "AbortError" ? "İşlem durduruldu." : `Hata: ${e.message || "işlem yapılamadı"}`);
+      endTask(e.name === "AbortError" ? "Durduruldu" : "Hata");
+    } finally {
+      if (ctrl === actAbort) ctrl = null;
     }
   };
   const run = document.createElement("button"); run.className = "ib run"; run.innerHTML = icon("play", 11, 2.4) + "Çalıştır";
@@ -355,11 +413,12 @@ async function runActionCard(act, aEl) {
 async function ask(q) {
   q = (q || "").trim();
   if (!q || busy) return;
-  busy = true; go.disabled = true; input.value = "";
+  busy = true; input.value = "";
   $("chips").hidden = true; out.hidden = false;
   const qEl = document.createElement("div"); qEl.className = "q"; qEl.textContent = q;
   const aEl = document.createElement("div"); aEl.className = "a cur";
   out.append(qEl, aEl); out.scrollTop = out.scrollHeight;
+  updateWorkingUI();
 
   // Önce doğrudan MakerOS uygulama / ajan / sistem eylemi mi kontrol et:
   const act = matchAction(q);
@@ -367,7 +426,7 @@ async function ask(q) {
     aEl.classList.remove("cur");
     await runActionCard(act, aEl);
     history.push({ role: "user", content: q }, { role: "assistant", content: aEl.textContent || act.label });
-    busy = false; go.disabled = false; out.scrollTop = out.scrollHeight;
+    busy = false; updateWorkingUI(); out.scrollTop = out.scrollHeight;
     return;
   }
 
@@ -400,17 +459,26 @@ async function ask(q) {
     const box = commands(extra?.commands); if (box) aEl.after(box);
     history.push({ role: "assistant", content: text });
     if (timings?.predicted_per_second) $("meta").textContent = `MakerOS AI · ${timings.predicted_per_second.toFixed(1)} token/sn`;
-    status("ok", "Hazır");
+    if (activeTasks === 0) status("ok", "Hazır");
   } catch (e) {
     aEl.classList.remove("cur");
-    history.pop();
-    if (e.name !== "AbortError") { const er = document.createElement("div"); er.className = "err"; er.textContent = e.message || "Asistana ulaşılamadı."; aEl.after(er); }
-    poll();
+    if (e.name === "AbortError") {
+      if (!text) aEl.innerHTML = `<span style="color:var(--text-2)">Durduruldu.</span>`;
+      status("ok", "Durduruldu");
+    } else {
+      history.pop();
+      const er = document.createElement("div"); er.className = "err"; er.textContent = e.message || "Asistana ulaşılamadı."; aEl.after(er);
+      poll();
+    }
   } finally {
-    busy = false; go.disabled = false; ctrl = null; out.scrollTop = out.scrollHeight;
+    busy = false; ctrl = null; updateWorkingUI(); out.scrollTop = out.scrollHeight;
   }
 }
 
-$("f").onsubmit = e => { e.preventDefault(); ask(input.value); };
-$("new").onclick = () => { ctrl?.abort(); history = []; out.replaceChildren(); out.hidden = true; $("chips").hidden = false; input.focus(); };
+$("f").onsubmit = e => {
+  e.preventDefault();
+  if (busy || activeTasks > 0) stopAll();
+  else ask(input.value);
+};
+$("new").onclick = () => { stopAll(); history = []; out.replaceChildren(); out.hidden = true; $("chips").hidden = false; input.focus(); };
 $("close").onclick = () => setPref("aiWidget", false);
