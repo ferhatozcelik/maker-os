@@ -169,7 +169,7 @@ Tüm derleme ve test araçları Docker içinde çalışır; geliştirici makines
 
 ## Doğrulama durumu
 
-Görüntüler güncel derlemenin Docker ortamında çekilmiştir; sıcaklık, bellek ve ağ gibi cihaz bilgileri örnek veridir. Arayüz, `makerd` ve Chromium penceresi Docker içinde derlenmiş kök dosya sistemiyle uçtan uca test edilmiştir. Gerçek Raspberry Pi donanımında ölçülmüş performans verisi henüz yoktur; sanal karşılaştırma raporu için bkz. [`docs/v2/BENCHMARK.md`](docs/v2/BENCHMARK.md). Sorunları [Issues](https://github.com/ferhatozcelik/maker-os/issues) sayfasına bildirebilirsiniz.
+Arayüz ve arka uç için Docker/mock tabanlı testler bulunur. Gerçek Raspberry Pi donanımında doğrulanması gereken alanlar ve test kapsamı için [Doğrulama durumu](docs/verification/validation.md) sayfasına bakın. Sorunları [Issues](https://github.com/ferhatozcelik/maker-os/issues) sayfasına bildirebilirsiniz.
 
 ## Lisans
 

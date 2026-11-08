@@ -19,8 +19,6 @@ const USAGE: &str = "Kullanım: makeros-ai <komut> [seçenekler]
                            Verilmezse Ayarlar'daki AI Asistan izin modu kullanılır.
   risk \"komut\"             komutun risk düzeyi (SAFE / WARNING / DANGEROUS); çıkış kodu 0/10/20
   durum                    hizmet ve model durumu (yüklü mü, RAM)
-  olcum [--n 8] [--json] [--goster]
-                           performans: model yükleme, ilk yanıt gecikmesi, token/sn, RAM, CPU
   model-kur [--dosya YOL]  modeli kur (internetten bir kez indirir ya da USB'deki dosyadan kopyalar;
                            SHA-256 doğrulanır)
   serve [--listen 127.0.0.1:8091] [--model YOL] [--llama llama-server] [--ctx 2048]
@@ -49,10 +47,6 @@ fn main() {
             if rest.is_empty() { eprintln!("kullanım: makeros-ai risk \"komut\""); 2 } else { cli::risk(&rest.join(" ")) }
         }
         "durum" | "status" => cli::status(),
-        "olcum" | "ölçüm" | "bench" => match Flags::parse(rest.into_iter(), &["n"], &["json", "goster"]) {
-            Ok(f) => cli::bench(f.int("n", 8).unwrap_or(8).clamp(1, 20) as usize, f.bool("json"), f.bool("goster")),
-            Err(e) => { eprintln!("{e}\n\n{USAGE}"); 2 }
-        },
         "model-kur" => match Flags::parse(rest.into_iter(), &["dosya", "model"], &[]) {
             Ok(f) => install_model(&f.str("dosya", ""), &f.str("model", MODEL)),
             Err(e) => { eprintln!("{e}\n\n{USAGE}"); 2 }

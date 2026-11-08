@@ -29,11 +29,11 @@ LLAMA_CPP_CONF_OPTS = \
 
 define LLAMA_CPP_BUILD_CMDS
 	$(TARGET_MAKE_ENV) $(BR2_CMAKE) --build $(LLAMA_CPP_BUILDDIR) -j$(PARALLEL_JOBS) \
-		--target llama-server llama-cli llama-bench
+		--target llama-server llama-cli
 endef
 
 define LLAMA_CPP_INSTALL_TARGET_CMDS
-	for b in llama-server llama-cli llama-bench; do \
+	for b in llama-server llama-cli; do \
 		$(INSTALL) -D -m 0755 $(LLAMA_CPP_BUILDDIR)/bin/$$b $(TARGET_DIR)/usr/bin/$$b; \
 	done
 	$(INSTALL) -D -m 0644 $(@D)/LICENSE $(TARGET_DIR)/usr/share/licenses/llama.cpp/LICENSE

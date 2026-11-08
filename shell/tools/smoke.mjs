@@ -4,7 +4,7 @@
 //   node shell/tools/dev-server.mjs --fresh &   node shell/tools/smoke.mjs --fresh    (önce kurulum sihirbazı)
 // Önerilen: yalnız Docker ile → shell/Makefile (make smoke | smoke-fresh | smoke-makerd)
 // Oturum açar, uygulamaları açar, kısayolları dener, ekran görüntüsü alır ve konsol hatalarını raporlar.
-// M2: kurulum sihirbazı (--fresh), tercih eşitlemesi (GET/PUT /prefs), tembel yükleme, Wi-Fi anahtarı .
+// M2: kurulum sihirbazı (--fresh), tercih eşitlemesi (GET/PUT /prefs), tembel yükleme, Wi-Fi anahtarı.
 import { spawn } from "node:child_process";
 import { mkdirSync, writeFileSync, mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";

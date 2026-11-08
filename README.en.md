@@ -22,7 +22,7 @@
   <a href="#setup-guide">Setup guide</a> ·
   <a href="#features">Features</a> ·
   <a href="#build-from-source">Building from source</a> ·
-  <a href="docs/api.md">API</a> ·
+  <a href="docs/api.en.md">API</a> ·
   <a href="CONTRIBUTING.md">Contributing</a>
 </p>
 

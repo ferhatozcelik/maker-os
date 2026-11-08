@@ -4,7 +4,6 @@
 uv run main.py                # kamera + web önizleme: http://<pi>:8000
 uv run main.py --source test  # kamera olmadan dene
 uv run main.py --image foto.jpg
-uv run main.py --bench 300    # yalnız çıkarım hızı
 ```
 
 | Seçenek | Varsayılan | Açıklama |

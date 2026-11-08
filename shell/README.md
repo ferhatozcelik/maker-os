@@ -2,7 +2,7 @@
 
 Pi 4'te WPE/cog içinde (1080p, zayıf GPU) ve uzaktan herhangi bir masaüstü/telefon tarayıcısında çalışan
 masaüstü kabuğu ve sistem uygulamaları. **Derleme adımı yok**: yerel ES modülleri + Web Components (`mk-*`),
-çalışma anı bağımlılığı yok (yalnız `vendor/` altındaki sabitlenmiş dosyalar). Arka uç sözleşmesi: [`docs/v2/api.md`](../docs/api.md).
+çalışma anı bağımlılığı yok (yalnız `vendor/` altındaki sabitlenmiş dosyalar). Arka uç sözleşmesi: [`docs/v2/api.md`](../docs/v2/api.md).
 
 ## Çalıştırma (yalnız Docker)
 
@@ -26,7 +26,6 @@ Duman testi kapsayıcısı hedefe `makeros-shell` Docker ağı üzerinden bağla
 `dev-server.mjs` uçları: `--fresh` (kurulumsuz başla), `POST /api/v1/dev/reset` (yalnız dev-server; kurulumsuz duruma dön).
 
 URL parametreleri: `?fx=full|lite|flat` (efekt katmanını zorla), `?open=makeros.terminal` (açılışta uygulama aç).
-`?perf=1` (sol altta kare hızı, en kötü kare, uzun görevler, pencere sayısı, JS yığını; WPE'de `longtask` yoksa rAF aralığından tahmin, `*` ile işaretli).
 
 ## Dizin yapısı
 
@@ -115,10 +114,10 @@ yerel değerler yüklenir. `setPref()` 700 ms debounce ile tüm gövdeyi `PUT` e
 konumları (`wm.*`) cihaza özeldir, yalnız yerel kalır. Arka uç `404/405` dönerse eşitleme sessizce kapanır.
 Telefonda doğrudan açılan uygulamalar (`app-kit`, bağımsız mod) da açılışta `syncPrefs()` çağırır.
 
-## Performans (Pi 4 / WPE)
+## Çizim ve etkileşim modeli
 
 - **Tembel yükleme**: masaüstü ilk karesi için yalnız çekirdek modüller içe aktarılır; Bul/değiştirici boşta önceden yüklenir,
-  Uygulamalar ızgarası, Genel Bakış, Kontrol Merkezi, kilit/giriş, mobil düzen, sihirbaz, perf HUD ve native arka uç ilk kullanımda
+  Uygulamalar ızgarası, Genel Bakış, Kontrol Merkezi, kilit/giriş, mobil düzen, sihirbaz ve native arka uç ilk kullanımda
   `import()` ile gelir (`main.js → M`, `lib.js → lazy()/loadCSS()`).
 - **Efektler**: `lite`/`flat` katmanında hiçbir yüzeyde `backdrop-filter` yoktur (önceden bulanık duvar kâğıdı); `full`'da yalnız
   menü çubuğu, raf, menü/popover, Bul ve Bildirim Merkezi. Sihirbaz kartı her katmanda opaktır.
@@ -186,21 +185,4 @@ Otomatik = WPE dışında açık). Terminal odaktayken Ctrl her zaman terminale 
 Tarayıcıların ayırdığı birleşimler (Ctrl+W/N/T/Q, Ctrl+Tab) uzak oturumda yakalanamaz; Super kullanın.
 Terminal içinde: ⌘C/⌘V kopyala/yapıştır, ⌘T yeni sekme, ⌘K temizle; dokunmatik cihazlarda ek tuş çubuğu (Esc, Tab, Ctrl, oklar, |, /, ~, ^C, ^D).
 
-## Boyut bütçesi
 
-Hedef: masaüstü açılışında yüklenen JS+CSS (vendor ve i18n hariç, sıkıştırmasız) < 150 KB. Duman testi her çalışmada
-gerçek açılış boyutunu yazdırır (`ℹ açılış …`). Elle ölçüm:
-
-```sh
-cd shell && cat css/{tokens,kit,shell}.css js/{main,lib,i18n,prefs,api,apps,keys,shell,icons}.js js/wm/{index,web}.js \
-  js/ui/{menubar,dock,control,layer,popup}.js | wc -c          # açılış (M2: ~97 KB, gzip ~30 KB)
-cat $(find js css -name '*.js' -o -name '*.css') | wc -c        # kabuğun tamamı (uygulamalar ve sihirbaz hariç)
-```
-
-| | M1 | M2 |
-|---|---|---|
-| Açılış (render-blocking + statik modüller) | 117 KB | 97 KB |
-| Boşta ön yükleme (Bul, değiştirici) | — | 11 KB |
-| Kabuk tamamı (`js/` + `css/`) | 123 KB | 136 KB |
-| Sihirbaz (`setup/`, yalnız ilk açılış) | — | 30 KB |
-| Uygulamalar (`apps/`, kendi iframe'lerinde) | 31 KB | 31 KB |

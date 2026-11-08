@@ -20,7 +20,7 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF \
 	-DCMAKE_C_FLAGS="$F" -DCMAKE_CXX_FLAGS="$F" -DCMAKE_EXE_LINKER_FLAGS="-static-libstdc++ -static-libgcc" >/dev/null
 cmake --build build -j "$JOBS" --target llama-server llama-cli llama-bench 2>&1 | grep -E "error|warning: unused|Built target llama-(server|cli|bench)" || true
 mkdir -p /out/bin
-install -m 0755 -s build/bin/llama-server build/bin/llama-cli build/bin/llama-bench /out/bin/
+install -m 0755 -s build/bin/llama-server build/bin/llama-cli /out/bin/
 cp LICENSE /out/LICENSE; echo "$TAG $(git rev-parse --short HEAD)" > /out/VERSION
 ls -la /out/bin; cat /out/VERSION
 '

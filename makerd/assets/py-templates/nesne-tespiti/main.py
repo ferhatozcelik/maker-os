@@ -14,6 +14,7 @@ Neden hızlı (Pi 4, 4 GB):
 Model: NanoDet-m (COCO, 80 sınıf), RangiLyu/nanodet (Apache-2.0); ncnn dönüşümü nihui/ncnn-assets.
 """
 import argparse
+import json
 import os
 import threading
 import time

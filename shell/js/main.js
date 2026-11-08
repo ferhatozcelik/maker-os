@@ -1,6 +1,6 @@
 // MakerOS 2 web masaüstü kabuğu — açılış.
 // Yalnız masaüstünün ilk karesi için gerekenler doğrudan içe aktarılır; Bul, Uygulamalar ızgarası,
-// değiştirici, Genel Bakış, Kontrol Merkezi, kilit/giriş, mobil düzen, kurulum sihirbazı ve perf HUD
+// değiştirici, Genel Bakış, Kontrol Merkezi, kilit/giriş, mobil düzen, kurulum sihirbazı ve yerel oturum
 // ilk kullanımda dinamik import ile yüklenir (bkz. M).
 import { $, store, lazy } from "./lib.js";
 import { t } from "./i18n.js";
@@ -227,6 +227,7 @@ async function pendingSetup(session) {
 
 async function start() {
   layout();
+  if (qs.get("perf") === "1") import("./perf.js").then(m => m.perfHUD());
   let session = null;
   for (let i = 0; ; i++) {
     try { session = await get("/session"); break; }
