@@ -225,14 +225,15 @@ async fn static_caching() {
     w("apps/settings/index.html", "ayarlar");
     w(".secret", "x");
     std::os::unix::fs::symlink("/etc/passwd", e.web.join("kacis.txt")).unwrap();
+    let cc_dyn = "no-cache, no-store, must-revalidate, max-age=0";
     let cases: Vec<(&str, &str, Vec<(&str, &str)>, u16, &str, &str, &str, &str)> = vec![
-        ("root", "/", vec![], 200, "<!doctype html>kabuk", "no-cache", "", "text/html; charset=utf-8"),
-        ("js plain", "/shell/app.js", vec![], 200, "console.log(1)", "no-cache", "", "text/javascript; charset=utf-8"),
-        ("js br", "/shell/app.js", vec![("Accept-Encoding", "gzip, br")], 200, "BR", "no-cache", "br", "text/javascript; charset=utf-8"),
-        ("js gz", "/shell/app.js", vec![("Accept-Encoding", "gzip, br;q=0")], 200, "GZ", "no-cache", "gzip", ""),
-        ("vendor", "/shell/vendor/lib.js", vec![], 200, "lib", "no-cache", "", ""),
+        ("root", "/", vec![], 200, "<!doctype html>kabuk", cc_dyn, "", "text/html; charset=utf-8"),
+        ("js plain", "/shell/app.js", vec![], 200, "console.log(1)", cc_dyn, "", "text/javascript; charset=utf-8"),
+        ("js br", "/shell/app.js", vec![("Accept-Encoding", "gzip, br")], 200, "BR", cc_dyn, "br", "text/javascript; charset=utf-8"),
+        ("js gz", "/shell/app.js", vec![("Accept-Encoding", "gzip, br;q=0")], 200, "GZ", cc_dyn, "gzip", ""),
+        ("vendor", "/shell/vendor/lib.js", vec![], 200, "lib", cc_dyn, "", ""),
         ("font", "/shell/fonts/inter.woff2", vec![], 200, "font", "public, max-age=31536000, immutable", "", "font/woff2"),
-        ("dir index", "/shell/apps/settings/", vec![], 200, "ayarlar", "no-cache", "", ""),
+        ("dir index", "/shell/apps/settings/", vec![], 200, "ayarlar", cc_dyn, "", ""),
         ("dir redirect", "/shell/apps/settings", vec![], 301, "", "", "", ""),
         ("dotfile", "/shell/.secret", vec![], 404, "", "", "", ""),
         ("symlink escape", "/shell/kacis.txt", vec![], 404, "", "", "", ""),
