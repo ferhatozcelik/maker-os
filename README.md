@@ -8,7 +8,7 @@
 
 <p align="center">ARM64 tabanlı, Pi 4 uyumlu kartlarda çalışan bağımsız ve tamamen açık kaynaklı Linux işletim sistemi.</p>
 
-<p align="center"><strong>Make it yours. Build what matters.</strong> · <em>Kendine ait kıl. Değerli olanı üret.</em></p>
+<p align="center"><strong>Atölyen cebinde.</strong> · <em>Your workshop, in your pocket.</em></p>
 
 <p align="center">
   <a href="https://github.com/ferhatozcelik/maker-os/releases/tag/v1.0.0"><img src="https://img.shields.io/badge/release-v1.0.0-f07a1c" alt="Release v1.0.0"></a>
@@ -76,7 +76,7 @@ MakerOS beş temel ilkeye dayanır: **Özgürlük** (kontrol kullanıcıdadır),
 
 > **Manifesto:** Bilgisayarların yalnızca tüketmek için var olduğuna ve güçlü deneyimlerin kapalı ekosistemlere ait olması gerektiğine inanmıyoruz. Sadelik ile özgürlüğün, açık kaynak ile iyi tasarımın bir arada bulunabileceğini savunuyoruz. Teknoloji kullanıcıya ne yapacağını söylememeli; kullanıcının ne yapabileceğini genişletmelidir.
 >
-> **Make it yours. Build what matters.** — *Kendine ait kıl. Değerli olanı üret.*
+> **Atölyen cebinde.** — *Your workshop, in your pocket.*
 
 ## İndir
 

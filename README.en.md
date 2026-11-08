@@ -8,7 +8,7 @@
 
 <p align="center">An independent, fully open-source Linux operating system for ARM64, Pi 4 compatible boards.</p>
 
-<p align="center"><strong>Make it yours. Build what matters.</strong></p>
+<p align="center"><strong>Your workshop, in your pocket.</strong></p>
 
 <p align="center">
   <a href="https://github.com/ferhatozcelik/maker-os/releases/tag/v1.0.0"><img src="https://img.shields.io/badge/release-v1.0.0-f07a1c" alt="Release v1.0.0"></a>
@@ -76,7 +76,7 @@ MakerOS is guided by five core principles: **Freedom** (you own your machine), *
 
 > **Manifesto:** We do not believe computers exist merely for consumption, nor that great design must come at the cost of user freedom. Simplicity and openness belong together. Technology should not tell you what to do—it should expand what you can build.
 >
-> **Make it yours. Build what matters.**
+> **Your workshop, in your pocket.**
 
 ## Download
 

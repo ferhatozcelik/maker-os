@@ -5,7 +5,7 @@
 ## Brand Identity & Tagline
 
 MakerOS speaks with a clear, open, and maker-focused voice.
-- **Primary Tagline:** *Make it yours. Build what matters.*
+- **Primary Tagline:** *Your workshop, in your pocket.* — **Atölyen cebinde.**
 
 ## Licensing
 

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>MakerOS · Kendine ait kıl. Değerli olanı üret.</title>
+<title>MakerOS · Atölyen cebinde.</title>
 <meta name="description" content="MakerOS: ARM64 tabanlı, Pi 4 uyumlu kartlar için bağımsız ve açık kaynaklı (MIT) Linux işletim sistemi. Web masaüstü, Rust sistem servisleri, A/B OTA güncelleme ve yerel AI asistanı.">
 <meta property="og:title" content="MakerOS">
 <meta property="og:description" content="ARM64 tabanlı, Pi 4 uyumlu kartlar için bağımsız ve açık kaynaklı Linux işletim sistemi.">
@@ -160,7 +160,7 @@ html[lang="en"] [data-en] { display: revert; }
     <div class="wrap">
       <a class="pill" href="https://github.com/ferhatozcelik/maker-os/releases/latest"><b>v1.0.0</b><span data-tr>İlk kararlı sürüm yayında</span><span data-en>First stable release is out</span></a>
       <img class="logo" src="assets/logo.svg" alt="MakerOS logosu" width="96" height="96">
-      <h1><span data-tr>Kendine ait kıl.<br><em>Değerli olanı üret.</em></span><span data-en>Make it yours.<br><em>Build what matters.</em></span></h1>
+      <h1><span data-tr>Atölyen<br><em>cebinde.</em></span><span data-en>Your workshop,<br><em>in your pocket.</em></span></h1>
       <p class="lead">
         <span data-tr>MakerOS; ARM64 tabanlı, Pi 4 uyumlu kartlar için bağımsız ve açık kaynaklı bir Linux işletim sistemi. Web masaüstü, Rust sistem servisleri, A/B güncelleme ve yerel yapay zekâ asistanı tek bir bütünde.</span>
         <span data-en>MakerOS is an independent, open-source Linux operating system for ARM64, Pi 4 compatible boards. Web desktop, Rust system services, A/B updates and an on-device AI assistant in one cohesive system.</span>
@@ -270,7 +270,7 @@ html[lang="en"] [data-en] { display: revert; }
   const root = document.documentElement, btn = document.getElementById("lang");
   const set = l => {
     root.lang = l; btn.textContent = l === "tr" ? "EN" : "TR";
-    document.title = l === "tr" ? "MakerOS · Kendine ait kıl. Değerli olanı üret." : "MakerOS · Make it yours. Build what matters.";
+    document.title = l === "tr" ? "MakerOS · Atölyen cebinde." : "MakerOS · Your workshop, in your pocket.";
     try { localStorage.setItem("mk-lang", l); } catch {}
   };
   let saved = null;

@@ -5,7 +5,7 @@
 ## Marka Kimliği ve Slogan
 
 MakerOS'un marka dili sade, özgür, üretken ve şeffaftır.
-- **Ana Slogan:** *Make it yours. Build what matters.* — **Kendine ait kıl. Değerli olanı üret.**
+- **Ana Slogan:** **Atölyen cebinde.** — *Your workshop, in your pocket.*
 
 ## Lisanslama
 
