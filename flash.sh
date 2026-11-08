@@ -30,7 +30,15 @@ while [ $# -gt 0 ]; do
 	-d|--disk) DISK="${2:?}"; shift 2 ;;
 	-v|--version) VERSION="${2:?}"; shift 2 ;;
 	--no-wifi) WIFI=0; shift ;;
-	-h|--help) sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+	-h|--help)
+		cat <<-'USAGE'
+		MakerOS microSD yazıcı / flasher (macOS, Linux)
+		  -i, --image <dosya|file>    yerel .img / .img.xz kullan · use a local image
+		  -d, --disk <aygıt|device>   hedef disk · target disk (/dev/disk4, /dev/sdb)
+		  -v, --version <vX.Y.Z>      belirli sürüm · specific release (default: latest)
+		      --no-wifi               Wi-Fi sorusunu atla · skip the Wi-Fi question
+		USAGE
+		exit 0 ;;
 	*) die "bilinmeyen seçenek: $1" "unknown option: $1" ;;
 	esac
 done
