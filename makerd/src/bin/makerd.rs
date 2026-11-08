@@ -215,7 +215,11 @@ async fn run(o: Opts, fds: Vec<std::os::fd::OwnedFd>) -> Result<(), String> {
             Arc::new(upd),
             Some(Arc::new(move |u: &str| auth::is_admin("/etc/group", u) || u == ss.primary_user()) as makerd::httpd::IsAdmin),
             true,
-            vec!["/usr/share/applications".into(), "/usr/local/share/applications".into()],
+            // ~/.local/share/applications: `mos pkg install` ile Debian kutusundan aktarılan uygulamalar.
+            std::iter::once(PathBuf::from("/usr/share/applications"))
+                .chain(std::iter::once(PathBuf::from("/usr/local/share/applications")))
+                .chain(std::env::var_os("HOME").filter(|h| !h.is_empty()).map(|h| PathBuf::from(h).join(".local/share/applications")))
+                .collect(),
             apps::system_launcher(),
             Vec::new(),
         )

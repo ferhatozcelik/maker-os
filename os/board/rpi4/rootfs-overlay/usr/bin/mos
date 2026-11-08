@@ -1,15 +1,23 @@
 #!/bin/sh
-# mos - MakerOS komut satiri araci (M1 iskeleti).
+# mos - MakerOS komut satiri araci.
 #
-#   mos box [ad]            Debian arm64 gelistirici kutusunu olustur/gir
-#   mos box rm [ad]         kutuyu sil
-#   mos box ls              kutulari listele
-#   mos version             surum bilgisi
-#   mos status              kisa sistem durumu
+#   mos pkg install <paket...>   Debian paketi kur (komutlari ve uygulamalari MakerOS'a aktarir)
+#   mos pkg remove <paket...>    paketi kaldir (aktarimlari da siler)
+#   mos pkg search <sozcuk>      paket ara
+#   mos pkg show <paket>         paket bilgisi
+#   mos pkg list                 mos pkg ile kurulan paketler
+#   mos pkg update | upgrade     paket listesini yenile | paketleri guncelle
+#   mos pkg export <komut>       kutudaki bir komutu MakerOS'a aktar (unexport: geri al)
+#   mos box [ad]                 Debian arm64 gelistirici kutusunu olustur/gir
+#   mos box run [ad] -- <komut>  kutuda tek komut calistir
+#   mos box rm [ad] | ls         kutuyu sil | kutulari listele
+#   mos version | status         surum bilgisi | kisa sistem durumu
 #
-# Kutu: rootless podman; $HOME paylasilir, /dev/gpiochip*, i2c, spi, video ve
-# seri aygitlar gecirilir. Ogrenci kutuda 'sudo apt install gcc ...' yapar,
-# host salt-okunur ve temiz kalir (ChromeOS Crostini deseni).
+# Kok dosya sistemi salt okunurdur; paketler kullanici yetkisiyle rootless podman
+# kutusuna (Debian trixie) kurulur. Kutu ve paketler microSD'deki /data bolumunde
+# ($HOME altinda) durur ve OTA guncellemelerinden etkilenmez. $HOME paylasilir;
+# /dev/gpiochip*, i2c, spi, video ve seri aygitlar kutuya gecirilir.
+# 'apt' ve 'apt-get' komutlari da 'mos pkg'ye yonlenir.
 set -eu
 
 BOX_IMAGE="${MOS_BOX_IMAGE:-docker.io/library/debian:trixie}"
@@ -26,7 +34,7 @@ box_devices() {
 
 box_create() {
 	name="$1"
-	echo "mos: '${name}' kutusu olusturuluyor (${BOX_IMAGE})..."
+	echo "mos: '${name}' kutusu olusturuluyor (${BOX_IMAGE})..." >&2
 	# shellcheck disable=SC2046
 	podman create --name "${BOX_PREFIX}${name}" \
 		--hostname "${name}-box" \
@@ -49,12 +57,189 @@ box_create() {
 	podman exec "${BOX_PREFIX}${name}" sh -c "
 		set -e
 		export DEBIAN_FRONTEND=noninteractive
-		apt-get update -qq && apt-get install -y -qq sudo ca-certificates less nano >/dev/null
+		apt-get update -qq && apt-get install -y -qq sudo ca-certificates less nano bash-completion >/dev/null
 		getent group $(id -g) >/dev/null || groupadd -g $(id -g) $(id -gn)
 		id -u $(id -un) >/dev/null 2>&1 || useradd -M -d ${HOME} -u $(id -u) -g $(id -g) -s /bin/bash $(id -un)
 		echo '$(id -un) ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/mosbox
 	"
-	echo "mos: hazir. Cikmak icin 'exit'; tekrar girmek icin 'mos box ${name}'."
+	echo "mos: '${name}' kutusu hazir." >&2
+}
+
+box_ensure() {
+	name="$1"
+	podman container exists "${BOX_PREFIX}${name}" || box_create "${name}"
+	podman start "${BOX_PREFIX}${name}" >/dev/null 2>&1 || true
+}
+
+# Kutuda calisma dizini: $HOME paylasildigi icin yalniz onun altindaki dizinler gorunur.
+box_workdir() {
+	case "${PWD}" in "${HOME}"|"${HOME}"/*) printf '%s' "${PWD}" ;; *) printf '%s' "${HOME}" ;; esac
+}
+
+# box_exec <ad> <kullanici> <komut...>: terminale bagliysa etkilesimli calisir.
+box_exec() {
+	name="$1"; user="$2"; shift 2
+	box_ensure "${name}"
+	if [ -t 0 ] && [ -t 1 ]; then t=-it; else t=-i; fi
+	podman exec ${t} --user "${user}" --workdir "$(box_workdir)" \
+		--env TERM="${TERM:-xterm-256color}" --env LANG="${LANG:-C.UTF-8}" \
+		--env WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-0}" \
+		"${BOX_PREFIX}${name}" "$@"
+}
+
+box_run() {
+	name="${1:-debian}"
+	[ $# -gt 0 ] && shift
+	[ "${1:-}" = "--" ] && shift
+	[ $# -gt 0 ] || die "kullanim: mos box run [ad] -- <komut> [arguman...]"
+	box_exec "${name}" "$(id -u):$(id -g)" "$@"
+}
+
+# --- paket yoneticisi (mos pkg) --------------------------------------------------
+PKG_BOX="${MOS_PKG_BOX:-debian}"
+PKG_STATE="${XDG_DATA_HOME:-${HOME}/.local/share}/mos/pkg/${PKG_BOX}"
+BIN_DIR="${HOME}/.local/bin"
+APP_DIR="${XDG_DATA_HOME:-${HOME}/.local/share}/applications"
+EXPORT_TAG="# mos-export"
+SYS_PATH="${MOS_SYS_PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/node/bin:/opt/data/bin}"
+
+pkg_args() { for a; do case "$a" in -*) ;; *) printf '%s\n' "$a" ;; esac; done; }
+
+# Kutuda paketin calistirilabilir dosyalarini ve .desktop dosyalarini listeler: "bin <yol>" / "app <yol>".
+pkg_files() {
+	box_exec "${PKG_BOX}" root sh -c '
+		for p; do
+			dpkg -L "$p" 2>/dev/null | while IFS= read -r f; do
+				case "$f" in
+				/usr/bin/*/*|/usr/sbin/*/*|/usr/games/*/*) ;;
+				/usr/bin/*|/usr/sbin/*|/usr/games/*) [ -x "$f" ] && [ ! -d "$f" ] && echo "bin $f" ;;
+				/usr/share/applications/*.desktop) [ -f "$f" ] && echo "app $f" ;;
+				esac
+			done
+		done' sh "$@" </dev/null
+}
+
+# export_bin <yol> <paket>: ~/.local/bin altina kutuya yonlenen kucuk bir betik yazar.
+export_bin() {
+	path="$1"; pkg="$2"; cmd="${path##*/}"; dst="${BIN_DIR}/${cmd}"
+	if PATH="${SYS_PATH}" command -v "${cmd}" >/dev/null 2>&1; then
+		echo "mos: '${cmd}' MakerOS'ta zaten var; aktarilmadi (kutuda: mos box run ${PKG_BOX} -- ${cmd})" >&2
+		return 1
+	fi
+	if [ -e "${dst}" ] && ! grep -q "^${EXPORT_TAG}" "${dst}" 2>/dev/null; then
+		echo "mos: ${dst} size ait; uzerine yazilmadi" >&2
+		return 1
+	fi
+	mkdir -p "${BIN_DIR}"
+	printf '#!/bin/sh\n%s %s/%s\nexec mos box run %s -- %s "$@"\n' "${EXPORT_TAG}" "${PKG_BOX}" "${pkg}" "${PKG_BOX}" "${path}" > "${dst}"
+	chmod 0755 "${dst}"
+	echo "${dst}"
+}
+
+# export_app <yol> <paket>: .desktop dosyasini kutuda calisacak sekilde MakerOS uygulamalarina ekler.
+export_app() {
+	path="$1"; pkg="$2"; dst="${APP_DIR}/mosbox-${PKG_BOX}-${path##*/}"
+	mkdir -p "${APP_DIR}"
+	box_exec "${PKG_BOX}" root cat "${path}" </dev/null | sed \
+		-e "/^TryExec=/d" -e "/^DBusActivatable=/d" \
+		-e "s|^Exec=|Exec=mos box run ${PKG_BOX} -- |" \
+		-e "s|^\\(Name\\(\\[[^]]*\\]\\)\\{0,1\\}\\)=\\(.*\\)|\\1=\\3 (${PKG_BOX})|" \
+		-e "/^\\[Desktop Entry\\]/a X-MakerOS-Box=${PKG_BOX}" \
+		-e "/^\\[Desktop Entry\\]/a X-MakerOS-Package=${pkg}" > "${dst}"
+	echo "${dst}"
+}
+
+pkg_export() {
+	mkdir -p "${PKG_STATE}"
+	for pkg; do
+		list="${PKG_STATE}/${pkg}.files"
+		: > "${list}.new"
+		pkg_files "${pkg}" | while read -r kind path; do
+			case "${kind}" in
+			bin) export_bin "${path}" "${pkg}" >> "${list}.new" || true ;;
+			app) export_app "${path}" "${pkg}" >> "${list}.new" || true ;;
+			esac
+		done
+		mv "${list}.new" "${list}"
+		n=$(wc -l < "${list}" | tr -d ' ')
+		echo "mos: ${pkg}: ${n} oge MakerOS'a aktarildi" >&2
+	done
+}
+
+pkg_unexport() {
+	for pkg; do
+		list="${PKG_STATE}/${pkg}.files"
+		[ -f "${list}" ] || continue
+		while IFS= read -r f; do
+			case "$f" in
+			"${BIN_DIR}"/*) grep -q "^${EXPORT_TAG}" "$f" 2>/dev/null && rm -f "$f" ;;
+			"${APP_DIR}"/mosbox-*) rm -f "$f" ;;
+			esac
+		done < "${list}"
+		rm -f "${list}"
+	done
+}
+
+# Kutuda gercekten kurulu olanlar (apt basarisiz olsa da yarim kalanlar aktarilmaz).
+pkg_installed() {
+	for p; do
+		box_exec "${PKG_BOX}" root dpkg-query -W -f='${Status}' "$p" </dev/null 2>/dev/null | grep -q "install ok installed" && echo "$p" || true
+	done
+}
+
+pkg_tracked() {
+	[ -d "${PKG_STATE}" ] || return 0
+	ls "${PKG_STATE}" | sed -n 's/\.files$//p' | grep -vx manual || true
+}
+
+pkg() {
+	sub="${1:-help}"
+	[ $# -gt 0 ] && shift
+	case "${sub}" in
+	install|add)
+		[ $# -gt 0 ] || die "kullanim: mos pkg install <paket...>"
+		box_exec "${PKG_BOX}" root apt install "$@"
+		# shellcheck disable=SC2046
+		pkg_export $(pkg_installed $(pkg_args "$@"))
+		;;
+	remove|rm|purge)
+		[ $# -gt 0 ] || die "kullanim: mos pkg remove <paket...>"
+		a=remove; [ "${sub}" = purge ] && a=purge
+		box_exec "${PKG_BOX}" root apt "${a}" "$@"
+		for p in $(pkg_args "$@"); do
+			[ -n "$(pkg_installed "$p")" ] || pkg_unexport "$p"
+		done
+		;;
+	autoremove) box_exec "${PKG_BOX}" root apt autoremove "$@" ;;
+	search) box_exec "${PKG_BOX}" "$(id -u):$(id -g)" apt search "$@" ;;
+	show|info) box_exec "${PKG_BOX}" "$(id -u):$(id -g)" apt show "$@" ;;
+	list)
+		if [ $# -gt 0 ]; then box_exec "${PKG_BOX}" "$(id -u):$(id -g)" apt list "$@"; else pkg_tracked; fi
+		;;
+	update) box_exec "${PKG_BOX}" root apt update "$@" ;;
+	upgrade|full-upgrade)
+		box_exec "${PKG_BOX}" root apt "${sub}" "$@"
+		t=$(pkg_tracked)
+		# shellcheck disable=SC2086
+		[ -z "$t" ] || { pkg_unexport $t; pkg_export $(pkg_installed $t); }
+		;;
+	export)
+		[ $# -gt 0 ] || die "kullanim: mos pkg export <komut>"
+		for c; do
+			p=$(box_exec "${PKG_BOX}" root sh -c 'command -v "$1"' sh "$c" </dev/null) || die "kutuda '${c}' yok"
+			mkdir -p "${PKG_STATE}"
+			export_bin "$p" "manual" >> "${PKG_STATE}/manual.files" && echo "mos: ${c} aktarildi" >&2
+		done
+		;;
+	unexport)
+		for c; do
+			f="${BIN_DIR}/${c}"
+			grep -q "^${EXPORT_TAG}" "$f" 2>/dev/null && rm -f "$f" && echo "mos: ${c} kaldirildi" >&2
+		done
+		;;
+	help|-h|--help) sed -n '4,10p' "$0" | sed 's/^# \{0,1\}//' ;;
+	*) die "bilinmeyen pkg komutu: ${sub} (mos pkg help)" ;;
+	esac
 }
 
 box_enter() {
@@ -74,9 +259,13 @@ box)
 	sub="${1:-debian}"
 	case "${sub}" in
 	ls)  podman ps -a --filter label=makeros.box=1 --format '{{.Names}}\t{{.Status}}\t{{.Image}}' ;;
+	run) shift; box_run "$@" ;;
 	rm)  podman rm -f "${BOX_PREFIX}${2:-debian}" ;;
 	*)   box_enter "${sub}" ;;
 	esac
+	;;
+pkg)
+	pkg "$@"
 	;;
 version)
 	. /usr/lib/os-release
@@ -90,7 +279,7 @@ status)
 	df -h /data 2>/dev/null | tail -n1
 	;;
 help|-h|--help)
-	sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'
+	sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'
 	;;
 *)
 	die "bilinmeyen komut: ${cmd} (mos help)"

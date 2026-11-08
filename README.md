@@ -20,6 +20,8 @@
 <p align="center">
   <a href="https://github.com/ferhatozcelik/maker-os/releases/latest">İndir</a> ·
   <a href="#features">Özellikler</a> ·
+  <a href="#architecture">Mimari</a> ·
+  <a href="#packages">Paketler</a> ·
   <a href="#setup-guide">Kurulum rehberi</a> ·
   <a href="#documentation">Dokümantasyon</a> ·
   <a href="docs/api.md">API</a> ·
@@ -90,40 +92,142 @@ MakerOS beş temel ilkeye dayanır: **Özgürlük** (kontrol kullanıcıdadır),
 | **Masaüstü ve Web** | Yerel ekranda Cog/WPE WebKit ve ağ üzerinden tarayıcıda aynı deneyim: pencereli **Ekran** (`/`) ve mobil uyumlu **Web** (`/web`) görünümü |
 | **Rust Arka Uç** | `makerd` (HTTP/WS API), `makerd-priv` (ayrıcalıklı işlemler), `makerd-user` (kullanıcı süreçleri ve PTY terminal), `makeros-ai` (yerel AI servisi) |
 | **Yerel AI Asistanı** | Qwen2.5-0.5B-Instruct GGUF + `llama.cpp` tabanlı Türkçe asistan; sohbet modu, MakerOS bilgi bankası, bağlam temizleme, risk sınıflandırması ve Full Bypass / İzinli komut çalıştırma |
+| **Paket Yöneticisi** | Debian'daki gibi `apt install` / `mos pkg`: paketler microSD'deki kullanıcı kutusuna (Debian trixie, rootless podman) kurulur; komutlar ve uygulamalar MakerOS'a otomatik aktarılır ([ayrıntı](docs/architecture/packages.md)) |
 | **Python ve Otomasyon** | `uv` tabanlı sanal ortam ve proje yöneticisi, hazır GPIO/Kamera/Web/AI şablonları; **Otomatik Başlatma** ve **Cron** zamanlayıcı ile açılışta veya zamanlanmış görevlerle çalıştırma |
 | **Donanım ve Kamera** | 40-pin GPIO canlı kontrolü, I²C, SPI, UART; CSI ve USB kameralar için canlı MJPEG akışı ve fotoğraf çekimi |
 | **Eklentiler ve Temalar** | Python eklenti mimarisi, Eklenti Mağazası (`makeros-plugins`), `.zip` içe/dışa aktarma; Maker (varsayılan), Donanım, Siber, 3B Baskı ve Konya HackerSpace temaları, düz (flat) düşük GPU modu ve Sistem UI gizleme |
 
+<a id="architecture"></a>
+
+## Mimari
+
+MakerOS katmanlardan oluşur; her katman kendi dizininde durur ve kendi belgesiyle anlatılır.
+
+```mermaid
+flowchart TB
+  subgraph UI["🖥️ Kullanıcı arayüzü — shell/"]
+    direction LR
+    LOCAL["Yerel ekran<br/>labwc + Cog/WPE"]
+    WEB["Ağdaki tarayıcı<br/>/ ve /web"]
+    PHONE["Telefon<br/>mobil görünüm"]
+  end
+  subgraph SVC["⚙️ Rust servisleri — makerd/"]
+    direction LR
+    MAKERD["makerd<br/>HTTP/WS API"]
+    PRIV["makerd-priv<br/>ayrıcalıklı işlemler"]
+    USER["makerd-user<br/>süreçler + PTY"]
+    AI["makeros-ai<br/>yerel LLM"]
+  end
+  subgraph BOX["📦 Paket kutusu — mos pkg"]
+    DEB["Debian trixie (podman, rootless)<br/>apt install …"]
+  end
+  subgraph OS["🧱 İşletim sistemi — os/"]
+    direction LR
+    KERNEL["Linux 6.18 ARM64<br/>systemd"]
+    RO["EROFS kök (salt okunur)"]
+    RAUC["RAUC A/B OTA"]
+  end
+  HW["🔌 Pi 4 / 400 uyumlu ARM64 kart<br/>GPIO · I²C · SPI · UART · CSI kamera"]
+
+  UI -- "HTTPS + WebSocket" --> SVC
+  SVC --> OS
+  BOX -. "komutlar + uygulamalar aktarılır" .-> UI
+  BOX --> OS
+  OS --> HW
+```
+
+**Katman belgeleri:** [Masaüstü kabuğu](docs/architecture/desktop.md) · [Rust arka uç](docs/architecture/backend.md) · [Yerel AI](docs/architecture/ai-assistant.md) · [Paket yöneticisi](docs/architecture/packages.md) · [Önyükleme ve depolama](docs/architecture/boot-and-storage.md) · [Ağ ve güvenlik](docs/architecture/network-security.md) · [Donanım](docs/architecture/hardware.md)
+
+### microSD bölüm düzeni
+
+Sistem salt okunur iki kök bölümle (A/B) çalışır; tüm kullanıcı verisi ve kurulan paketler `DATA` bölümündedir. Bu yüzden güncellemeler verinize dokunmaz. Ayrıntı: [Önyükleme ve Depolama](docs/architecture/boot-and-storage.md).
+
+```mermaid
+flowchart LR
+  subgraph SD["microSD kart"]
+    direction LR
+    CFG["MOSCFG<br/>FAT32 · 64 MiB<br/>autoboot.txt · wifi.txt"]
+    BA["BOOT_A<br/>FAT32 · 256 MiB"]
+    BB["BOOT_B<br/>FAT32 · 256 MiB"]
+    RA["ROOT_A<br/>EROFS · 2,5 GiB<br/>salt okunur"]
+    RB["ROOT_B<br/>EROFS · 2,5 GiB<br/>OTA hedefi"]
+    DATA["DATA · ext4 · kartın sonuna kadar<br/>/home · /etc katmanı · /var · /usr/local<br/>📦 mos pkg kutuları ve paketleri"]
+  end
+  CFG -- "tryboot" --> BA & BB
+  BA --> RA
+  BB --> RB
+  RA & RB -- "bağlar" --> DATA
+```
+
+### Açılış ve güncelleme akışı
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant E as EEPROM
+  participant B as BOOT_A / BOOT_B
+  participant K as Çekirdek + preinit
+  participant S as systemd
+  participant M as makerd
+  E->>B: autoboot.txt → etkin slot
+  B->>K: kernel8.img (initramfs yok)
+  K->>K: DATA'yı denetle ve /data'ya bağla, /etc katmanı
+  K->>S: exec systemd
+  S->>M: makerd :80/:443 + kiosk (labwc + Cog)
+  Note over M: Ayarlar › Genel › Yazılım güncelleme
+  M->>B: imzalı .raucb → boştaki slota yaz
+  M->>E: reboot "0 tryboot" (tek seferlik)
+  S-->>M: sağlıklı açılış → mark-good, slot kalıcı olur
+```
+
+<a id="packages"></a>
+
+## Paket Yöneticisi (`mos pkg` / `apt`)
+
+Kök dosya sistemi salt okunur olduğu hâlde Debian'daki gibi paket kurabilirsiniz. `mos pkg` (ya da alışkın olduğunuz `apt` / `apt-get`) paketleri microSD'deki `DATA` bölümünde duran, kullanıcı yetkisiyle çalışan bir Debian trixie kutusuna kurar. Paketin komutları ve masaüstü uygulamaları otomatik olarak MakerOS'a aktarılır: terminalde doğrudan çalışır, uygulamalar menüde görünür. Ayrıntı: [Paket Yöneticisi](docs/architecture/packages.md).
+
+```mermaid
+flowchart LR
+  U["👤 Kullanıcı<br/>apt install htop"] --> P["mos pkg install"]
+  P --> BX["📦 Debian trixie kutusu<br/>(podman, rootless)<br/>/data/home/… üzerinde"]
+  BX -- "dpkg -L" --> EX{"Aktar"}
+  EX -- "/usr/bin/*" --> BIN["~/.local/bin/htop<br/>→ mos box run …"]
+  EX -- "*.desktop" --> APP["~/.local/share/applications<br/>→ MakerOS menüsü"]
+  BIN --> T["Terminal: htop"]
+  APP --> D["Masaüstünde uygulama"]
+```
+
+```bash
+apt install htop           # ya da: mos pkg install htop
+htop                       # MakerOS terminalinde doğrudan çalışır
+mos pkg list               # mos pkg ile kurulan paketler
+apt upgrade                # kutudaki paketleri güncelle, aktarımları yenile
+apt remove htop            # paketi ve aktarılan komutları kaldır
+mos box                    # tam Debian kabuğuna gir (sudo apt, gcc, make …)
+```
+
 <a id="documentation"></a>
 
-## Dokümantasyon Ağacı
+## Dokümantasyon
 
-Teknik ayrıntılar ve mimari belgeler Türkçe ve İngilizce olarak [`docs/`](docs/README.md) dizininde yer alır:
+Tüm belgeler Türkçe ve İngilizcedir; giriş sayfası: [`docs/`](docs/README.md).
 
-```text
-maker-os/
-├── README.md · README.en.md
-├── docs/
-│   ├── README.md · README.en.md
-│   ├── architecture/
-│   │   ├── overview.md · overview.en.md
-│   │   ├── boot-and-storage.md · boot-and-storage.en.md
-│   │   ├── desktop.md · desktop.en.md
-│   │   ├── backend.md · backend.en.md
-│   │   ├── ai-assistant.md · ai-assistant.en.md
-│   │   ├── network-security.md · network-security.en.md
-│   │   └── hardware.md · hardware.en.md
-│   ├── development/
-│   │   └── build-and-test.md · build-and-test.en.md
-│   ├── verification/
-│   │   └── validation.md · validation.en.md
-│   ├── project/
-│   │   └── branding-and-licensing.md · branding-and-licensing.en.md
-│   └── api.md · api.en.md
-├── os/         # Buildroot dış ağacı, çekirdek, paketler ve imaj üretimi
-├── makerd/     # Rust sistem servisleri ve yerel AI asistanı
-└── shell/      # Web masaüstü kabuğu ve yerleşik uygulamalar
-```
+| Konu | Türkçe | English |
+| --- | --- | --- |
+| Genel bakış | [overview.md](docs/architecture/overview.md) | [overview.en.md](docs/architecture/overview.en.md) |
+| Önyükleme ve depolama | [boot-and-storage.md](docs/architecture/boot-and-storage.md) | [boot-and-storage.en.md](docs/architecture/boot-and-storage.en.md) |
+| Masaüstü kabuğu | [desktop.md](docs/architecture/desktop.md) | [desktop.en.md](docs/architecture/desktop.en.md) |
+| Rust arka uç | [backend.md](docs/architecture/backend.md) | [backend.en.md](docs/architecture/backend.en.md) |
+| Paket yöneticisi | [packages.md](docs/architecture/packages.md) | [packages.en.md](docs/architecture/packages.en.md) |
+| Yerel AI asistanı | [ai-assistant.md](docs/architecture/ai-assistant.md) | [ai-assistant.en.md](docs/architecture/ai-assistant.en.md) |
+| Ağ ve güvenlik | [network-security.md](docs/architecture/network-security.md) | [network-security.en.md](docs/architecture/network-security.en.md) |
+| Donanım | [hardware.md](docs/architecture/hardware.md) | [hardware.en.md](docs/architecture/hardware.en.md) |
+| Derleme ve test | [build-and-test.md](docs/development/build-and-test.md) | [build-and-test.en.md](docs/development/build-and-test.en.md) |
+| Doğrulama durumu | [validation.md](docs/verification/validation.md) | [validation.en.md](docs/verification/validation.en.md) |
+| Marka ve lisans | [branding-and-licensing.md](docs/project/branding-and-licensing.md) | [branding-and-licensing.en.md](docs/project/branding-and-licensing.en.md) |
+| HTTP/WS API | [api.md](docs/api.md) | [api.en.md](docs/api.en.md) |
+
+Kaynak dizinleri: [`os/`](os/README.md) (Buildroot dış ağacı, çekirdek, paketler, imaj) · [`makerd/`](makerd/) (Rust sistem servisleri ve AI) · [`shell/`](shell/README.md) (web masaüstü ve uygulamalar) · [`site/`](site/index.html) ([tanıtım sayfası](https://ferhatozcelik.github.io/maker-os/)).
 
 <a id="setup-guide"></a>
 

@@ -20,6 +20,8 @@
 <p align="center">
   <a href="https://github.com/ferhatozcelik/maker-os/releases/latest">Download</a> ·
   <a href="#features">Features</a> ·
+  <a href="#architecture">Architecture</a> ·
+  <a href="#packages">Packages</a> ·
   <a href="#setup-guide">Setup Guide</a> ·
   <a href="#documentation">Documentation</a> ·
   <a href="docs/api.en.md">API</a> ·
@@ -90,40 +92,142 @@ MakerOS is guided by five core principles: **Freedom** (you own your machine), *
 | **Desktop & Web** | Shared experience on local display (Cog/WPE WebKit) and remote browsers: windowed **Desktop** (`/`) and mobile-ready **Web** (`/web`) interface |
 | **Rust Backend** | `makerd` (HTTP/WS API), `makerd-priv` (privileged operations), `makerd-user` (user processes & PTY terminal), `makeros-ai` (local AI daemon) |
 | **Local AI Assistant** | Offline assistant powered by Qwen2.5-0.5B-Instruct GGUF + `llama.cpp`; conversational mode, MakerOS knowledge cards, context reset, risk classification, and Full Bypass / Ask execution modes |
+| **Package Manager** | Debian-style `apt install` / `mos pkg`: packages install into a per-user box on the microSD (Debian trixie, rootless podman); commands and apps are exported to MakerOS automatically ([details](docs/architecture/packages.en.md)) |
 | **Python & Automation** | `uv`-based virtual environment and project manager with ready-made GPIO/Camera/Web/AI templates; **Autostart** and **Cron** scheduler for boot and periodic execution |
 | **Hardware & Camera** | Live 40-pin GPIO control, I²C, SPI, UART; live MJPEG streaming and photo capture for CSI and USB cameras |
 | **Plugins & Themes** | Python plugin architecture, Plugin Store (`makeros-plugins`), `.zip` import/export; Maker (default), Hardware, Cyber, 3D Print, and Konya HackerSpace themes, flat low-GPU mode, and granular System UI toggles |
 
+<a id="architecture"></a>
+
+## Architecture
+
+MakerOS is built in layers; each layer lives in its own directory and has its own document.
+
+```mermaid
+flowchart TB
+  subgraph UI["🖥️ User interface — shell/"]
+    direction LR
+    LOCAL["Local display<br/>labwc + Cog/WPE"]
+    WEB["Browser on the network<br/>/ ve /web"]
+    PHONE["Phone<br/>mobile view"]
+  end
+  subgraph SVC["⚙️ Rust services — makerd/"]
+    direction LR
+    MAKERD["makerd<br/>HTTP/WS API"]
+    PRIV["makerd-priv<br/>privileged operations"]
+    USER["makerd-user<br/>processes + PTY"]
+    AI["makeros-ai<br/>local LLM"]
+  end
+  subgraph BOX["📦 Package box — mos pkg"]
+    DEB["Debian trixie (podman, rootless)<br/>apt install …"]
+  end
+  subgraph OS["🧱 Operating system — os/"]
+    direction LR
+    KERNEL["Linux 6.18 ARM64<br/>systemd"]
+    RO["EROFS root (read-only)"]
+    RAUC["RAUC A/B OTA"]
+  end
+  HW["🔌 Pi 4 / 400 compatible ARM64 board<br/>GPIO · I²C · SPI · UART · CSI camera"]
+
+  UI -- "HTTPS + WebSocket" --> SVC
+  SVC --> OS
+  BOX -. "commands + apps exported" .-> UI
+  BOX --> OS
+  OS --> HW
+```
+
+**Layer documents:** [Desktop shell](docs/architecture/desktop.en.md) · [Rust backend](docs/architecture/backend.en.md) · [Local AI](docs/architecture/ai-assistant.en.md) · [Package manager](docs/architecture/packages.en.md) · [Boot & storage](docs/architecture/boot-and-storage.en.md) · [Network & security](docs/architecture/network-security.en.md) · [Hardware](docs/architecture/hardware.en.md)
+
+### microSD partition layout
+
+The system runs from two read-only root slots (A/B); all user data and installed packages live on the `DATA` partition, so updates never touch your data. Details: [Boot & Storage](docs/architecture/boot-and-storage.en.md).
+
+```mermaid
+flowchart LR
+  subgraph SD["microSD card"]
+    direction LR
+    CFG["MOSCFG<br/>FAT32 · 64 MiB<br/>autoboot.txt · wifi.txt"]
+    BA["BOOT_A<br/>FAT32 · 256 MiB"]
+    BB["BOOT_B<br/>FAT32 · 256 MiB"]
+    RA["ROOT_A<br/>EROFS · 2,5 GiB<br/>read-only"]
+    RB["ROOT_B<br/>EROFS · 2,5 GiB<br/>OTA target"]
+    DATA["DATA · ext4 · to end of card<br/>/home · /etc overlay · /var · /usr/local<br/>📦 mos pkg boxes and packages"]
+  end
+  CFG -- "tryboot" --> BA & BB
+  BA --> RA
+  BB --> RB
+  RA & RB -- "mounts" --> DATA
+```
+
+### Boot and update flow
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant E as EEPROM
+  participant B as BOOT_A / BOOT_B
+  participant K as Kernel + preinit
+  participant S as systemd
+  participant M as makerd
+  E->>B: autoboot.txt → active slot
+  B->>K: kernel8.img (no initramfs)
+  K->>K: fsck DATA, mount /data, /etc overlay
+  K->>S: exec systemd
+  S->>M: makerd :80/:443 + kiosk (labwc + Cog)
+  Note over M: Settings › General › Software update
+  M->>B: signed .raucb → write to idle slot
+  M->>E: reboot "0 tryboot" (one-shot)
+  S-->>M: healthy boot → mark-good, slot becomes permanent
+```
+
+<a id="packages"></a>
+
+## Package Manager (`mos pkg` / `apt`)
+
+Even though the root filesystem is read-only, you can install packages just like on Debian. `mos pkg` (or the familiar `apt` / `apt-get`) installs packages into a rootless Debian trixie box stored on the microSD `DATA` partition. The package's commands and desktop apps are exported to MakerOS automatically: they run straight from the terminal and show up in the app menu. Details: [Package Manager](docs/architecture/packages.en.md).
+
+```mermaid
+flowchart LR
+  U["👤 User<br/>apt install htop"] --> P["mos pkg install"]
+  P --> BX["📦 Debian trixie box<br/>(podman, rootless)<br/>on /data/home/…"]
+  BX -- "dpkg -L" --> EX{"Export"}
+  EX -- "/usr/bin/*" --> BIN["~/.local/bin/htop<br/>→ mos box run …"]
+  EX -- "*.desktop" --> APP["~/.local/share/applications<br/>→ MakerOS menu"]
+  BIN --> T["Terminal: htop"]
+  APP --> D["App on the desktop"]
+```
+
+```bash
+apt install htop           # or: mos pkg install htop
+htop                       # runs directly in the MakerOS terminal
+mos pkg list               # packages installed with mos pkg
+apt upgrade                # upgrade box packages, refresh exports
+apt remove htop            # remove package and its exported commands
+mos box                    # enter a full Debian shell (sudo apt, gcc, make …)
+```
+
 <a id="documentation"></a>
 
-## Documentation Tree
+## Documentation
 
-All technical architecture, verification, and API documents are maintained side by side in Turkish and English under [`docs/`](docs/README.en.md):
+All documents are available in English and Turkish; start at [`docs/`](docs/README.en.md).
 
-```text
-maker-os/
-├── README.md · README.en.md
-├── docs/
-│   ├── README.md · README.en.md
-│   ├── architecture/
-│   │   ├── overview.md · overview.en.md
-│   │   ├── boot-and-storage.md · boot-and-storage.en.md
-│   │   ├── desktop.md · desktop.en.md
-│   │   ├── backend.md · backend.en.md
-│   │   ├── ai-assistant.md · ai-assistant.en.md
-│   │   ├── network-security.md · network-security.en.md
-│   │   └── hardware.md · hardware.en.md
-│   ├── development/
-│   │   └── build-and-test.md · build-and-test.en.md
-│   ├── verification/
-│   │   └── validation.md · validation.en.md
-│   ├── project/
-│   │   └── branding-and-licensing.md · branding-and-licensing.en.md
-│   └── api.md · api.en.md
-├── os/         # Buildroot external tree, kernel, packages, and image builder
-├── makerd/     # Rust system services and local AI assistant
-└── shell/      # Web desktop shell and built-in applications
-```
+| Topic | English | Türkçe |
+| --- | --- | --- |
+| Overview | [overview.en.md](docs/architecture/overview.en.md) | [overview.md](docs/architecture/overview.md) |
+| Boot & storage | [boot-and-storage.en.md](docs/architecture/boot-and-storage.en.md) | [boot-and-storage.md](docs/architecture/boot-and-storage.md) |
+| Desktop shell | [desktop.en.md](docs/architecture/desktop.en.md) | [desktop.md](docs/architecture/desktop.md) |
+| Rust backend | [backend.en.md](docs/architecture/backend.en.md) | [backend.md](docs/architecture/backend.md) |
+| Package manager | [packages.en.md](docs/architecture/packages.en.md) | [packages.md](docs/architecture/packages.md) |
+| Local AI assistant | [ai-assistant.en.md](docs/architecture/ai-assistant.en.md) | [ai-assistant.md](docs/architecture/ai-assistant.md) |
+| Network & security | [network-security.en.md](docs/architecture/network-security.en.md) | [network-security.md](docs/architecture/network-security.md) |
+| Hardware | [hardware.en.md](docs/architecture/hardware.en.md) | [hardware.md](docs/architecture/hardware.md) |
+| Build & test | [build-and-test.en.md](docs/development/build-and-test.en.md) | [build-and-test.md](docs/development/build-and-test.md) |
+| Validation status | [validation.en.md](docs/verification/validation.en.md) | [validation.md](docs/verification/validation.md) |
+| Branding & licensing | [branding-and-licensing.en.md](docs/project/branding-and-licensing.en.md) | [branding-and-licensing.md](docs/project/branding-and-licensing.md) |
+| HTTP/WS API | [api.en.md](docs/api.en.md) | [api.md](docs/api.md) |
+
+Source directories: [`os/`](os/README.md) (Buildroot external tree, kernel, packages, image) · [`makerd/`](makerd/) (Rust system services and AI) · [`shell/`](shell/README.md) (web desktop and apps) · [`site/`](site/index.html) ([project website](https://ferhatozcelik.github.io/maker-os/)).
 
 <a id="setup-guide"></a>
 
@@ -150,7 +254,7 @@ See [`docs/development/build-and-test.en.md`](docs/development/build-and-test.en
 
 The desktop shell (`shell/`), `makerd` service family, local AI assistant (`makeros-ai`), terminal sessions, Python Manager, Autostart / Cron scheduler, and OTA update flow have been verified via automated Docker smoke tests and on real Pi 4 compatible ARM64 hardware. See [`docs/verification/validation.en.md`](docs/verification/validation.en.md) for verified features versus future roadmap items.
 
-## License & Trademark Notice
+## License
 
 [MIT](LICENSE) — See [`NOTICE.md`](NOTICE.md) and [`docs/project/branding-and-licensing.en.md`](docs/project/branding-and-licensing.en.md) for third-party notices.
 

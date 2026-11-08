@@ -709,12 +709,6 @@ pub async fn browse(method: Method, Query(q): Query<HashMap<String, String>>, h:
     let req_ct = h.get(header::CONTENT_TYPE).and_then(|v| v.to_str().ok());
     let b_slice = if req_body.is_empty() { None } else { Some(req_body.as_ref()) };
     let (status, ct, body) = match crate::browse::fetch_req(method.as_str(), &url, lang, req_ct, b_slice).await {
-        Ok(p) if crate::browse::is_bot_wall(&p) => {
-            crate::browse::mark_walled(&p.url);
-            crate::browse::mark_walled(&url);
-            let msg = "Bu site Cloudflare bot doğrulaması kullanıyor; doğrulama yalnız gerçek bir tarayıcıda yapılabilir. Sayfayı Chromium'da (ya da bu cihazın tarayıcı sekmesinde) açıp doğrulama kutusunu orada işaretleyin.";
-            (StatusCode::BAD_GATEWAY, "text/html; charset=utf-8".to_string(), crate::browse::walled_page(&p.url, msg))
-        }
         Ok(p) => {
             let html = p.content_type.contains("text/html") || p.content_type.contains("xhtml");
             let css = p.content_type.contains("text/css");

@@ -127,7 +127,6 @@ async function load(u) {
   let v;
   try { v = await ticket(); } catch (e) { showHint(e.message); return; }
   if (u !== cur) return; // bu arada başka adrese geçildi
-  if (KIOSK && isWalled(u)) { frame?.remove(); frame = null; openExt(u); return; }
   frame?.remove();
   frame = h("iframe", { src: proxied(v, u), allow: "fullscreen; clipboard-write; autoplay",
     sandbox: "allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals allow-downloads" });

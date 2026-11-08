@@ -1,0 +1,21 @@
+#!/bin/sh
+# MakerOS: 'apt' / 'apt-get' -> 'mos pkg' (kok dosya sistemi salt okunur; paketler kullanici
+# kutusuna, microSD'deki /data bolumune kurulur ve komutlari MakerOS'a aktarilir).
+# 'sudo apt ...' de calisir: islem sudo'yu cagiran kullanicinin kutusunda yapilir.
+set -eu
+if [ "$(id -u)" = 0 ] && [ -n "${SUDO_USER:-}" ] && [ "${SUDO_USER}" != root ]; then
+	uid=$(id -u "${SUDO_USER}")
+	exec sudo -u "${SUDO_USER}" env XDG_RUNTIME_DIR="/run/user/${uid}" HOME="$(getent passwd "${SUDO_USER}" | cut -d: -f6)" "$0" "$@"
+fi
+sub="${1:-}"
+case "${sub}" in
+install|remove|purge|autoremove|search|show|update|upgrade|full-upgrade|list)
+	exec mos pkg "$@" ;;
+""|-h|--help|help)
+	echo "MakerOS'ta apt, 'mos pkg' uzerinden Debian kutusunda calisir:"
+	mos pkg help
+	;;
+*)
+	# Diger alt komutlar (policy, depends, ...) dogrudan kutudaki apt'ye gider.
+	exec mos box run "${MOS_PKG_BOX:-debian}" -- "$(basename "$0")" "$@" ;;
+esac
