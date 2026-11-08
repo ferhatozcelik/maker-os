@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# MakerOS 2 imaj derleyicisi: Buildroot'u Docker icinde calistirir.
+# MakerOS imaj derleyicisi: Buildroot'u Docker icinde calistirir.
 #
 #   ./build.sh defconfig        makeros_rpi4_defconfig'i uygula
 #   ./build.sh build            tam derleme -> os/out/makeros-<ver>-rpi4.img.xz

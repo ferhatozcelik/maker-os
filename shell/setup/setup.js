@@ -1,7 +1,7 @@
 // İlk açılış sihirbazı: yalnız Wi-Fi (atlanabilir) → Bitti. Hesap, dil, saat dilimi ve cihaz adı
 // varsayılanlarla kurulur; hepsi sonradan Ayarlar'dan değiştirilir. Pi HDMI'da (WPE) otomatik oturum
 // açılır; ağdan erişimde varsayılan kullanıcı/parola (DEFAULT_USER) kullanılır.
-// API (docs/v2/api.md → "İlk açılış kurulumu"):
+// API (docs/api.md → "İlk açılış kurulumu"):
 //   GET /setup → {hostname, defaults:{lang,keymap,timezone}, languages, keymaps, timezones[], online, wifi_needed, hotspot}
 //   POST /setup/wifi/scan → /net/wifi/scan gövdesi (kimliksiz)
 //   POST /setup/complete {user,password,fullname?,hostname,timezone,lang,keymap,wifi?} → {user,admin,job?,warnings?} + çerez; 409 = kurulu

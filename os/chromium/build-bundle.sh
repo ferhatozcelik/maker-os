@@ -1,7 +1,7 @@
 #!/bin/sh
 # Chromium paketi (yalnız Docker'da, debian:trixie arm64): Debian'ın chromium paketini ve glibc dışındaki
 # tüm kütüphanelerini /opt/chromium ağacına toplar. Buildroot Chromium paketlemiyor; MakerOS bu ağacı
-# os/package/chromium-bin ile imaja koyar. glibc imajınki kullanılır (Debian 2.41 < MakerOS 2.42: uyumlu).
+# os/package/chromium-bin ile imaja koyar. glibc imajınki kullanılır (Debian 2.41 < MakerOS glibc 2.42: uyumlu).
 #   docker run --rm -v "$PWD/os/chromium":/s:ro -v "$PWD/os/out":/out debian:trixie sh /s/build-bundle.sh
 set -eu
 export DEBIAN_FRONTEND=noninteractive

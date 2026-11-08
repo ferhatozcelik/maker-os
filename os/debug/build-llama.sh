@@ -3,7 +3,7 @@
 # Çıktı mk-llama biriminde: /out/bin/{llama-server,llama-cli}, /out/LICENSE, /out/VERSION
 #
 # - OpenMP kapalı: MakerOS'ta libgomp yok; ggml'in kendi iş parçacığı havuzu kullanılır.
-# - libstdc++/libgcc gömülü, yalnız glibc'ye bağlı (bookworm glibc 2.36 ≤ MakerOS 2.42).
+# - libstdc++/libgcc gömülü, yalnız glibc'ye bağlı (bookworm glibc 2.36 ≤ MakerOS glibc 2.42).
 # - curl yok: çalışma zamanında internet gerekmez (model yerel dosyadan).
 set -euo pipefail
 TAG="${LLAMA_TAG:-v0.9.0}"

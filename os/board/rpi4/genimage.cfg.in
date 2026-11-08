@@ -1,4 +1,4 @@
-# MakerOS 2 - SD kart bolum tablosu (MBR, disk imzasi 0x4d4f5332 = "MOS2")
+# MakerOS - SD kart bolum tablosu (MBR, disk imzasi 0x4d4f5332 = "MOS2")
 #
 #  p1  MOSCFG  FAT32   64M   autoboot.txt (A/B secici), wifi.txt, durum dosyasi
 #  p2  BOOT_A  FAT32  256M   firmware + kernel8.img + DTB + config.txt (root=p5)

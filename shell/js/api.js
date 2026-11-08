@@ -1,4 +1,4 @@
-// makerd API v1 istemcisi (docs/v2/api.md). fetch sarmalayıcı + events WS.
+// makerd API v1 istemcisi (docs/api.md). fetch sarmalayıcı + events WS.
 import { Emitter } from "./lib.js";
 
 export const BASE = "/api/v1";

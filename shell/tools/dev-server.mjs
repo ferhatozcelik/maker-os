@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // MakerOS kabuğu için geliştirme sunucusu (bağımlılıksız).
-// shell/ dizinini sunar ve docs/v2/api.md uç noktalarını sahte veriyle uygular:
+// shell/ dizinini sunar ve docs/api.md uç noktalarını sahte veriyle uygular:
 // oturum, sistem, ağ, uygulamalar, süreçler, bildirimler, events WS ve sahte terminal.
 //   node shell/tools/dev-server.mjs [--port 8090]      kullanıcı: maker / maker
 //   node shell/tools/dev-server.mjs --fresh            ilk açılış: kullanıcı yok, GET /setup + POST /setup/complete
@@ -67,7 +67,7 @@ const net = () => ({ online: !!(wifiOn && activeSsid), wifi_enabled: wifiOn, ifa
   { name: "eth0", type: "ethernet", state: "disconnected", ipv4: [], mac: "dc:a6:32:01:02:03" },
   { name: "wlan0", type: "wifi", state: !wifiOn ? "unavailable" : activeSsid ? "connected" : "disconnected", ipv4: wifiOn && activeSsid ? ["192.168.1.42/24"] : [], mac: "dc:a6:32:01:02:04", ssid: wifiOn && activeSsid || undefined },
 ], hotspot: { active: !setupDone, ssid: "MakerOS" } });
-// makerd ile aynı biçim (docs/v2/api.md → "İlk açılış kurulumu")
+// makerd ile aynı biçim (docs/api.md → "İlk açılış kurulumu")
 const setupInfo = () => ({ setup_done: false, hostname: "makeros-0204", defaults: { lang: "tr_TR.UTF-8", keymap: "trq", timezone: "Europe/Istanbul" },
   languages: [["tr_TR.UTF-8", "Türkçe"], ["en_US.UTF-8", "English (US)"], ["de_DE.UTF-8", "Deutsch"]].map(([id, name]) => ({ id, name })),
   keymaps: [["trq", "Türkçe Q"], ["trf", "Türkçe F"], ["us", "İngilizce (ABD)"], ["gb", "İngilizce (BK)"], ["de", "Almanca"], ["fr", "Fransızca"]].map(([id, name]) => ({ id, name })),
@@ -271,7 +271,7 @@ const PROMPT = () => `\x1b[1;32mmaker@${hostname}\x1b[0m:\x1b[1;34m~\x1b[0m$ `;
 function fakeShell(ws, t) {
   let line = "";
   const out = s => ws.send(Buffer.from(s.replace(/\n/g, "\r\n")), true);
-  if (!t.started) { t.started = true; out(`\x1b[1;31mMakerOS 2\x1b[0m geliştirme terminali (sahte kabuk). \x1b[2m'help' yazın.\x1b[0m\n\n`); }
+  if (!t.started) { t.started = true; out(`\x1b[1;31mMakerOS\x1b[0m geliştirme terminali (sahte kabuk). \x1b[2m'help' yazın.\x1b[0m\n\n`); }
   out(PROMPT());
   const run = cmd => {
     const [c, ...a] = cmd.trim().split(/\s+/);

@@ -1,4 +1,4 @@
-# MakerOS 2 — derleme ciktilari depoya girmez (imaj ve guncelleme paketi GitHub Releases'te).
+# MakerOS — derleme ciktilari depoya girmez (imaj ve guncelleme paketi GitHub Releases'te).
 os/out/
 *.img
 *.img.xz

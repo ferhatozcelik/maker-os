@@ -1,4 +1,4 @@
-# MakerOS 2: test + Raspberry Pi imaji + imzali guncelleme paketi + GitHub Release.
+# MakerOS: test + Raspberry Pi imaji + imzali guncelleme paketi + GitHub Release.
 #
 # main'e her push'ta os/VERSION'daki surum henuz yayinlanmamissa:
 #   imaj (makeros-<surum>-rpi4.img.xz) ve RAUC paketi (makeros-<surum>-rpi4.raucb) derlenir,
@@ -13,12 +13,12 @@
 # Sure: ilk derleme (arac zinciri, WPE WebKit, Mesa, cekirdek) GitHub'in 6 saatlik is sinirina
 # yaklasabilir. dl/ ve ccache basarisiz iste de onbellege yazilir; zaman asiminda "Re-run" ile
 # ikinci deneme onceden derlenenleri onbellekten alir ve cok daha kisa surer.
-name: MakerOS 2 surum
+name: MakerOS surum
 
 on:
   push:
     branches: [main]
-    paths-ignore: ["**.md", "docs/**"]
+    paths-ignore: ["**.md", "docs/**", "site/**", ".github/workflows/pages.yml"]
   workflow_dispatch:
 
 permissions:
@@ -150,7 +150,7 @@ jobs:
 
           ---
           **Kurulum:** \`makeros-$V-rpi4.img.xz\` dosyasini Raspberry Pi Imager ile SD karta yazin (Raspberry Pi 4/400).
-          **Guncelleme:** MakerOS 2 cihazlari Ayarlar › Genel › Yazilim guncelleme ile kurar (\`.raucb\`, imzali).
+          **Guncelleme:** MakerOS cihazlari Ayarlar › Genel › Yazilim guncelleme ile kurar (\`.raucb\`, imzali).
           EOF
 
       - name: Release

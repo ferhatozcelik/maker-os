@@ -1,0 +1,43 @@
+# MakerOS tanıtım sayfası → GitHub Pages (https://ferhatozcelik.github.io/maker-os/).
+# Kaynak: site/index.html; logo, yazı tipleri ve ekran görüntüleri depodan kopyalanır (tek kaynak).
+name: Tanıtım sayfası
+
+on:
+  push:
+    branches: [main]
+    paths: ["site/**", "docs/screenshots/**", "shell/icons/logo.svg", ".github/workflows/pages.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sayfayı topla
+        run: |
+          set -eu
+          mkdir -p _site/assets/fonts _site/assets/screenshots
+          cp site/index.html _site/
+          cp shell/icons/logo.svg shell/icons/apple-touch-icon.png _site/assets/
+          cp shell/vendor/fonts/inter-latin-wght-normal.woff2 shell/vendor/fonts/inter-latin-ext-wght-normal.woff2 \
+             shell/vendor/fonts/jetbrains-mono-latin-wght-normal.woff2 _site/assets/fonts/
+          cp docs/screenshots/*.png _site/assets/screenshots/
+          touch _site/.nojekyll
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deploy
+        uses: actions/deploy-pages@v4

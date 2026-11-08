@@ -1,4 +1,4 @@
-//! makerd: MakerOS 2 arka uç hizmeti (yetkisiz kullanıcı olarak çalışır).
+//! makerd: MakerOS arka uç hizmeti (yetkisiz kullanıcı olarak çalışır).
 
 use futures_util::future::BoxFuture;
 use makerd::apierr::{ApiError, ApiResult};

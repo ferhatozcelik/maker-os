@@ -1,6 +1,6 @@
 [Unit]
 Description=MakerOS Türkçe Linux asistanı (yerel LLM API, internetsiz)
-Documentation=https://github.com/ferhatozcelik/maker-os/blob/main/docs/v2/ai-asistan.md
+Documentation=https://github.com/ferhatozcelik/maker-os/blob/main/docs/architecture/ai-assistant.md
 After=network.target
 # Model kurulu değilse başlamaz (kurulum: sudo makeros-ai model-kur).
 ConditionPathExists=/var/lib/makeros-ai/models/qwen2.5-0.5b-instruct-q4_k_m.gguf

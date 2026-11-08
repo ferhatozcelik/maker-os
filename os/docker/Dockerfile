@@ -1,4 +1,4 @@
-# MakerOS 2 Buildroot derleyici imaji (arm64 yerel; colima/Docker Desktop).
+# MakerOS Buildroot derleyici imaji (arm64 yerel; colima/Docker Desktop).
 # Host'a hicbir arac kurulmaz; tum derleme bu kapta yapilir.
 FROM debian:trixie-slim
 

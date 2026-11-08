@@ -1,4 +1,4 @@
-// MakerOS 2 web masaüstü kabuğu — açılış.
+// MakerOS web masaüstü kabuğu — açılış.
 // Yalnız masaüstünün ilk karesi için gerekenler doğrudan içe aktarılır; Bul, Uygulamalar ızgarası,
 // değiştirici, Genel Bakış, Kontrol Merkezi, kilit/giriş, mobil düzen, kurulum sihirbazı ve perf HUD
 // ilk kullanımda dinamik import ile yüklenir (bkz. M).

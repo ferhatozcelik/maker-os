@@ -1,4 +1,4 @@
-# MakerOS 2 - Raspberry Pi 4 / 400 (arm64)
+# MakerOS - Raspberry Pi 4 / 400 (arm64)
 # Her BOOT_A/BOOT_B bolumunde ayni dosya bulunur. Varsayilan hiz asirtma YOK.
 arm_64bit=1
 kernel=kernel8.img

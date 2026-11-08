@@ -1,5 +1,5 @@
-# MakerOS 2 cekirdek parcasi (bcm2711_defconfig uzerine)
-# Bkz. docs/v2/PLAN.md (çekirdek ve bellek kararları)
+# MakerOS cekirdek parcasi (bcm2711_defconfig uzerine)
+# Bkz. docs/architecture/boot-and-storage.md
 
 # --- Zamanlama / gecikme ---
 CONFIG_PREEMPT=y

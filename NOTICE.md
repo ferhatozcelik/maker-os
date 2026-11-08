@@ -4,7 +4,7 @@ MakerOS'un kendi kaynak kodu (makerd, web kabuğu, `os/` altındaki derleme beti
 yapılandırmalar, örnek projeler) **MIT** lisansıyla lisanslanmıştır; bkz.
 [`LICENSE`](LICENSE).
 
-MakerOS 2 imajı Buildroot ile kaynaktan derlenir. Buildroot'un indirip derlediği paketlerin
+MakerOS imajı Buildroot ile kaynaktan derlenir. Buildroot'un indirip derlediği paketlerin
 lisansları ve kaynakları `./os/build.sh make legal-info` ile `output/legal-info/` altında
 listelenir (paket başına lisans metinleri ve kaynak arşivleri). Aşağıdaki tablo başlıca
 bileşenlerin özetidir; dağıtılan sürümün kendi lisans metinleri esastır.

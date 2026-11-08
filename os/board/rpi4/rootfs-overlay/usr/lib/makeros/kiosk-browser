@@ -1,7 +1,7 @@
 #!/bin/sh
 # labwc autostart icinden calisir: makerd hazir olana kadar kisa bekler, yerel oturum
 # bileti (/run/makeros/token; /run/makeros 0750 maker:maker) varsa otomatik
-# giris URL'si ile cog'u acar. Bkz. docs/v2/api.md "Yerel kabuk".
+# giris URL'si ile cog'u acar. Bkz. docs/api.md.
 BASE="http://127.0.0.1"
 i=0
 while [ $i -lt 50 ]; do
