@@ -34,6 +34,7 @@ box_devices() {
 
 box_create() {
 	name="$1"
+	mkdir -m 0700 -p "/run/user/$(id -u)" 2>/dev/null || true
 	echo "mos: '${name}' kutusu olusturuluyor (${BOX_IMAGE})..." >&2
 	# shellcheck disable=SC2046
 	podman create --name "${BOX_PREFIX}${name}" \
@@ -67,6 +68,7 @@ box_create() {
 
 box_ensure() {
 	name="$1"
+	mkdir -m 0700 -p "/run/user/$(id -u)" 2>/dev/null || true
 	podman container exists "${BOX_PREFIX}${name}" || box_create "${name}"
 	podman start "${BOX_PREFIX}${name}" >/dev/null 2>&1 || true
 }

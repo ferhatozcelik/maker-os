@@ -18,10 +18,10 @@ RestartSec=2
 Slice=user.slice
 # Kabuklar bu birimin cgroup'unda çalışır; durdurulunca hepsi kapanır.
 KillMode=control-group
-# İsteğe bağlı: logind oturumu ve /run/user/UID için (pam_systemd gerekir):
-#PAMName=login
+RuntimeDirectory=user/%U
+RuntimeDirectoryMode=0700
 UMask=0022
-Environment=LANG=C.UTF-8
+Environment=LANG=C.UTF-8 XDG_RUNTIME_DIR=/run/user/%U
 # Kasıtlı olarak NoNewPrivileges/ProtectSystem/MemoryDenyWriteExecute yok: bu
 # kullanıcının kendi oturumudur (sudo, podman, Node JIT çalışmalı).
 OOMScoreAdjust=100

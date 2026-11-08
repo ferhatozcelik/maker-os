@@ -8,6 +8,8 @@ if [ "$(id -u)" = 0 ] && [ -n "${SUDO_USER:-}" ] && [ "${SUDO_USER}" != root ]; 
 	uid=$(id -u "${SUDO_USER}")
 	user_home=$(grep -E "^${SUDO_USER}:" /etc/passwd 2>/dev/null | cut -d: -f6)
 	user_home="${user_home:-/home/${SUDO_USER}}"
+	mkdir -m 0700 -p "/run/user/${uid}" 2>/dev/null || true
+	chown "${uid}:${uid}" "/run/user/${uid}" 2>/dev/null || true
 	exec sudo -u "${SUDO_USER}" env XDG_RUNTIME_DIR="/run/user/${uid}" HOME="${user_home}" PATH="${PATH}" "$0" "$@"
 fi
 
