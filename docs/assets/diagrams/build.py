@@ -163,6 +163,105 @@ DIAGRAMS = {
     },
 }
 
+
+def terminal(lines, title, kind="mac", w=760):
+    """Terminal penceresi görseli. lines: (stil, metin); stil: cmd | out | ok | warn | dim | in."""
+    bar = 34
+    lh = 22
+    h = bar + 22 + lh * len(lines) + 14
+    bg, fg = ("#1e1f24", "#e6e6e9") if kind == "mac" else ("#012456", "#eeedf0")
+    out = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}" width="{w}" height="{h}" role="img" aria-label="{escape(title)}">',
+           f'<rect x="0.5" y="0.5" width="{w - 1}" height="{h - 1}" rx="12" fill="{bg}" stroke="#00000033"/>']
+    if kind == "mac":
+        out.append(f'<path d="M0.5 12.5 a12 12 0 0 1 12 -12 h{w - 25} a12 12 0 0 1 12 12 v{bar - 12} h-{w - 1} z" fill="#2c2d33"/>')
+        for i, c in enumerate(("#ff5f57", "#febc2e", "#28c840")):
+            out.append(f'<circle cx="{20 + i * 20}" cy="{bar / 2}" r="6" fill="{c}"/>')
+        out.append(text(w / 2, bar / 2 + 5, title, 13, 600, "#a9abb3"))
+    else:
+        out.append(f'<path d="M0.5 12.5 a12 12 0 0 1 12 -12 h{w - 25} a12 12 0 0 1 12 12 v{bar - 12} h-{w - 1} z" fill="#f3f3f3"/>')
+        out.append(text(16, bar / 2 + 5, title, 13, 600, "#1f1f1f", "start"))
+        for i, g in enumerate(("—", "☐", "✕")):
+            out.append(text(w - 90 + i * 32, bar / 2 + 5, g, 13, 400, "#1f1f1f"))
+    colors = {"cmd": fg, "out": fg, "ok": "#4ade80", "warn": "#f87171", "dim": "#9ca3af", "in": "#fbbf24", "acc": ACCENT}
+    y = bar + 26
+    for style, line in lines:
+        weight = 700 if style in ("ok", "warn", "acc") else 400
+        if style == "cmd":
+            prompt = "$ " if kind == "mac" else "PS> "
+            out.append(f'<text x="18" y="{y}" font-family="{MONO}" font-size="14" fill="{fg}"><tspan fill="{ACCENT}" font-weight="700">{escape(prompt)}</tspan>{escape(line)}</text>')
+        else:
+            out.append(f'<text x="18" y="{y}" font-family="{MONO}" font-size="14" font-weight="{weight}" fill="{colors[style]}" xml:space="preserve">{escape(line)}</text>')
+        y += lh
+    out.append("</svg>\n")
+    return "".join(out)
+
+
+FLASH_TR = [
+    ("cmd", 'sh -c "$(curl -fsSL https://raw.githubusercontent.com/ferhatozcelik/maker-os/main/flash.sh)"'),
+    ("acc", "  MakerOS — microSD yazıcı"),
+    ("out", "==> İmaj indiriliyor ve doğrulanıyor (SHA-256) … Doğrulandı."),
+    ("out", "==> Harici diskler aranıyor"),
+    ("out", "  1) /dev/disk4       31.9 GB  SD Card Reader"),
+    ("warn", "UYARI: /dev/disk4 üzerindeki HER ŞEY silinecek."),
+    ("in", "Onaylamak için disk adını yazın (disk4): disk4"),
+    ("in", "Wi-Fi ağ adı (boş bırakılabilir): EvAgim"),
+    ("dim", "5.9 GB yazıldı · 32 MB/s"),
+    ("ok", "✓ Hazır! Kartı çıkarıp cihaza takın ve gücü verin."),
+]
+FLASH_EN = [
+    ("cmd", 'sh -c "$(curl -fsSL https://raw.githubusercontent.com/ferhatozcelik/maker-os/main/flash.sh)"'),
+    ("acc", "  MakerOS — microSD flasher"),
+    ("out", "==> Downloading and verifying image (SHA-256) … Verified."),
+    ("out", "==> Looking for external disks"),
+    ("out", "  1) /dev/disk4       31.9 GB  SD Card Reader"),
+    ("warn", "WARNING: EVERYTHING on /dev/disk4 will be erased."),
+    ("in", "Type the disk name to confirm (disk4): disk4"),
+    ("in", "Wi-Fi network name (optional): HomeWiFi"),
+    ("dim", "5.9 GB written · 32 MB/s"),
+    ("ok", "✓ Done! Remove the card, insert it into the board and power it on."),
+]
+WIN_TR = [
+    ("cmd", "irm https://raw.githubusercontent.com/ferhatozcelik/maker-os/main/flash.ps1 | iex"),
+    ("acc", "  MakerOS — microSD yazıcı"),
+    ("out", "==> İmaj indiriliyor ve doğrulanıyor (SHA-256) … Doğrulandı."),
+    ("out", "==> Harici diskler aranıyor"),
+    ("out", "  1) disk2       31.9 GB  Generic SD/MMC USB Device"),
+    ("warn", "UYARI: disk2 üzerindeki HER ŞEY silinecek."),
+    ("in", "Onaylamak için disk adını yazın (disk2): disk2"),
+    ("in", "Wi-Fi ağ adı (boş bırakılabilir): EvAgim"),
+    ("dim", "Yazıldı: 5.9 GB · 210 s"),
+    ("ok", "✓ Hazır! Kartı çıkarıp cihaza takın ve gücü verin."),
+]
+WIN_EN = [
+    ("cmd", "irm https://raw.githubusercontent.com/ferhatozcelik/maker-os/main/flash.ps1 | iex"),
+    ("acc", "  MakerOS — microSD flasher"),
+    ("out", "==> Downloading and verifying image (SHA-256) … Verified."),
+    ("out", "==> Looking for external disks"),
+    ("out", "  1) disk2       31.9 GB  Generic SD/MMC USB Device"),
+    ("warn", "WARNING: EVERYTHING on disk2 will be erased."),
+    ("in", "Type the disk name to confirm (disk2): disk2"),
+    ("in", "Wi-Fi network name (optional): HomeWiFi"),
+    ("dim", "Written: 5.9 GB · 210 s"),
+    ("ok", "✓ Done! Remove the card, insert it into the board and power it on."),
+]
+
+DIAGRAMS["flash"] = {
+    "tr": lambda: flow([
+        ("Komutu çalıştır", "Terminal / PowerShell'e\ntek satırı yapıştırın"),
+        ("İndir", "En son imaj iner ve\nSHA-256 doğrulanır"),
+        ("Kartı seç", "Yalnız harici diskler;\ndisk adını yazıp onaylayın"),
+        ("Yaz ve tak", "Wi-Fi isteğe bağlı;\nkartı cihaza takın"),
+    ], "microSD karta yazma", highlight=(3,)),
+    "en": lambda: flow([
+        ("Run the command", "Paste one line into\nTerminal / PowerShell"),
+        ("Download", "Latest image downloads\nand SHA-256 is verified"),
+        ("Pick the card", "External disks only;\ntype its name to confirm"),
+        ("Write & insert", "Wi-Fi optional;\ninsert into the board"),
+    ], "Flashing the microSD card", highlight=(3,)),
+}
+DIAGRAMS["flash-mac"] = {"tr": lambda: terminal(FLASH_TR, "Terminal — macOS / Linux", "mac", 900), "en": lambda: terminal(FLASH_EN, "Terminal — macOS / Linux", "mac", 900)}
+DIAGRAMS["flash-windows"] = {"tr": lambda: terminal(WIN_TR, "Windows PowerShell (Yönetici)", "win", 900), "en": lambda: terminal(WIN_EN, "Windows PowerShell (Administrator)", "win", 900)}
+
 if __name__ == "__main__":
     for name, langs in DIAGRAMS.items():
         for lang, fn in langs.items():
