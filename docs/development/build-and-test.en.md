@@ -27,4 +27,4 @@ cd os
 # Output: os/out/makeros-1.0.0-rpi4.img.xz (+ .sha256)
 ```
 
-To push live updates (`makerd` + `shell` + overlay scripts) to a board connected over USB-C (`10.55.0.1`), run [`os/debug/push.sh`](../../os/debug/push.sh) (`os/debug/push.sh all`).
+To push live updates (`makerd` + `shell` + overlay scripts) to a board connected over USB-C (`10.42.0.1`), run [`os/debug/push.sh`](../../os/debug/push.sh) (`os/debug/push.sh all`).

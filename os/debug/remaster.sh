@@ -6,7 +6,7 @@
 #   os/debug/remaster.sh [taban.img.xz]            → os/out/makeros-<sürüm>-rpi4-debug.img.xz
 #   os/debug/remaster.sh --release [taban.img.xz]  → os/out/makeros-<sürüm>-rpi4.img.xz + .raucb
 #
-# Debug imajında: USB-C ağ kartı (Pi 10.55.0.1), anahtarla root SSH (~/.ssh/id_ed25519_makeros.pub),
+# Debug imajında: USB-C ağ kartı (Pi 10.42.0.1), anahtarla root SSH (~/.ssh/id_ed25519_makeros.pub),
 # /usr üzerinde yazılabilir katman (os/debug/push.sh). Kullanıcı imajına (--release) GİRMEZ.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"

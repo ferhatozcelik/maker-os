@@ -200,7 +200,7 @@ irm https://raw.githubusercontent.com/ferhatozcelik/maker-os/main/flash.ps1 | ie
 ### 2. Boot and connect
 
 1. **Boot:** Insert the card into the board and power it on. The first boot takes a minute or two.
-2. **Connect:** Open `http://maker-os.local/` on the same network or `http://10.55.0.1/` over USB-C; without a network, join the `MakerOS` Wi-Fi and open `http://10.42.0.1/kurulum`.
+2. **Connect:** Open `http://maker-os.local/` on the same network or `http://10.42.0.1/` over USB-C; without a network, join the `MakerOS` Wi-Fi and open `http://10.42.0.1/kurulum`.
 3. **Sign in:** The default account is **`makeros` / `makeros`**. Change the password in **Settings › User**.
 
 <a id="documentation"></a>

@@ -200,7 +200,7 @@ irm https://raw.githubusercontent.com/ferhatozcelik/maker-os/main/flash.ps1 | ie
 ### 2. Başlatın ve bağlanın
 
 1. **Başlatın:** Kartı cihaza takıp gücü verin. İlk açılış bir iki dakika sürer.
-2. **Bağlanın:** Aynı ağda `http://maker-os.local/`, USB-C ile `http://10.55.0.1/`; ağ yoksa `MakerOS` Wi-Fi'ına bağlanıp `http://10.42.0.1/kurulum` adresini açın.
+2. **Bağlanın:** Aynı ağda `http://maker-os.local/`, USB-C ile `http://10.42.0.1/`; ağ yoksa `MakerOS` Wi-Fi'ına bağlanıp `http://10.42.0.1/kurulum` adresini açın.
 3. **Oturum açın:** Varsayılan hesap **`makeros` / `makeros`**. Parolayı **Ayarlar › Kullanıcı** bölümünden değiştirin.
 
 <a id="documentation"></a>

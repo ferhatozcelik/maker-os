@@ -8,7 +8,7 @@ MakerOS is designed for secure local and remote administration over Wi-Fi, Ether
 
 - **Wi-Fi, Ethernet & Hotspot:** Managed via NetworkManager with support for WPA2/WPA3, WPA-Enterprise, and Wi-Fi hotspot mode (default gateway `10.42.0.1` / `10.42.0.0`).
 - **First-Boot Fallback Hotspot:** Automatically starts an open `MakerOS` setup network if no known network is reachable.
-- **USB-C Gadget Networking:** Direct connection over USB-C at `10.55.0.1` (`maker-os.local`).
+- **USB-C Gadget Networking:** Direct connection over USB-C at `10.42.0.1` (`maker-os.local`).
 
 ## Security Controls
 

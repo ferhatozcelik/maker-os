@@ -8,7 +8,7 @@ MakerOS, hem yerel ekrandan hem de ağ veya USB-C üzerinden güvenli uzaktan y�
 
 - **Wi-Fi, Ethernet ve Hotspot:** NetworkManager üzerinden WPA2/WPA3, kurumsal ağlar (802.1X) ve erişim noktası (varsayılan ağ geçidi `10.42.0.1` / `10.42.0.0`) desteklenir.
 - **İlk Açılış Erişim Noktası:** Kayıtlı ağ bulunamazsa şifresiz `MakerOS` kurulum ağı otomatik açılır.
-- **USB-C Gadget Ağı:** Kart bilgisayara USB-C ile bağlandığında `10.55.0.1` (`maker-os.local`) adresinden doğrudan erişilebilir.
+- **USB-C Gadget Ağı:** Kart bilgisayara USB-C ile bağlandığında `10.42.0.1` (`maker-os.local`) adresinden doğrudan erişilebilir.
 
 ## Güvenlik Kontrolleri
 
