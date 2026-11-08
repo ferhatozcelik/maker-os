@@ -120,14 +120,9 @@ pub fn local_addr(ip: &str) -> bool {
     }
 }
 
-/// MAC adresinin son 4 onaltılık hanesinden "makeros-xxxx" önerir.
-pub fn suggest_hostname(mac: &str) -> String {
-    let h = mac.replace(':', "").to_lowercase();
-    if h.len() < 4 || !h.chars().all(|c| c.is_ascii_hexdigit()) {
-        return "makeros".into();
-    }
-    format!("makeros-{}", &h[h.len() - 4..])
-}
+/// Varsayılan cihaz adı: web arayüzü her zaman http://maker-os.local/ adresinden açılır.
+/// (Aynı ağda ikinci bir MakerOS varsa mDNS çakışmasını systemd-resolved çözer; kullanıcı adı değiştirebilir.)
+pub const DEFAULT_HOSTNAME: &str = "maker-os";
 
 #[cfg(test)]
 mod tests {
@@ -141,13 +136,6 @@ mod tests {
         for bad in ["8.8.8.8", "2001:db8::1", "x"] {
             assert!(!local_addr(bad), "{bad}");
         }
-    }
-
-    #[test]
-    fn hostnames() {
-        assert_eq!(suggest_hostname("dc:a6:32:12:ab:cd"), "makeros-abcd");
-        assert_eq!(suggest_hostname(""), "makeros");
-        assert_eq!(suggest_hostname("zz:zz"), "makeros");
     }
 
     #[test]

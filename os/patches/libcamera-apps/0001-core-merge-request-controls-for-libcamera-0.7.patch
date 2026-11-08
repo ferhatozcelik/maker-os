@@ -1,0 +1,22 @@
+From: MakerOS <noreply@makeros>
+Subject: [PATCH] core: merge request controls instead of overwriting them
+
+libcamera 0.7 no longer allows replacing Request::controls() wholesale
+("Overwriting Request::controls() is not allowed" -> abort). Merge the
+pending controls into the request's own list, as upstream rpicam-apps
+v1.11.1 does.
+
+Upstream: https://github.com/raspberrypi/rpicam-apps/compare/v1.11.0...v1.11.1
+---
+--- a/core/rpicam_app.cpp
++++ b/core/rpicam_app.cpp
+@@ -894,7 +894,8 @@
+ 
+ 	{
+ 		std::lock_guard<std::mutex> lock(control_mutex_);
+-		request->controls() = std::move(controls_);
++		request->controls().merge(controls_, ControlList::MergePolicy::OverwriteExisting);
++		controls_.clear();
+ 	}
+ 
+ 	if (camera_->queueRequest(request) < 0)

@@ -16,7 +16,7 @@ const BUILTIN = {
   camera: { w: 760, h: 520, keys: "kamera fotoğraf video camera picamera rpicam" },
   gpio: { w: 720, h: 640, keys: "gpio pin donanım elektronik led buton hardware header", single: true },
   plugins: { w: 880, h: 580, keys: "eklenti uygulama zip içe aktar dışa aktar paylaş plugin extension import export", single: true },
-  screen: { w: 1000, h: 640, keys: "ekran modu uzak ekran masaüstü vnc ekran paylaşımı remote desktop screen viewer", single: true },
+  browser: { w: 1100, h: 720, keys: "tarayıcı internet web sitesi chromium chrome browser" },
 };
 export const DEFAULT_DOCK = ["makeros.files", "chromium", "makeros.terminal", "makeros.python", "makeros.agents", "makeros.camera", "makeros.gpio", "makeros.plugins", "makeros.activity", "makeros.settings"];
 
@@ -46,14 +46,10 @@ export let APPS = withTheme(builtinList());
 prefs.on("change", k => { if (k === "look") APPS = withTheme(APPS); });
 export const appById = id => APPS.find(a => a.id === id);
 
-// Ekran Modu durumu (GET /screen): { enabled, headless }. loadApps doldurur.
-export const SCREEN = { enabled: false, headless: true };
 const isBrowser = a => a.id === "chromium" || (a.categories || []).includes("WebBrowser");
 export { isBrowser };
 
 export async function loadApps() {
-  // Ekran Modu durumu, uygulama listesiyle paralel istenir (açılış sırayla beklemesin).
-  const screenP = get("/screen").catch(() => null);
   try {
     const list = await get("/apps");
     if (Array.isArray(list) && list.length) {
@@ -71,13 +67,9 @@ export async function loadApps() {
     APPS = [...APPS.filter(a => !a.id.startsWith("makeros.plugin.")), ...extra];
   } catch { /* eklenti hizmeti yok */ }
   APPS = withTheme(APPS);
-  // Ekran Modu: varsayılan kapalı (Ayarlar › Ekran Modu). Kapalıyken ya da Pi'nin kendi ekranında
-  // (cog/WPE, yerel giriş: kendini gösterirdi) hiçbir yerde listelenmez.
-  let local = /WPE|cog/i.test(navigator.userAgent);
-  try { local ||= sessionStorage.getItem("mk.local") === "1" || new URLSearchParams(location.search).get("local") === "1"; } catch { /* yok */ }
-  const sc = await screenP;
-  if (sc) Object.assign(SCREEN, sc); else SCREEN.enabled = false;
-  if (local || !SCREEN.enabled) APPS = APPS.filter(a => a.id !== "makeros.screen");
+  // Tarayıcı penceresi masaüstünde ayrı listelenmez: uzaktan "Chromium" simgesi onu açar (bkz. main.js).
+  // Web arayüzünde (/web) yerel uygulama olmadığından orada "Tarayıcı" olarak görünür.
+  if (document.documentElement.dataset.ui !== "web") APPS = APPS.filter(a => a.id !== "makeros.browser");
   prefs.emit("change", "look", pref("look")); // eklenti teması etkinse duvar kâğıdı/marka/raf yenilensin
   return APPS;
 }

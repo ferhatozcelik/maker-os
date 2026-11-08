@@ -10,7 +10,11 @@
 .lk-date { font-size: var(--fs-title2); font-weight: 500; margin-top: 8px; text-transform: capitalize; }
 .lk-card { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 18vh; width: 260px; }
 .lk-avatar { width: 84px; height: 84px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.22); margin-bottom: 4px; overflow: hidden; }
-.lk-avatar img { width: 84px; height: 84px; }
+.lk-avatar { position: relative; }
+/* Logo dairenin tam ortasında ve biraz büyük: simgenin yuvarlatılmış kare köşeleri dairenin dışında kalır → yuvarlak logo.
+   (Taşan öğe grid ile ortalanınca kayıyordu; mutlak konum + translate kesin ortalar.) */
+.lk-avatar img { position: absolute; left: 50%; top: 50%; width: 104px; height: 104px; max-width: none; transform: translate(-50%, -50%); }
+.lk-avatar { box-shadow: 0 0 0 2px rgba(255,255,255,.35), 0 6px 20px rgba(0,0,0,.25); }
 .lk-name { font-size: var(--fs-title2); font-weight: 600; }
 .lk-sub { color: rgba(255,255,255,.78); margin-bottom: 6px; }
 .lk-field { position: relative; width: 100%; }

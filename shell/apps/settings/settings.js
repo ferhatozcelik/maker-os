@@ -8,7 +8,8 @@ import { pref, setPref, fxTier, flushPrefs, isDark } from "/shell/js/prefs.js";
 import { THEMES, wallURL, registerPluginThemes, themeName, themeDesc } from "/shell/js/themes.js";
 import { SHORTCUTS, macLabel, pcLabel } from "/shell/js/keys.js";
 import { lang, locale } from "/shell/js/i18n.js";
-import { confirmDlg } from "/shell/js/appui.js";
+import { confirmDlg, toast } from "/shell/js/appui.js";
+import { chooseWallpaper, removeWallpaper } from "/shell/js/wallpaper-upload.js";
 
 app.init({ title: t("app.settings") });
 app.chrome({ sidebar: 220, title: false });
@@ -81,15 +82,18 @@ const PAGES = {
   async wifi(el) {
     const list = h("div.group", h("div.empty", t("loading")));
     const status = h("p.hint");
-    let nets = [], job = null, sel = null;
+    let nets = [], job = null, sel = null, busySsid = null, formErr = "";
+    // Bağlanırken: düğme dönen simge + "Bağlanılıyor…", ağ satırında durum; sonuç bildirim (toast) + satır içi hata.
     const connect = async (n, extra = {}) => {
+      busySsid = n.ssid; formErr = ""; render();
       try {
         const r = await post("/net/wifi/connect", { ssid: n.ssid, ...extra });
         job = r?.job; flash(status, t("set.wifi.connecting", { ssid: n.ssid }));
+        if (!job) { busySsid = null; toast(t("set.wifi.ok") + ": " + n.ssid); sel = null; scan(); return; }
         // WS kaçırırsa: GET /jobs/{id} ile yokla
         const poll = setInterval(async () => { if (!job) return clearInterval(poll); try { onJob(await get(`/jobs/${encodeURIComponent(job)}`)); } catch { /* yok */ } }, 2500);
         cleanup.push(() => clearInterval(poll));
-      } catch (e) { flash(status, e.message, false); }
+      } catch (e) { busySsid = null; formErr = e.message; flash(status, e.message, false); toast(e.message); render(); }
     };
     const form = n => {
       const ent = n.security === "enterprise";
@@ -97,12 +101,16 @@ const PAGES = {
       const go = () => connect(n, ent ? { eap: { identity: id.value, password: pw.value, method: "peap" } } : { password: pw.value });
       pw.onkeydown = e => { if (e.key === "Enter") go(); };
       setTimeout(() => (ent ? id : pw).focus());
-      return h("div.row", h("div.grow", { style: { display: "grid", gap: "6px" } }, ent ? id : "", pw), btn(t("connect"), go, ".primary"));
+      const busy = busySsid === n.ssid;
+      const b = h("button.btn.primary" + (busy ? ".busy" : ""), { onclick: go, disabled: busy },
+        ...(busy ? [h("span", { html: icon("loader-circle", 14), style: { display: "inline-flex", marginRight: "6px" } }), t("set.wifi.connectingShort")] : [t("connect")]));
+      return h("div.row", h("div.grow", { style: { display: "grid", gap: "6px" } }, ent ? id : "", pw,
+        formErr ? h("p.hint.err", { style: { margin: 0 } }, formErr) : ""), b);
     };
     const render = () => {
       if (!nets.length) return list.replaceChildren(h("div.empty", t("set.wifi.none")));
       list.replaceChildren(...nets.flatMap(n => {
-        const r = row(n.ssid, [n.active ? t("set.wifi.connected") : n.known ? t("set.wifi.known") : "", n.security === "open" ? t("set.wifi.open") : n.security.toUpperCase()].filter(Boolean).join(" · "),
+        const r = row(n.ssid, [busySsid === n.ssid ? t("set.wifi.connectingShort") : n.active ? t("set.wifi.connected") : n.known ? t("set.wifi.known") : "", n.security === "open" ? t("set.wifi.open") : n.security.toUpperCase()].filter(Boolean).join(" · "),
           h("span", { style: { display: "flex", gap: "8px", alignItems: "center" } },
             n.known ? h("button.btn.sm", { onclick: e => { e.stopPropagation(); post("/net/wifi/forget", { ssid: n.ssid }).then(scan).catch(x => flash(status, x.message, false)); } }, t("forget")) : "",
             n.security !== "open" ? h("span.muted", { html: icon("lock", 13) }) : "", h("span", { html: icon(wifiIcon(n.signal), 17) })),
@@ -123,11 +131,17 @@ const PAGES = {
       s.focus();
     };
     const other = h("button.link", { onclick: hidden }, t("set.wifi.other"));
-    el.append(h("div.page-h", h("h2", { style: { margin: 0, flex: 1 } }, t("set.wifi.networks")), rescan), list, status, other);
+    el.append(h("div.page-h", h("h2", { style: { margin: 0, flex: 1 } }, t("set.wifi.networks")), rescan), status, list, other);
     const onJob = j => {
       if (!j || j.id !== job) return;
       if (j.state === "running") flash(status, `${j.log || ""} %${j.progress}`);
-      else { flash(status, j.log || (j.state === "done" ? t("set.wifi.ok") : t("error")), j.state === "done"); job = null; sel = null; scan(); }
+      else {
+        const ok = j.state === "done", ssid = busySsid, m = j.log || (ok ? t("set.wifi.ok") : t("error"));
+        flash(status, m, ok); job = null; busySsid = null;
+        toast(ok ? `${t("set.wifi.ok")}: ${ssid}` : m);
+        if (ok) { sel = null; formErr = ""; } else formErr = m; // hata: şifre kutusu açık kalır, altında neden yazar
+        render(); scan();
+      }
     };
     cleanup.push(app.events.subscribe("jobs", onJob));
     scan();
@@ -204,8 +218,32 @@ const PAGES = {
       onclick: e => { packs.querySelectorAll(".pack").forEach(b => b.classList.toggle("on", b === e.currentTarget)); setPref("look", p.id); setPref("accent", p.accent); setPref("wallpaper", "auto"); if (p.mode) setPref("theme", p.mode); syncAcc(); wsel.value = "auto"; } },
       h("span.thumb", { style: `background-image:url("${wallURL(p.id, isDark())}")` }), h("span.pn", themeName(p, t, lang)), h("span.pd", themeDesc(p, t, lang)))));
     const refreshThumbs = () => packs.querySelectorAll(".pack").forEach(b => { b.querySelector(".thumb").style.backgroundImage = `url("${wallURL(b.dataset.id, isDark())}")`; });
+    const custom = () => String(pref("wallpaper") || "").startsWith("custom:");
     const wsel = h("select", { onchange: e => setPref("wallpaper", e.target.value) }, h("option", { value: "auto" }, t("set.ap.wall.auto")), ...THEMES.map(p => h("option", { value: p.id }, themeName(p, t, lang))));
-    wsel.value = pref("wallpaper") || "auto";
+    const syncWsel = () => {
+      wsel.querySelector("option.cu")?.remove();
+      if (custom()) wsel.append(h("option.cu", { value: pref("wallpaper") }, t("set.ap.wall.custom")));
+      wsel.value = pref("wallpaper") || "auto";
+    };
+    syncWsel();
+    // Kendi resmin: masaüstü ve (ayrı) kilit ekranı. Yükleme sırasında düğme meşgul; sonuç bildirim olarak.
+    const upBtn = (label, fn) => {
+      const b = h("button.btn.sm", { onclick: async () => {
+        b.disabled = true; const old = b.textContent; b.textContent = t("set.ap.uploading");
+        try { if (await fn()) toast(t("set.ap.saved")); } catch (e) { toast(e.message); }
+        b.disabled = false; b.textContent = old;
+      } }, label);
+      return b;
+    };
+    const wallUp = upBtn(t("set.ap.wall.upload"), async () => { if (!await chooseWallpaper("desktop")) return false; setPref("wallpaper", "custom:" + Date.now()); syncWsel(); return true; });
+    const lockMode = () => (pref("lockWall") ? "custom" : "same");
+    const lockSeg = h("span");
+    const renderLock = () => lockSeg.replaceChildren(
+      seg([["same", t("set.ap.lock.same")], ["custom", t("set.ap.lock.custom")]], lockMode(), async v => {
+        if (v === "same") { await removeWallpaper("lock"); setPref("lockWall", ""); toast(t("set.ap.saved")); renderLock(); }
+        else if (!pref("lockWall")) { try { if (await chooseWallpaper("lock")) { setPref("lockWall", String(Date.now())); toast(t("set.ap.saved")); } } catch (e) { toast(e.message); } renderLock(); }
+      }),
+      pref("lockWall") ? upBtn(t("set.ap.lock.change"), async () => { if (!await chooseWallpaper("lock")) return false; setPref("lockWall", String(Date.now())); return true; }) : "");
     const themes = [["light", t("set.ap.light")], ["dark", t("set.ap.dark")], ["auto", t("set.auto")]];
     const th = h("div.themes", ...themes.map(([v, l]) => h("button.theme" + (pref("theme") === v ? ".on" : ""), { onclick: e => { th.querySelectorAll(".theme").forEach(b => b.classList.toggle("on", b === e.currentTarget)); setPref("theme", v); setTimeout(refreshThumbs, 50); } },
       h("span.prev.prev-" + v), h("span", l))));
@@ -216,10 +254,14 @@ const PAGES = {
     const fxHint = h("div.s");
     const upd = () => { fxHint.textContent = t("set.ap.fx." + fxTier()); };
     upd();
+    renderLock();
     el.append(h("h2.first", t("set.ap.packs")), h("div.group.pad", packs),
-      group(row(t("set.ap.mode"), null, th), row(t("set.ap.wall"), t("set.ap.wallHint"), wsel)), group(row(t("set.ap.accent"), null, acc)),
+      group(row(t("set.ap.mode"), null, th), row(t("set.ap.wall"), t("set.ap.wallHint"), h("span", { style: { display: "flex", gap: "8px", alignItems: "center" } }, wsel, wallUp)),
+        row(t("set.ap.lock"), t("set.ap.lockHint"), lockSeg)), group(row(t("set.ap.accent"), null, acc)),
       group(row(t("set.ap.fx"), fxHint, seg([["auto", t("set.auto")], ["full", t("fx.full")], ["lite", t("fx.lite")], ["flat", t("fx.flat")]], pref("fx"), v => { setPref("fx", v); upd(); })),
-        row(t("set.ap.magnify"), t("set.ap.magnifyHint"), sw(pref("magnify"), v => setPref("magnify", v)))));
+        row(t("set.ap.magnify"), t("set.ap.magnifyHint"), sw(pref("magnify"), v => setPref("magnify", v)))),
+      group(row(t("set.ap.aiWidget"), t("set.ap.aiWidgetHint"), sw(pref("aiWidget") !== false, v => setPref("aiWidget", v))),
+        row(t("set.ap.aiMode"), t("set.ap.aiModeHint"), seg([["oner", t("ai.mode.oner")], ["sor", t("ai.mode.sor")], ["otomatik", t("ai.mode.otomatik")]], pref("aiMode") || "oner", v => setPref("aiMode", v)))));
   },
 
   async user(el) {

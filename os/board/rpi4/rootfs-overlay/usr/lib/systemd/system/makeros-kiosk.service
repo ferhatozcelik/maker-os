@@ -1,4 +1,4 @@
-# Yerel ekran: labwc (wlroots) + cog (WPE WebKit) -> web kabuk; wayvnc ile uzaktan.
+# Yerel ekran: labwc (wlroots) + cog (WPE WebKit) -> web kabuk.
 # 'maker' hizmet hesabi olarak (makerd ile ayni), logind oturumu (PAM ->
 # pam_systemd) ile seat0'da. Kurulum tamamlanmadan da calisir: makerd '/'
 # adresinde kurulum sihirbazini sunar.

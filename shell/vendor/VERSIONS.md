@@ -33,10 +33,3 @@ Yazı tiplerinin `latin` + `latin-ext` alt kümeleri Türkçe karakterleri (ğ �
 Apple varlığı, SF yazı tipi veya SF Symbols kullanılmaz. Uygulama simgeleri ve duvar kâğıdı MakerOS'a özgüdür
 (`tools/gen-app-icons.mjs`, `tools/gen-wallpaper.mjs`).
 
-## noVNC (Ekran Modu ve Chromium penceresi)
-
-| Bileşen | Sürüm | Lisans | Kaynak tarball (sha256) |
-|---|---|---|---|
-| @novnc/novnc (`core/`, `vendor/pako`) | 1.7.0 | MPL-2.0 (`novnc/LICENSE.txt`; pako MIT) | `https://registry.npmjs.org/@novnc/novnc/-/novnc-1.7.0.tgz` (32689f18d6abe96bc6530828a6bd0b9ae33bda07c083a6575ed255b5a8f2e903) |
-
-Değiştirilmeden kopyalanmıştır; `apps/screen/screen.js` doğrudan `core/rfb.js` ES modülünü içe aktarır.

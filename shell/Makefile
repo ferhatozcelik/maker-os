@@ -5,7 +5,6 @@
 #   make smoke        dev-server'a karşı duman testi (ekran görüntüleri: OUT)
 #   make smoke-fresh  --fresh dev-server'a karşı sihirbaz + tam test
 #   make smoke-makerd gerçek makerd --mock (MAKERD_MOCK_FRESH=1) kapsayıcısına karşı --fresh test
-#   make vnc-e2e      uçtan uca Uzak Ekran (noVNC → makerd → wayvnc → labwc)
 #   make down         kapsayıcıları ve ağı kaldır
 SHELL_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 REPO      := $(abspath $(SHELL_DIR)/..)
@@ -62,12 +61,3 @@ smoke-makerd: makerd-fresh
 down:
 	-docker rm -f mk-shell-dev mk-makerd
 	-docker network rm $(NET)
-
-# Uçtan uca Uzak Ekran: depo kökündeki compose (makerd --mock + labwc/wayvnc sanal masaüstü)
-# → başsız Chromium noVNC ile bağlanır, VNC'den terminale komut yazar, sonucu masaüstü kabında doğrular.
-.PHONY: vnc-e2e
-vnc-e2e: smoke-image
-	cd "$(REPO)" && $(COMPOSE) up -d --build --force-recreate
-	@sleep 5
-	docker run --rm --network maker-os_default -v "$(SHELL_DIR)":/shell:ro -v "$(OUT)":/out --entrypoint node $(SMOKE_IMG) /shell/tools/vnc-e2e.mjs --url http://makerd:8080 --out /out
-	cd "$(REPO)" && $(COMPOSE) exec -T desktop test -f /tmp/vnc-e2e-ok && echo "✔ komut uzak masaüstünde çalıştı"

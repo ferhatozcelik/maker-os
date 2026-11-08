@@ -126,6 +126,192 @@ pub fn list(home: &str, p: &str) -> Result<Listing, FsError> {
     Ok(out)
 }
 
+// --- kopyala, çöp kutusu, arama, konumlar ------------------------------------------------
+
+/// Hedef varsa "ad (2).uzantı" biçiminde boş bir ad bulur (Finder/Dosyalar gibi).
+fn free_name(p: &Path) -> PathBuf {
+    if p.symlink_metadata().is_err() {
+        return p.to_path_buf();
+    }
+    let dir = p.parent().unwrap_or(Path::new("/"));
+    let stem = p.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default();
+    let ext = p.extension().map(|e| format!(".{}", e.to_string_lossy())).unwrap_or_default();
+    (2..10_000).map(|i| dir.join(format!("{stem} ({i}){ext}"))).find(|c| c.symlink_metadata().is_err()).unwrap_or_else(|| p.to_path_buf())
+}
+
+/// Klasörü (bağlantılar bağlantı olarak) özyinelemeli kopyalar.
+fn copy_tree(src: &Path, dst: &Path) -> Result<(), FsError> {
+    let md = src.symlink_metadata().map_err(fs_err)?;
+    if md.file_type().is_symlink() {
+        let t = std::fs::read_link(src).map_err(fs_err)?;
+        std::os::unix::fs::symlink(t, dst).map_err(fs_err)?;
+    } else if md.is_dir() {
+        std::fs::create_dir(dst).map_err(fs_err)?;
+        for e in std::fs::read_dir(src).map_err(fs_err)?.flatten() {
+            copy_tree(&e.path(), &dst.join(e.file_name()))?;
+        }
+        let _ = std::fs::set_permissions(dst, md.permissions());
+    } else {
+        std::fs::copy(src, dst).map_err(fs_err)?;
+    }
+    Ok(())
+}
+
+/// freedesktop.org çöp kutusu: ~/.local/share/Trash/{files,info}.
+fn trash_dirs(home: &str) -> (PathBuf, PathBuf) {
+    let t = Path::new(home).join(".local/share/Trash");
+    (t.join("files"), t.join("info"))
+}
+
+fn pct_encode(s: &str) -> String {
+    s.bytes().map(|b| if b.is_ascii_alphanumeric() || b"/-._~".contains(&b) { (b as char).to_string() } else { format!("%{b:02X}") }).collect()
+}
+
+fn pct_decode(s: &str) -> String {
+    let b = s.as_bytes();
+    let mut out = Vec::with_capacity(b.len());
+    let mut i = 0;
+    while i < b.len() {
+        if b[i] == b'%' && i + 2 < b.len() {
+            if let Some(v) = std::str::from_utf8(&b[i + 1..i + 3]).ok().and_then(|h| u8::from_str_radix(h, 16).ok()) {
+                out.push(v);
+                i += 3;
+                continue;
+            }
+        }
+        out.push(b[i]);
+        i += 1;
+    }
+    String::from_utf8_lossy(&out).into_owned()
+}
+
+/// Çöpteki bir öğe (liste için).
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct TrashItem {
+    /// Çöp içindeki ad (geri yükleme/silme anahtarı).
+    pub id: String,
+    pub name: String,
+    /// Asıl konumu.
+    pub origin: String,
+    pub deleted: String,
+    pub dir: bool,
+    pub size: i64,
+}
+
+fn trash_put(home: &str, p: &Path) -> Result<(), FsError> {
+    if p == Path::new(home) || p == Path::new("/") {
+        return Err(FsError("Ev dizini çöpe atılamaz.".into()));
+    }
+    let (files, info) = trash_dirs(home);
+    if p.starts_with(&files) {
+        return Err(FsError("Zaten çöp kutusunda.".into()));
+    }
+    std::fs::create_dir_all(&files).map_err(fs_err)?;
+    std::fs::create_dir_all(&info).map_err(fs_err)?;
+    let name = p.file_name().map(|s| s.to_string_lossy().into_owned()).ok_or_else(|| FsError("Geçersiz yol.".into()))?;
+    let dst = free_name(&files.join(&name));
+    let id = dst.file_name().unwrap().to_string_lossy().into_owned();
+    let when = jiff::Zoned::now().strftime("%Y-%m-%dT%H:%M:%S").to_string();
+    std::fs::write(info.join(format!("{id}.trashinfo")), format!("[Trash Info]\nPath={}\nDeletionDate={when}\n", pct_encode(&p.to_string_lossy()))).map_err(fs_err)?;
+    if let Err(e) = std::fs::rename(p, &dst) {
+        let _ = std::fs::remove_file(info.join(format!("{id}.trashinfo")));
+        // Başka bir dosya sistemi (USB bellek): çöpe taşınamaz.
+        if e.raw_os_error() == Some(18) {
+            return Err(FsError("Bu sürücüdeki öğeler çöpe atılamaz; kalıcı olarak silin.".into()));
+        }
+        return Err(fs_err(e));
+    }
+    Ok(())
+}
+
+fn trash_list(home: &str) -> Vec<TrashItem> {
+    let (files, info) = trash_dirs(home);
+    let mut out = Vec::new();
+    for e in std::fs::read_dir(&files).into_iter().flatten().flatten() {
+        let id = e.file_name().to_string_lossy().into_owned();
+        let txt = std::fs::read_to_string(info.join(format!("{id}.trashinfo"))).unwrap_or_default();
+        let field = |k: &str| txt.lines().find_map(|l| l.strip_prefix(k)).unwrap_or("").to_string();
+        let origin = pct_decode(&field("Path="));
+        let md = e.path().symlink_metadata().ok();
+        out.push(TrashItem {
+            name: Path::new(&origin).file_name().map(|s| s.to_string_lossy().into_owned()).unwrap_or_else(|| id.clone()),
+            id,
+            origin,
+            deleted: field("DeletionDate="),
+            dir: md.as_ref().is_some_and(|m| m.is_dir()),
+            size: md.map(|m| m.len() as i64).unwrap_or(0),
+        });
+    }
+    out.sort_by(|a, b| b.deleted.cmp(&a.deleted));
+    out
+}
+
+fn trash_id_ok(id: &str) -> Result<(), FsError> {
+    if id.is_empty() || id.contains('/') || id == "." || id == ".." {
+        return Err(FsError("Geçersiz çöp öğesi.".into()));
+    }
+    Ok(())
+}
+
+/// Ad içinde arar (büyük/küçük harf duyarsız), en fazla 300 sonuç, 8 düzey derinlik; gizli klasörlere girmez.
+fn search(home: &str, dir: &Path, q: &str) -> Listing {
+    let q = q.to_lowercase();
+    let mut out = Listing { path: dir.to_string_lossy().into_owned(), home: home.into(), entries: Vec::new() };
+    let mut stack = vec![(dir.to_path_buf(), 0)];
+    while let Some((d, depth)) = stack.pop() {
+        for e in std::fs::read_dir(&d).into_iter().flatten().flatten() {
+            let name = e.file_name().to_string_lossy().into_owned();
+            let Ok(md) = e.path().symlink_metadata() else { continue };
+            if name.to_lowercase().contains(&q) {
+                // Sonucun klasöre göre yolu: kabuk tıklayınca açabilsin.
+                let rel = e.path().strip_prefix(dir).map(|r| r.to_string_lossy().into_owned()).unwrap_or(name.clone());
+                out.entries.push(entry(rel, &md));
+                if out.entries.len() >= 300 {
+                    return out;
+                }
+            }
+            if md.is_dir() && !name.starts_with('.') && depth < 8 && name != "node_modules" && name != "__pycache__" {
+                stack.push((e.path(), depth + 1));
+            }
+        }
+    }
+    out.entries.sort_by(|a, b| b.dir.cmp(&a.dir).then_with(|| a.name.to_lowercase().cmp(&b.name.to_lowercase())));
+    out
+}
+
+/// Kenar çubuğu konumları: ev altındaki standart klasörler (varsa) ve takılı sürücüler (USB bellek, SD).
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Place {
+    pub id: String,
+    pub path: String,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub drive: bool,
+}
+
+fn places(home: &str) -> Vec<Place> {
+    // Standart klasörler yoksa oluşturulur (yeni hesapta da kenar çubuğu dolu olsun).
+    for d in ["Masaüstü", "Belgeler", "İndirilenler", "Resimler", "Videolar"] {
+        let _ = std::fs::create_dir(Path::new(home).join(d));
+    }
+    let mut out = Vec::new();
+    for (id, d) in [("home", ""), ("desktop", "Masaüstü"), ("documents", "Belgeler"), ("downloads", "İndirilenler"), ("pictures", "Resimler"), ("videos", "Videolar"), ("projects", "Projeler")] {
+        let p = if d.is_empty() { PathBuf::from(home) } else { Path::new(home).join(d) };
+        if id == "home" || p.is_dir() {
+            out.push(Place { id: id.into(), path: p.to_string_lossy().into_owned(), drive: false });
+        }
+    }
+    let user = Path::new(home).file_name().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default();
+    for base in [format!("/run/media/{user}"), format!("/media/{user}"), "/media".into(), "/mnt".into()] {
+        for e in std::fs::read_dir(&base).into_iter().flatten().flatten() {
+            let p = e.path();
+            if p.is_dir() && std::fs::read_dir(&p).is_ok() && !out.iter().any(|x| x.path == p.to_string_lossy()) && p.to_string_lossy() != format!("/media/{user}") {
+                out.push(Place { id: e.file_name().to_string_lossy().into_owned(), path: p.to_string_lossy().into_owned(), drive: true });
+            }
+        }
+    }
+    out
+}
+
 /// mkdir, rename, remove, stat ve list; JSON yanıt.
 pub fn fs_op(home: &str, o: &Open) -> Result<Vec<u8>, FsError> {
     let p = resolve(home, &o.path);
@@ -150,6 +336,90 @@ pub fn fs_op(home: &str, o: &Open) -> Result<Vec<u8>, FsError> {
                 Err(e) => return Err(fs_err(e)),
             }
         }
+        // Kopyala: hedef klasöre (ya da tam hedef yola); ad çakışırsa "ad (2)".
+        "copy" => {
+            let mut to = resolve(home, &o.to);
+            if to.is_dir() {
+                to = to.join(p.file_name().ok_or_else(|| FsError("Geçersiz yol.".into()))?);
+            }
+            let to = free_name(&to);
+            if to.starts_with(&p) {
+                return Err(FsError("Klasör kendi içine kopyalanamaz.".into()));
+            }
+            copy_tree(&p, &to)?;
+            return serde_json::to_vec(&serde_json::json!({ "path": to.to_string_lossy() })).map_err(|e| FsError(e.to_string()));
+        }
+        // Taşı: hedef klasöre; ad çakışırsa hata (kabuk sorar).
+        "move" => {
+            let mut to = resolve(home, &o.to);
+            if to.is_dir() {
+                to = to.join(p.file_name().ok_or_else(|| FsError("Geçersiz yol.".into()))?);
+            }
+            if to == p {
+                return Ok(br#"{"ok":true}"#.to_vec());
+            }
+            if to.starts_with(&p) {
+                return Err(FsError("Klasör kendi içine taşınamaz.".into()));
+            }
+            if to.symlink_metadata().is_ok() {
+                return Err(FsError("Hedefte aynı adla bir dosya var.".into()));
+            }
+            if let Err(e) = std::fs::rename(&p, &to) {
+                if e.raw_os_error() != Some(18) {
+                    return Err(fs_err(e));
+                }
+                // Farklı sürücü: kopyala + sil.
+                copy_tree(&p, &to)?;
+                if p.is_dir() { std::fs::remove_dir_all(&p) } else { std::fs::remove_file(&p) }.map_err(fs_err)?;
+            }
+        }
+        "trash" => trash_put(home, &p)?,
+        "trash-list" => return serde_json::to_vec(&trash_list(home)).map_err(|e| FsError(e.to_string())),
+        // path = çöp öğesinin kimliği
+        "restore" => {
+            trash_id_ok(&o.path)?;
+            let (files, info) = trash_dirs(home);
+            let id = &o.path;
+            let txt = std::fs::read_to_string(info.join(format!("{id}.trashinfo"))).map_err(fs_err)?;
+            let origin = pct_decode(txt.lines().find_map(|l| l.strip_prefix("Path=")).unwrap_or(""));
+            if origin.is_empty() {
+                return Err(FsError("Asıl konum bilinmiyor.".into()));
+            }
+            let dst = free_name(Path::new(&origin));
+            if let Some(d) = dst.parent() {
+                std::fs::create_dir_all(d).map_err(fs_err)?;
+            }
+            std::fs::rename(files.join(id), &dst).map_err(fs_err)?;
+            let _ = std::fs::remove_file(info.join(format!("{id}.trashinfo")));
+            return serde_json::to_vec(&serde_json::json!({ "path": dst.to_string_lossy() })).map_err(|e| FsError(e.to_string()));
+        }
+        // path = çöp öğesinin kimliği; boşsa tüm çöp boşaltılır
+        "trash-delete" => {
+            let (files, info) = trash_dirs(home);
+            let ids: Vec<String> = if o.path.is_empty() {
+                std::fs::read_dir(&files).into_iter().flatten().flatten().map(|e| e.file_name().to_string_lossy().into_owned()).collect()
+            } else {
+                trash_id_ok(&o.path)?;
+                vec![o.path.clone()]
+            };
+            for id in ids {
+                let f = files.join(&id);
+                match f.symlink_metadata() {
+                    Ok(md) if md.is_dir() => std::fs::remove_dir_all(&f).map_err(fs_err)?,
+                    Ok(_) => std::fs::remove_file(&f).map_err(fs_err)?,
+                    Err(_) => {}
+                }
+                let _ = std::fs::remove_file(info.join(format!("{id}.trashinfo")));
+            }
+        }
+        // path = aranacak klasör, to = sorgu
+        "search" => {
+            if o.to.trim().is_empty() {
+                return serde_json::to_vec(&list(home, &o.path)?).map_err(|e| FsError(e.to_string()));
+            }
+            return serde_json::to_vec(&search(home, &p, o.to.trim())).map_err(|e| FsError(e.to_string()));
+        }
+        "places" => return serde_json::to_vec(&places(home)).map_err(|e| FsError(e.to_string())),
         "stat" => {
             let md = std::fs::metadata(&p).map_err(fs_err)?;
             let name = p.file_name().map(|s| s.to_string_lossy().into_owned()).unwrap_or_else(|| "/".into());
@@ -249,6 +519,46 @@ mod tests {
         op("remove", "a", "").unwrap();
         assert!(open_read(home, "a/b/c.txt").is_err());
         assert_eq!(open_read(home, "yok").unwrap_err().0, "Dosya veya klasör bulunamadı.");
+        let _ = std::fs::remove_dir_all(h);
+    }
+
+    #[test]
+    fn copy_move_trash_search() {
+        let h = std::env::temp_dir().join(format!("mk-fs2-{}", crate::util::random_hex(4)));
+        std::fs::create_dir_all(&h).unwrap();
+        let home = h.to_str().unwrap();
+        let op = |mode: &str, path: &str, to: &str| fs_op(home, &Open { mode: mode.into(), path: path.into(), to: to.into(), ..Default::default() });
+        op("mkdir", "Belgeler/rapor", "").unwrap();
+        write_file_atomic(home, "Belgeler/rapor/not ğ.txt", b"x").unwrap();
+        // Kopya: aynı klasöre → "ad (2)"
+        let r: serde_json::Value = serde_json::from_slice(&op("copy", "Belgeler/rapor", "Belgeler").unwrap()).unwrap();
+        assert!(r["path"].as_str().unwrap().ends_with("Belgeler/rapor (2)"), "{r}");
+        assert!(h.join("Belgeler/rapor (2)/not ğ.txt").is_file());
+        assert!(op("copy", "Belgeler", "Belgeler/rapor").is_err(), "kendi içine kopya");
+        // Taşı
+        op("mkdir", "Arsiv", "").unwrap();
+        op("move", "Belgeler/rapor (2)", "Arsiv").unwrap();
+        assert!(h.join("Arsiv/rapor (2)/not ğ.txt").is_file());
+        assert!(op("move", "Arsiv", "Arsiv/rapor (2)").is_err());
+        // Arama
+        let s: Listing = serde_json::from_slice(&op("search", "", "NOT").unwrap()).unwrap();
+        assert_eq!(s.entries.len(), 2, "{:?}", s.entries.iter().map(|e| &e.name).collect::<Vec<_>>());
+        // Çöp: at, listele, geri yükle, boşalt
+        op("trash", "Belgeler/rapor/not ğ.txt", "").unwrap();
+        assert!(!h.join("Belgeler/rapor/not ğ.txt").exists());
+        let t: Vec<TrashItem> = serde_json::from_slice(&op("trash-list", "", "").unwrap()).unwrap();
+        assert_eq!((t.len(), t[0].name.as_str()), (1, "not ğ.txt"));
+        assert!(t[0].origin.ends_with("Belgeler/rapor/not ğ.txt"), "{}", t[0].origin);
+        op("restore", &t[0].id, "").unwrap();
+        assert!(h.join("Belgeler/rapor/not ğ.txt").is_file());
+        assert!(op("restore", "../x", "").is_err());
+        op("trash", "Arsiv", "").unwrap();
+        op("trash-delete", "", "").unwrap();
+        let t: Vec<TrashItem> = serde_json::from_slice(&op("trash-list", "", "").unwrap()).unwrap();
+        assert!(t.is_empty());
+        assert!(op("trash", "", "").is_err(), "ev dizini");
+        let pl: Vec<Place> = serde_json::from_slice(&op("places", "", "").unwrap()).unwrap();
+        assert!(pl.iter().any(|p| p.id == "documents"));
         let _ = std::fs::remove_dir_all(h);
     }
 }

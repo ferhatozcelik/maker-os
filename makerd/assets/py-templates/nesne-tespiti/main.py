@@ -1,12 +1,12 @@
 """{{name}}: Raspberry Pi'de gerçek zamanlı nesne tespiti (NanoDet-m + ncnn).
 
-  uv run main.py                 kamera (Pi kamera modülü / USB), web önizleme http://<pi>:8000
+  uv run main.py                 kamera (Pi kamera modülü / USB), arayüz http://<pi>:8000 (ui.html)
   uv run main.py --source test   kamerasız deneme (sentetik görüntü, çıkarım gerçek)
   uv run main.py --image foto.jpg
   uv run main.py --bench 300     yalnız çıkarım hızı (JSON; `mos bench ai` bunu kullanır)
 
 Neden hızlı (Pi 4, 4 GB):
-  * Görüntü: kamera → VideoCore donanım MJPEG kodlayıcı → tarayıcı. CPU'ya yük yok.
+  * Görüntü: kamera → VideoCore donanım MJPEG kodlayıcı (rpicam-vid) → tarayıcı. Tespit karesi yarım boyutta çözülür.
   * Tespit: küçük "lores" akış (320x180) → ncnn, 1-3. çekirdeklere sabit; 0. çekirdek arayüze kalır.
     16:9 girdi 32'nin katına (320x192) doldurulur: kare 320x320'ye göre ~%40 daha az hesap.
   * Kutular tarayıcıda çizilir (Pi'de ayrıca JPEG kodlama yok). En yeni kare işlenir, kuyruk birikmez.
@@ -33,11 +33,27 @@ CLASSES = ("insan bisiklet araba motosiklet uçak otobüs tren kamyon tekne traf
            "oyuncak-ayı saç-kurutma diş-fırçası").split()
 
 
+MODEL_URL = "https://raw.githubusercontent.com/nihui/ncnn-assets/master/models/"
+
+
 def model_file(name):
+    """Modeli bilinen dizinlerde arar; yoksa ilk çalıştırmada ~/.ncnn/models altına indirir (bir kez, ~2 MB)."""
     for d in MODEL_DIRS:
         if d and os.path.isfile(os.path.join(d, name)):
             return os.path.join(d, name)
-    raise SystemExit(f"Model dosyası bulunamadı: {name} (aranan: {', '.join(d for d in MODEL_DIRS if d)})")
+    import urllib.request
+    dst_dir = os.path.expanduser("~/.ncnn/models")
+    os.makedirs(dst_dir, exist_ok=True)
+    dst = os.path.join(dst_dir, name)
+    print(f"Model indiriliyor: {name} → {dst_dir}", flush=True)
+    try:
+        with urllib.request.urlopen(MODEL_URL + name, timeout=60) as r, open(dst + ".part", "wb") as f:
+            while chunk := r.read(1 << 16):
+                f.write(chunk)
+        os.replace(dst + ".part", dst)
+    except OSError as e:
+        raise SystemExit(f"Model indirilemedi ({e}). İnternet bağlantısını kontrol edin ya da {name} dosyasını {dst_dir} altına koyun.")
+    return dst
 
 
 class NanoDet:
@@ -144,21 +160,40 @@ class TestSource:
 
 
 class CameraSource:
-    def __init__(self, frames, lores=(320, 180)):
-        from picamera2 import Picamera2
-        from picamera2.encoders import MJPEGEncoder
-        from picamera2.outputs import FileOutput
-        self.cam = Picamera2()
-        cfg = self.cam.create_video_configuration(main={"size": (960, 540)}, lores={"size": lores, "format": "YUV420"},
-                                                  controls={"FrameRate": 30})
-        self.cam.configure(cfg)
-        self.cam.start_recording(MJPEGEncoder(), FileOutput(frames))  # donanım kodlayıcı (Pi 4)
+    """rpicam-vid donanım MJPEG akışı (MakerOS'ta hazır): kareler önizlemeye olduğu gibi gider, tespit için
+    küçültülüp çözülür. Kamera uygulaması açıksa önce onu kapatın (kamerayı aynı anda tek program kullanır)."""
+    def __init__(self, frames, lores=(320, 180), size=(640, 360), fps=20):
         import cv2
-        self.cv2, self.lw, self.lh = cv2, lores[0], lores[1]
+        import subprocess
+        self.cv2, self.frames, self.lw, self.lh = cv2, frames, lores[0], lores[1]
+        self.p = subprocess.Popen(["rpicam-vid", "-n", "-t", "0", "--codec", "mjpeg", "--width", str(size[0]), "--height", str(size[1]),
+                                   "--framerate", str(fps), "-o", "-"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        self.buf = b""
+        self.jpeg = None
+        self.cond = threading.Condition()
+        threading.Thread(target=self._read, daemon=True).start()
+        with self.cond:
+            if not self.cond.wait_for(lambda: self.jpeg is not None, timeout=8):
+                self.p.kill()
+                raise RuntimeError("kamera görüntü vermedi (takılı mı, başka program kullanıyor mu?)")
+
+    def _read(self):
+        pin({0})  # okuyucu 0. çekirdekte: çıkarım çekirdeklerindeki OpenMP döngüsü onu aç bırakmasın
+        while chunk := self.p.stdout.read1(65536):
+            self.buf += chunk
+            while (a := self.buf.find(b"\xff\xd8")) >= 0 and (b := self.buf.find(b"\xff\xd9", a + 2)) >= 0:
+                f, self.buf = self.buf[a:b + 2], self.buf[b + 2:]
+                self.frames.write(f)
+                with self.cond:
+                    self.jpeg = f
+                    self.cond.notify_all()
 
     def lores(self):
-        yuv = self.cam.capture_array("lores")  # sonraki kareyi bekler: kuyruk birikmez
-        return self.cv2.cvtColor(yuv, self.cv2.COLOR_YUV420p2BGR)
+        with self.cond:  # yeni kareyi bekle: kuyruk birikmez, en yeni kare işlenir
+            self.cond.wait(1)
+            f = self.jpeg
+        img = self.cv2.imdecode(np.frombuffer(f, np.uint8), self.cv2.IMREAD_REDUCED_COLOR_2)  # 640x360 → 320x180 çözerken küçült
+        return img
 
 
 # --------------------------------------------------------------- web önizleme
@@ -176,27 +211,38 @@ class Frames:
         pass
 
 
-PAGE = """<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width'><title>{{name}}</title>
-<style>body{margin:0;background:#111;color:#eee;font:14px system-ui}#v{position:relative;display:inline-block;max-width:100%}
-img,canvas{display:block;width:100%}canvas{position:absolute;inset:0}#s{position:fixed;top:8px;left:8px;background:#000a;padding:6px 10px;border-radius:8px}</style>
-<div id=v><img id=i src=/stream><canvas id=c></canvas></div><div id=s>…</div><script>
-const c=document.getElementById('c'),x=c.getContext('2d'),i=document.getElementById('i'),s=document.getElementById('s');
-new EventSource('/events').onmessage=e=>{const d=JSON.parse(e.data);c.width=i.clientWidth;c.height=i.clientHeight;x.lineWidth=2;x.font='14px system-ui';
-for(const o of d.o){const[a,b,w,h]=o.b;x.strokeStyle='#ff7a1a';x.strokeRect(a*c.width,b*c.height,w*c.width,h*c.height);x.fillStyle='#ff7a1a';
-x.fillText(o.c+' '+Math.round(o.p*100)+'%',a*c.width+4,b*c.height+16)}s.textContent=`tespit ${d.fps} FPS · ${d.ms} ms · ${d.o.length} nesne`};
-</script>"""
+UI = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ui.html")  # arayüz: her istekte okunur, düzenleyip sayfayı yenileyin
 
 
-def serve(port, frames, state):
+def serve(port, frames, state, det):
     class H(server.BaseHTTPRequestHandler):
         def log_message(self, *a):
             pass
 
+        def do_POST(self):
+            # Arayüzden ayar: {"prob": 0.1-0.9} güven eşiği.
+            if self.path != "/config":
+                return self.send_error(404)
+            try:
+                d = json.loads(self.rfile.read(min(int(self.headers.get("Content-Length") or 0), 4096)) or b"{}")
+                if "prob" in d:
+                    det.prob = min(0.9, max(0.1, float(d["prob"])))
+                    state["last"]["info"]["prob"] = det.prob
+            except (ValueError, TypeError):
+                return self.send_error(400)
+            self.send_response(204); self.end_headers()
+
         def do_GET(self):
-            if self.path == "/":
-                body = PAGE.encode()
-                self.send_response(200); self.send_header("Content-Type", "text/html; charset=utf-8"); self.end_headers(); self.wfile.write(body)
-            elif self.path == "/stream":
+            path = self.path.split("?")[0]
+            if path == "/":
+                try:
+                    with open(UI, "rb") as f:
+                        body = f.read()
+                except OSError:
+                    body = b"<p>ui.html bulunamadi</p>"
+                self.send_response(200); self.send_header("Content-Type", "text/html; charset=utf-8"); self.send_header("Cache-Control", "no-store")
+                self.send_header("Content-Length", str(len(body))); self.end_headers(); self.wfile.write(body)
+            elif path == "/stream":
                 self.send_response(200); self.send_header("Content-Type", "multipart/x-mixed-replace; boundary=F"); self.end_headers()
                 try:
                     while True:
@@ -207,7 +253,7 @@ def serve(port, frames, state):
                             self.wfile.write(b"--F\r\nContent-Type: image/jpeg\r\nContent-Length: %d\r\n\r\n%s\r\n" % (len(f), f))
                 except (BrokenPipeError, ConnectionResetError):
                     pass
-            elif self.path == "/events":
+            elif path == "/events":
                 self.send_response(200); self.send_header("Content-Type", "text/event-stream"); self.send_header("Cache-Control", "no-cache"); self.end_headers()
                 try:
                     while True:
@@ -220,7 +266,9 @@ def serve(port, frames, state):
             else:
                 self.send_error(404)
 
-    threading.Thread(target=server.ThreadingHTTPServer(("", port), H).serve_forever, daemon=True).start()
+    httpd = server.ThreadingHTTPServer(("", port), H)
+    httpd.daemon_threads = True  # açık akışlar çıkışı bekletmesin
+    threading.Thread(target=httpd.serve_forever, daemon=True).start()
 
 
 def main():
@@ -261,19 +309,20 @@ def main():
         return
 
     frames = Frames()
-    state = {"cond": threading.Condition(), "last": {"o": [], "fps": 0, "ms": 0}}
+    state = {"cond": threading.Condition(), "last": {"o": [], "fps": 0, "ms": 0, "info": {"source": "camera", "prob": det.prob, "size": a.size}}}
     try:
         src = CameraSource(frames) if a.source == "camera" else TestSource()
-    except (ImportError, RuntimeError, IndexError) as e:
+    except (ImportError, RuntimeError, IndexError, OSError) as e:
         print(f"Kamera açılamadı ({e}); --source test ile devam ediliyor.")
         src = TestSource()
+    state["last"]["info"]["source"] = "test" if isinstance(src, TestSource) else "camera"
     if isinstance(src, TestSource):
         import cv2
 
         def enc(img):  # yazılım JPEG yalnız deneme kaynağında
             frames.write(cv2.imencode(".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, 70])[1])
-    serve(a.port, frames, state)
-    print(f"Önizleme: http://0.0.0.0:{a.port}   (Ctrl+C ile durdur)")
+    serve(a.port, frames, state, det)
+    print(f"Arayüz: http://0.0.0.0:{a.port}   (Ctrl+C ile durdur)", flush=True)
     n, t_last, ms_acc = 0, time.perf_counter(), 0.0
     while True:
         img = src.lores()

@@ -1,17 +1,22 @@
 """{{name}}: GPIO17'deki (fiziksel pin 11) LED'i yakıp söndürür.
 
 Bağlantı: GPIO17 --[330 Ω direnç]--> LED (+, uzun bacak) ; LED (-) --> GND (pin 9)
-Pi 4 ve Pi 5'te aynı çalışır (gpiozero, lgpio arka ucu). Durdurmak için Ctrl+C.
+gpiod (Linux GPIO karakter aygıtı, /dev/gpiochip0) kullanır; Pi 4 ve Pi 5'te çalışır. Durdurmak için Ctrl+C.
 """
-from time import sleep
+import time
 
-from gpiozero import LED
+import gpiod
+from gpiod.line import Direction, Value
 
-led = LED(17)
-print("LED GPIO17'de yanıp sönüyor. Durdurmak için Ctrl+C.")
-try:
-    while True:
-        led.toggle()
-        sleep(0.5)
-except KeyboardInterrupt:
-    led.off()
+CHIP, LED_PIN = "/dev/gpiochip0", 17
+
+with gpiod.request_lines(CHIP, consumer="{{name}}", config={LED_PIN: gpiod.LineSettings(direction=Direction.OUTPUT, output_value=Value.INACTIVE)}) as req:
+    print("LED GPIO17'de yanıp sönüyor. Durdurmak için Ctrl+C.")
+    on = False
+    try:
+        while True:
+            on = not on
+            req.set_value(LED_PIN, Value.ACTIVE if on else Value.INACTIVE)
+            time.sleep(0.5)
+    except KeyboardInterrupt:
+        req.set_value(LED_PIN, Value.INACTIVE)

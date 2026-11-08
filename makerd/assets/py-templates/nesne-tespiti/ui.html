@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{name}} · Nesne tespiti</title>
+<!-- {{name}} arayüzü: main.py sunar (GET /). Görüntü /stream (MJPEG), tespitler /events (SSE), ayar POST /config. -->
+<style>
+:root {
+  --bg: #0e0f12; --panel: #17181d; --panel-2: #1f2027; --line: #2a2c34; --text: #ececf1; --text-2: #9a9cab;
+  --accent: #ff7a1a; --ok: #3fc35a; --bad: #f2555a; --r: 14px;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; display: flex; flex-direction: column; overflow: hidden; }
+button { font: inherit; color: inherit; }
+
+/* üst çubuk */
+header { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--panel); flex: none; }
+.logo { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: linear-gradient(135deg, #ff9a3d, #ff5a1a); flex: none; }
+.ttl { min-width: 0; }
+.ttl b { display: block; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ttl span { color: var(--text-2); font-size: 12px; }
+.live { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: var(--panel-2); font-size: 12px; font-weight: 600; white-space: nowrap; }
+.live i { width: 8px; height: 8px; border-radius: 50%; background: var(--text-2); }
+.live.on i { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 30%, transparent); animation: pulse 1.6s infinite; }
+.live.off i { background: var(--bad); }
+.live.pause i { background: #f5b83d; animation: none; }
+@keyframes pulse { 50% { box-shadow: 0 0 0 6px transparent; } }
+.grow { flex: 1; }
+.btn { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel-2); cursor: pointer; white-space: nowrap; }
+.btn:hover { border-color: #3a3c46; background: #262731; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+.btn.primary:hover { background: #ff8a33; }
+.btn svg { width: 16px; height: 16px; flex: none; }
+
+/* ana alan */
+main { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 300px; }
+.view { min-width: 0; min-height: 0; padding: 16px; display: grid; place-items: center; container-type: size; }
+.stage { position: relative; width: min(100cqw, 100cqh * var(--ar, 1.7778)); aspect-ratio: var(--ar, 1.7778); border-radius: var(--r); overflow: hidden; background: #000; box-shadow: 0 12px 40px rgba(0,0,0,.45); }
+.stage img, .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.stage img { object-fit: fill; }
+.badge { position: absolute; left: 12px; top: 12px; display: flex; gap: 6px; }
+.badge span { padding: 4px 9px; border-radius: 8px; background: rgba(0,0,0,.55); backdrop-filter: blur(6px); font-size: 12px; font-variant-numeric: tabular-nums; }
+.msg { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; color: var(--text-2); background: rgba(0,0,0,.6); padding: 24px; }
+.msg[hidden] { display: none; }
+.flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+.flash.go { animation: flash .35s ease-out; }
+@keyframes flash { from { opacity: .8; } to { opacity: 0; } }
+
+/* yan panel */
+aside { border-left: 1px solid var(--line); background: var(--panel); overflow: auto; padding: 16px; display: flex; flex-direction: column; gap: 18px; }
+h3 { margin: 0 0 8px; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--text-2); }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stat { background: var(--panel-2); border-radius: 12px; padding: 10px; }
+.stat b { display: block; font-size: 20px; font-variant-numeric: tabular-nums; }
+.stat span { color: var(--text-2); font-size: 11px; }
+.list { display: flex; flex-direction: column; gap: 6px; }
+.row { display: grid; grid-template-columns: 10px 1fr auto; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 10px; background: var(--panel-2); cursor: pointer; border: 1px solid transparent; }
+.row:hover { border-color: var(--line); }
+.row.focus { border-color: var(--accent); }
+.row .sw { width: 10px; height: 10px; border-radius: 3px; }
+.row .nm { text-transform: capitalize; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row .ct { font-weight: 700; font-variant-numeric: tabular-nums; }
+.row .bar { grid-column: 2 / 4; height: 3px; border-radius: 2px; background: var(--line); overflow: hidden; }
+.row .bar i { display: block; height: 100%; }
+.empty { color: var(--text-2); font-size: 13px; padding: 10px; border: 1px dashed var(--line); border-radius: 10px; text-align: center; }
+.seen { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { padding: 3px 9px; border-radius: 999px; background: var(--panel-2); font-size: 12px; text-transform: capitalize; }
+.chip b { margin-left: 4px; color: var(--text-2); font-weight: 600; }
+.set { display: flex; flex-direction: column; gap: 12px; }
+.set label { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+.sw-t { position: relative; width: 36px; height: 20px; flex: none; }
+.sw-t input { opacity: 0; position: absolute; inset: 0; margin: 0; cursor: pointer; }
+.sw-t i { position: absolute; inset: 0; border-radius: 999px; background: var(--line); transition: .2s; pointer-events: none; }
+.sw-t i::after { content: ""; position: absolute; left: 2px; top: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: .2s; }
+.sw-t input:checked + i { background: var(--accent); }
+.sw-t input:checked + i::after { transform: translateX(16px); }
+.foot { margin-top: auto; color: var(--text-2); font-size: 11px; line-height: 1.5; }
+.shots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.shots a { display: block; border-radius: 8px; overflow: hidden; aspect-ratio: 16/9; background: #000; }
+.shots img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+@media (max-width: 760px) {
+  main { grid-template-columns: 1fr; grid-template-rows: minmax(220px, 55%) 1fr; }
+  aside { border-left: 0; border-top: 1px solid var(--line); }
+  .view { padding: 10px; }
+  .btn .t { display: none; }
+  .ttl span { display: none; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="1"/><path d="M18.9 12.4a1 1 0 0 0 0-.8 7.5 7.5 0 0 0-13.8 0 1 1 0 0 0 0 .8 7.5 7.5 0 0 0 13.8 0"/></svg></div>
+  <div class="ttl"><b>{{name}}</b><span>AI nesne tespiti · NanoDet-m</span></div>
+  <span class="live" id="live"><i></i><span>Bağlanıyor…</span></span>
+  <span class="grow"></span>
+  <button class="btn" id="pause" title="Duraklat (Boşluk)"></button>
+  <button class="btn primary" id="shot" title="Fotoğraf çek (F)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3"/></svg><span class="t">Fotoğraf</span></button>
+  <button class="btn" id="full" title="Tam ekran"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
+</header>
+<main>
+  <section class="view">
+    <div class="stage" id="stage">
+      <img id="img" alt="">
+      <canvas id="cv"></canvas>
+      <div class="badge"><span id="src">Kamera</span><span id="fps">– FPS</span></div>
+      <div class="msg" id="msg">Görüntü bekleniyor…</div>
+      <div class="flash" id="flash"></div>
+    </div>
+  </section>
+  <aside>
+    <div>
+      <h3>Performans</h3>
+      <div class="stats">
+        <div class="stat"><b id="s-fps">–</b><span>FPS</span></div>
+        <div class="stat"><b id="s-ms">–</b><span>ms / kare</span></div>
+        <div class="stat"><b id="s-n">0</b><span>nesne</span></div>
+      </div>
+    </div>
+    <div>
+      <h3>Şu an görülenler</h3>
+      <div class="list" id="now"></div>
+    </div>
+    <div>
+      <h3>Bu oturumda</h3>
+      <div class="seen" id="seen"><span class="empty" style="width:100%">Henüz bir şey görülmedi</span></div>
+    </div>
+    <div>
+      <h3>Ayarlar</h3>
+      <div class="set">
+        <div>
+          <label for="prob"><span>Güven eşiği</span><b id="prob-v">40%</b></label>
+          <input type="range" id="prob" min="10" max="90" step="5" value="40">
+        </div>
+        <label><span>Etiketleri göster</span><span class="sw-t"><input type="checkbox" id="o-lbl" checked><i></i></span></label>
+        <label><span>Güven yüzdesi</span><span class="sw-t"><input type="checkbox" id="o-pct" checked><i></i></span></label>
+      </div>
+    </div>
+    <div id="shots-box" hidden>
+      <h3>Fotoğraflar</h3>
+      <div class="shots" id="shots"></div>
+    </div>
+    <div class="foot">Bir türe tıklayınca yalnız o vurgulanır. Model COCO'daki 80 nesne türünü tanır.<br>Kamera aynı anda tek programda açılabilir: Kamera uygulamasını kapatın.</div>
+  </aside>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const img = $("img"), cv = $("cv"), ctx = cv.getContext("2d"), stage = $("stage"), msg = $("msg");
+const ICON_PAUSE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg><span class="t">Duraklat</span>';
+const ICON_PLAY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 4l14 8-14 8z"/></svg><span class="t">Devam</span>';
+let last = { o: [], fps: 0, ms: 0 }, paused = false, focus = null, seen = {}, prevNow = new Set(), live = false;
+const opt = { lbl: true, pct: true };
+
+// Türe göre sabit renk (aynı tür hep aynı renk).
+const color = c => { let h = 0; for (const ch of c) h = (h * 31 + ch.charCodeAt(0)) % 360; return c === "insan" ? "#ff7a1a" : `hsl(${h} 85% 58%)`; };
+const nice = c => c.replace(/-/g, " ");
+
+function setLive(state, text) { const l = $("live"); l.className = "live " + state; l.lastElementChild.textContent = text; }
+
+// --- görüntü (MJPEG); koparsa yeniden bağlan
+function connectImg() { img.src = "stream?t=" + Date.now(); }
+img.onload = () => {
+  if (img.naturalWidth) stage.style.setProperty("--ar", img.naturalWidth / img.naturalHeight);
+  msg.hidden = true; draw();
+};
+img.onerror = () => { if (paused) return; msg.hidden = false; msg.textContent = "Görüntü alınamadı, yeniden deneniyor…"; setTimeout(connectImg, 2000); };
+
+// --- tespitler (SSE)
+const es = new EventSource("events");
+es.onopen = () => { live = true; if (!paused) setLive("on", "Canlı"); };
+es.onerror = () => { live = false; setLive("off", "Bağlantı yok"); };
+es.onmessage = e => {
+  if (paused) return;
+  last = JSON.parse(e.data);
+  if (last.info) applyInfo(last.info);
+  draw(); panel();
+};
+function applyInfo(i) {
+  $("src").textContent = i.source === "test" ? "Deneme görüntüsü" : "Kamera";
+  if (!document.activeElement || document.activeElement.id !== "prob") { $("prob").value = Math.round(i.prob * 100); $("prob-v").textContent = Math.round(i.prob * 100) + "%"; }
+}
+
+function draw(target = ctx, W, H) {
+  const r = stage.getBoundingClientRect();
+  if (target === ctx) {
+    const dpr = devicePixelRatio || 1;
+    W = r.width; H = r.height;
+    if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+  }
+  const s = Math.max(1, W / 640), fs = Math.round(13 * s);
+  target.font = `600 ${fs}px system-ui, sans-serif`;
+  target.lineJoin = "round";
+  for (const o of last.o) {
+    const dim = focus && o.c !== focus;
+    const [x, y, w, h] = [o.b[0] * W, o.b[1] * H, o.b[2] * W, o.b[3] * H], c = color(o.c);
+    target.globalAlpha = dim ? 0.25 : 1;
+    target.lineWidth = 2.5 * s; target.strokeStyle = c;
+    target.beginPath(); target.roundRect(x, y, w, h, 6 * s); target.stroke();
+    if (!opt.lbl || dim) continue;
+    const t = nice(o.c) + (opt.pct ? `  ${Math.round(o.p * 100)}%` : "");
+    const tw = target.measureText(t).width + 12 * s, th = fs + 8 * s;
+    const ly = y - th - 2 * s < 0 ? y + 2 * s : y - th - 2 * s;
+    target.fillStyle = c; target.beginPath(); target.roundRect(x, ly, tw, th, 5 * s); target.fill();
+    target.fillStyle = "#111"; target.fillText(t, x + 6 * s, ly + th - 6 * s);
+  }
+  target.globalAlpha = 1;
+  $("fps").textContent = `${last.fps || "–"} FPS`;
+}
+
+function panel() {
+  $("s-fps").textContent = last.fps || "–";
+  $("s-ms").textContent = last.ms || "–";
+  $("s-n").textContent = last.o.length;
+  const by = {};
+  for (const o of last.o) { const b = by[o.c] ||= { n: 0, p: 0 }; b.n++; b.p = Math.max(b.p, o.p); }
+  // "bu oturumda": bir tür kareye yeni girdiğinde sayılır (her karede değil).
+  const nowSet = new Set(Object.keys(by));
+  for (const c of nowSet) if (!prevNow.has(c)) seen[c] = (seen[c] || 0) + 1;
+  prevNow = nowSet;
+  const rows = Object.entries(by).sort((a, b) => b[1].n - a[1].n || b[1].p - a[1].p);
+  const now = $("now");
+  if (!rows.length) now.innerHTML = '<div class="empty">Görüntüde tanınan nesne yok</div>';
+  else now.replaceChildren(...rows.map(([c, b]) => {
+    const r = document.createElement("div");
+    r.className = "row" + (focus === c ? " focus" : "");
+    r.innerHTML = `<span class="sw" style="background:${color(c)}"></span><span class="nm"></span><span class="ct">${b.n}</span><span class="bar"><i style="width:${Math.round(b.p * 100)}%;background:${color(c)}"></i></span>`;
+    r.querySelector(".nm").textContent = nice(c);
+    r.title = `En yüksek güven: %${Math.round(b.p * 100)}`;
+    r.onclick = () => { focus = focus === c ? null : c; draw(); panel(); };
+    return r;
+  }));
+  const se = Object.entries(seen).sort((a, b) => b[1] - a[1]);
+  if (se.length) $("seen").replaceChildren(...se.map(([c, n]) => {
+    const s = document.createElement("span"); s.className = "chip"; s.style.boxShadow = `inset 3px 0 0 ${color(c)}`;
+    s.textContent = nice(c); const b = document.createElement("b"); b.textContent = n; s.append(b); return s;
+  }));
+}
+
+// --- düğmeler
+function setPaused(p) {
+  paused = p;
+  $("pause").innerHTML = p ? ICON_PLAY : ICON_PAUSE;
+  if (p) {
+    // Son kareyi dondur (MJPEG akışı akmaya devam eder, görüntü değişmesin).
+    const c = document.createElement("canvas"); c.width = img.naturalWidth; c.height = img.naturalHeight;
+    c.getContext("2d").drawImage(img, 0, 0); img.dataset.live = img.src; img.removeAttribute("src"); img.src = c.toDataURL("image/jpeg", .92);
+    setLive("pause", "Duraklatıldı");
+  } else { connectImg(); setLive(live ? "on" : "off", live ? "Canlı" : "Bağlantı yok"); }
+}
+$("pause").onclick = () => setPaused(!paused);
+setPaused(false);
+
+$("shot").onclick = () => {
+  if (!img.naturalWidth) return;
+  const W = img.naturalWidth * 2, H = img.naturalHeight * 2; // küçük kareler (deneme kipi) için 2x
+  const c = document.createElement("canvas"); c.width = W; c.height = H;
+  const x = c.getContext("2d"); x.drawImage(img, 0, 0, W, H); draw(x, W, H);
+  const url = c.toDataURL("image/jpeg", .92);
+  const d = new Date(), p = n => String(n).padStart(2, "0");
+  const name = `tespit-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}.jpg`;
+  const a = document.createElement("a"); a.href = url; a.download = name; a.title = name;
+  const t = document.createElement("img"); t.src = url; a.append(t);
+  $("shots").prepend(a); while ($("shots").children.length > 6) $("shots").lastChild.remove();
+  $("shots-box").hidden = false;
+  a.cloneNode(true).click(); // indir
+  const f = $("flash"); f.classList.remove("go"); void f.offsetWidth; f.classList.add("go");
+};
+$("full").onclick = () => document.fullscreenElement ? document.exitFullscreen() : stage.requestFullscreen?.().catch(() => {});
+
+let probT;
+$("prob").oninput = e => {
+  const v = +e.target.value; $("prob-v").textContent = v + "%";
+  clearTimeout(probT);
+  probT = setTimeout(() => fetch("config", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prob: v / 100 }) }).catch(() => {}), 150);
+};
+$("o-lbl").onchange = e => { opt.lbl = e.target.checked; draw(); };
+$("o-pct").onchange = e => { opt.pct = e.target.checked; draw(); };
+addEventListener("keydown", e => {
+  if (e.target.tagName === "INPUT") return;
+  if (e.code === "Space") { e.preventDefault(); setPaused(!paused); }
+  else if (e.key === "f" || e.key === "F") $("shot").click();
+});
+new ResizeObserver(() => draw()).observe(stage);
+panel();
+</script>
+</body>
+</html>

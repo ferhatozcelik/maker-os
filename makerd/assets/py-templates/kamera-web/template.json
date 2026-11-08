@@ -1,1 +1,1 @@
-{"id":"kamera-web","order":6,"category":"kamera","icon":"video","title":{"tr":"Kamera web yayını","en":"Camera web stream"},"desc":{"tr":"Kamerayı tarayıcıda canlı izleyin (MJPEG, port 8000).","en":"Watch the camera live in a browser (MJPEG, port 8000)."},"deps":[],"needs":["camera"]}
+{"id":"kamera-web","order":6,"category":"kamera","icon":"video","title":{"tr":"Kamera web yayını","en":"Camera web stream"},"desc":{"tr":"Kamerayı tarayıcıda canlı izleyin (MJPEG, port 8000).","en":"Watch the camera live in a browser (MJPEG, port 8000)."},"deps":[],"needs":["camera"],"ui":8000}

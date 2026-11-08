@@ -62,8 +62,12 @@ pub fn replace_file(path: &Path, data: &[u8], perm: u32) -> std::io::Result<()> 
         let mut f = fs::OpenOptions::new().write(true).create_new(true).mode(0o600).open(&tmp)?;
         f.write_all(data)?;
         f.set_permissions(fs::Permissions::from_mode(mode))?;
+        // Sahiplik yalnız gerekirse korunur (root'un başkasına ait dosyayı yazması). Kendi dosyasında fchown
+        // çağrılmaz: makerd'in seccomp süzgeci (~@privileged) chown ailesini yasaklar.
         if let Some((u, g)) = owner {
-            let _ = std::os::unix::fs::fchown(&f, Some(u), Some(g));
+            if u != nix::unistd::geteuid().as_raw() || g != nix::unistd::getegid().as_raw() {
+                let _ = std::os::unix::fs::fchown(&f, Some(u), Some(g));
+            }
         }
         f.sync_all()?;
         drop(f);
@@ -195,4 +199,9 @@ mod tests {
         assert_eq!(t.len(), 24);
         assert!(t.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_'));
     }
+}
+
+/// Kullanıcının XDG_RUNTIME_DIR dizini.
+pub fn runtime_dir() -> String {
+    std::env::var("XDG_RUNTIME_DIR").ok().filter(|v| !v.is_empty()).unwrap_or_else(|| format!("/run/user/{}", getuid()))
 }

@@ -6,11 +6,12 @@
 //! - `makerd-user`: kullanıcı başına hizmet (PTY terminal ve kullanıcı adına dosya işlemleri).
 
 pub mod activity;
+pub mod ai;
 pub mod agents;
 pub mod apierr;
 pub mod apps;
 pub mod auth;
-pub mod browser;
+pub mod browse;
 pub mod camera;
 pub mod catalog;
 pub mod dbus;
@@ -28,7 +29,6 @@ pub mod plugins;
 pub mod prefs;
 pub mod privsep;
 pub mod pyman;
-pub mod screen;
 pub mod sd;
 pub mod setup;
 pub mod system;

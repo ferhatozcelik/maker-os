@@ -1,0 +1,7 @@
+# Debug USB ag karti hep usb0 adini alsin (usb-gadget, makeros-usb-dhcp ve NM ayari bu adi bekler).
+[Match]
+MACAddress=02:4d:4f:53:00:01
+
+[Link]
+NamePolicy=
+Name=usb0

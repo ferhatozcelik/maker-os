@@ -1,6 +1,8 @@
 // Özgün tema duvar kâğıtları (kodla üretilir, dış görsel yok → lisans temiz).
 //   docker run --rm -v "$PWD/shell":/s -w /s node:24-alpine node tools/gen-wallpaper.mjs
-// Çıktı: wallpapers/<tema>-{light,dark}[-blur].svg  (blur: kilit ekranı ve "lite" efekt katmanı)
+// Çıktı: wallpapers/<tema>-{light,dark}.svg ve <tema>-{light,dark}-blur.png (kilit ekranı, Launchpad, "lite"
+// efekt katmanı). Bulanık sürüm önceden küçük PNG'ye çizilir (resvg): Pi'de canlı Gaussian bulanıklık hesaplanmaz.
+//   docker run --rm -v "$PWD/shell":/s -w /s node:24-alpine sh -c "npm i --no-save @resvg/resvg-js@2.6.2 >/dev/null && node tools/gen-wallpaper.mjs"
 import { writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -17,8 +19,10 @@ const f1 = n => +n.toFixed(1);
 function maker(dark) {
   const c = dark
     ? { bg: ["#2c2f34", "#141518"], glow: "#4a4f57", dot: "#ffffff", line: "#ffffff", acc: "#ff7a1a", ink: "#e9eaec" }
-    : { bg: ["#eef0f2", "#cfd3d8"], glow: "#ffffff", dot: "#1b1d21", line: "#1b1d21", acc: "#f06a00", ink: "#2a2d32" };
+    : { bg: ["#fff7ef", "#f2dcc8"], glow: "#ffffff", dot: "#1b1d21", line: "#1b1d21", acc: "#f06a00", ink: "#2a2d32" };
+  // Sıcak turuncu (sağ üst) ve mavi (sol alt) ışıltı: bulanık sürümde (kilit ekranı) gri yerine renkli bir zemin.
   const defs = lin("bg", ...c.bg, .4, 1) + rad("g", c.glow, 360, 180, 900, dark ? .55 : .9) +
+    rad("o", "#ff8a3d", 1560, 140, 980, dark ? .32 : .5) + rad("b", "#4f8fff", 180, 1020, 900, dark ? .26 : .32) +
     `<pattern id="dots" width="32" height="32" patternUnits="userSpaceOnUse"><circle cx="16" cy="16" r="1.3" fill="${c.dot}" opacity="${dark ? .14 : .16}"/></pattern>` +
     `<pattern id="grid" width="160" height="160" patternUnits="userSpaceOnUse"><path d="M160 0H0V160" fill="none" stroke="${c.line}" stroke-width="1" opacity="${dark ? .08 : .1}"/></pattern>`;
   // İzometrik küp tel çizimi + ölçü çizgileri (teknik çizim)
@@ -35,6 +39,7 @@ function maker(dark) {
   let ticks = "";
   for (let x = 0; x <= W; x += 16) { const m = x % 160 === 0, h = m ? 26 : x % 80 === 0 ? 16 : 9; ticks += `M${x} ${H - 40}v${-h}`; }
   const body = `<rect width="${W}" height="${H}" fill="url(#bg)"/><rect width="${W}" height="${H}" fill="url(#g)"/>` +
+    `<rect width="${W}" height="${H}" fill="url(#o)"/><rect width="${W}" height="${H}" fill="url(#b)"/>` +
     `<rect width="${W}" height="${H}" fill="url(#grid)"/><rect width="${W}" height="${H}" fill="url(#dots)"/>` + iso +
     `<path d="${ticks}" stroke="${c.ink}" stroke-width="1.5" opacity="${dark ? .22 : .3}"/>` +
     `<path d="M0 ${H - 40}H${W}" stroke="${c.ink}" stroke-width="1.5" opacity="${dark ? .22 : .3}"/>` +
@@ -148,14 +153,21 @@ function print3d(dark) {
   return { defs, body };
 }
 
-const THEMES = { maker, khs, hardware, cyber, print3d };
-for (const [id, fn] of Object.entries(THEMES)) for (const dark of [false, true]) for (const blur of [false, true]) {
+// KHS teması bir eklentidir (makerd/assets/plugin-defaults/khs) ve kendi duvar kâğıtlarını taşır; burada üretilmez.
+const THEMES = { maker, hardware, cyber, print3d };
+let Resvg = null;
+try { ({ Resvg } = await import("@resvg/resvg-js")); } catch { console.warn("@resvg/resvg-js yok: bulanık PNG'ler üretilmedi"); }
+for (const [id, fn] of Object.entries(THEMES)) for (const dark of [false, true]) {
   const { defs, body } = fn(dark);
-  const f = blur ? `<filter id="blur" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="${dark ? 40 : 46}"/></filter>` : "";
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice"><defs>${defs}${f}</defs>` +
-    (blur ? `<g filter="url(#blur)">${body}</g>` : body) + `</svg>\n`;
-  // KHS teması bir eklentidir (makerd/internal/plugins/defaults/khs); duvar kâğıtları oraya yazılır.
-  const out = id === "khs" ? join(dir, "../../makerd/internal/plugins/defaults/khs/wallpapers") : dir;
-  writeFileSync(join(out, `${id}-${dark ? "dark" : "light"}${blur ? "-blur" : ""}.svg`), svg);
+  const name = `${id}-${dark ? "dark" : "light"}`;
+  writeFileSync(join(dir, `${name}.svg`), `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice"><defs>${defs}</defs>${body}</svg>\n`);
+  if (!Resvg) continue;
+  // Bulanık: tam boyutta çizip bulanıklaştır, 480 px genişliğe küçült (CSS büyütünce zaten yumuşak).
+  const f = `<filter id="blur" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="${dark ? 40 : 46}"/></filter>`;
+  // Kenarlar bulanıklıkta saydamlaşıp kararmasın: zemin düz renk + bulanık katman %16 büyütülür (kenarlar dışarıda kalır).
+  const k = 1.16, tx = -(W * (k - 1)) / 2, ty = -(H * (k - 1)) / 2;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}"><defs>${defs}${f}</defs><rect width="${W}" height="${H}" fill="url(#bg)"/>` +
+    `<g transform="translate(${tx} ${ty}) scale(${k})"><g filter="url(#blur)">${body}</g></g></svg>`;
+  writeFileSync(join(dir, `${name}-blur.png`), new Resvg(svg, { fitTo: { mode: "width", value: 480 } }).render().asPng());
 }
 console.log("duvar kâğıtları yazıldı:", Object.keys(THEMES).join(", "));

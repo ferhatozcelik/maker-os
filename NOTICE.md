@@ -22,7 +22,6 @@ bileşenlerin özetidir; dağıtılan sürümün kendi lisans metinleri esastır
 | RAUC (A/B güncelleme) | LGPL-2.1 | [github.com/rauc/rauc](https://github.com/rauc/rauc) |
 | NetworkManager, wpa_supplicant, dnsmasq, nftables | GPL-2.0+ / BSD-3 / GPL-2.0 / GPL-2.0 | [NetworkManager](https://gitlab.freedesktop.org/NetworkManager/NetworkManager) · [hostap](https://w1.fi/) · [dnsmasq](https://thekelleys.org.uk/dnsmasq/) · [nftables](https://netfilter.org/) |
 | labwc 0.9.8, wlroots | GPL-2.0 / MIT | [github.com/labwc/labwc](https://github.com/labwc/labwc) · [gitlab.freedesktop.org/wlroots](https://gitlab.freedesktop.org/wlroots/wlroots) |
-| wayvnc 0.10.2, neatvnc 1.0.4, aml 1.0.0 | ISC | [github.com/any1](https://github.com/any1/wayvnc) |
 | Mesa (V3D/VC4), Wayland, libinput | MIT | [mesa3d.org](https://mesa3d.org/) · [wayland.freedesktop.org](https://wayland.freedesktop.org/) |
 | WPE WebKit, cog (Pi ekranındaki kabuk tarayıcısı) | BSD-2 / LGPL-2.1 (WebCore) / MIT (cog) | [wpewebkit.org](https://wpewebkit.org/) · [github.com/Igalia/cog](https://github.com/Igalia/cog) |
 | Chromium 156 (Debian trixie arm64 derlemesi) ve birlikte gelen kütüphaneler | BSD-3 ve çeşitli; paket başına `/opt/chromium/share/doc/<paket>/copyright` | [chromium.org](https://www.chromium.org/) · [packages.debian.org/trixie/chromium](https://packages.debian.org/trixie/chromium) |
@@ -36,7 +35,6 @@ bileşenlerin özetidir; dağıtılan sürümün kendi lisans metinleri esastır
 
 | Bileşen | Lisans | Kaynak |
 |---|---|---|
-| noVNC 1.7.0 (pako dahil) | MPL-2.0 (pako: MIT) | [github.com/novnc/noVNC](https://github.com/novnc/noVNC) |
 | xterm.js 5.5.0, @xterm/addon-fit 0.10.0 | MIT | [github.com/xtermjs/xterm.js](https://github.com/xtermjs/xterm.js) |
 | Lucide simgeleri (alt küme) | ISC | [lucide.dev](https://lucide.dev/) |
 | Simple Icons 16.36.0 (ajan logoları: Claude, Gemini, Ollama, OpenCode; logolar ilgili şirketlerin ticari markalarıdır) | CC0-1.0 | [simpleicons.org](https://simpleicons.org/) |

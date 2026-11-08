@@ -1,5 +1,5 @@
 // Oturum açma / kilit ekranı ve onay iletişim kutusu.
-import { h, $, animate } from "../lib.js";
+import { h, $, animate, store } from "../lib.js";
 import { icon } from "../icons.js";
 import { t, locale } from "../i18n.js";
 import { api, ApiError } from "../api.js";
@@ -13,7 +13,7 @@ export function lockScreen(mode, user = "") {
     const timeEl = h("div.lk-time"), dateEl = h("div.lk-date");
     const tick = () => { const d = new Date(); timeEl.textContent = d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" }); dateEl.textContent = d.toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long" }); };
     tick(); const iv = setInterval(tick, 5000);
-    const uIn = h("input", { name: "user", placeholder: t("login.user"), autocomplete: "username", autocapitalize: "none", spellcheck: "false", value: user || "maker", "aria-label": t("login.user") });
+    const uIn = h("input", { name: "user", placeholder: t("login.user"), autocomplete: "username", autocapitalize: "none", spellcheck: "false", value: user || store.get("lastUser") || "makeros", "aria-label": t("login.user") });
     const pIn = h("input", { name: "password", type: "password", placeholder: t("login.pass"), autocomplete: "current-password", "aria-label": t("login.pass") });
     const go = h("button.lk-go", { type: "submit", "aria-label": t("login.go"), html: icon("chevron-right", 18, 2.4) });
     const msg = h("p.lk-msg", { role: "alert" });
@@ -32,6 +32,7 @@ export function lockScreen(mode, user = "") {
       msg.textContent = ""; go.disabled = true; go.innerHTML = icon("loader-circle", 18, 2.4); go.classList.add("busy");
       try {
         const r = await api("POST", "/auth/login", { user: mode === "lock" ? user : uIn.value.trim(), password: pIn.value });
+        if (r?.user) store.set("lastUser", r.user);
         done(true); resolve(r);
       } catch (x) {
         msg.textContent = x instanceof ApiError && x.status === 401 ? t("login.bad") : x.message;

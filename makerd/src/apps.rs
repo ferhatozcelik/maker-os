@@ -47,12 +47,12 @@ pub fn builtin() -> Vec<App> {
         web("terminal", "Terminal", &["System", "Utility"]),
         web("activity", "Etkinlik Monitörü", &["System", "Monitor"]),
         web("files", "Dosyalar", &["System", "FileManager"]),
-        web("python", "Python", &["Development"]),
+        web("python", "Python Yöneticisi", &["Development"]),
         web("agents", "AI Ajanları", &["Development", "AI"]),
         web("camera", "Kamera", &["AudioVideo", "Development"]),
         web("gpio", "GPIO", &["Development", "Electronics"]),
         web("plugins", "Eklentiler", &["System", "Plugin"]),
-        web("screen", "Ekran Modu", &["System", "RemoteAccess"]),
+        web("browser", "Tarayıcı", &["Network", "WebBrowser"]),
     ]
 }
 
@@ -107,6 +107,12 @@ impl Registry {
     }
 
     fn icon(&self, name: &str) -> String {
+        // Kabuğun kendi simgesi tam yol olarak verilmiş olabilir (ör. chromium.desktop: Icon=/shell/icons/chromium.svg).
+        if let Some(rest) = name.strip_prefix("/shell/icons/") {
+            if !rest.contains("..") && !self.web_dir.is_empty() && Path::new(&self.web_dir).join("icons").join(rest).exists() {
+                return name.into();
+            }
+        }
         if !name.is_empty() && !name.contains(['/', '.']) && !self.web_dir.is_empty() && Path::new(&self.web_dir).join("icons").join(format!("{name}.svg")).exists() {
             return format!("/shell/icons/{name}.svg");
         }

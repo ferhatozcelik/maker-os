@@ -1,5 +1,6 @@
-//! Bellek içi oturumlar (HMAC imzalı çerez), giriş hız sınırı, yerel kabuk
-//! belirteci ve parola doğrulayıcı arayüzü.
+//! Oturumlar (HMAC imzalı çerez), giriş hız sınırı, yerel kabuk belirteci ve parola doğrulayıcı arayüzü.
+//! Oturumlar ve imza anahtarı `<data-dir>/sessions.json` (0600) dosyasında da tutulur: makerd yeniden
+//! başlayınca (güncelleme, çökme) kullanıcılar oturumdan düşmez, kilit ekranı açılmaz.
 
 use crate::apierr::ApiResult;
 use crate::util::random_token;
@@ -10,7 +11,8 @@ use sha2::Sha256;
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Mutex;
-use std::time::{Duration, Instant};
+use std::path::PathBuf;
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 pub const COOKIE_NAME: &str = "mk_session";
 pub const SESSION_TTL: Duration = Duration::from_secs(7 * 24 * 3600);
@@ -28,18 +30,31 @@ pub trait Checker: Send + Sync {
     fn check<'a>(&'a self, user: &'a str, password: &'a str) -> BoxFuture<'a, ApiResult<CheckResult>>;
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Session {
     pub id: String,
     pub user: String,
     pub admin: bool,
-    expires: Instant,
+    /// Bitiş (Unix saniye; diske yazılabilsin diye duvar saati).
+    expires: u64,
+}
+
+fn now_unix() -> u64 {
+    SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0)
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+struct Stored {
+    key: String,
+    sessions: Vec<Session>,
 }
 
 pub struct Manager {
     key: [u8; 32],
     ttl: Duration,
     sessions: Mutex<HashMap<String, Session>>,
+    /// Kalıcı kayıt dosyası (yoksa yalnız bellekte).
+    path: Option<PathBuf>,
 }
 
 impl Default for Manager {
@@ -52,7 +67,36 @@ impl Manager {
     pub fn new() -> Self {
         let mut key = [0u8; 32];
         rand::fill(&mut key);
-        Self { key, ttl: SESSION_TTL, sessions: Mutex::new(HashMap::new()) }
+        Self { key, ttl: SESSION_TTL, sessions: Mutex::new(HashMap::new()), path: None }
+    }
+
+    /// Kalıcı oturumlar: dosya varsa anahtar ve süresi dolmamış oturumlar yüklenir.
+    pub fn persistent(path: impl Into<PathBuf>) -> Self {
+        let path = path.into();
+        let mut m = Self::new();
+        if let Some(st) = std::fs::read(&path).ok().and_then(|b| serde_json::from_slice::<Stored>(&b).ok()) {
+            if let Some(k) = base64::engine::general_purpose::STANDARD.decode(&st.key).ok().filter(|k| k.len() == 32) {
+                m.key.copy_from_slice(&k);
+                let now = now_unix();
+                m.sessions = Mutex::new(st.sessions.into_iter().filter(|s| s.expires > now).map(|s| (s.id.clone(), s)).collect());
+            }
+        }
+        m.path = Some(path);
+        m.save(&m.sessions.lock().unwrap());
+        m
+    }
+
+    fn save(&self, map: &HashMap<String, Session>) {
+        let Some(p) = &self.path else { return };
+        let st = Stored { key: base64::engine::general_purpose::STANDARD.encode(self.key), sessions: map.values().cloned().collect() };
+        let Ok(b) = serde_json::to_vec(&st) else { return };
+        let tmp = p.with_extension("tmp");
+        use std::io::Write;
+        use std::os::unix::fs::OpenOptionsExt;
+        let ok = std::fs::OpenOptions::new().write(true).create(true).truncate(true).mode(0o600).open(&tmp).and_then(|mut f| f.write_all(&b)).is_ok();
+        if !ok || std::fs::rename(&tmp, p).is_err() {
+            tracing::warn!(path = %p.display(), "oturumlar kaydedilemedi");
+        }
     }
 
     fn sign(&self, id: &str) -> String {
@@ -64,8 +108,8 @@ impl Manager {
     /// Yeni oturum açar; çerez değerini döndürür.
     pub fn create(&self, user: &str, admin: bool) -> (Session, String) {
         let id = random_token(18);
-        let now = Instant::now();
-        let s = Session { id: id.clone(), user: user.into(), admin, expires: now + self.ttl };
+        let now = now_unix();
+        let s = Session { id: id.clone(), user: user.into(), admin, expires: now + self.ttl.as_secs() };
         let mut map = self.sessions.lock().unwrap();
         map.retain(|_, v| v.expires > now);
         if map.len() >= MAX_SESSIONS {
@@ -74,6 +118,8 @@ impl Manager {
             }
         }
         map.insert(id.clone(), s.clone());
+        self.save(&map);
+        drop(map);
         let cookie = format!("{id}.{}", self.sign(&id));
         (s, cookie)
     }
@@ -86,8 +132,9 @@ impl Manager {
         }
         let mut map = self.sessions.lock().unwrap();
         let s = map.get(id)?;
-        if Instant::now() > s.expires {
+        if now_unix() > s.expires {
             map.remove(id);
+            self.save(&map);
             return None;
         }
         Some(s.clone())
@@ -95,7 +142,9 @@ impl Manager {
 
     pub fn delete(&self, value: &str) {
         if let Some(s) = self.lookup(value) {
-            self.sessions.lock().unwrap().remove(&s.id);
+            let mut map = self.sessions.lock().unwrap();
+            map.remove(&s.id);
+            self.save(&map);
         }
     }
 
@@ -197,6 +246,27 @@ pub fn is_admin(group_file: &str, user: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn sessions_survive_restart() {
+        let p = std::env::temp_dir().join(format!("mk-sess-{}.json", crate::util::random_hex(4)));
+        let m = Manager::persistent(&p);
+        let (_, cookie) = m.create("ayse", true);
+        let (_, gone) = m.create("ali", false);
+        m.delete(&gone);
+        drop(m);
+        // Yeni süreç: aynı dosyadan yüklenir, çerez geçerli kalır; silinen oturum dönmez.
+        let m2 = Manager::persistent(&p);
+        assert_eq!(m2.lookup(&cookie).map(|s| (s.user, s.admin)), Some(("ayse".into(), true)));
+        assert!(m2.lookup(&gone).is_none());
+        use std::os::unix::fs::PermissionsExt;
+        assert_eq!(std::fs::metadata(&p).unwrap().permissions().mode() & 0o777, 0o600);
+        // Bozuk dosya: sıfırdan başlar, çökmez.
+        std::fs::write(&p, "bozuk").unwrap();
+        assert!(Manager::persistent(&p).lookup(&cookie).is_none());
+        let _ = std::fs::remove_file(p);
+    }
+
     use super::*;
 
     #[test]

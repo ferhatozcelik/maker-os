@@ -26,6 +26,8 @@ export function dialog(title, body, buttons) {
     const bg = h("div.dlg-bg", { onclick: e => e.target === bg && close(null) }, dlg);
     document.body.append(bg);
     addEventListener("keydown", function k(e) { if (e.key === "Escape") { removeEventListener("keydown", k); close(null); } });
+    // Tek satırlık giriş kutusunda Enter: birincil düğme (Kaydet, Oluştur…).
+    dlg.addEventListener("keydown", e => { if (e.key === "Enter" && e.target.matches("input")) { e.preventDefault(); dlg.querySelector(".act .primary")?.click(); } });
     dlg.querySelector("input,select,textarea")?.focus();
   });
 }

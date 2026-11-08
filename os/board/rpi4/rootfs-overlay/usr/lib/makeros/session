@@ -1,10 +1,10 @@
 #!/bin/sh
-# MakerOS ekran oturumu (makeros-kiosk.service): labwc + web kabuk + VNC.
+# MakerOS ekran oturumu (makeros-kiosk.service): labwc + web kabuk.
 # GPU/DRM yoksa (surucu hatasi, QEMU, bozuk firmware) sonsuz yeniden baslama
 # dongusune girmek yerine monitorsuz + yazilim cizim moduna gecer; Pi yine
-# tarayicidan (VNC) kullanilabilir.
+# tarayicidan (web arayuzu) kullanilabilir.
 if ! ls /dev/dri/card* >/dev/null 2>&1; then
-	echo "makeros-session: DRM aygiti yok -> headless + pixman (yalniz VNC)" >&2
+	echo "makeros-session: DRM aygiti yok -> headless + pixman" >&2
 	export WLR_BACKENDS=headless WLR_RENDERER=pixman WLR_LIBINPUT_NO_DEVICES=1
 	# WebKit: GPU olmadan CPU (Skia) cizimi; softpipe'tan cok daha hafif.
 	export WEBKIT_SKIA_ENABLE_CPU_RENDERING=1 LIBGL_ALWAYS_SOFTWARE=1

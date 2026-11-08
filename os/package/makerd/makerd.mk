@@ -25,7 +25,7 @@ endef
 MAKERD_PRE_BUILD_HOOKS += MAKERD_VENDOR_CRATES
 
 define MAKERD_INSTALL_TARGET_CMDS
-	for b in makerd makerd-priv makerd-user; do \
+	for b in makerd makerd-priv makerd-user makeros-ai; do \
 		$(INSTALL) -D -m 0755 $(@D)/target/$(RUSTC_TARGET_NAME)/release/$$b \
 			$(TARGET_DIR)/usr/bin/$$b || exit 1; \
 	done

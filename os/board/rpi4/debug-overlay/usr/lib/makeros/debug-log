@@ -1,0 +1,12 @@
+#!/bin/sh
+# MakerOS debug: durum ve gunluk SD kartin MOSCFG bolumune (Mac/PC'de okunur): makeros-debug.txt
+O=/boot/moscfg/makeros-debug.txt
+{
+	echo "== $(date -Is) $(cat /usr/lib/makeros/debug-image)"; uptime
+	echo "== ag"; ip -br addr; ip -br link
+	echo "== usb"; cat /sys/kernel/config/usb_gadget/makeros/UDC 2>&1; ls /sys/class/udc 2>&1
+	echo "== basarisiz birimler"; systemctl --failed --no-legend
+	echo "== birimler"; systemctl status --no-pager -n 15 makeros-usb-gadget makeros-usb-dhcp sshd makerd makeros-kiosk 2>&1 | head -120
+	echo "== gunluk (uyari+)"; journalctl -b -p warning --no-pager | tail -150
+} > "$O.tmp" 2>&1 && mv "$O.tmp" "$O"
+sync

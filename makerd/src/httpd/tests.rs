@@ -92,9 +92,6 @@ async fn env(fresh: bool) -> Env {
         agent: Some(Arc::new(uagent::Local { command: sh(), home: tmp("home").to_string_lossy().into_owned() })),
         camera: Some(Arc::new(camera::Hub::new(Arc::new(camera::Synthetic)))),
         gpio: Some(Arc::new(gpio::Sim::new("test"))),
-        vnc_addr: String::new(),
-        screen: None,
-        browser: None,
         update: None,
         catalog: None,
     };
@@ -271,7 +268,7 @@ async fn setup_flow() {
     let r = e.req("GET", "/api/v1/setup", "", &[]).await;
     let st = r.json();
     assert_eq!(r.status, 200);
-    assert_eq!((st["setup_done"].as_bool(), st["hostname"].as_str(), st["defaults"]["lang"].as_str(), st["min_password"].as_u64()), (Some(false), Some("makeros-0001"), Some("tr_TR.UTF-8"), Some(6)));
+    assert_eq!((st["setup_done"].as_bool(), st["hostname"].as_str(), st["defaults"]["lang"].as_str(), st["min_password"].as_u64()), (Some(false), Some("maker-os"), Some("tr_TR.UTF-8"), Some(6)));
     assert!(st["languages"].as_array().is_some_and(|l| !l.is_empty()) && st["timezones"].as_array().is_some_and(|l| !l.is_empty()));
     assert_eq!(e.req("POST", "/api/v1/setup/wifi/scan", "", x).await.status, 200);
     let r = e.req("GET", "/api/v1/auth/local?token=yerel-belirtec", "", &[]).await;
@@ -487,4 +484,22 @@ async fn term_ws() {
     c2.send(tungstenite::Message::binary(&b"exit\n"[..])).await.unwrap();
     let f = read_until(&mut c2, "\u{0}YOK\u{0}").await.expect("kapanış çerçevesi");
     assert_eq!(u16::from(f.code), 1000);
+}
+
+#[tokio::test]
+async fn wallpapers() {
+    let e = env(false).await;
+    let c = e.login().await;
+    let a: &[(&str, &str)] = &[("Cookie", &c), ("X-Maker", "1")];
+    let jpg = [vec![0xff, 0xd8, 0xff, 0xe0], vec![0u8; 64]].concat();
+    assert_eq!(e.req("GET", "/api/v1/wallpaper/lock", "", &[]).await.status, 404);
+    assert_eq!(e.req_bytes("PUT", "/api/v1/wallpaper/lock", jpg.clone(), &[("X-Maker", "1")]).await.status, 401);
+    assert_eq!(e.req_bytes("PUT", "/api/v1/wallpaper/lock", b"<svg/>".to_vec(), a).await.status, 400, "resim değil");
+    assert_eq!(e.req_bytes("PUT", "/api/v1/wallpaper/../prefs", jpg.clone(), a).await.status, 404);
+    assert_eq!(e.req_bytes("PUT", "/api/v1/wallpaper/lock", jpg.clone(), a).await.status, 204);
+    // Kilit ekranı girişten önce de görünür: oturumsuz GET.
+    let r = e.req("GET", "/api/v1/wallpaper/lock", "", &[]).await;
+    assert_eq!((r.status, r.headers.get("content-type").unwrap().to_str().unwrap(), r.body.len()), (200, "image/jpeg", jpg.len()));
+    assert_eq!(e.req("DELETE", "/api/v1/wallpaper/lock", "", a).await.status, 204);
+    assert_eq!(e.req("GET", "/api/v1/wallpaper/lock", "", &[]).await.status, 404);
 }

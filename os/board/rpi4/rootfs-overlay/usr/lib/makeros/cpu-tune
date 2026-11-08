@@ -1,7 +1,7 @@
 #!/bin/sh
 # CPU frekans yoneticisi.
-# Varsayilan: cekirdek varsayilani schedutil. /etc/makeros/cpu-governor
-# dosyasi 'ondemand' iceriyorsa Raspberry Pi OS ayarlari uygulanir:
+# Varsayilan: /etc/makeros/cpu-governor (ondemand; Pi 4 arayuzu schedutil ile gec hizlaniyor).
+# ondemand ise Raspberry Pi OS ayarlari uygulanir:
 #  - up_threshold=50        : yuk %50'yi gecince en yuksek frekansa cik
 #  - sampling_rate=100000   : 100 ms'de bir olc
 #  - sampling_down_factor=50: yuksek frekansta 5 sn kal

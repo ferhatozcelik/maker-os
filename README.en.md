@@ -89,7 +89,7 @@ make -C shell smoke                   # shell smoke test (headless Chromium)
 | Area | What you get |
 | --- | --- |
 | Base | Independent system built with Buildroot on Linux 6.18 (Raspberry Pi); read-only EROFS root file system, A/B partitions, systemd |
-| Two views | One address (`http://makeros.local/`): the windowed **Screen** (desktop, dock, windows) and the phone-friendly **Web** interface, switched with *Web \| Screen*. Installable as a web app (PWA) |
+| Two views | One address (`http://maker-os.local/`): the windowed **Screen** (desktop, dock, windows) and the phone-friendly **Web** interface, switched with *Web \| Screen*. Installable as a web app (PWA) |
 | Chromium | A normal window on the desktop: the real browser running on the Pi, drawn on a separate invisible display with only that window streamed; resizes with the window and stops when closed |
 | Files and terminal | Upload and download; click a `.py` file to run it. The web terminal shares its session with the Pi’s screen, with an extra key bar for phones |
 | Python | `uv` projects with virtual environments and Python versions; templates: LED, button, I2C scanner, camera, web, AI object detection |
@@ -116,7 +116,7 @@ MakerOS runs on Raspberry Pi 4 Model B and Raspberry Pi 400 (64-bit). It can be 
 ### 2. Power on and connect
 
 1. Insert the SD card into the Raspberry Pi and power it on.
-2. With Ethernet plugged in or `wifi.txt` configured, open **http://makeros.local/** from a browser on your computer or phone.
+2. With Ethernet plugged in or `wifi.txt` configured, open **http://maker-os.local/** from a browser on your computer or phone.
 3. Without Ethernet or `wifi.txt`, connect your phone to the open **`MakerOS`** Wi-Fi network. The setup page opens automatically (or visit `http://10.42.0.1/kurulum`).
 4. In the first-boot wizard, select a Wi-Fi network or skip this step. The device is set up with the default **`makeros` / `makeros`** administrator account and the Pi's own display signs in automatically. Sign in with these credentials from another computer and change the password under **Settings → User**.
 

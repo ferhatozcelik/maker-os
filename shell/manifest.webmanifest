@@ -20,7 +20,6 @@
     { "src": "/shell/icons/logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
   ],
   "shortcuts": [
-    { "name": "Ekran Modu", "short_name": "Ekran", "url": "/shell/apps/screen/", "icons": [{ "src": "/shell/icons/pwa-192.png", "sizes": "192x192" }] },
     { "name": "Terminal", "url": "/web#terminal", "icons": [{ "src": "/shell/icons/pwa-192.png", "sizes": "192x192" }] },
     { "name": "Python", "url": "/web#python", "icons": [{ "src": "/shell/icons/pwa-192.png", "sizes": "192x192" }] },
     { "name": "Dosyalar", "url": "/web#files", "icons": [{ "src": "/shell/icons/pwa-192.png", "sizes": "192x192" }] }

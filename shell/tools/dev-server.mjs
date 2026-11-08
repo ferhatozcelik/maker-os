@@ -40,7 +40,6 @@ const updateState = () => {
   }
   return st;
 };
-const screenMode = { enabled: false, headless: true, managed: true }; // Ekran Modu varsayılan kapalı
 const notifications = [
   { id: "n1", app: "makeros.system", title: "MakerOS'a hoş geldiniz", body: "Kısayollar için Ayarlar → Klavye bölümüne bakın.", time: new Date(t0 - 6e5).toISOString(), read: false },
   { id: "n2", app: "makeros.update", title: "Sistem güncel", body: "MakerOS 2.0.0-dev çalışıyor.", time: new Date(t0 - 36e5).toISOString(), read: true },
@@ -51,7 +50,7 @@ const procs = procNames.map((name, i) => ({ pid: [412, 655, 702, 703, 640, 1, 38
   cpu_pct: 0, rss: Math.round((5 + Math.random() * 120) * 1048576), slice: name.startsWith("WPE") || name === "cog" || name === "cage" ? "shell.slice" : ["bash", "python3", "node"].includes(name) ? "apps.slice" : "system.slice" }));
 const apps = [
   ["settings", "Ayarlar", ["system"]], ["terminal", "Terminal", ["system", "dev"]], ["activity", "Etkinlik Monitörü", ["system"]],
-  ["files", "Dosyalar", ["system"]], ["python", "Python", ["dev"]], ["camera", "Kamera", ["hardware"]], ["gpio", "GPIO", ["hardware"]], ["agents", "AI Ajanları", ["dev"]], ["plugins", "Eklentiler", ["system"]], ["screen", "Ekran Modu", ["system"]],
+  ["files", "Dosyalar", ["system"]], ["python", "Python", ["dev"]], ["camera", "Kamera", ["hardware"]], ["gpio", "GPIO", ["hardware"]], ["agents", "AI Ajanları", ["dev"]], ["plugins", "Eklentiler", ["system"]], ["browser", "Tarayıcı", ["network"]],
 ].map(([n, name, categories]) => ({ id: "makeros." + n, name, icon: `/shell/icons/${n}.svg`, kind: "web", url: `/shell/apps/${n}/`, categories }));
 
 const wobble = (v, d, lo, hi) => Math.min(hi, Math.max(lo, v + (Math.random() - 0.5) * d));
@@ -185,8 +184,6 @@ async function api(req, res, path) {
     case "GET /system/update": return send(res, 200, updateState());
     case "POST /system/update/check": update.checked = new Date().toISOString(); return send(res, 200, updateState());
     case "POST /system/update/apply": update.started = Date.now(); return send(res, 202, { job: "up1" });
-    case "GET /screen": return send(res, 200, screenMode);
-    case "PUT /screen": { const b = await body(req); screenMode.enabled = !!b?.enabled; return send(res, 200, screenMode); }
     case "POST /term": { const b = await body(req); if (terms.size >= 6) return err(res, 409, "conflict", "Terminal oturum sınırı (6)");
       const id = "t" + randomBytes(4).toString("hex"), ticket = randomBytes(12).toString("hex"); terms.set(id, { ticket, cols: b.cols, rows: b.rows }); return send(res, 200, { id, ticket }); }
   }

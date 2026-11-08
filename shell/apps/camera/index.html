@@ -20,11 +20,19 @@ body { background: #111114; color: #eee; }
 .shot { position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%); width: 62px; height: 62px; border-radius: 50%; border: 4px solid #fff; background: rgba(255,255,255,.25); }
 .shot:active { background: #fff; }
 .flash { animation: fl .35s; } @keyframes fl { from { filter: brightness(3); } }
+/* Video kaydı: kırmızı düğme, kayıtta kare; üstte süre */
+.shot.video { background: #e5322d; border-color: #fff; }
+.shot.video.rec { border-radius: 14px; width: 54px; height: 54px; bottom: 22px; animation: pulse 1.2s infinite; }
+@keyframes pulse { 50% { opacity: .65; } }
+.modes { position: absolute; bottom: 92px; left: 50%; transform: translateX(-50%); display: flex; gap: 4px; padding: 3px; border-radius: 999px; background: rgba(0,0,0,.45); }
+.modes button { border: 0; border-radius: 999px; padding: 4px 12px; background: none; color: #ddd; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.modes button.on { background: #fff; color: #111; }
+.timer { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); padding: 4px 10px; border-radius: 8px; background: #e5322d; color: #fff; font-variant-numeric: tabular-nums; font-weight: 600; font-size: 13px; }
 </style>
 </head>
 <body>
 <div class="bar2"><span class="info"></span><span class="grow"></span><button class="btn sm b-gal"></button><button class="btn sm b-pause"></button></div>
-<div class="view"><img alt=""><div class="msg" hidden></div><button class="shot" aria-label="Fotoğraf"></button></div>
+<div class="view"><img alt=""><div class="msg" hidden></div><div class="timer" hidden>00:00</div><div class="modes"><button class="m-photo on"></button><button class="m-video"></button></div><button class="shot" aria-label="Fotoğraf"></button></div>
 <script type="module" src="/shell/apps/camera/camera.js"></script>
 </body>
 </html>

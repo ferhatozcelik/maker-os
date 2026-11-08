@@ -1,0 +1,37 @@
+#!/bin/sh
+# MakerOS debug: Pi 4 USB-C portu -> USB ag karti (CDC-ECM, configfs). Mac/PC'ye takilinca
+# Pi 10.55.0.1 olur, bilgisayar DHCP ile (makeros-usb-dhcp) 10.55.0.x alir; yonlendirici/DNS verilmez.
+# NetworkManager usb0'a dokunmaz (conf.d/60-makeros-usb.conf).
+# Yalniz debug imajinda vardir (os/board/rpi4/debug-overlay). config.txt: dtoverlay=dwc2,dr_mode=peripheral
+set -e
+G=/sys/kernel/config/usb_gadget/makeros
+modprobe libcomposite
+mountpoint -q /sys/kernel/config || mount -t configfs none /sys/kernel/config
+UDC=$(ls /sys/class/udc | head -n1)
+[ -n "$UDC" ] || { echo "usb-gadget: UDC yok (dtoverlay=dwc2 eksik mi?)" >&2; exit 1; }
+if [ ! -e "$G/UDC" ] || [ -z "$(cat "$G/UDC")" ]; then
+mkdir -p "$G"
+echo 0x1d6b > "$G/idVendor"   # Linux Foundation
+echo 0x0104 > "$G/idProduct"  # Multifunction Composite Gadget
+mkdir -p "$G/strings/0x409"
+echo MakerOS > "$G/strings/0x409/manufacturer"
+echo "MakerOS debug USB" > "$G/strings/0x409/product"
+cat /proc/device-tree/serial-number 2>/dev/null | tr -d '\0' > "$G/strings/0x409/serialnumber" || true
+mkdir -p "$G/configs/c.1/strings/0x409"
+echo "ECM" > "$G/configs/c.1/strings/0x409/configuration"
+echo 250 > "$G/configs/c.1/MaxPower"
+mkdir -p "$G/functions/ecm.usb0"
+# Sabit MAC: bilgisayar her takista ayni ag arayuzunu gorur.
+echo 02:4d:4f:53:00:01 > "$G/functions/ecm.usb0/dev_addr"
+echo 02:4d:4f:53:00:02 > "$G/functions/ecm.usb0/host_addr"
+ln -sf "$G/functions/ecm.usb0" "$G/configs/c.1/"
+echo "$UDC" > "$G/UDC"
+fi
+# Arayuz adi (udev yeniden adlandirmis olabilir) -> usb0, sabit adres, acik.
+i=0; IF=""
+while [ $i -lt 50 ]; do IF=$(cat "$G/functions/ecm.usb0/ifname" 2>/dev/null); [ -n "$IF" ] && [ -e "/sys/class/net/$IF" ] && break; sleep 0.1; i=$((i + 1)); done
+[ -n "$IF" ] || { echo "usb-gadget: ag arayuzu olusmadi" >&2; exit 1; }
+if [ "$IF" != usb0 ]; then ip link set "$IF" down; ip link set "$IF" name usb0; fi
+ip addr replace 10.55.0.1/24 dev usb0
+ip link set usb0 up
+echo "usb-gadget: $UDC uzerinde ECM hazir (usb0 = 10.55.0.1, once $IF)"

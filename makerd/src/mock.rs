@@ -503,7 +503,7 @@ pub fn launcher(real: Option<Launcher>) -> Launcher {
 
 fn has_display() -> bool {
     use std::os::unix::fs::FileTypeExt;
-    let rd = crate::screen::runtime_dir();
+    let rd = crate::util::runtime_dir();
     let d = std::env::var("WAYLAND_DISPLAY").ok().filter(|v| !v.is_empty()).unwrap_or_else(|| "wayland-0".into());
     let p = if d.starts_with('/') { std::path::PathBuf::from(d) } else { std::path::Path::new(&rd).join(d) };
     std::fs::metadata(p).is_ok_and(|m| m.file_type().is_socket())

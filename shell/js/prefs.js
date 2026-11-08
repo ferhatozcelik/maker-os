@@ -5,7 +5,7 @@ import { store, Emitter } from "./lib.js";
 import { api } from "./api.js";
 
 export const prefs = new Emitter();
-const DEF = { theme: "auto", look: "maker", wallpaper: "auto", fx: "auto", accent: "orange", magnify: false, ctrlCmd: "auto", dockApps: null, lang: "tr" };
+const DEF = { theme: "auto", look: "maker", wallpaper: "auto", fx: "auto", accent: "orange", magnify: false, ctrlCmd: "auto", dockApps: null, lang: "tr", aiWidget: true, aiMode: "oner" };
 const SYNC = Object.keys(DEF);
 export const pref = k => store.get(k, DEF[k]);
 export function setPref(k, v) { store.set(k, v); apply(); prefs.emit("change", k, v); push(); }

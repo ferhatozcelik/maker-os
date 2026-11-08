@@ -41,6 +41,8 @@ LockPersonality=yes
 SystemCallArchitectures=native
 SystemCallFilter=@system-service
 SystemCallFilter=~@privileged @resources
+# Yasaklı çağrı süreci öldürmesin (varsayılan SIGSYS), EPERM dönsün: hata işlenir, hizmet ayakta kalır.
+SystemCallErrorNumber=EPERM
 UMask=0027
 MemoryHigh=64M
 MemoryMax=128M

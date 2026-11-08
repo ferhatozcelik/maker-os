@@ -1,4 +1,4 @@
-//! makerd'nin HTTP katmanı: /api/v1 REST uçları, events/term/VNC
+//! makerd'nin HTTP katmanı: /api/v1 REST uçları, events/term
 //! WebSocket'leri, CSRF/kimlik ara katmanları ve kabuk statik sunumu.
 
 mod api;
@@ -12,7 +12,7 @@ pub use static_files::Static;
 use crate::apierr::{ApiError, ApiResult};
 use crate::events::{fetch, Hub, Producer};
 use crate::privsep::UserCreateArgs;
-use crate::{activity, apps, auth, browser, camera, gpio, jobs, network, notify, ota, prefs, screen, setup, system, term, uagent};
+use crate::{activity, apps, auth, camera, gpio, jobs, network, notify, ota, prefs, setup, system, term, uagent};
 use axum::body::Body;
 use axum::extract::{ConnectInfo, Request};
 use axum::http::{header, HeaderMap, HeaderValue, Method, StatusCode};
@@ -72,11 +72,6 @@ pub struct Deps {
     pub agent: Option<Arc<dyn uagent::Agent>>,
     pub camera: Option<Arc<camera::Hub>>,
     pub gpio: Option<Arc<dyn gpio::Provider>>,
-    /// Yerel VNC sunucusu (wayvnc, 127.0.0.1:5900); boşsa /vnc 503.
-    pub vnc_addr: String,
-    /// Ekran Modu; None: her zaman açık sayılır.
-    pub screen: Option<Arc<screen::Manager>>,
-    pub browser: Option<Arc<browser::Manager>>,
     pub update: Option<Arc<ota::Updater>>,
     /// Eklenti kataloğu (mağaza); None ise /plugins/catalog 503.
     pub catalog: Option<Arc<crate::catalog::Catalog>>,
@@ -159,12 +154,12 @@ impl Server {
             .route("/api/v1/term/{id}", get(ws::term_ws).delete(ws::term_close))
             .route("/api/v1/term/{id}/ticket", post(ws::term_ticket))
             .route("/api/v1/events", get(ws::events_ws))
-            .route("/api/v1/vnc", get(ws::vnc_ws))
-            .route("/api/v1/browser/vnc", get(ws::browser_ws))
+            .route("/api/v1/browse", get(api::browse))
+            .route("/api/v1/wallpaper/{name}", get(api::wallpaper_get).put(api::wallpaper_put).delete(api::wallpaper_delete))
+            .route("/api/v1/browse/ticket", post(api::browse_ticket))
             .route("/api/v1/system/update", get(api::update_status))
             .route("/api/v1/system/update/check", post(api::update_check))
             .route("/api/v1/system/update/apply", post(api::update_apply))
-            .route("/api/v1/screen", get(ws::screen_state).put(ws::screen_set))
             .route("/api/v1/files", get(user::files_list))
             .route("/api/v1/files/raw", get(user::files_raw).put(user::files_upload))
             .route("/api/v1/files/op", post(user::files_op))
@@ -174,6 +169,13 @@ impl Server {
             .route("/api/v1/projects", get(user::project_list).post(user::project_create))
             .route("/api/v1/projects/templates", get(user::project_templates))
             .route("/api/v1/projects/{name}/run", post(user::project_run))
+            .route("/api/v1/projects/{name}/status", get(user::project_status))
+            .route("/api/v1/projects/{name}/start", post(user::project_start))
+            .route("/api/v1/projects/{name}/stop", post(user::project_stop))
+            .route("/api/v1/projects/{name}/log", get(user::project_log))
+            .route("/api/v1/projects/{name}/packages", get(user::project_packages).post(user::project_package_op))
+            .route("/api/v1/projects/{name}/python", put(user::project_python))
+            .route("/api/v1/projects/{name}/autostart", put(user::project_autostart))
             .route("/api/v1/projects/{name}", delete(user::project_delete))
             .route("/api/v1/agents", get(user::agent_list))
             .route("/api/v1/agents/{id}/{op}", post(user::agent_op))
@@ -191,6 +193,8 @@ impl Server {
             .route("/api/v1/plugins/{id}/asset/{*path}", get(user::plugin_asset))
             .route("/api/v1/plugins/{id}/{op}", post(user::plugin_op))
             .route("/api/v1/plugins/{id}", delete(user::plugin_delete))
+            .route("/api/v1/asistan/calistir", post(user::ai_run))
+            .route("/api/v1/ai/{*rest}", any(proxy::ai_proxy))
             .route("/plugin/{id}/", any(proxy::plugin_proxy))
             .route("/plugin/{id}/{*rest}", any(proxy::plugin_proxy))
             .route("/", get(|axum::extract::State(s): axum::extract::State<S>, req: Request| async move { let (p, _) = req.into_parts(); s.stat.serve(&p, "index.html").await }))

@@ -1,9 +1,15 @@
 #!/bin/sh
-# labwc acildiginda: sanal ekran varsa 1280x720 yap, web kabugu baslat. Ekran Modu (wayvnc)
-# varsayilan KAPALI: yalniz Ayarlar'dan acildiysa (makerd /var/lib/makerd/screen-mode) baslar.
+# labwc acildiginda: sanal ekran varsa 1280x720 yap, web kabugu baslat.
 if command -v wlr-randr >/dev/null 2>&1 && wlr-randr | grep -q '^VIRTUAL-1'; then
 	wlr-randr --output VIRTUAL-1 --custom-mode 1280x720@30Hz || true
 fi
+# Pi 4 GPU'su 4K/1440p'de web kabuğunu akıcı çizemez (kare başına 4 kat piksel): 1920 pikselden
+# geniş fiziksel ekranları 1080p'ye indir. Yerel çözünürlük için: touch /etc/makeros/display-native
+if command -v wlr-randr >/dev/null 2>&1 && [ ! -e /etc/makeros/display-native ]; then
+	wlr-randr | awk '/^[^ ]/ { o = $1 } /current/ && o !~ /^VIRTUAL/ { split($1, a, "x"); if (a[1] + 0 > 1920) print o }' |
+	while read -r out; do
+		wlr-randr --output "$out" --mode 1920x1080 2>/dev/null || wlr-randr --output "$out" --custom-mode 1920x1080 || true
+	done
+fi
 systemctl --user import-environment WAYLAND_DISPLAY XDG_RUNTIME_DIR 2>/dev/null
-[ -e /var/lib/makerd/screen-mode ] && systemctl --user start makeros-vnc.service 2>/dev/null &
 exec /usr/lib/makeros/kiosk-browser

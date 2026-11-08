@@ -26,6 +26,16 @@ function newTab(existing) {
     fontFamily: '"JetBrains Mono", ui-monospace, monospace', theme: THEME, macOptionIsMeta: true });
   tab.fit = new FitAddon.FitAddon(); tab.term.loadAddon(tab.fit);
   host.append(tab.el); tab.term.open(tab.el);
+  // http(s) adresleri tıklanabilir: MakerOS Tarayıcı penceresinde açılır (örnek projelerin "http://0.0.0.0:8000" çıktısı;
+  // tarayıcı yerel adresleri Pi'nin adına çevirir, bkz. apps/browser).
+  tab.term.registerLinkProvider({ provideLinks(y, cb) {
+    const line = tab.term.buffer.active.getLine(y - 1)?.translateToString(true) || "";
+    const out = [];
+    for (const m of line.matchAll(/https?:\/\/[^\s"'<>()]+[^\s"'<>().,;:]/g)) {
+      out.push({ text: m[0], range: { start: { x: m.index + 1, y }, end: { x: m.index + m[0].length, y } }, activate: (_, u) => app.open("chromium", u) });
+    }
+    cb(out.length ? out : undefined);
+  } });
   tab.term.onTitleChange(s => { tab.title = s || tab.title; renderTabs(); });
   tab.term.onData(d => {
     if (!tab.ws || tab.ws.readyState !== 1) { if (d === "\r") connect(tab); return; }
