@@ -57,7 +57,7 @@ box_create() {
 	podman exec "${BOX_PREFIX}${name}" sh -c "
 		set -e
 		export DEBIAN_FRONTEND=noninteractive
-		apt-get update -qq && apt-get install -y -qq sudo ca-certificates less nano bash-completion >/dev/null
+		apt-get update -qq && apt-get install -y -qq sudo ca-certificates less nano bash-completion curl gnupg >/dev/null
 		getent group $(id -g) >/dev/null || groupadd -g $(id -g) $(id -gn)
 		id -u $(id -un) >/dev/null 2>&1 || useradd -M -d ${HOME} -u $(id -u) -g $(id -g) -s /bin/bash $(id -un)
 		echo '$(id -un) ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/mosbox
@@ -192,12 +192,30 @@ pkg_tracked() {
 	ls "${PKG_STATE}" | sed -n 's/\.files$//p' | grep -vx manual || true
 }
 
+sync_host_apt() {
+	if [ -d /etc/apt/sources.list.d ]; then
+		for f in /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources; do
+			[ -f "$f" ] || continue
+			box_exec "${PKG_BOX}" root sh -c "mkdir -p /etc/apt/sources.list.d && cat > '/etc/apt/sources.list.d/${f##*/}'" < "$f" 2>/dev/null || true
+		done
+	fi
+	for kdir in /usr/share/keyrings /etc/apt/keyrings; do
+		if [ -d "$kdir" ]; then
+			for f in "$kdir"/*; do
+				[ -f "$f" ] || continue
+				box_exec "${PKG_BOX}" root sh -c "mkdir -p '$kdir' && cat > '$f'" < "$f" 2>/dev/null || true
+			done
+		fi
+	done
+}
+
 pkg() {
 	sub="${1:-help}"
 	[ $# -gt 0 ] && shift
 	case "${sub}" in
 	install|add)
 		[ $# -gt 0 ] || die "kullanim: mos pkg install <paket...>"
+		sync_host_apt
 		box_exec "${PKG_BOX}" root apt install "$@"
 		# shellcheck disable=SC2046
 		pkg_export $(pkg_installed $(pkg_args "$@"))
@@ -216,8 +234,11 @@ pkg() {
 	list)
 		if [ $# -gt 0 ]; then box_exec "${PKG_BOX}" "$(id -u):$(id -g)" apt list "$@"; else pkg_tracked; fi
 		;;
-	update) box_exec "${PKG_BOX}" root apt update "$@" ;;
+	update)
+		sync_host_apt
+		box_exec "${PKG_BOX}" root apt update "$@" ;;
 	upgrade|full-upgrade)
+		sync_host_apt
 		box_exec "${PKG_BOX}" root apt "${sub}" "$@"
 		t=$(pkg_tracked)
 		# shellcheck disable=SC2086
