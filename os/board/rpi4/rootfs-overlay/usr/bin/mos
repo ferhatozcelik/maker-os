@@ -20,7 +20,7 @@
 # 'apt' ve 'apt-get' komutlari da 'mos pkg'ye yonlenir.
 set -eu
 
-BOX_IMAGE="${MOS_BOX_IMAGE:-docker.io/library/debian:trixie}"
+BOX_IMAGE="${MOS_BOX_IMAGE:-debian:trixie-slim}"
 BOX_PREFIX=mosbox-
 
 die() { echo "mos: $*" >&2; exit 1; }
@@ -34,13 +34,15 @@ box_devices() {
 
 box_create() {
 	name="$1"
+	mkdir -m 1777 -p /run/user 2>/dev/null || true
 	mkdir -m 0700 -p "/run/user/$(id -u)" 2>/dev/null || true
 	echo "mos: '${name}' kutusu olusturuluyor (${BOX_IMAGE})..." >&2
+	userns_opt=""
+	[ "$(id -u)" != 0 ] && userns_opt="--userns=keep-id --group-add keep-groups"
 	# shellcheck disable=SC2046
 	podman create --name "${BOX_PREFIX}${name}" \
 		--hostname "${name}-box" \
-		--userns=keep-id \
-		--group-add keep-groups \
+		${userns_opt} \
 		--security-opt label=disable \
 		--network host \
 		--volume "${HOME}:${HOME}" \
