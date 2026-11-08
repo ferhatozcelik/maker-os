@@ -1,7 +1,7 @@
 // MakerOS service worker (kapsam "/": makerd /sw.js olarak sunar).
 // Strateji: ağ önce. Kabuk dosyaları başarılı her yanıtta önbelleğe yazılır; Pi'ye ulaşılamazsa
 // önbellekten açılır (en azından "bağlantı yok" ekranı ve son görülen arayüz). API, WebSocket,
-// akışlar (kamera/VNC/terminal) ve dosya indirmeleri hiç önbelleklenmez.
+// akışlar (kamera/terminal) ve dosya indirmeleri hiç önbelleklenmez.
 const CACHE = "makeros-shell-v1";
 const SKIP = /^\/(api|plugin)\//;
 

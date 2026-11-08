@@ -115,7 +115,7 @@ POST için geçerlidir.
 | POST | `/setup/wifi/scan` | → `/net/wifi/scan` ile aynı (kurulum ekranı için kimliksiz) |
 | POST | `/setup/complete` | `{"user","password","fullname"?,"hostname","timezone","lang","keymap","wifi"?:{"ssid","password"?,"hidden"?,"eap"?}}` → `200 {"user","admin":true,"job"?,"warnings"?:["..."]}` + `mk_session` çerezi |
 
-- `hostname` önerisi MAC adresinin son 4 hanesinden üretilir (`makeros-xxxx`).
+- `hostname` önerisi her zaman `maker-os` (web arayüzü `http://maker-os.local/`).
   `wifi_needed` alanı, çevrimdışıyken veya kurulum erişim noktası açıkken `true` olur.
 - Doğrulama kuralları şöyledir. `user`: `^[a-z_][a-z0-9_-]{0,31}$` olmalı ve ayrılmış
   adlardan (root, daemon, nobody, systemd-* …) biri olmamalıdır. `password`: en az
@@ -175,17 +175,11 @@ süreç içinde bir PTY açılır.
 - Uygulama↔kabuk köprüsü mesajı `{mk:"visibility",visible}` belgelensin (shell/README.md).
 - SSH aç/kapat: makerd-priv `ssh.enable` komutu + `PUT /system/ssh {enabled}` (admin).
 
-## Uzak Ekran (M3, 2026-11-03)
+## Uzak tarayıcı (2026-11-08)
 
-| Yöntem | Yol | Açıklama |
-|---|---|---|
-| GET (WebSocket) | `/vnc` | **Yönetici** oturumu + aynı Origin. Alt protokol `binary`. İkili çerçeveler ham RFB akışıdır; makerd bunları `--vnc` adresindeki (varsayılan `127.0.0.1:5900`, wayvnc) TCP bağlantısına aktarır. **Ekran Modu kapalıysa (varsayılan) `403 forbidden`.** VNC sunucusu yoksa `503 unavailable`, `--vnc ""` ise özellik kapalı (`503`). |
-| GET (WebSocket) | `/browser/vnc` | **Yönetici.** MakerOS'taki "Chromium" penceresi: ayrı, monitörsüz tarayıcı oturumu (labwc + Chromium + wayvnc, yalnız `127.0.0.1:5901`; `/usr/lib/makeros/browser-session`, systemd `makeros-browser.service`). İlk bağlantıda başlar, son bağlantıdan 45 sn sonra durur; Ekran Modu ayarından bağımsızdır. Pencere boyutu = oturumun ekran boyutu (SetDesktopSize). Başlatılamazsa `503`. |
-| GET | `/screen` | Ekran Modu durumu: `{"enabled":bool,"headless":bool,"managed":bool}`. `headless`: Pi'ye monitör bağlı değil (sanal ekran tarayıcı boyutuna uyar). |
-| PUT | `/screen` | **Yönetici.** `{"enabled":bool}` → durum. Açınca wayvnc başlar (systemd kullanıcı birimi `makeros-vnc.service`, yoksa makerd kendisi), kapatınca durur; `<data-dir>/screen-mode` ile kalıcı. Ayrı port açılmaz. |
-
-wayvnc hiçbir zaman dış ağa açılmaz; kimlik doğrulama yalnız makerd oturumudur.
-Kabuk uygulaması: `makeros.screen` (`/shell/apps/screen/`, noVNC 1.7 `core/rfb.js`).
+Uzak masaüstü (VNC: wayvnc, `/vnc`, `/screen`, Ekran Modu) kaldırıldı. Web arayüzü bağlanan bilgisayarın
+tarayıcısında çizilir; Pi'nin ekranı aktarılmaz. Uzaktan "Chromium" tıklanınca kabuk `/shell/apps/browser/`
+(Tarayıcı, iframe) penceresini açar; Pi'de bir şey başlamaz. Pi'nin kendi ekranında Chromium yerel uygulamadır.
 
 ## Eklenti mağazası (2026-11-05)
 
@@ -202,3 +196,21 @@ Her dosya ağaçtaki git blob özetiyle (SHA-1) denetlenir. 10 dk önbellek.
 - `POST /plugins/catalog/{id}/install` → kurulan `plugin.json`. Ağaç her seferinde yenilenir; klasördeki dosyalar (gizli, `.venv`,
   `__pycache__` hariç) indirilir, boyut ve git özeti denetlenir, `/plugins/import` kurallarıyla kurulur. Çalışan eklenti yeniden başlatılır.
   Hatalar: `404` katalogda yok, `400` dosya uyuşmazlığı/geçersiz eklenti/boyut, `503` indirme hatası veya zaman aşımı (180 sn).
+
+## Dosyalar ve Python yöneticisi (2026-11-08)
+
+`POST /files/op {op, path, to}` işlemleri: `mkdir`, `rename`, `remove`, `stat`, `copy` (hedef klasör; çakışmada
+"ad (2)"), `move`, `trash` / `trash-list` / `restore` (path = çöp kimliği) / `trash-delete` (path boş = çöpü boşalt;
+freedesktop `~/.local/share/Trash`), `search` (path = klasör, to = sorgu; ≤300 sonuç, 8 düzey), `places`
+(standart klasörler + `/media`, `/run/media/<kullanıcı>`, `/mnt` altındaki sürücüler).
+
+| Yöntem | Yol | Açıklama |
+|---|---|---|
+| GET | `/projects/{ad}/status` | `{running, autostart, python, template}` |
+| POST | `/projects/{ad}/start` · `/stop` | Arka planda (setsid) çalıştır / süreç grubunu durdur; çıktı `.makeros-run.log` |
+| GET | `/projects/{ad}/log?from=N` | Günlüğün N. bayttan sonrası (≤64 KB): `{size, from, text, reset}` |
+| GET | `/projects/{ad}/packages` | `{deps: [pyproject], installed: [uv pip list]}` |
+| POST | `/projects/{ad}/packages` | `{op: add\|remove\|upgrade\|sync, pkg}` → terminal oturumu (yalnız uv) |
+| PUT | `/projects/{ad}/python` | `{python: "system"\|"3.12"}` → ortam yeniden kurulur (terminal) |
+| PUT | `/projects/{ad}/autostart` | `{enabled}`; işaret `~/.config/makeros/autostart/<ad>`, makerd açılışta birincil kullanıcının işaretli projelerini başlatır |
+| GET/PUT/DELETE | `/wallpaper/{desktop\|desktop-blur\|lock}` | Kullanıcı duvar kâğıdı (GET herkese açık: kilit ekranı girişten önce görünür) |

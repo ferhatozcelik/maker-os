@@ -6,7 +6,7 @@ use makerd::flags::Flags;
 use makerd::httpd::{Accounts, Deps, Server, TOPICS};
 use makerd::privsep::{self, client::Client, AuthCheckArgs, AuthCheckResult, UserCreateArgs, UserCreateResult};
 use makerd::termproc::login;
-use makerd::{activity, apps, auth, browser, camera, events, gpio, jobs, logging, mock, network, notify, ota, prefs, screen, sd, setup, system, term, uagent, util};
+use makerd::{activity, apps, auth, camera, events, gpio, jobs, logging, mock, network, notify, ota, prefs, sd, setup, system, term, uagent, util};
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
@@ -22,7 +22,6 @@ const USAGE: &str = "Kullanım: makerd [bayraklar]
   --user-socket-dir D   makerd-user@ soketleri (<uid>.sock) (varsayılan /run/makeros/user)
   --log-level SEVİYE    debug|info|warn|error (varsayılan info)
   --log-format BİÇİM    text|json (varsayılan text)
-  --vnc ADR             yerel VNC sunucusu (wayvnc); boş: uzak masaüstü kapalı (varsayılan 127.0.0.1:5900)
   --update-repo SAHİP/AD  yazılım güncellemeleri için GitHub deposu; boş: kapalı (varsayılan ferhatozcelik/maker-os)
   --plugin-catalog SAHİP/DEPO[@DAL]  eklenti mağazası: deponun plugins/<id>/ klasörleri; boş: kapalı (varsayılan ferhatozcelik/makeros-plugins@main)
   --version             sürümü yaz ve çık";
@@ -35,13 +34,12 @@ struct Opts {
     token_file: PathBuf,
     priv_socket: String,
     user_dir: String,
-    vnc: String,
     update_repo: String,
     plugin_catalog: String,
 }
 
 fn main() {
-    let known = ["listen", "web", "data-dir", "token-file", "priv-socket", "user-socket-dir", "log-level", "log-format", "vnc", "update-repo", "plugin-catalog"];
+    let known = ["listen", "web", "data-dir", "token-file", "priv-socket", "user-socket-dir", "log-level", "log-format", "update-repo", "plugin-catalog"];
     let f = match Flags::parse(std::env::args().skip(1), &known, &["mock", "version"]) {
         Ok(f) => f,
         Err(e) => {
@@ -77,7 +75,6 @@ fn main() {
         token_file,
         priv_socket: f.str("priv-socket", privsep::DEFAULT_SOCKET),
         user_dir: f.str("user-socket-dir", term::DEFAULT_USER_DIR),
-        vnc: f.str("vnc", "127.0.0.1:5900"),
         update_repo: f.str("update-repo", "ferhatozcelik/maker-os"),
         plugin_catalog: f.str("plugin-catalog", makerd::catalog::DEFAULT_SOURCE),
     };
@@ -131,7 +128,17 @@ async fn run(o: Opts, fds: Vec<std::os::fd::OwnedFd>) -> Result<(), String> {
     let stop = CancellationToken::new();
     let hub = events::Hub::new(TOPICS);
     let jobs = jobs::Manager::new(Some(hub.clone()));
-    let notes = notify::Store::new(Some(hub.clone()));
+    // Bildirimler: otomatik temizlik + AI olay dosyası (yalnız gerçek sistemde; mock geçici dizine yazar).
+    let notes = notify::Store::new(Some(hub.clone())).with_hook(if o.mock { o.data_dir.join("olaylar.log") } else { std::path::PathBuf::from(notify::HOOK_PATH) });
+    {
+        let n = notes.clone();
+        tokio::spawn(async move {
+            loop {
+                tokio::time::sleep(std::time::Duration::from_secs(300)).await;
+                n.prune();
+            }
+        });
+    }
     let local_user = if o.mock { mock::USER.to_string() } else { util::name_of(util::getuid()).unwrap_or_else(|| mock::USER.into()) };
     let token = match auth::write_token(&o.token_file) {
         Ok(t) => t,
@@ -141,6 +148,7 @@ async fn run(o: Opts, fds: Vec<std::os::fd::OwnedFd>) -> Result<(), String> {
         }
     };
     let setup_store = Arc::new(setup::Store::new(o.data_dir.clone()));
+    let setup_store_user = setup_store.done().then(|| setup_store.primary_user());
     let shell = login::login("/etc/passwd", "/bin/sh");
 
     let (checker, accounts, system, network, activity, term_mgr, agent, update, is_admin, loopback, desktop_dirs, launch, extra): (
@@ -220,19 +228,10 @@ async fn run(o: Opts, fds: Vec<std::os::fd::OwnedFd>) -> Result<(), String> {
         Some(g) => Arc::new(g),
         None => Arc::new(gpio::Sim::new("Raspberry Pi 4 Model B (benzetim)")),
     };
-    let screen_m = (!o.vnc.is_empty()).then(|| {
-        // Ekran Modu varsayılan kapalı; açıksa (Ayarlar) wayvnc başlatılır.
-        Arc::new(screen::Manager::new(o.data_dir.join("screen-mode"), &o.vnc))
-    });
-    if let Some(sc) = &screen_m {
-        sc.apply().await;
-    }
     let update = (!o.update_repo.is_empty()).then_some(update);
     if let Some(u) = &update {
         tokio::spawn(watch_updates(u.clone(), notes.clone(), stop.clone()));
     }
-    // Uzak tarayıcı oturumu (MakerOS'taki "Chromium" penceresi).
-    let browser_m = Arc::new(browser::Manager::new("127.0.0.1:5901", "/usr/lib/makeros/browser-session", Duration::ZERO));
 
     let catalog = match o.plugin_catalog.as_str() {
         "" => None,
@@ -240,7 +239,7 @@ async fn run(o: Opts, fds: Vec<std::os::fd::OwnedFd>) -> Result<(), String> {
     };
     let d = Deps {
         web_dir: o.web.clone(),
-        sessions: Arc::new(auth::Manager::new()),
+        sessions: Arc::new(auth::Manager::persistent(o.data_dir.join("sessions.json"))),
         checker,
         limiter: Arc::new(auth::Limiter::new(5, Duration::from_secs(60))),
         is_admin,
@@ -259,12 +258,9 @@ async fn run(o: Opts, fds: Vec<std::os::fd::OwnedFd>) -> Result<(), String> {
         apps: Arc::new(apps::Registry::new(desktop_dirs, &o.web, extra, launch)),
         activity,
         term: term_mgr.clone(),
-        agent: Some(agent),
+        agent: Some(agent.clone()),
         camera: Some(Arc::new(camera::Hub::new(cam_src))),
         gpio: Some(gpio_p),
-        vnc_addr: o.vnc.clone(),
-        screen: screen_m.clone(),
-        browser: Some(browser_m.clone()),
         update,
         catalog,
     };
@@ -287,6 +283,14 @@ async fn run(o: Opts, fds: Vec<std::os::fd::OwnedFd>) -> Result<(), String> {
         tasks.spawn(srv.clone().serve(l));
     }
     sd::notify("READY=1\nSTATUS=makerd hazır");
+    // Python yöneticisi: birincil kullanıcının "açılışta başlat" işaretli projeleri (makerd-user hazır olsun diye kısa bekleme).
+    if let Some(user) = setup_store_user.clone().filter(|u| !u.is_empty() && !o.mock) {
+        let a = agent.clone();
+        tokio::spawn(async move {
+            tokio::time::sleep(Duration::from_secs(15)).await;
+            makerd::pyman::autostart_all(a.as_ref(), &user).await;
+        });
+    }
 
     use tokio::signal::unix::{signal, SignalKind};
     let (mut int, mut term_sig) = (signal(SignalKind::interrupt()).map_err(|e| e.to_string())?, signal(SignalKind::terminate()).map_err(|e| e.to_string())?);
@@ -302,10 +306,6 @@ async fn run(o: Opts, fds: Vec<std::os::fd::OwnedFd>) -> Result<(), String> {
     sd::notify("STOPPING=1");
     stop.cancel();
     term_mgr.close_all();
-    browser_m.close().await;
-    if let Some(sc) = &screen_m {
-        sc.close();
-    }
     let _ = tokio::time::timeout(Duration::from_secs(5), async { while tasks.join_next().await.is_some() {} }).await;
     res
 }

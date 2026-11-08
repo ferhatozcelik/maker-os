@@ -13,7 +13,6 @@ yapılır; Mac'e (veya Linux'a) Docker dışında hiçbir araç kurulmaz.
 | Kök FS | **EROFS (lz4hc)**, salt-okunur, A/B slot, initramfs yok |
 | Ağ | NetworkManager + wpa_supplicant, resolved (mDNS) |
 | Ekran | labwc 0.9.8 (wlroots 0.19) + cog (WPE WebKit 2.50) → `http://127.0.0.1/`; monitör yoksa sanal ekran (`LABWC_FALLBACK_OUTPUT`) |
-| Uzak masaüstü | wayvnc 0.10.2 + neatvnc 1.0.4 (Tight/JPEG, libjpeg-turbo), yalnız `127.0.0.1:5900`; tarayıcıya makerd `/api/v1/vnc` + noVNC 1.7 |
 | OTA | RAUC 1.15 + Pi firmware `tryboot` (özel arka uç betiği) |
 
 ## Derleme
@@ -87,13 +86,12 @@ nedeniyle); `.xz` hâli çok daha küçüktür.
 5. **systemd**: fstab ile `/var` (overlay), `/home`, `/opt/data`, `/usr/local`
    (bind) bağlanır; `makeros-growdata` DATA'yı kart sonuna kadar büyütür;
    `makeros-zram` (zstd, RAM'in %50'si); `makeros-firstboot` (ana makine adı
-   `makeros-XXXX`, SSH anahtarları); NetworkManager; `makeros-network-fallback`
+   `maker-os`, SSH anahtarları); NetworkManager; `makeros-network-fallback`
    (45 sn içinde ağ yoksa açık "MakerOS" erişim noktası + captive portal,
    10.42.0.1); `makerd` (:80/:443) + `makerd-priv.socket`.
 6. **makeros-kiosk.service**: `maker` hizmet hesabı, logind oturumu (PAM,
    seat0/tty1), `shell.slice` içinde `labwc -C /usr/share/makeros/labwc`; autostart
-   `cog http://127.0.0.1/` (yerel bilet varsa `/api/v1/auth/local?token=…`) ve
-   kullanıcı hizmeti `makeros-vnc` (wayvnc, 127.0.0.1:5900) başlatır. Monitör
+   `cog http://127.0.0.1/` (yerel bilet varsa `/api/v1/auth/local?token=…`) başlatır. Monitör
    yoksa labwc 1280x720 sanal ekran açar. Kurulum bitmeden de açılır;
    makerd `/` adresinde kurulum sihirbazını sunar.
 7. **boot-complete.target** (`makeros-healthcheck`) → `makeros-mark-good` →
@@ -114,7 +112,7 @@ os/
     genimage.cfg.in  post-build.sh  post-image.sh  users.txt  wifi-example.txt
     rootfs-overlay/
       usr/lib/makeros/      preinit, growdata, zram-setup, cpu-tune,
-                            network-fallback, kiosk-browser, browser-session
+                            network-fallback, kiosk-browser
       usr/lib/systemd/      makeros-*.service, shell/apps/ai/build.slice
                             (sistem + kullanıcı), oomd, journald (volatile),
                             watchdog, resolved (mDNS), 70-makeros.preset
@@ -129,7 +127,7 @@ os/
     makeros-shell/     ../shell → /usr/share/makeros/shell (+ .gz ön-sıkıştırma)
     makeros-firstboot/ ilk açılış betiği + birimi
     chromium-bin/      Debian trixie arm64 Chromium paketi + başlatıcı
-    labwc/ wayvnc/ neatvnc/ aml/  Wayland pencere yöneticisi ve VNC bileşenleri
+    labwc/                       Wayland pencere yöneticisi
     uv-bin/            uv 0.13.6 aarch64-gnu (sha256 sabit)
     makeros-node/      Node.js v24.22.2 linux-arm64 → /opt/node (sha256 sabit)
     font-inter/        Inter 4.1 (değişken TTF)
@@ -169,7 +167,7 @@ os/
 |---|---|
 | Bootlin hazır glibc toolchain | Yalnızca x86_64 host destekli (`depends on BR2_HOSTARCH = "x86_64"`). Arm toolchain'in başlıkları 4.20 (systemd ≥5.4 ister). → **Buildroot iç glibc toolchain'i** |
 | `rpicam-apps` | Buildroot adı `libcamera-apps` (v1.7.0) — seçildi |
-| `wayvnc` / `neatvnc` / `aml` / `labwc` | `package/{labwc,wayvnc,neatvnc,aml}` altında özel paketler |
+| `labwc` | `package/labwc` altında özel paket |
 | `chromium-bin` | `os/chromium/build-bundle.sh` + `package/chromium-bin` |
 | `zram-generator` | `makeros-zram.service` + `zram-setup` |
 | Inter yazı tipi | `package/font-inter` |

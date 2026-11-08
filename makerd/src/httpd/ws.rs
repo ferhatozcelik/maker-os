@@ -1,4 +1,4 @@
-//! Terminal oturumları, events ve VNC WebSocket'leri, Ekran Modu.
+//! Terminal oturumları ve events WebSocket'leri.
 
 use super::user::TermResp;
 use super::*;
@@ -8,7 +8,6 @@ use bytes::Bytes;
 use futures_util::{SinkExt, StreamExt};
 use serde::Deserialize;
 use std::collections::HashMap;
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 // --- terminal --------------------------------------------------------------
 
@@ -152,118 +151,4 @@ async fn events_loop(s: S, ws: WebSocket) {
         _ = writer => {}
     }
     s.d.hub.remove(id);
-}
-
-// --- VNC ------------------------------------------------------------------
-
-/// noVNC'yi yerel VNC sunucusuna (wayvnc, yalnız 127.0.0.1) bağlar. Uzak
-/// masaüstü sistemi tam denetler, bu yüzden yönetici oturumu ister.
-pub async fn vnc_ws(State(s): State<S>, h: HeaderMap, up: Result<WebSocketUpgrade, axum::extract::ws::rejection::WebSocketUpgradeRejection>) -> R {
-    let sess = admin_of(&s, &h)?;
-    if s.d.vnc_addr.is_empty() {
-        return Err(ApiError::unavailable("Uzak masaüstü bu sistemde kapalı."));
-    }
-    if s.d.screen.as_ref().is_some_and(|sc| !sc.enabled()) {
-        return Err(ApiError::forbidden("Ekran Modu kapalı. Ayarlar › Ekran Modu'ndan açabilirsiniz."));
-    }
-    if !origin_ok(&h) {
-        return Err(ApiError::forbidden("Geçersiz Origin."));
-    }
-    let addr = s.d.vnc_addr.clone();
-    bridge_rfb(s, up.ok(), addr, "uzak masaüstü", sess.user, None).await
-}
-
-/// MakerOS'taki "Chromium" penceresini uzak tarayıcı oturumuna bağlar: oturum
-/// ilk pencerede başlar, son pencere kapanınca bir süre sonra durur.
-pub async fn browser_ws(State(s): State<S>, h: HeaderMap, up: Result<WebSocketUpgrade, axum::extract::ws::rejection::WebSocketUpgradeRejection>) -> R {
-    let sess = admin_of(&s, &h)?;
-    let b = s.d.browser.clone().ok_or_else(|| ApiError::unavailable("Tarayıcı bu sistemde yok."))?;
-    if !origin_ok(&h) {
-        return Err(ApiError::forbidden("Geçersiz Origin."));
-    }
-    let up = upgrade_of(up.ok())?;
-    b.acquire().await.map_err(|e| ApiError::unavailable(format!("Tarayıcı başlatılamadı: {e}")))?;
-    let addr = b.addr.clone();
-    let res = bridge_rfb(s, Some(up), addr, "tarayıcı", sess.user, Some(b.clone())).await;
-    if res.is_err() {
-        b.release().await;
-    }
-    res
-}
-
-/// WebSocket ikili çerçeveler <-> yerel RFB TCP akışı (websockify'ın yaptığı iş).
-async fn bridge_rfb(s: S, up: Option<WebSocketUpgrade>, addr: String, what: &'static str, user: String, release: Option<Arc<browser::Manager>>) -> R {
-    let up = upgrade_of(up)?;
-    let tc = match tokio::time::timeout(Duration::from_secs(3), tokio::net::TcpStream::connect(&addr)).await {
-        Ok(Ok(c)) => c,
-        _ => return Err(ApiError::unavailable("Uzak masaüstü sunucusu çalışmıyor (ekran oturumu açık mı?).")),
-    };
-    let _ = tc.set_nodelay(true);
-    // noVNC "binary" alt protokolünü ister; Origin yukarıda doğrulandı.
-    Ok(up.protocols(["binary"]).max_message_size(4 << 20).on_upgrade(move |ws| async move {
-        tracing::info!(user = %user, "{what} bağlandı");
-        let (mut wtx, mut wrx) = ws.split();
-        let (mut tr, mut tw) = tc.into_split();
-        let tcp_to_ws = async {
-            let mut buf = vec![0u8; 64 << 10];
-            loop {
-                let n = match tr.read(&mut buf).await {
-                    Ok(0) | Err(_) => break,
-                    Ok(n) => n,
-                };
-                let send = wtx.send(Message::Binary(Bytes::copy_from_slice(&buf[..n])));
-                if !matches!(tokio::time::timeout(Duration::from_secs(15), send).await, Ok(Ok(()))) {
-                    break;
-                }
-            }
-            let _ = wtx.send(Message::Close(None)).await;
-        };
-        let ws_to_tcp = async {
-            while let Some(Ok(m)) = wrx.next().await {
-                let data = match m {
-                    Message::Binary(b) => b,
-                    Message::Text(t) => Bytes::copy_from_slice(t.as_bytes()),
-                    Message::Close(_) => break,
-                    _ => continue,
-                };
-                if tw.write_all(&data).await.is_err() {
-                    break;
-                }
-            }
-        };
-        tokio::select! {
-            _ = tcp_to_ws => {}
-            _ = ws_to_tcp => {}
-            _ = s.stop.cancelled() => {}
-        }
-        if let Some(b) = release {
-            b.release().await;
-        }
-        tracing::info!(user = %user, "{what} kapandı");
-    }))
-}
-
-// --- Ekran Modu --------------------------------------------------------------
-
-/// Ekran Modu açık mı, Pi'ye monitör bağlı mı.
-pub async fn screen_state(State(s): State<S>, h: HeaderMap) -> R {
-    session_of(&s, &h)?;
-    Ok(match &s.d.screen {
-        None => json(&screen::State { enabled: !s.d.vnc_addr.is_empty(), headless: true, managed: false }),
-        Some(sc) => json(&sc.state()),
-    })
-}
-
-pub async fn screen_set(State(s): State<S>, h: HeaderMap, body: Bytes) -> R {
-    let sess = admin_of(&s, &h)?;
-    #[derive(Deserialize, Default)]
-    struct Req {
-        #[serde(default)]
-        enabled: bool,
-    }
-    let req: Req = decode(&body)?;
-    let sc = s.d.screen.clone().ok_or_else(|| ApiError::unavailable("Ekran Modu bu sistemde yönetilemiyor."))?;
-    sc.set(req.enabled).await.map_err(|e| ApiError::internal(format!("Ekran Modu ayarı kaydedilemedi: {e}")))?;
-    tracing::info!(enabled = req.enabled, user = %sess.user, "Ekran Modu");
-    Ok(json(&sc.state()))
 }

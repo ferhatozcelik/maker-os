@@ -62,6 +62,32 @@ pub async fn plugin_proxy(State(s): State<S>, mut req: Request) -> R {
     Ok(Response::from_parts(parts, Body::new(body)))
 }
 
+/// /api/v1/ai/<yol> → yerel Türkçe Linux asistanı (makeros-ai, 127.0.0.1:8091). Yalnız oturum sahibi; yalnız
+/// bilinen uçlar. makeros-ai komut çalıştırmaz: yanıtlar yalnız öneri ve risk değerlendirmesidir.
+pub async fn ai_proxy(State(s): State<S>, mut req: Request) -> R {
+    let _sess = session_of(&s, req.headers())?;
+    let rest = req.uri().path().trim_start_matches("/api/v1/ai/").to_string();
+    if !matches!(rest.as_str(), "v1/chat/completions" | "v1/models" | "v1/makeros/durum" | "v1/makeros/risk" | "v1/makeros/olaylar" | "health") {
+        return Err(ApiError::not_found("Bilinmeyen asistan ucu."));
+    }
+    let host = "127.0.0.1:8091";
+    *req.uri_mut() = format!("http://{host}/{rest}").parse().map_err(|_| ApiError::invalid("Geçersiz adres."))?;
+    let h = req.headers_mut();
+    h.remove(header::COOKIE);
+    for k in HOP {
+        h.remove(*k);
+    }
+    h.insert(header::HOST, HeaderValue::from_static("127.0.0.1:8091"));
+    let res = client().request(req).await.map_err(|_| ApiError::unavailable("Yerel AI asistanı çalışmıyor (sudo systemctl start makeros-ai)."))?;
+    let (mut parts, body) = res.into_parts();
+    for k in HOP {
+        parts.headers.remove(*k);
+    }
+    // Akış (SSE) ara belleğe alınmasın.
+    parts.headers.insert("x-accel-buffering", HeaderValue::from_static("no"));
+    Ok(Response::from_parts(parts, Body::new(body)))
+}
+
 /// Yükseltme isteği (WebSocket): iki ucu ham bağlantı olarak birbirine bağlar.
 async fn upgrade_proxy(mut req: Request) -> R {
     let client_up = hyper::upgrade::on(&mut req);

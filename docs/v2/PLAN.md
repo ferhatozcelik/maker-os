@@ -33,7 +33,7 @@ web tabanlı macOS benzeri masaüstü, telefondan/PC'den aynı arayüzle erişim
 1. **Tamamen makerlara yönelik:** Python/AI, kamera, GPIO, seri port, proje şablonları ilk açılışta hazır.
 2. **VNC + web tabanlı:** Pi ister monitörle ister monitörsüz kullanılsın, telefon/PC tarayıcısından aynı arayüz; tam masaüstü VNC ile.
 3. **Dağıtım bağımlılığı yok:** doğrudan Linux çekirdeği + Buildroot; tüm bileşenler upstream açık kaynak.
-4. **Basit:** SD karta yaz → aç → tarayıcıdan `makeros.local`. Komut satırı bilmek gerekmez.
+4. **Basit:** SD karta yaz → aç → tarayıcıdan `maker-os.local`. Komut satırı bilmek gerekmez.
 5. **Açık kaynak, geniş kullanım:** GPL-3.0, Docker ile herkesin tekrar üretebileceği derleme, TR/EN arayüz.
 6. **Pi 4 (4 GB) üzerinde hızlı:** boşta < 500 MB RAM, kabuğa < 10 sn açılış, VNC 30 FPS / 720p.
 7. **Tüm derleme ve testler Docker içinde;** geliştirici makinesine araç kurulmaz.

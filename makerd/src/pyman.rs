@@ -48,6 +48,13 @@ pub struct Template {
     pub needs: Vec<String>,
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub run: String,
+    /// Projenin web arayüzü portu (0: yok). Kabuk, proje çalışınca arayüzü Tarayıcı penceresinde açar.
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub ui: u16,
+}
+
+fn is_zero(v: &u16) -> bool {
+    *v == 0
 }
 
 /// Gömülü şablonlar (sıralı).
@@ -192,7 +199,7 @@ pub fn python_cmd(op: &str, version: &str) -> ApiResult<String> {
 // --- Projeler --------------------------------------------------------------
 
 /// Proje kökündeki .makeros.json.
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct Meta {
     #[serde(default)]
     pub template: String,
@@ -201,6 +208,9 @@ pub struct Meta {
     pub created: jiff::Timestamp,
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub run: String,
+    /// Web arayüzü portu (0: yok; şablondan gelir, .makeros.json'da değiştirilebilir).
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub ui: u16,
 }
 
 /// Listede gösterilen proje.
@@ -310,7 +320,7 @@ pub async fn create(a: &dyn Agent, user: &str, name: &str, tmpl_id: &str, python
         toml_str(&t.title.tr)
     );
     uagent::write_all(a, user, &format!("{dir}/pyproject.toml"), pyproject).await?;
-    let meta = Meta { template: t.id.clone(), python: python.into(), created: jiff::Timestamp::now(), run: t.run.clone() };
+    let meta = Meta { template: t.id.clone(), python: python.into(), created: jiff::Timestamp::now(), run: t.run.clone(), ui: t.ui };
     let mut mb = serde_json::to_vec_pretty(&meta)?;
     mb.push(b'\n');
     uagent::write_all(a, user, &format!("{dir}/.makeros.json"), mb).await?;
@@ -405,5 +415,151 @@ mod tests {
         let v = merge_versions(raw, "/home/m/.local/share/uv/python/cpython-3.12.7-linux/bin/python3.12");
         let got: Vec<(&str, bool, bool, bool)> = v.iter().map(|v| (v.version.as_str(), v.installed, v.system, v.default)).collect();
         assert_eq!(got, vec![("3.12.7", true, false, true), ("3.11.2", true, true, false), ("3.13.2", false, false, false)]);
+    }
+}
+
+// --- Python yöneticisi: arka planda çalıştırma, günlük, paketler, ortam, otomatik başlatma ----------
+// Proje "Çalıştır" ile kendi oturumunda (setsid) arka planda çalışır; çıktı .makeros-run.log'a yazılır ve
+// uygulama onu canlı izler. Otomatik başlatma: ~/.config/makeros/autostart/<proje> işareti; makerd açılışta
+// birincil kullanıcının işaretli projelerini başlatır. Hepsi kullanıcının kendi hesabıyla (makerd-user).
+
+pub const RUN_LOG: &str = ".makeros-run.log";
+pub const RUN_PID: &str = ".makeros-run.pid";
+pub const AUTOSTART_DIR: &str = ".config/makeros/autostart";
+
+/// Paket adı / gereksinim belirteci (ör. "requests", "numpy>=2", "uvicorn[standard]").
+pub fn valid_pkg(p: &str) -> ApiResult<()> {
+    if p.is_empty() || p.len() > 120 || !p.chars().all(|c| c.is_ascii_alphanumeric() || "._-[],<>=!~ ".contains(c)) || p.starts_with('-') {
+        return Err(ApiError::invalid("Geçersiz paket adı."));
+    }
+    Ok(())
+}
+
+async fn project_dir(a: &dyn Agent, user: &str, name: &str) -> ApiResult<String> {
+    valid_name(name)?;
+    let dir = format!("{PROJECTS_DIR}/{name}");
+    a.fs(user, Open { mode: "stat".into(), path: format!("{dir}/pyproject.toml"), ..Default::default() })
+        .await
+        .map_err(|_| ApiError::not_found("Proje bulunamadı."))?;
+    Ok(dir)
+}
+
+/// Arka planda başlatan komut (zaten çalışıyorsa bir şey yapmaz).
+pub async fn start_command(a: &dyn Agent, user: &str, name: &str) -> ApiResult<String> {
+    let dir = project_dir(a, user, name).await?;
+    let run = read_meta(a, user, &dir).await.map(|m| m.run).unwrap_or_default();
+    let run = crate::util::shq(&format!("exec {}", run_cmd(&run)));
+    Ok(format!(
+        "cd ~/{dir} || exit 1; p=$(cat {RUN_PID} 2>/dev/null); if [ -n \"$p\" ] && kill -0 \"$p\" 2>/dev/null && [ \"$(cut -d\\) -f2 /proc/$p/stat 2>/dev/null | cut -c2)\" != Z ]; then exit 0; fi; \
+         printf '» %s  %s\\n' \"$(date '+%Y-%m-%d %H:%M:%S')\" {name} > {RUN_LOG}; \
+         PYTHONUNBUFFERED=1 setsid sh -c {run} >> {RUN_LOG} 2>&1 < /dev/null & echo $! > {RUN_PID}"
+    ))
+}
+
+pub async fn stop(a: &dyn Agent, user: &str, name: &str) -> ApiResult<()> {
+    let dir = project_dir(a, user, name).await?;
+    let cmd = format!(
+        "cd ~/{dir} || exit 0; p=$(cat {RUN_PID} 2>/dev/null) || exit 0; [ -n \"$p\" ] || exit 0; kill -TERM -- -\"$p\" 2>/dev/null || kill -TERM \"$p\" 2>/dev/null; \
+         for i in 1 2 3 4 5 6 7 8 9 10; do kill -0 \"$p\" 2>/dev/null || break; sleep 0.3; done; kill -KILL -- -\"$p\" 2>/dev/null; rm -f {RUN_PID}; printf '\\n» durduruldu\\n' >> {RUN_LOG}; true"
+    );
+    uagent::output(a, user, &cmd).await.map(|_| ())
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct Status {
+    pub running: bool,
+    pub autostart: bool,
+    pub python: String,
+    pub template: String,
+    /// Web arayüzü portu (0: yok).
+    pub ui: u16,
+}
+
+pub async fn status(a: &dyn Agent, user: &str, name: &str) -> ApiResult<Status> {
+    let dir = project_dir(a, user, name).await?;
+    let cmd = format!("cd ~/{dir} || exit 1; p=$(cat {RUN_PID} 2>/dev/null); if [ -n \"$p\" ] && kill -0 \"$p\" 2>/dev/null && [ \"$(cut -d\\) -f2 /proc/$p/stat 2>/dev/null | cut -c2)\" != Z ]; then echo run; fi; [ -e ~/{AUTOSTART_DIR}/{name} ] && echo auto; true");
+    let (out, _) = uagent::output(a, user, &cmd).await?;
+    let out = String::from_utf8_lossy(&out);
+    let m = read_meta(a, user, &dir).await.unwrap_or_default();
+    // Eski projelerin .makeros.json'unda ui yok: şablondan.
+    let ui = if m.ui > 0 { m.ui } else { template_by_id(&m.template).map(|t| t.ui).unwrap_or(0) };
+    Ok(Status { running: out.lines().any(|l| l == "run"), autostart: out.lines().any(|l| l == "auto"), python: m.python, template: m.template, ui })
+}
+
+/// Günlüğün `from` baytından sonrası (en fazla 64 KB) ve toplam boyut.
+pub async fn log(a: &dyn Agent, user: &str, name: &str, from: u64) -> ApiResult<serde_json::Value> {
+    let dir = project_dir(a, user, name).await?;
+    let cmd = format!("cd ~/{dir} || exit 1; s=$(stat -c %s {RUN_LOG} 2>/dev/null || echo 0); echo \"$s\"; [ \"$s\" -gt {from} ] && tail -c +{} {RUN_LOG} | head -c 65536; true", from + 1);
+    let (out, _) = uagent::output(a, user, &cmd).await?;
+    let txt = String::from_utf8_lossy(&out);
+    let (size, rest) = txt.split_once('\n').unwrap_or((&txt, ""));
+    let size: u64 = size.trim().parse().unwrap_or(0);
+    // Günlük kısaldıysa (yeniden başlatma) baştan.
+    let (from, text) = if size < from { (0, String::new()) } else { (from, rest.to_string()) };
+    Ok(serde_json::json!({ "size": size, "from": from, "text": text, "reset": size < from }))
+}
+
+/// Doğrudan bağımlılıklar (pyproject) ve ortamda kurulu paketler.
+pub async fn packages(a: &dyn Agent, user: &str, name: &str) -> ApiResult<serde_json::Value> {
+    let dir = project_dir(a, user, name).await?;
+    let cmd = format!(
+        "cd ~/{dir} || exit 1; printf '{{\"deps\":'; python3 -c \"import tomllib,json;print(json.dumps(tomllib.load(open('pyproject.toml','rb')).get('project',{{}}).get('dependencies',[])),end='')\" 2>/dev/null || printf '[]'; \
+         printf ',\"installed\":'; if [ -d .venv ]; then uv pip list --format json 2>/dev/null || printf '[]'; else printf '[]'; fi; printf '}}'"
+    );
+    uagent::json(a, user, &cmd).await
+}
+
+/// Paket işlemi için terminal komutu (çıktı uygulamada canlı görünür).
+pub async fn package_cmd(a: &dyn Agent, user: &str, name: &str, op: &str, pkg: &str) -> ApiResult<String> {
+    let dir = project_dir(a, user, name).await?;
+    let q = crate::util::shq(pkg);
+    let c = match op {
+        "add" => { valid_pkg(pkg)?; format!("uv add {q}") }
+        "remove" => { valid_pkg(pkg)?; format!("uv remove {q}") }
+        "upgrade" if pkg.is_empty() => "uv lock --upgrade && uv sync".into(),
+        "upgrade" => { valid_pkg(pkg)?; format!("uv lock --upgrade-package {q} && uv sync") }
+        "sync" => "uv sync".into(),
+        _ => return Err(ApiError::invalid("Bilinmeyen paket işlemi.")),
+    };
+    Ok(format!("cd ~/{dir} && {c} && echo && echo '✔ Tamamlandı'"))
+}
+
+/// Projenin Python sürümünü değiştirir: ortam yeniden kurulur ("system" ya da "3.12").
+pub async fn python_switch_cmd(a: &dyn Agent, user: &str, name: &str, python: &str) -> ApiResult<String> {
+    let dir = project_dir(a, user, name).await?;
+    let python = if python.is_empty() { "system" } else { python };
+    if python != "system" {
+        valid_version(python)?;
+    }
+    let mut m = read_meta(a, user, &dir).await.unwrap_or_else(|| Meta { template: String::new(), python: String::new(), created: jiff::Timestamp::now(), run: String::new(), ui: 0 });
+    m.python = python.into();
+    let mut mb = serde_json::to_vec_pretty(&m)?;
+    mb.push(b'\n');
+    uagent::write_all(a, user, &format!("{dir}/.makeros.json"), mb).await?;
+    let py = if python == "system" { SYSTEM_PYTHON } else { python };
+    Ok(format!("cd ~/{dir} && echo '» Python ortamı yeniden kuruluyor: {python}' && uv venv --clear --quiet --system-site-packages --python {py} && uv sync && echo && echo '✔ Tamamlandı'"))
+}
+
+pub async fn set_autostart(a: &dyn Agent, user: &str, name: &str, on: bool) -> ApiResult<()> {
+    project_dir(a, user, name).await?;
+    let mark = format!("{AUTOSTART_DIR}/{name}");
+    if on {
+        uagent::write_all(a, user, &mark, "").await
+    } else {
+        a.fs(user, Open { mode: "remove".into(), path: mark, ..Default::default() }).await.map(|_| ())
+    }
+}
+
+/// Açılışta: kullanıcının otomatik başlatılacak projelerini arka planda başlatır.
+pub async fn autostart_all(a: &dyn Agent, user: &str) {
+    let Ok(l) = list(a, user, AUTOSTART_DIR).await else { return };
+    for e in l.entries.iter().filter(|e| !e.dir) {
+        match start_command(a, user, &e.name).await {
+            Ok(cmd) => match uagent::output(a, user, &cmd).await {
+                Ok(_) => tracing::info!(user, project = %e.name, "proje otomatik başlatıldı"),
+                Err(err) => tracing::warn!(user, project = %e.name, err = %err.message, "proje başlatılamadı"),
+            },
+            Err(err) => tracing::warn!(user, project = %e.name, err = %err.message, "otomatik başlatma atlandı"),
+        }
     }
 }

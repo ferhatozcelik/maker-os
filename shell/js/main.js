@@ -7,7 +7,7 @@ import { t } from "./i18n.js";
 import { prefs, pref, isDark, syncPrefs } from "./prefs.js";
 import { wallURL, themeById, brand, setFavicon, widgetReady } from "./themes.js";
 import { get, post, bus, Events } from "./api.js";
-import { APPS, appById, loadApps, SCREEN, isBrowser } from "./apps.js";
+import { APPS, appById, loadApps, isBrowser } from "./apps.js";
 import { keys, attach } from "./keys.js";
 import { WindowManager } from "./wm/index.js";
 import { WebBackend, bridge } from "./wm/web.js";
@@ -18,7 +18,6 @@ import { initNotifications, toast, toggleNC } from "./ui/control.js";
 import { closeOverlay, overlayOpen } from "./ui/layer.js";
 import { closePopup } from "./ui/popup.js";
 import { registerSW } from "./pwa.js";
-import { openScreen } from "./screen-overlay.js";
 
 registerSW();
 
@@ -54,6 +53,16 @@ function wallpaper() {
   html.dataset.look = themeById(pref("look")).id;
 }
 wallpaper(); prefs.on("change", wallpaper);
+// Kilit ekranı arka planı (cihaz geneli, Ayarlar › Görünüm): yüklenmişse onu, yoksa bulanık masaüstünü kullanır.
+// Girişten önce de görünür (makerd GET /api/v1/wallpaper/lock herkese açık).
+function lockWall() {
+  const v = store.get("lockWallV") || "", src = `/api/v1/wallpaper/lock?v=${encodeURIComponent(pref("lockWall") || v)}`;
+  const img = new Image();
+  img.onload = () => html.style.setProperty("--lock-wall", `url("${src}")`);
+  img.onerror = () => html.style.removeProperty("--lock-wall");
+  img.src = src;
+}
+lockWall(); prefs.on("change", k => { if (k === "lockWall") { store.set("lockWallV", pref("lockWall") || ""); lockWall(); } });
 
 // Çalışma alanı (menü çubuğu altı, raf üstü). Raf yüksekliği ResizeObserver ile önbelleğe alınır:
 // render() her çağrıda offsetHeight okumaz (zorunlu eşzamanlı yerleşim yok).
@@ -73,25 +82,25 @@ S.toast = toast;
 S.apps = APPS;
 
 S.launch = async (app, o = {}) => {
-  if (typeof app === "string") app = appById(app);
+  if (typeof app === "string") {
+    // Tarayıcı istenirse (ör. terminaldeki bağlantı): Chromium girdisi yoksa /web'deki Tarayıcı, o da yoksa pencerenin kendisi.
+    const br = app === "chromium" || app === "makeros.browser";
+    app = appById(app) || (br ? appById("chromium") || appById("makeros.browser") || { id: "chromium", name: t("app.browser"), kind: "native", categories: ["WebBrowser"] } : null);
+  }
   if (!app) return;
   closeOverlay();
-  // Ekran Modu pencere değildir: sayfanın tamamı Pi'nin ekranı olur. Pi'nin kendi ekranında anlamsız (kendini gösterir).
-  if (app.id === "makeros.screen") { if (S.local || !SCREEN.enabled) return; return S.screenMode(); }
   if (app.kind === "native") {
-    // Uzaktaki tarayıcıdan "Chromium": Pi'de çalışan gerçek Chromium bu masaüstünde normal bir pencere olur.
-    // Arkada ayrı, monitörsüz bir oturum (makerd /api/v1/browser/vnc); Pi'nin kendi ekranı etkilenmez.
-    // Pencere kimliği yerel uygulamanınkiyle aynı: raftaki Chromium simgesi çalışıyor göstergesini alır.
+    // Uzaktan "Chromium": MakerOS'un kendi Tarayıcı penceresi (sayfalar Pi üzerinden aktarılır, bkz. apps/browser).
+    // Açılışta Google; sık kullanılanlar çubuğunda maker siteleri. Pencere kimliği Chromium'unki: raf simgesi çalışıyor görünür.
     if (!S.local && isBrowser(app)) {
-      return wm.activateApp({ ...app, kind: "web", url: "/shell/apps/screen/?src=browser", w: 1100, h: 720, single: true });
+      const br = { ...app, kind: "web", url: "/shell/apps/browser/", w: 1180, h: 760, single: true };
+      // Adresle açılış (ör. terminaldeki bağlantı): açık pencere varsa o adrese gider.
+      return o.path ? wm.open(br, { path: o.path }) : wm.activateApp(br);
     }
+    // Diğer yerel uygulamalar Pi'nin kendi ekranında (labwc) açılır.
     toast(t("launch.native", { app: app.name }), "app-window");
     try { native ??= new (await M.native()).NativeBackend(); await native.launch(app); } catch (e) { toast(t("launch.fail", { app: app.name }) + ": " + e.message, "circle-alert"); return; }
-    // Diğer yerel uygulamalar Pi'nin ekranında açılır: uzaktan görmek için Ekran Modu (açıksa) gelir.
-    if (!S.local) {
-      if (SCREEN.enabled) { toast(t("launch.onScreen", { app: app.name }), "monitor"); S.screenMode(); }
-      else toast(t("launch.onPi", { app: app.name }), "monitor");
-    }
+    if (!S.local) toast(t("launch.onPi", { app: app.name }), "monitor");
     return;
   }
   if (o.force || o.path) return wm.open(app, o);
@@ -108,15 +117,22 @@ S.local = (() => {
 })();
 // Web arayüzüne geç (raftaki düğme, Kontrol Merkezi).
 S.webMode = () => location.assign("/web");
-// Ekran Modu: Pi'nin ekranı bu sayfanın içinde, tüm görünümü kaplayan katman (adres değişmez).
-S.screenMode = () => openScreen();
 S.openSettings = page => S.launch("makeros.settings", { path: page || "" });
 S.about = app => M.lock().then(m => m.aboutDialog(app, S.sys));
+// Kilit sunucu tarafında da geçerli: oturum kapatılır (çerez geçersiz), kullanıcı adı yalnız bu tarayıcıda kalır.
+// Sayfa yenilense de kilit atlanamaz: açılışta oturum yoktur ve doğrudan o kullanıcının kilit ekranı gelir.
+// Pencere düzeni (wm.session) korunur: parola girilince masaüstü kaldığı yerden açılır.
 S.lock = async () => {
   closeOverlay(); closePopup();
   if (locked()) return;
-  const r = await lockScreen("lock", S.user?.user);
-  if (r.user !== S.user?.user) location.reload(); else S.user = r;
+  const u = S.user?.user;
+  store.set("lockUser", u || null);
+  S.events.stop();
+  try { await post("/auth/logout"); } catch { /* ağ yoksa da kilit ekranı açılır */ }
+  const r = await lockScreen("lock", u);
+  store.set("lockUser", null);
+  if (r.user !== u) location.reload();
+  else { S.user = r; S.events.start(); }
 };
 S.logout = async () => {
   if (!(await confirmDialog(t("logout.confirm"), t("logout.ok")))) return;
@@ -202,7 +218,7 @@ let rt = 0; addEventListener("resize", () => { cancelAnimationFrame(rt); rt = re
 // ------------------------------------------------------------ oturum
 let started = false, relogin = null;
 async function onUnauthorized() {
-  if (relogin || !started) return;
+  if (relogin || !started || locked()) return; // kilitliyken 401 beklenir (oturum kapalı)
   relogin = lockScreen("login", S.user?.user).then(r => { relogin = null; S.user = r; S.events.stop(); S.events.start(); });
 }
 bus.on("unauthorized", onUnauthorized);
@@ -233,7 +249,13 @@ async function start() {
     location.replace("/"); // dil ve oturum çerezi yeni sayfada geçerli
     return;
   }
-  if (!session) { const m = await M.lock(); $("#boot").remove(); session = await m.lockScreen("login"); }
+  if (!session) {
+    const m = await M.lock(); $("#boot").remove();
+    // Kilitliyken yenilendiyse: aynı kullanıcının kilit ekranı (pencereler parola sonrası geri gelir).
+    const lu = store.get("lockUser");
+    session = await m.lockScreen(lu ? "lock" : "login", lu || "");
+    store.set("lockUser", null);
+  }
   else $("#boot").remove();
   S.user = session;
   const next = qs.get("next"); // bağımsız uygulamadan gelen yönlendirme
@@ -272,29 +294,50 @@ window.__mk = S;
 
 
 // ------------------------------------------------------------ masaüstü widget'ları
-// Etkin temanın eklentisi widget getiriyorsa (ör. Konya HackerSpace kapı durumu) masaüstünün sağ üstünde gösterilir.
-let widgetKey = "";
-async function renderWidgets() {
-  const host = $("#widgets"), w = themeById(pref("look")).widget;
-  const key = w ? w.url : "";
-  if (key === widgetKey) return;
-  widgetKey = key;
-  host.replaceChildren();
-  if (!w) return;
+// Sağ üstte: etkin temanın eklenti widget'ı (ör. Konya HackerSpace kapı durumu) ve yerleşik "AI Asistan"
+// (yerel Türkçe Linux asistanı; Ayarlar › Görünüm'den ya da widget'ın × düğmesiyle gizlenir).
+const AI_WIDGET = { url: "/shell/apps/ai-widget/", w: 340, h: 170 };
+let themeKey = "", aiOn = null;
+function widgetFrame(cls, w) {
   const f = document.createElement("iframe");
   Object.assign(f, { title: "widget", allowTransparency: true });
+  f.className = cls;
   f.style.cssText = `width:${w.w}px;height:${w.h}px`;
-  host.append(f);
+  return f;
+}
+async function renderWidgets() {
+  const host = $("#widgets");
+  // AI Asistan (telefonda ve Pi'nin kendi ekranında da çalışır; masaüstü dar ise gizli).
+  const ai = pref("aiWidget") !== false && !mq.matches;
+  if (ai !== aiOn) {
+    aiOn = ai;
+    host.querySelector("iframe.w-ai")?.remove();
+    if (ai) {
+      const f = widgetFrame("w-ai", AI_WIDGET);
+      f.addEventListener("load", () => f.classList.add("on"));
+      f.src = AI_WIDGET.url;
+      host.append(f);
+    }
+  }
+  // Tema widget'ı
+  const w = themeById(pref("look")).widget;
+  const key = w ? w.url : "";
+  if (key === themeKey) return;
+  themeKey = key;
+  host.querySelector("iframe.w-theme")?.remove();
+  if (!w) return;
+  const f = widgetFrame("w-theme", w);
+  host.prepend(f);
   await widgetReady(w, id => post(`/plugins/${id}/start`));
-  if (widgetKey !== key) return;
+  if (themeKey !== key) return;
   f.addEventListener("load", () => f.classList.add("on")); // boş iframe'in ilk "load"ı sayılmaz
   f.src = w.url;
 }
 addEventListener("message", e => {
   if (e.origin !== location.origin || !e.data?.mk) return;
-  const f = $("#widgets iframe");
-  if (!f || e.source !== f.contentWindow) return;
-  if (e.data.mk === "open" && e.data.app) S.launch(e.data.app);
+  const f = [...document.querySelectorAll("#widgets iframe")].find(x => x.contentWindow === e.source);
+  if (!f) return;
+  if (e.data.mk === "open" && e.data.app) S.launch(e.data.app, e.data.path ? { path: e.data.path } : {});
   else if (e.data.mk === "widget-size" && e.data.h > 40 && e.data.h < 800) f.style.height = e.data.h + "px"; // içeriğe göre (boşluk yok)
 });
-prefs.on("change", k => { if (k === "look") renderWidgets(); });
+prefs.on("change", k => { if (k === "look" || k === "aiWidget") renderWidgets(); });

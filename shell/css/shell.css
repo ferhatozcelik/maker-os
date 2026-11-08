@@ -157,7 +157,7 @@ html.wm-ov-anim mk-window { transition: transform var(--dur-slow) var(--ease-out
 .ov-layer { position: absolute; inset: 0; }
 /* ---------- oturum / kilit */
 #lock, #boot { position: fixed; inset: 0; z-index: 9800; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff;
-  background: linear-gradient(rgba(0,0,0,.22), rgba(0,0,0,.32)), var(--wall-blur) center / cover, #222; }
+  background: linear-gradient(rgba(0,0,0,.08), rgba(0,0,0,.24)), var(--lock-wall, var(--wall-blur)) center / cover, #222; }
 #boot { z-index: 9900; gap: 20px; }
 #boot p { color: rgba(255,255,255,.8); min-height: 1.3em; }
 /* ---------- mobil düzen: temel görünürlük (ayrıntılar css/mobile.css) */

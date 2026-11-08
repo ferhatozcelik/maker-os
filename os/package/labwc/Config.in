@@ -21,6 +21,5 @@ config BR2_PACKAGE_LABWC
 	  Hafif, wlroots tabanli pencere yoneticisi (Raspberry Pi OS'un
 	  varsayilani). MakerOS'ta web kabuk (cog) tam ekran altta, yerel
 	  uygulamalar (foot, GTK, OpenCV) ustte pencere olarak calisir.
-	  wlroots protokolleri sayesinde wayvnc ile uzaktan erisilir.
 
 	  https://labwc.github.io

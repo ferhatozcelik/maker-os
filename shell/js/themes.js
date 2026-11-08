@@ -27,17 +27,39 @@ export function brand(id) {
   return { logo, mark: t?.mark || c?.mark || "", favicon: t?.favicon || c?.favicon || (t?.logo || c?.logo) || "/shell/icons/logo.svg" };
 }
 export const wallURL = (id, dark, blur = false) => {
+  // Kullanıcının yüklediği resim: "custom:<sürüm>" (makerd /api/v1/wallpaper; sürüm önbelleği kırar).
+  if (typeof id === "string" && id.startsWith("custom:")) return `/api/v1/wallpaper/${blur ? "desktop-blur" : "desktop"}?v=${encodeURIComponent(id.slice(7))}`;
   const t = find(id);
   if (!t) { const c = cached(id); if (c?.wall) return c.wall; }
   const th = t || THEMES[0];
   if (th.wall) return th.wall[(dark ? "dark" : "light") + (blur ? "_blur" : "")] || th.wall[dark ? "dark" : "light"] || th.wall.dark;
-  return `/shell/wallpapers/${th.id}-${dark ? "dark" : "light"}${blur ? "-blur" : ""}.svg`;
+  return `/shell/wallpapers/${th.id}-${dark ? "dark" : "light"}${blur ? "-blur.png" : ".svg"}`;
 };
 // Uygulama simgesi: etkin tema simge paketi getiriyorsa ondan (ör. KHS), yoksa yerleşik.
-const BUILTIN_ICONS = new Set(["settings", "terminal", "activity", "files", "python", "agents", "camera", "gpio", "plugins", "screen", "chromium", "launchpad", "web", "app"]);
+const BUILTIN_ICONS = new Set(["settings", "terminal", "activity", "files", "python", "agents", "camera", "gpio", "plugins", "browser", "chromium", "launchpad", "web", "app"]);
+// Aynı simgenin diğer adı: tema paketi yalnız birini getirebilir (KHS: chromium.svg var, browser.svg yok).
+const ICON_ALIAS = { browser: "chromium", chromium: "browser" };
 export function themeIcon(id, name, fallback) {
   const t = find(id);
   return t?.icons && BUILTIN_ICONS.has(name) ? t.icons + name + ".svg" : fallback;
+}
+// Tema paketinde eksik simge: önce diğer adı, o da yoksa yerleşik simge (/shell/icons/<ad>.svg). Kabuk, web
+// arayüzü ve uygulamalar aynı modülü yükler; <img> hataları belge düzeyinde yakalanır (yakalama evresi).
+if (typeof document !== "undefined") {
+  document.addEventListener("error", e => {
+    const img = e.target;
+    if (!(img instanceof HTMLImageElement)) return;
+    const m = /\/api\/v1\/plugins\/[^/]+\/asset\/(?:.*\/)?([a-z-]+)\.svg$/.exec(img.src);
+    if (!m || !BUILTIN_ICONS.has(m[1])) return;
+    const tried = (img.dataset.iconTried || "").split(",");
+    const alias = ICON_ALIAS[m[1]];
+    if (alias && !tried.includes(alias)) {
+      img.dataset.iconTried = [...tried, m[1], alias].filter(Boolean).join(",");
+      img.src = img.src.replace(new RegExp(m[1] + "\\.svg$"), alias + ".svg");
+    } else {
+      img.src = `/shell/icons/${m[1]}.svg`;
+    }
+  }, true);
 }
 // Tema adı: yerleşikler i18n'den, eklenti temaları kendi adlarıyla ({tr,en} veya metin).
 export const themeName = (t, tr, lang) => t.plugin ? (typeof t.name === "object" ? (t.name[lang] || t.name.tr) : t.name) : tr("theme." + t.id);

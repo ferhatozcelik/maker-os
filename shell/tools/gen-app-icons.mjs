@@ -22,7 +22,7 @@ const apps = {
   files: ["#55b6ff", "#1a6fe0", "folder"],
   plugins: ["#ff9f43", "#e8590c", "puzzle"],
   agents: ["#8b7bff", "#4c3fd6", "bot"],
-  screen: ["#4b5563", "#111827", "monitor"],
+  browser: ["#5aa9ff", "#1f5fd1", "globe"],
   launchpad: ["#c3c8d6", "#7b8296", "layout-grid"],
   web: ["#ff8a3d", "#d9480f", "layout-grid"],
   chromium: ["#5aa9ff", "#1f5fd1", "globe"],

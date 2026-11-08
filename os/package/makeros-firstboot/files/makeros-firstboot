@@ -1,7 +1,7 @@
 #!/bin/sh
 # MakerOS ilk acilis hazirligi (kullanici etkilesimi yok). Bir kez calisir;
 # isaret: /var/lib/makeros/firstboot-done (DATA uzerinde).
-#  - cihaza ozel ana makine adi: makeros-XXXX (seri numarasinin son 4 hanesi)
+#  - ana makine adi: maker-os (web arayuzu her zaman http://maker-os.local/)
 #  - SSH host anahtarlari (imajda ortak anahtar yok; sshd sihirbaza kadar kapali)
 # Bolum buyutme makeros-growdata.service'tedir (her acilista, idempotent).
 set -u
@@ -12,9 +12,7 @@ if [ -e /run/makeros/volatile ]; then
 	log "gecici mod: ilk acilis isaretlenmeyecek"
 fi
 
-serial="$(tr -d '\0' < /proc/device-tree/serial-number 2>/dev/null | tail -c 4)"
-[ -n "${serial}" ] || serial="$(tr -dc 'a-f0-9' < /dev/urandom | head -c 4)"
-host="makeros-$(echo "${serial}" | tr 'A-F' 'a-f')"
+host=maker-os
 if [ ! -s /etc/hostname ] || [ "$(cat /etc/hostname)" = makeros ]; then
 	echo "${host}" > /etc/hostname
 	hostname "${host}"

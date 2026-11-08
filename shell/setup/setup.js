@@ -37,7 +37,7 @@ export function runSetup(info) {
     const S = {
       ...DEFAULT_USER, lang, keymap: kmFor(lang),
       timezone: zones.includes(here) ? here : zones.includes(D.timezone) ? D.timezone : zones.includes("Europe/Istanbul") ? "Europe/Istanbul" : zones[0],
-      hostname: info.hostname || "makeros", wifi: null,
+      hostname: info.hostname || "maker-os", wifi: null,
     };
     let networks = (info.wifi_networks || []).filter(n => n.ssid), scanned = !!info.wifi_networks;
     const scan = async () => { try { const r = await api("POST", "/setup/wifi/scan", {}, { timeout: 30000 }); if (Array.isArray(r)) networks = r.filter(n => n.ssid); } catch { /* yok */ } scanned = true; };
@@ -152,7 +152,8 @@ export function runSetup(info) {
       const body = { user: S.user, password: S.password, fullname: S.fullname, hostname: S.hostname, timezone: S.timezone, lang: S.lang, keymap: S.keymap };
       if (S.wifi?.ssid) body.wifi = { ssid: S.wifi.ssid.trim(), ...(S.wifi.password ? { password: S.wifi.password } : {}), ...(S.wifi.hidden ? { hidden: true } : {}) };
       try {
-        const r = await api("POST", "/setup/complete", body, { timeout: 60000 });
+        const r = await api("POST", "/setup/complete", body, { timeout: 75000 });
+        store.set("lastUser", S.user);
         S.warnings = Array.isArray(r?.warnings) ? r.warnings : [];
         busy = false; next.classList.remove("busy"); go(1);
       } catch (e) {

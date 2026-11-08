@@ -52,8 +52,12 @@ export function animate(el, frames, opts = {}) {
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (!el.animate || reduce) return Promise.resolve();
   el.style.willChange = "transform, opacity";
-  const a = el.animate(frames, { duration: 240, easing: "cubic-bezier(.2,.8,.2,1)", ...opts });
-  return a.finished.catch(() => {}).finally(() => { el.style.willChange = ""; });
+  const o = { duration: 240, easing: "cubic-bezier(.2,.8,.2,1)", ...opts };
+  const a = el.animate(frames, o);
+  // Güvenlik: kare döngüsü durursa (WPE/cog'da yük altında, gizli sayfa) "finished" hiç çözülmeyebilir;
+  // akış (sihirbaz "Başla", kilit ekranı kapanışı) animasyona takılı kalmasın.
+  const cap = new Promise(r => setTimeout(r, (o.duration || 0) + (o.delay || 0) + 400));
+  return Promise.race([a.finished.catch(() => {}), cap]).finally(() => { el.style.willChange = ""; });
 }
 export const nextFrame = () => new Promise(r => requestAnimationFrame(() => r()));
 

@@ -50,13 +50,9 @@ export function mountDock(root) {
     items.clear();
     const lp = item({ id: "launchpad", name: t("dock.apps"), icon: themeIcon(pref("look"), "launchpad", "/shell/icons/launchpad.svg") }, true);
     const kids = [lp, ...pins.map(id => item(appById(id))), ...(running.length ? [h("div.dsep")] : []), ...running.map(id => item(appById(id)))];
-    // Web arayüzüne geçiş (Ekran modunda izleyen tarayıcıyı /web'e geçirir; bkz. S.webMode).
+    // Web arayüzüne geçiş (bkz. S.webMode).
     kids.push(h("div.dsep"), h("button.di.mode", { "aria-label": t("dock.web"), title: t("dock.web"), onclick: () => S.webMode() },
       h("img", { src: themeIcon(pref("look"), "web", "/shell/icons/web.svg"), alt: "", draggable: "false" }), h("span.tip", t("dock.web"))));
-    // Ekran Modu (yalnız Ayarlar'dan açıksa ve uzaktan bakılıyorsa listede vardır): Pi'nin ekranı bu sayfada.
-    const scr = appById("makeros.screen");
-    if (scr) kids.push(h("button.di.mode", { "aria-label": scr.name, title: scr.name, onclick: () => S.launch(scr) },
-      h("img", { src: themeIcon(pref("look"), "screen", "/shell/icons/screen.svg"), alt: "", draggable: "false" }), h("span.tip", scr.name)));
     for (const k of kids) if (k.dataset?.app) items.set(k.dataset.app, k);
     inner.replaceChildren(...kids);
     state();

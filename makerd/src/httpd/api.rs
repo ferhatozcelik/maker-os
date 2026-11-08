@@ -305,19 +305,42 @@ pub async fn wifi_enable(State(s): State<S>, h: HeaderMap, body: Bytes) -> R {
 
 // --- prefs -----------------------------------------------------------------
 
+// Tercihler kullanıcının ev dizininde (~/.config/makeros/prefs.json; bkz. prefs.rs). Eski kurulumlarda
+// <data-dir>/prefs/<kullanıcı>.json'da durur: ilk okumada ev dizinine taşınır.
+
 pub async fn get_prefs(State(s): State<S>, h: HeaderMap) -> R {
     let sess = session_of(&s, &h)?;
-    let p = s.d.prefs.as_ref().ok_or_else(|| ApiError::unavailable("Tercih deposu yok."))?;
-    Ok(raw_json(p.get(&sess.user)?))
+    let old = s.d.prefs.as_ref();
+    let Some(a) = &s.d.agent else {
+        let p = old.ok_or_else(|| ApiError::unavailable("Tercih deposu yok."))?;
+        return Ok(raw_json(p.get(&sess.user)?));
+    };
+    if let Ok(b) = crate::uagent::read_all(a.as_ref(), &sess.user, prefs::HOME_PATH).await {
+        if prefs::valid(&b) {
+            return Ok(raw_json(b));
+        }
+    }
+    // Taşıma: eski depodaki tercihler ev dizinine yazılır.
+    let b = old.and_then(|p| p.get(&sess.user).ok()).unwrap_or_else(|| b"{}".to_vec());
+    if b != b"{}" {
+        match crate::uagent::write_all(a.as_ref(), &sess.user, prefs::HOME_PATH, b.clone()).await {
+            Ok(()) => tracing::info!(user = %sess.user, "tercihler ev dizinine taşındı"),
+            Err(e) => tracing::warn!(user = %sess.user, "tercihler taşınamadı: {}", e.message),
+        }
+    }
+    Ok(raw_json(b))
 }
 
 pub async fn put_prefs(State(s): State<S>, h: HeaderMap, body: Bytes) -> R {
     let sess = session_of(&s, &h)?;
-    let p = s.d.prefs.as_ref().ok_or_else(|| ApiError::unavailable("Tercih deposu yok."))?;
-    if body.len() > prefs::MAX_SIZE {
-        return Err(ApiError::new(413, "invalid", "Tercihler en fazla 16 KB olabilir."));
+    let compact = prefs::normalize(&body)?;
+    match &s.d.agent {
+        Some(a) => crate::uagent::write_all(a.as_ref(), &sess.user, prefs::HOME_PATH, compact.clone()).await?,
+        None => {
+            s.d.prefs.as_ref().ok_or_else(|| ApiError::unavailable("Tercih deposu yok."))?.put(&sess.user, &compact)?;
+        }
     }
-    Ok(raw_json(p.put(&sess.user, &body)?))
+    Ok(raw_json(compact))
 }
 
 // --- uygulamalar, süreçler, bildirimler, işler ---------------------------------
@@ -446,14 +469,8 @@ pub async fn setup_state(State(s): State<S>, ci: Ci) -> R {
         r.online = st.online;
         r.hotspot = st.hotspot.active;
         r.wifi_needed = !st.online || st.hotspot.active;
-        let mut mac = String::new();
-        for i in &st.ifaces {
-            if mac.is_empty() || i.kind == "ethernet" {
-                mac = i.mac.clone();
-            }
-        }
-        r.hostname = setup::suggest_hostname(&mac);
     }
+    r.hostname = setup::DEFAULT_HOSTNAME.into();
     Ok(json(&r))
 }
 
@@ -544,27 +561,40 @@ pub async fn setup_complete(State(s): State<S>, ci: Ci, body: Bytes) -> R {
             Err(BeginError::Busy) => return Err(ApiError::conflict("Kurulum şu anda sürüyor.")),
             Err(BeginError::Io(e)) => return Err(ApiError::internal(format!("Kurulum kilidi alınamadı: {e}"))),
         };
-        let work = async {
-            let args = privsep::UserCreateArgs { user: req.user.clone(), password: req.password.clone(), fullname: req.fullname.clone(), ..Default::default() };
-            if let Err(e) = accounts.create_user(args).await {
+        // Yalnız hesap oluşturma süre sınırına tabidir; ardından setup-done hemen yazılır. Böylece
+        // yavaş/askıda bir D-Bus hizmeti (ilk açılışta soğuk polkit, hostnamed...) kurulumu sonsuza
+        // dek "bitmemiş" bırakıp sihirbazı başa döndüremez.
+        let args = privsep::UserCreateArgs { user: req.user.clone(), password: req.password.clone(), fullname: req.fullname.clone(), ..Default::default() };
+        match tokio::time::timeout(Duration::from_secs(45), accounts.create_user(args)).await {
+            Ok(Ok(())) => {}
+            Ok(Err(e)) => {
                 tracing::error!(user = %req.user, err = %e, "kurulum: hesap oluşturulamadı");
                 s2.d.limiter.fail(&ip);
                 return Err(e);
             }
-            let mut warn = Vec::new();
-            if let Err(e) = s2.d.system.set_hostname(&req.hostname).await {
-                warn.push(format!("Cihaz adı ayarlanamadı: {}", err_msg(&e)));
+            Err(_) => {
+                tracing::error!(user = %req.user, "kurulum: hesap oluşturma zaman aşımı");
+                return Err(ApiError::unavailable("Hesap oluşturma zaman aşımına uğradı; lütfen yeniden deneyin."));
             }
-            if let Err(e) = s2.d.system.set_time(system::TimeUpdate { timezone: Some(req.timezone.clone()), ..Default::default() }).await {
-                warn.push(format!("Saat dilimi ayarlanamadı: {}", err_msg(&e)));
-            }
-            if let Err(e) = s2.d.system.set_locale(system::Locale { lang: req.lang.clone(), keymap: req.keymap.clone() }).await {
-                warn.push(format!("Dil/klavye ayarlanamadı: {}", err_msg(&e)));
-            }
-            if let Err(e) = store.mark_done(&req.user) {
-                tracing::error!(err = %e, "kurulum: setup-done yazılamadı");
-                return Err(ApiError::internal("Kurulum durumu kaydedilemedi."));
-            }
+        }
+        if let Err(e) = store.mark_done(&req.user) {
+            tracing::error!(err = %e, "kurulum: setup-done yazılamadı");
+            return Err(ApiError::internal("Kurulum durumu kaydedilemedi."));
+        }
+        let work = async {
+            // Ayarlar birbirinden bağımsız: paralel ve her biri kısa süre sınırıyla; hata yalnız uyarıdır.
+            const STEP: Duration = Duration::from_secs(12);
+            let step = |what: &'static str, r: Result<ApiResult<()>, tokio::time::error::Elapsed>| match r {
+                Ok(Ok(())) => None,
+                Ok(Err(e)) => Some(format!("{what} ayarlanamadı: {}", err_msg(&e))),
+                Err(_) => Some(format!("{what} ayarlanamadı: zaman aşımı")),
+            };
+            let (h, t, l) = tokio::join!(
+                tokio::time::timeout(STEP, s2.d.system.set_hostname(&req.hostname)),
+                tokio::time::timeout(STEP, s2.d.system.set_time(system::TimeUpdate { timezone: Some(req.timezone.clone()), ..Default::default() })),
+                tokio::time::timeout(STEP, s2.d.system.set_locale(system::Locale { lang: req.lang.clone(), keymap: req.keymap.clone() })),
+            );
+            let warn: Vec<String> = [step("Cihaz adı", h), step("Saat dilimi", t), step("Dil/klavye", l)].into_iter().flatten().collect();
             s2.d.limiter.reset(&ip);
             let admin = s2.admin_of(&req.user, true);
             let (_, cookie) = s2.d.sessions.create(&req.user, admin);
@@ -581,7 +611,7 @@ pub async fn setup_complete(State(s): State<S>, ci: Ci, body: Bytes) -> R {
             tracing::info!(user = %req.user, hostname = %req.hostname, ip = %ip, "kurulum tamamlandı");
             Ok(with_cookie(json(&resp), &s2.d.sessions.set_cookie(&cookie)))
         };
-        tokio::time::timeout(Duration::from_secs(60), work).await.unwrap_or_else(|_| Err(ApiError::unavailable("İşlem zaman aşımına uğradı.")))
+        work.await
     })
     .await
     .unwrap_or_else(|_| Err(ApiError::internal("İstek tamamlanamadı.")))
@@ -628,4 +658,126 @@ pub async fn update_apply(State(s): State<S>, h: HeaderMap) -> R {
     });
     tracing::info!(version = %av.version, user = %sess.user, "yazılım güncellemesi başladı");
     Ok(json_status(StatusCode::ACCEPTED, &HashMap::from([("job", id)])))
+}
+
+// --- Tarayıcı penceresi: sayfa aktarımı (crate::browse) ------------------------
+
+/// Oturum sahibine aktarım bileti (iframe içindeki sayfa çerez göndermez; bkz. browse.rs).
+pub async fn browse_ticket(State(s): State<S>, h: HeaderMap) -> R {
+    let sess = session_of(&s, &h)?;
+    #[derive(Serialize)]
+    struct Resp {
+        ticket: String,
+        /// Yeni sekmede açılacak (bot korumalı) alan adları.
+        walled: Vec<String>,
+    }
+    Ok(json(&Resp { ticket: crate::browse::ticket(&sess.user), walled: crate::browse::walled_hosts() }))
+}
+
+pub async fn browse(Query(q): Query<HashMap<String, String>>, h: HeaderMap) -> R {
+    let t = q.get("t").map(String::as_str).unwrap_or("");
+    let url = q.get("url").cloned().unwrap_or_default();
+    let Some(user) = crate::browse::check(t) else {
+        // Bilet bellekte tutulur: makerd yeniden başlayınca eskir. JSON yerine kabuğa haber veren bir sayfa döner,
+        // Tarayıcı penceresi yeni bilet alıp sayfayı kendiliğinden yeniden yükler.
+        return Response::builder()
+            .status(StatusCode::UNAUTHORIZED)
+            .header(header::CONTENT_TYPE, "text/html; charset=utf-8")
+            .header("content-security-policy", "sandbox allow-scripts")
+            .body(Body::from(crate::browse::expired_page(&url)))
+            .map_err(|e| ApiError::internal(e.to_string()));
+    };
+    let lang = h.get(header::ACCEPT_LANGUAGE).and_then(|v| v.to_str().ok()).unwrap_or("");
+    let (status, ct, body) = match crate::browse::fetch(&url, lang).await {
+        Ok(p) if crate::browse::is_bot_wall(&p) => {
+            crate::browse::mark_walled(&p.url);
+            crate::browse::mark_walled(&url);
+            let msg = "Bu site bot korumalı (Cloudflare); yalnız gerçek tarayıcıda açılır. Bundan sonra doğrudan yeni sekmede açılacak.";
+            (StatusCode::BAD_GATEWAY, "text/html; charset=utf-8".to_string(), crate::browse::error_page(&p.url, msg))
+        }
+        Ok(p) => {
+            let html = p.content_type.contains("text/html") || p.content_type.contains("xhtml");
+            tracing::debug!(user = %user, url = %p.url, status = p.status, "tarayıcı");
+            let body = if html { crate::browse::rewrite(&p.body, &p.url, t) } else { p.body };
+            (StatusCode::from_u16(p.status).unwrap_or(StatusCode::OK), p.content_type, body)
+        }
+        Err(e) => (StatusCode::BAD_GATEWAY, "text/html; charset=utf-8".to_string(), crate::browse::error_page(&url, &e)),
+    };
+    Response::builder()
+        .status(status)
+        .header(header::CONTENT_TYPE, HeaderValue::from_str(&ct).unwrap_or(HeaderValue::from_static("application/octet-stream")))
+        // Opak köken: aktarılan sayfa MakerOS ile aynı adreste olsa da kabuğa/API'ye erişemez.
+        .header("content-security-policy", "sandbox allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals allow-downloads")
+        .body(Body::from(body))
+        .map_err(|e| ApiError::internal(e.to_string()))
+}
+
+// --- Duvar kâğıtları: kullanıcının yüklediği resimler (cihaz geneli) -------------------------
+// <data-dir>/wallpapers/{desktop,desktop-blur,lock}. Kilit ekranı girişten önce de görünmeli: GET herkese açık
+// (yalnız bu üç sabit ad; resim baytları olduğu gibi, image/* türüyle). Yükleme/silme oturum ister.
+
+const WALL_NAMES: [&str; 3] = ["desktop", "desktop-blur", "lock"];
+const WALL_MAX: usize = 12 << 20;
+
+fn wall_path(s: &S, name: &str) -> ApiResult<std::path::PathBuf> {
+    if !WALL_NAMES.contains(&name) {
+        return Err(ApiError::not_found("Duvar kâğıdı yok."));
+    }
+    let p = s.d.prefs.as_ref().ok_or_else(|| ApiError::unavailable("Veri dizini yok."))?;
+    Ok(p.dir.parent().unwrap_or(&p.dir).join("wallpapers").join(name))
+}
+
+/// Resim türü baytlardan (uzantıya/başlığa güvenilmez).
+fn image_type(b: &[u8]) -> Option<&'static str> {
+    if b.starts_with(&[0xff, 0xd8, 0xff]) {
+        Some("image/jpeg")
+    } else if b.starts_with(b"\x89PNG\r\n\x1a\n") {
+        Some("image/png")
+    } else if b.len() > 12 && &b[0..4] == b"RIFF" && &b[8..12] == b"WEBP" {
+        Some("image/webp")
+    } else {
+        None
+    }
+}
+
+pub async fn wallpaper_get(State(s): State<S>, Path(name): Path<String>) -> R {
+    let path = wall_path(&s, &name)?;
+    let b = tokio::fs::read(&path).await.map_err(|_| ApiError::not_found("Duvar kâğıdı yok."))?;
+    let ct = image_type(&b).unwrap_or("application/octet-stream");
+    Response::builder()
+        .header(header::CONTENT_TYPE, ct)
+        // Adres sürüm içerir (?v=) ama kilit ekranı sürümsüz de istenebilir: her seferinde doğrula.
+        .header(header::CACHE_CONTROL, "no-cache")
+        .body(Body::from(b))
+        .map_err(|e| ApiError::internal(e.to_string()))
+}
+
+pub async fn wallpaper_put(State(s): State<S>, h: HeaderMap, Path(name): Path<String>, body: Bytes) -> R {
+    let sess = session_of(&s, &h)?;
+    let path = wall_path(&s, &name)?;
+    if body.len() > WALL_MAX {
+        return Err(ApiError::invalid("Resim çok büyük (en fazla 12 MB)."));
+    }
+    if image_type(&body).is_none() {
+        return Err(ApiError::invalid("Yalnız JPEG, PNG ya da WebP resim yüklenebilir."));
+    }
+    if let Some(d) = path.parent() {
+        tokio::fs::create_dir_all(d).await.map_err(|e| ApiError::internal(e.to_string()))?;
+    }
+    let tmp = path.with_extension("tmp");
+    tokio::fs::write(&tmp, &body).await.map_err(|e| ApiError::internal(e.to_string()))?;
+    tokio::fs::rename(&tmp, &path).await.map_err(|e| ApiError::internal(e.to_string()))?;
+    tracing::info!(user = %sess.user, name = %name, bytes = body.len(), "duvar kâğıdı yüklendi");
+    Ok(StatusCode::NO_CONTENT.into_response())
+}
+
+pub async fn wallpaper_delete(State(s): State<S>, h: HeaderMap, Path(name): Path<String>) -> R {
+    session_of(&s, &h)?;
+    let path = wall_path(&s, &name)?;
+    match tokio::fs::remove_file(&path).await {
+        Ok(()) => {}
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+        Err(e) => return Err(ApiError::internal(e.to_string())),
+    }
+    Ok(StatusCode::NO_CONTENT.into_response())
 }

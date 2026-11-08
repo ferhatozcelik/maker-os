@@ -116,11 +116,14 @@ bu yüzden yalnız model seçimi için kullanılır, README kıyaslamasına girm
   systemd kullanıcı birimi, yoksa doğrudan), aynı HTTP portundan. labwc autostart da işarete bakar. Uzaktan **Chromium**
   tıklanınca kullanıcının kendi tarayıcısında yeni sekme açılır (Pi'de tarayıcı başlamaz). Monitör yoksa Pi'nin sanal
   ekranı tarayıcı penceresinin boyutuna geçer (noVNC `resizeSession` → wayvnc; Docker'da 1280×720 → 1440×900 doğrulandı).
-- 2026-11-04: **Chromium, MakerOS masaüstünde normal bir pencere** (uzak tarayıcıdan): Pi'deki gerçek Chromium, ayrı
-  monitörsüz bir oturumda (ikinci labwc + wayvnc yalnız 127.0.0.1:5901, ayrı profil `~/.config/makeros-browser`); pencerede
-  yalnız Chromium görünür, boyutu pencereyle değişir. Pi'nin kendi ekranı/monitörü etkilenmez, Ekran Modu kapalı kalabilir.
-  makerd `internal/browser`: ilk pencerede başlatır, son pencere kapanınca 45 sn sonra durdurur. Docker'da doğrulandı
-  (raftan aç → 1100×646, büyüt → 1200×662, adres yazıldı, kapatınca oturum durdu).
+- 2026-11-08: **VNC tamamen kaldırıldı** (Ekran Modu, wayvnc/neatvnc/aml paketleri, noVNC, makerd `/vnc` ve
+  `/screen`). Uzaktan "Chromium" artık bağlanan bilgisayarın tarayıcısında çizilen Tarayıcı penceresi
+  (`/shell/apps/browser/`, iframe; iframe'i reddeden siteler için "Yeni sekmede aç"). Pi'nin kendi ekranında
+  Chromium yerel uygulama olarak kalır.
+- 2026-11-07: **Chromium yalnız Pi'nin gerçek ekranında** (HDMI/labwc). 11-04'teki ayrı monitörsüz tarayıcı oturumu
+  (ikinci labwc + wayvnc 5901, `browser-session`, makerd `browser`) kaldırıldı: VNC içinde "sanal makine" gibi görünüyor,
+  Pi 4'te ikinci bir bileşik + yazılım kodlama yüzünden kasıyordu. Uzaktan Chromium tıklanınca Pi'nin ekranında açılır ve
+  Ekran Modu gelir (kapalıysa yöneticiye açılsın mı diye sorulur): web'de görünen HDMI'daki ekranın kendisidir.
 - 2026-11-04: Web arayüzünde **Web ↔ Ekran** geçişi her zaman görünür: "Ekran" MakerOS masaüstüne (`/`, pencereler, raf,
   Chromium penceresi) geçer, Ekran Modu (VNC) ayarından bağımsızdır; masaüstünden dönüş raftaki Web düğmesiyle.
 - 2026-11-04: **2.0.0 sürümü.** Ayarlar'da Ekran Modu sayfası yok (kullanıcı isteği): Ekran Modu kapalı kalır ve

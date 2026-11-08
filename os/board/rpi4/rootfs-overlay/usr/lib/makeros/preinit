@@ -86,4 +86,12 @@ if ! mount -t overlay overlay \
 	log "/etc overlay kurulamadi; /etc salt-okunur kaliyor"
 fi
 
+# Yalniz debug imaji: /usr uzerine yazilabilir katman (ust: /data/dev/usr). os/debug/push.sh
+# makerd/kabuk dosyalarini buraya yazar; yeniden acilis gerekmez. Sifirlamak: rm -rf /data/dev
+if [ -e /usr/lib/makeros/debug-image ] && [ $data_ok = 1 ]; then
+	mkdir -p /data/dev/usr/upper /data/dev/usr/work
+	mount -t overlay overlay -o lowerdir=/usr,upperdir=/data/dev/usr/upper,workdir=/data/dev/usr/work /usr ||
+		log "debug: /usr overlay kurulamadi"
+fi
+
 exec /usr/lib/systemd/systemd "$@"

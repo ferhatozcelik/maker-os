@@ -1,5 +1,8 @@
-//! Kullanıcı başına kabuk tercihleri (serbest JSON nesnesi, en fazla 16 KB):
-//! `<data-dir>/prefs/<kullanıcı>.json`.
+//! Kullanıcı başına kabuk tercihleri (serbest JSON nesnesi, en fazla 16 KB).
+//!
+//! Asıl yer kullanıcının ev dizini: `~/.config/makeros/prefs.json` (makerd-user yazar; /home ayrı bölümdedir,
+//! yazılım güncellemesi ve sistem dizinleri ona dokunmaz). Bu depo (`<data-dir>/prefs/<kullanıcı>.json`) yalnız
+//! kullanıcı hizmeti olmayan ortamlarda (mock) ve eski kurulumlardan taşıma için kullanılır.
 
 use crate::apierr::{ApiError, ApiResult};
 use std::path::PathBuf;
@@ -23,8 +26,37 @@ fn is_object(b: &[u8]) -> bool {
     t.starts_with('{') && serde_json::from_str::<serde_json::Map<String, serde_json::Value>>(t).is_ok()
 }
 
+/// Kullanıcının ev dizinine göre tercih dosyası.
+pub const HOME_PATH: &str = ".config/makeros/prefs.json";
+
+/// Gövdeyi doğrular ve sıkıştırır (JSON nesnesi, en fazla 16 KB).
+pub fn normalize(raw: &[u8]) -> ApiResult<Vec<u8>> {
+    if raw.len() > MAX_SIZE {
+        return Err(ApiError::new(413, "invalid", "Tercihler en fazla 16 KB olabilir."));
+    }
+    if !is_object(raw) {
+        return Err(ApiError::invalid("Tercihler bir JSON nesnesi olmalıdır."));
+    }
+    let v: serde_json::Value = serde_json::from_slice(raw).map_err(|_| ApiError::invalid("Geçersiz JSON."))?;
+    Ok(serde_json::to_vec(&v)?)
+}
+
+/// Okunan baytlar geçerli bir nesne mi (bozuk/boş dosya varsayılana düşer).
+pub fn valid(b: &[u8]) -> bool {
+    is_object(b)
+}
+
 impl Store {
     pub fn new(dir: PathBuf) -> Self {
+        // Yarım kalmış yazımların artıkları (".<ad>.json-<rastgele>").
+        if let Ok(rd) = std::fs::read_dir(&dir) {
+            for e in rd.flatten() {
+                let n = e.file_name().to_string_lossy().into_owned();
+                if n.starts_with('.') && n.contains(".json-") {
+                    let _ = std::fs::remove_file(e.path());
+                }
+            }
+        }
         Self { dir, mu: Mutex::new(()) }
     }
 
@@ -50,14 +82,7 @@ impl Store {
     /// Tercihleri sıkıştırıp atomik yazar. Gövde JSON nesnesi olmalı.
     pub fn put(&self, user: &str, raw: &[u8]) -> ApiResult<Vec<u8>> {
         let p = self.path(user)?;
-        if raw.len() > MAX_SIZE {
-            return Err(ApiError::new(413, "invalid", "Tercihler en fazla 16 KB olabilir."));
-        }
-        if !is_object(raw) {
-            return Err(ApiError::invalid("Tercihler bir JSON nesnesi olmalıdır."));
-        }
-        let v: serde_json::Value = serde_json::from_slice(raw).map_err(|_| ApiError::invalid("Geçersiz JSON."))?;
-        let compact = serde_json::to_vec(&v)?;
+        let compact = normalize(raw)?;
         let _g = self.mu.lock().unwrap();
         std::fs::create_dir_all(&self.dir)?;
         crate::util::replace_file(&p, &compact, 0o640)?;

@@ -1,0 +1,133 @@
+{
+  "HomepageLocation": "https://www.google.com/",
+  "HomepageIsNewTabPage": false,
+  "ShowHomeButton": true,
+  "RestoreOnStartup": 4,
+  "RestoreOnStartupURLs": [
+    "https://www.google.com/"
+  ],
+  "NewTabPageLocation": "https://www.google.com/",
+  "BookmarkBarEnabled": true,
+  "DefaultSearchProviderEnabled": true,
+  "DefaultSearchProviderName": "Google",
+  "DefaultSearchProviderSearchURL": "https://www.google.com/search?q={searchTerms}",
+  "DefaultSearchProviderSuggestURL": "https://www.google.com/complete/search?output=chrome&q={searchTerms}",
+  "ManagedBookmarks": [
+    {
+      "toplevel_name": "Maker"
+    },
+    {
+      "name": "Raspberry Pi",
+      "children": [
+        {
+          "name": "Raspberry Pi Belgeleri",
+          "url": "https://www.raspberrypi.com/documentation/"
+        },
+        {
+          "name": "Raspberry Pi Forumları",
+          "url": "https://forums.raspberrypi.com/"
+        },
+        {
+          "name": "GPIO Pin Haritası",
+          "url": "https://pinout.xyz/"
+        },
+        {
+          "name": "Raspberry Pi Projeleri",
+          "url": "https://projects.raspberrypi.org/tr-TR"
+        }
+      ]
+    },
+    {
+      "name": "Elektronik",
+      "children": [
+        {
+          "name": "Adafruit Learn",
+          "url": "https://learn.adafruit.com/"
+        },
+        {
+          "name": "SparkFun Eğitimleri",
+          "url": "https://learn.sparkfun.com/tutorials"
+        },
+        {
+          "name": "Arduino Belgeleri",
+          "url": "https://docs.arduino.cc/"
+        },
+        {
+          "name": "Wokwi Simülatör",
+          "url": "https://wokwi.com/"
+        },
+        {
+          "name": "MicroPython",
+          "url": "https://docs.micropython.org/"
+        },
+        {
+          "name": "KiCad",
+          "url": "https://www.kicad.org/"
+        },
+        {
+          "name": "Datasheet Arama",
+          "url": "https://www.alldatasheet.com/"
+        }
+      ]
+    },
+    {
+      "name": "3D Baskı ve Tasarım",
+      "children": [
+        {
+          "name": "Printables",
+          "url": "https://www.printables.com/"
+        },
+        {
+          "name": "Thingiverse",
+          "url": "https://www.thingiverse.com/"
+        },
+        {
+          "name": "Tinkercad",
+          "url": "https://www.tinkercad.com/"
+        },
+        {
+          "name": "Onshape",
+          "url": "https://www.onshape.com/"
+        }
+      ]
+    },
+    {
+      "name": "Topluluk",
+      "children": [
+        {
+          "name": "Hackster",
+          "url": "https://www.hackster.io/"
+        },
+        {
+          "name": "Hackaday",
+          "url": "https://hackaday.com/"
+        },
+        {
+          "name": "Instructables",
+          "url": "https://www.instructables.com/"
+        }
+      ]
+    },
+    {
+      "name": "Yazılım ve AI",
+      "children": [
+        {
+          "name": "GitHub",
+          "url": "https://github.com/"
+        },
+        {
+          "name": "Python Belgeleri",
+          "url": "https://docs.python.org/3/"
+        },
+        {
+          "name": "Stack Overflow",
+          "url": "https://stackoverflow.com/"
+        },
+        {
+          "name": "Hugging Face",
+          "url": "https://huggingface.co/"
+        }
+      ]
+    }
+  ]
+}

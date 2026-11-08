@@ -1,0 +1,6 @@
+[Unit]
+Description=MakerOS debug durum dosyasi (MOSCFG/makeros-debug.txt)
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/makeros/debug-log

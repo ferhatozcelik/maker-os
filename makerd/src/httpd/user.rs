@@ -6,7 +6,7 @@
 
 use super::*;
 use crate::termproc::Open;
-use crate::{agents, plugins, pyman};
+use crate::{agents, plugins, pyman, uagent};
 use axum::extract::{Path, Query, State};
 use bytes::Bytes;
 use futures_util::StreamExt;
@@ -137,7 +137,7 @@ pub async fn files_op(State(s): State<S>, h: HeaderMap, body: Bytes) -> R {
         to: String,
     }
     let req: Req = decode(&body)?;
-    if !matches!(req.op.as_str(), "mkdir" | "rename" | "remove" | "stat") {
+    if !matches!(req.op.as_str(), "mkdir" | "rename" | "remove" | "stat" | "copy" | "move" | "trash" | "trash-list" | "restore" | "trash-delete" | "search" | "places") {
         return Err(ApiError::invalid("Geçersiz dosya işlemi."));
     }
     Ok(raw_json(a.fs(&sess.user, Open { mode: req.op, path: req.path, to: req.to, ..Default::default() }).await?))
@@ -256,6 +256,73 @@ pub async fn project_run(State(s): State<S>, h: HeaderMap, Path(name): Path<Stri
     let sess = session_of(&s, &h)?;
     let cmd = pyman::run_command(agent(&s)?.as_ref(), &sess.user, &name).await?;
     term_run(&s, &sess.user, cmd, name).await
+}
+
+// --- Python yöneticisi --------------------------------------------------------
+
+#[derive(Deserialize, Default)]
+struct ProjReq {
+    #[serde(default)]
+    op: String,
+    #[serde(default)]
+    pkg: String,
+    #[serde(default)]
+    python: String,
+    #[serde(default)]
+    enabled: bool,
+}
+
+pub async fn project_status(State(s): State<S>, h: HeaderMap, Path(name): Path<String>) -> R {
+    let sess = session_of(&s, &h)?;
+    Ok(json(&pyman::status(agent(&s)?.as_ref(), &sess.user, &name).await?))
+}
+
+pub async fn project_start(State(s): State<S>, h: HeaderMap, Path(name): Path<String>) -> R {
+    let sess = session_of(&s, &h)?;
+    let a = agent(&s)?;
+    let cmd = pyman::start_command(a.as_ref(), &sess.user, &name).await?;
+    uagent::output(a.as_ref(), &sess.user, &cmd).await?;
+    Ok(json(&pyman::status(a.as_ref(), &sess.user, &name).await?))
+}
+
+pub async fn project_stop(State(s): State<S>, h: HeaderMap, Path(name): Path<String>) -> R {
+    let sess = session_of(&s, &h)?;
+    let a = agent(&s)?;
+    pyman::stop(a.as_ref(), &sess.user, &name).await?;
+    Ok(json(&pyman::status(a.as_ref(), &sess.user, &name).await?))
+}
+
+pub async fn project_log(State(s): State<S>, h: HeaderMap, Path(name): Path<String>, qs: Q) -> R {
+    let sess = session_of(&s, &h)?;
+    let from = q(&qs, "from").parse().unwrap_or(0);
+    Ok(json(&pyman::log(agent(&s)?.as_ref(), &sess.user, &name, from).await?))
+}
+
+pub async fn project_packages(State(s): State<S>, h: HeaderMap, Path(name): Path<String>) -> R {
+    let sess = session_of(&s, &h)?;
+    Ok(json(&pyman::packages(agent(&s)?.as_ref(), &sess.user, &name).await?))
+}
+
+pub async fn project_package_op(State(s): State<S>, h: HeaderMap, Path(name): Path<String>, body: Bytes) -> R {
+    let sess = session_of(&s, &h)?;
+    let req: ProjReq = decode(&body)?;
+    let cmd = pyman::package_cmd(agent(&s)?.as_ref(), &sess.user, &name, &req.op, req.pkg.trim()).await?;
+    term_run(&s, &sess.user, cmd, format!("{name} · paketler")).await
+}
+
+pub async fn project_python(State(s): State<S>, h: HeaderMap, Path(name): Path<String>, body: Bytes) -> R {
+    let sess = session_of(&s, &h)?;
+    let req: ProjReq = decode(&body)?;
+    let cmd = pyman::python_switch_cmd(agent(&s)?.as_ref(), &sess.user, &name, req.python.trim()).await?;
+    term_run(&s, &sess.user, cmd, format!("{name} · Python")).await
+}
+
+pub async fn project_autostart(State(s): State<S>, h: HeaderMap, Path(name): Path<String>, body: Bytes) -> R {
+    let sess = session_of(&s, &h)?;
+    let req: ProjReq = decode(&body)?;
+    let a = agent(&s)?;
+    pyman::set_autostart(a.as_ref(), &sess.user, &name, req.enabled).await?;
+    Ok(json(&pyman::status(a.as_ref(), &sess.user, &name).await?))
 }
 
 pub async fn project_delete(State(s): State<S>, h: HeaderMap, Path(name): Path<String>) -> R {
@@ -455,5 +522,46 @@ mod tests {
         assert_eq!(run_file_cmd("b.py").unwrap(), "cd ~ && cd '.' && if [ -f pyproject.toml ]; then uv run 'b.py'; else python3 'b.py'; fi");
         assert!(run_file_cmd("a.sh").is_err() && run_file_cmd("a\n.py").is_err());
         assert_eq!(attachment("ö a.txt"), "attachment; filename=\"_ a.txt\"; filename*=UTF-8''%C3%B6%20a.txt");
+    }
+}
+
+// --- AI Asistan: önerilen komutu kullanıcı izniyle çalıştırma (bkz. ai/exec.rs) ---------------------------
+
+#[derive(Deserialize)]
+pub struct AiRunReq {
+    command: String,
+    /// Kullanıcı onay düğmesine bastı.
+    #[serde(default)]
+    onay: bool,
+    /// DANGEROUS komutlarda kullanıcının yeniden yazdığı komut.
+    #[serde(default)]
+    yazilan: Option<String>,
+}
+
+/// POST /api/v1/asistan/calistir — mod (kullanıcı tercihi `aiMode`), risk ve onay sunucuda yeniden denetlenir.
+/// Komut kullanıcının kendi yetkisiyle (makerd-user), stdin kapalı, 30 sn ve 64 KB sınırıyla çalışır.
+pub async fn ai_run(State(s): State<S>, h: HeaderMap, axum::Json(r): axum::Json<AiRunReq>) -> R {
+    use crate::ai::exec;
+    let sess = session_of(&s, &h)?;
+    let a = agent(&s)?;
+    if r.command.len() > 2000 || r.command.contains('\0') {
+        return Err(ApiError::invalid("Komut çok uzun ya da geçersiz."));
+    }
+    let mode = match uagent::read_all(a.as_ref(), &sess.user, crate::prefs::HOME_PATH).await {
+        Ok(b) => serde_json::from_slice::<serde_json::Value>(&b).ok().and_then(|v| v.get("aiMode").and_then(|m| m.as_str()).map(exec::Mode::parse)).unwrap_or(exec::Mode::Suggest),
+        Err(_) => exec::Mode::Suggest,
+    };
+    let (asm, d) = exec::check(mode, &r.command, r.onay, r.yazilan.as_deref());
+    match d {
+        exec::Decision::Deny(why) => Err(ApiError::forbidden(why)),
+        exec::Decision::Confirm(risk) => Ok(json(&serde_json::json!({"durum": "onay_gerekli", "risk": risk, "reasons": asm.reasons, "mod": mode.name(), "yeniden_yaz": risk == crate::ai::risk::Risk::Dangerous}))),
+        exec::Decision::Run => {
+            let t0 = std::time::Instant::now();
+            let (raw, _) = uagent::output(a.as_ref(), &sess.user, &exec::wrap(&r.command)).await?;
+            let (out, code, truncated) = exec::parse_output(&raw);
+            let ms = t0.elapsed().as_millis() as u64;
+            tracing::info!(user = %sess.user, risk = asm.risk.label(), mode = mode.name(), code = ?code, ms, cmd = %r.command, "AI asistan komutu çalıştırıldı");
+            Ok(json(&serde_json::json!({"durum": "calisti", "risk": asm.risk, "cikis": code, "cikti": out, "kesildi": truncated, "not": exec::note(code, &out), "ms": ms})))
+        }
     }
 }

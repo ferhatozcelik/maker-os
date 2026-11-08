@@ -1,0 +1,9 @@
+[Unit]
+Description=MakerOS debug durum dosyasi (acilistan 20 sn sonra, sonra her dakika)
+
+[Timer]
+OnBootSec=20
+OnUnitActiveSec=60
+
+[Install]
+WantedBy=timers.target

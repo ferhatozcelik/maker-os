@@ -1,5 +1,5 @@
 // MakerOS Web arayüzü (uzak tarayıcı varsayılanı): masaüstü ve pencere yok; kenar çubuğundan uygulamalar
-// tam sayfa açılır (her uygulama kendi sayfasıdır, iframe). "Ekran" modu Pi'nin gerçek ekranını (VNC) açar.
+// tam sayfa açılır (her uygulama kendi sayfasıdır, iframe). "Ekran" geçişi MakerOS masaüstüne (/) gider.
 // Uygulama ↔ kabuk mesajları masaüstüyle aynıdır ({mk:"title"|"open"|"close"|"path"}).
 import { h, $, bytes, duration } from "/shell/js/lib.js";
 import { t } from "/shell/js/i18n.js";
@@ -7,20 +7,19 @@ import { icon } from "/shell/js/icons.js";
 import { get, post, Events, bus } from "/shell/js/api.js";
 import { prefs, pref, isDark, syncPrefs } from "/shell/js/prefs.js";
 import { wallURL, brand, themeById, setFavicon, widgetReady } from "/shell/js/themes.js";
-import { APPS, loadApps, SCREEN } from "/shell/js/apps.js";
+import { APPS, loadApps } from "/shell/js/apps.js";
 import { watchThemeStatus } from "/shell/js/status.js";
 import { registerSW } from "/shell/js/pwa.js";
-import { openScreen } from "/shell/js/screen-overlay.js";
 
 registerSW();
 
 const html = document.documentElement;
 html.dataset.ui = "web";
 const view = $(".view"), nav = $(".nav"), ttl = $(".ttl");
-// Web arayüzünde gösterilmeyenler: Ekran Modu uygulaması (üstteki "Ekran Modu" geçişi onun yerine geçer).
-const HIDDEN = new Set(["makeros.screen"]);
+// Web arayüzünde gösterilmeyenler.
+const HIDDEN = new Set();
 const SYSTEM = new Set(["makeros.activity", "makeros.settings"]);
-const ORDER = ["makeros.files", "makeros.terminal", "makeros.python", "makeros.agents", "makeros.camera", "makeros.gpio", "makeros.plugins"];
+const ORDER = ["makeros.files", "makeros.browser", "makeros.terminal", "makeros.python", "makeros.agents", "makeros.camera", "makeros.gpio", "makeros.plugins"];
 const frames = new Map(); // uygulama → iframe (açık kalır: terminal oturumu, kamera durumu korunur)
 let cur = "home", sys = null;
 
@@ -46,17 +45,15 @@ function renderNav() {
     h("div.grp", t("web.system")), ...sorted(apps().filter(a => SYSTEM.has(a.id))).map(a => link(a.id, a.name, h("img", { src: a.icon, alt: "" }))));
 }
 
-// Telefon: alt sekme çubuğu (sık kullanılanlar + Ekran Modu). CSS yalnız dar ekranda gösterir.
-const TABBAR = [["home", "house", () => t("web.home")], ["makeros.files"], ["makeros.terminal"], ["makeros.python"], ["screen", "monitor", () => t("app.screen")]];
+// Telefon: alt sekme çubuğu (sık kullanılanlar). CSS yalnız dar ekranda gösterir.
+const TABBAR = [["home", "house", () => t("web.home")], ["makeros.files"], ["makeros.browser"], ["makeros.terminal"], ["makeros.python"]];
 function renderTabbar() {
   const bar = $(".tabbar");
   bar.replaceChildren(...TABBAR.map(([id, ic, label]) => {
     const app = APPS.find(a => a.id === id);
     if (!ic && !app) return "";
-    if (id === "screen" && !SCREEN.enabled) return ""; // Ekran Modu kapalı (Ayarlar)
-    const href = id === "home" ? "#" : id === "screen" ? "#" : "#" + short(id);
-    const onclick = id === "screen" ? e => { e.preventDefault(); openScreen(); } : null;
-    return h("a" + (cur === id ? ".on" : ""), { href, "data-id": id, onclick },
+    const href = id === "home" ? "#" : "#" + short(id);
+    return h("a" + (cur === id ? ".on" : ""), { href, "data-id": id },
       ic ? h("span.ti", { html: icon(ic, 22, 1.9) }) : h("img", { src: app.icon, alt: "" }), h("span.tl", label ? label() : app.name));
   }));
 }

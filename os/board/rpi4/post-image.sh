@@ -81,7 +81,8 @@ BUNDLE="makeros-${VERSION}-rpi4.raucb"
 rm -f "${BUNDLE}" "${BUNDLE}.sha256"
 if [ -f "${RAUC_KEY}" ]; then
 	BDIR="$(mktemp -d)"
-	cp rootfs.erofs "${BDIR}/rootfs.erofs"
+	# RAUC .erofs uzantisini tanimaz ve manifest'te 'type=' anahtari yoktur; .img uzantisi ham slot (type=raw) olarak kabul edilir.
+	cp rootfs.erofs "${BDIR}/rootfs.img"
 	# Acilis bolumu A slotu icin; B'ye yazilirsa kanca cmdline.txt'yi B'ye cevirir (rauc-hook.sh).
 	cp boot-a.vfat "${BDIR}/boot.vfat"
 	install -m 0755 "${BOARD_DIR}/rauc-hook.sh" "${BDIR}/hook.sh"
@@ -97,9 +98,7 @@ format=verity
 filename=hook.sh
 
 [image.rootfs]
-filename=rootfs.erofs
-# RAUC .erofs uzantisini taniyamiyor; slot ham blok aygiti (system.conf: type=raw).
-type=raw
+filename=rootfs.img
 
 [image.boot]
 filename=boot.vfat

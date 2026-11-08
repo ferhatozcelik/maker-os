@@ -1,0 +1,43 @@
+[Unit]
+Description=MakerOS Türkçe Linux asistanı (yerel LLM API, internetsiz)
+Documentation=https://github.com/ferhatozcelik/maker-os/blob/main/docs/v2/ai-asistan.md
+After=network.target
+# Model kurulu değilse başlamaz (kurulum: sudo makeros-ai model-kur).
+ConditionPathExists=/var/lib/makeros-ai/models/qwen2.5-0.5b-instruct-q4_k_m.gguf
+
+[Service]
+Type=simple
+# API yalnız 127.0.0.1:8091. Model (llama-server, 127.0.0.1:8092) ilk istekte yüklenir, 5 dk boşta kalınca
+# bellekten atılır: hizmet boştayken ~5 MB RAM kullanır.
+ExecStart=/usr/bin/makeros-ai serve --listen 127.0.0.1:8091 --idle 5m
+Slice=ai.slice
+DynamicUser=yes
+Restart=on-failure
+RestartSec=3
+Nice=5
+# Kum havuzu: komut çalıştırmaz, yalnız modeli okur ve yerel porta bağlanır.
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+IPAddressDeny=any
+IPAddressAllow=localhost
+SystemCallArchitectures=native
+CapabilityBoundingSet=
+ReadOnlyPaths=/var/lib/makeros-ai
+# Sabit istem önekinin KV önbelleği (~10 MB): soğuk başlangıç ~55 sn → birkaç sn.
+CacheDirectory=makeros-ai
+
+[Install]
+WantedBy=multi-user.target

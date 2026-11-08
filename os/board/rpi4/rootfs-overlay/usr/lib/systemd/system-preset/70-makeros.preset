@@ -9,6 +9,8 @@ enable makeros-healthcheck.service
 enable makeros-mark-good.service
 enable makerd.service
 enable makerd-priv.socket
+# Yerel AI asistanı: model kurulu değilse (ConditionPathExists) başlamaz; boşta ~5 MB.
+enable makeros-ai.service
 enable NetworkManager.service
 enable systemd-resolved.service
 enable systemd-timesyncd.service
