@@ -76,7 +76,7 @@ MakerOS, Pi 4 / 400 uyumlu ARM64 kartlar için hazırlanmış bağımsız ve aç
 
 ## İndir
 
-[Sürüm 1.0.0](https://github.com/ferhatozcelik/maker-os/releases/latest): `makeros-1.0.0-rpi4.img.xz` (Pi 4 / 400 uyumlu kartlar, ARM64). İndirdikten sonra `sha256sum -c makeros-*.img.xz.sha256` ile doğrulayın.
+[Sürüm 1.0.0](https://github.com/ferhatozcelik/maker-os/releases/latest): `makeros-1.0.0-rpi4.img.xz` (Pi 4 / 400 uyumlu kartlar, ARM64). En kolay yol: [Kurulum](#setup-guide) bölümündeki tek satırlık komut imajı indirip doğrular ve karta yazar.
 
 <a id="features"></a>
 
@@ -166,10 +166,42 @@ Ayrıntılar: [Paket yöneticisi](docs/architecture/packages.md)
 
 ## Kurulum
 
-1. **Yazın:** [Sürüm sayfasından](https://github.com/ferhatozcelik/maker-os/releases/latest) imajı indirin ve bir imaj yazma aracıyla (ör. balenaEtcher) microSD karta yazın. İsterseniz `MOSCFG` bölümündeki `wifi-example.txt` dosyasını `wifi.txt` olarak kopyalayıp Wi-Fi bilgilerinizi girin.
-2. **Başlatın:** Kartı takıp gücü verin.
-3. **Bağlanın:** Aynı ağda `http://maker-os.local/`, USB-C ile `http://10.55.0.1/`; ağ yoksa `MakerOS` Wi-Fi'ına bağlanıp `http://10.42.0.1/kurulum` adresini açın.
-4. **Oturum açın:** Varsayılan hesap **`makeros` / `makeros`**. Parolayı **Ayarlar › Kullanıcı** bölümünden değiştirin.
+### 1. microSD karta yazın
+
+<p align="center"><img src="docs/assets/diagrams/flash.svg" alt="microSD karta yazma: Komutu çalıştır, İndir, Kartı seç, Yaz ve tak" width="100%"></p>
+
+Tek satırlık komut en son imajı indirir, doğrular, yalnız harici diskleri listeler ve seçtiğiniz karta yazar. İsterseniz Wi-Fi bilgilerinizi de karta ekler; kart ilk açılışta ağınıza kendiliğinden bağlanır.
+
+**macOS / Linux** — Terminal'i açıp yapıştırın:
+
+```bash
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/ferhatozcelik/maker-os/main/flash.sh)"
+```
+
+<p align="center"><img src="docs/assets/diagrams/flash-mac.svg" alt="macOS Terminal'de flash.sh çıktısı" width="100%"></p>
+
+**Windows** — Başlat menüsünde *PowerShell*'e sağ tıklayıp **Yönetici olarak çalıştır**'ı seçin ve yapıştırın (ya da [`flash.cmd`](flash.cmd) dosyasını indirip çift tıklayın):
+
+```powershell
+irm https://raw.githubusercontent.com/ferhatozcelik/maker-os/main/flash.ps1 | iex
+```
+
+<p align="center"><img src="docs/assets/diagrams/flash-windows.svg" alt="Windows PowerShell'de flash.ps1 çıktısı" width="100%"></p>
+
+| Adım | Ne olur? |
+| --- | --- |
+| **1. Komutu çalıştır** | Betik GitHub'dan çalışır; ayrıca bir program kurmanız gerekmez. |
+| **2. İndir** | En son sürüm indirilir ve SHA-256 özeti doğrulanır. Bozuk ya da değiştirilmiş dosya yazılmaz. |
+| **3. Kartı seç** | Yalnız harici / çıkarılabilir diskler listelenir. Bilgisayarınızın diski asla gösterilmez; yazmadan önce disk adını (ör. `disk4`) yazarak onaylarsınız. |
+| **4. Yaz ve tak** | İmaj karta yazılır, Wi-Fi bilgisi verdiyseniz `wifi.txt` eklenir ve kart çıkarılmaya hazır olur. |
+
+> Windows kartı yazdıktan sonra "biçimlendirilsin mi?" diye sorarsa **İptal**'e basın. Elle yazmak isterseniz [sürüm sayfasındaki](https://github.com/ferhatozcelik/maker-os/releases/latest) `.img.xz` dosyasını balenaEtcher gibi bir araçla da yazabilirsiniz.
+
+### 2. Başlatın ve bağlanın
+
+1. **Başlatın:** Kartı cihaza takıp gücü verin. İlk açılış bir iki dakika sürer.
+2. **Bağlanın:** Aynı ağda `http://maker-os.local/`, USB-C ile `http://10.55.0.1/`; ağ yoksa `MakerOS` Wi-Fi'ına bağlanıp `http://10.42.0.1/kurulum` adresini açın.
+3. **Oturum açın:** Varsayılan hesap **`makeros` / `makeros`**. Parolayı **Ayarlar › Kullanıcı** bölümünden değiştirin.
 
 <a id="documentation"></a>
 

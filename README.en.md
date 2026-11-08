@@ -76,7 +76,7 @@ MakerOS is an independent, open-source Linux operating system for Pi 4 / 400 com
 
 ## Download
 
-[Release 1.0.0](https://github.com/ferhatozcelik/maker-os/releases/latest): `makeros-1.0.0-rpi4.img.xz` (Pi 4 / 400 compatible boards, ARM64). Verify after download with `sha256sum -c makeros-*.img.xz.sha256`.
+[Release 1.0.0](https://github.com/ferhatozcelik/maker-os/releases/latest): `makeros-1.0.0-rpi4.img.xz` (Pi 4 / 400 compatible boards, ARM64). Easiest: the one-line command in [Setup](#setup-guide) downloads, verifies and flashes the image for you.
 
 <a id="features"></a>
 
@@ -166,10 +166,42 @@ Details: [Package manager](docs/architecture/packages.en.md)
 
 ## Setup
 
-1. **Flash:** Download the image from [Releases](https://github.com/ferhatozcelik/maker-os/releases/latest) and write it to a microSD card with an image writer (e.g. balenaEtcher). Optionally copy `wifi-example.txt` to `wifi.txt` on the `MOSCFG` partition and fill in your Wi-Fi details.
-2. **Boot:** Insert the card and power on.
-3. **Connect:** Open `http://maker-os.local/` on the same network or `http://10.55.0.1/` over USB-C; without a network, join the `MakerOS` Wi-Fi and open `http://10.42.0.1/kurulum`.
-4. **Sign in:** The default account is **`makeros` / `makeros`**. Change the password in **Settings › User**.
+### 1. Flash the microSD card
+
+<p align="center"><img src="docs/assets/diagrams/flash.en.svg" alt="Flashing the microSD: Run the command, Download, Pick the card, Write & insert" width="100%"></p>
+
+A one-line command downloads the latest image, verifies it, lists only external disks and writes to the card you pick. It can also add your Wi-Fi details so the board joins your network on first boot.
+
+**macOS / Linux** — open Terminal and paste:
+
+```bash
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/ferhatozcelik/maker-os/main/flash.sh)"
+```
+
+<p align="center"><img src="docs/assets/diagrams/flash-mac.en.svg" alt="flash.sh output in macOS Terminal" width="100%"></p>
+
+**Windows** — right-click *PowerShell* in the Start menu, choose **Run as administrator** and paste (or download [`flash.cmd`](flash.cmd) and double-click it):
+
+```powershell
+irm https://raw.githubusercontent.com/ferhatozcelik/maker-os/main/flash.ps1 | iex
+```
+
+<p align="center"><img src="docs/assets/diagrams/flash-windows.en.svg" alt="flash.ps1 output in Windows PowerShell" width="100%"></p>
+
+| Step | What happens |
+| --- | --- |
+| **1. Run the command** | The script runs straight from GitHub; nothing else to install. |
+| **2. Download** | The latest release downloads and its SHA-256 checksum is verified. Corrupt or tampered files are never written. |
+| **3. Pick the card** | Only external / removable disks are listed. Your computer's own disk is never shown; you confirm by typing the disk name (e.g. `disk4`). |
+| **4. Write & insert** | The image is written, `wifi.txt` is added if you gave Wi-Fi details, and the card is ready to remove. |
+
+> If Windows asks to format the card after writing, click **Cancel**. To flash manually, write the `.img.xz` from the [release page](https://github.com/ferhatozcelik/maker-os/releases/latest) with a tool like balenaEtcher.
+
+### 2. Boot and connect
+
+1. **Boot:** Insert the card into the board and power it on. The first boot takes a minute or two.
+2. **Connect:** Open `http://maker-os.local/` on the same network or `http://10.55.0.1/` over USB-C; without a network, join the `MakerOS` Wi-Fi and open `http://10.42.0.1/kurulum`.
+3. **Sign in:** The default account is **`makeros` / `makeros`**. Change the password in **Settings › User**.
 
 <a id="documentation"></a>
 
