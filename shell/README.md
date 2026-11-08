@@ -2,7 +2,7 @@
 
 Pi 4'te WPE/cog içinde (1080p, zayıf GPU) ve uzaktan herhangi bir masaüstü/telefon tarayıcısında çalışan
 masaüstü kabuğu ve sistem uygulamaları. **Derleme adımı yok**: yerel ES modülleri + Web Components (`mk-*`),
-çalışma anı bağımlılığı yok (yalnız `vendor/` altındaki sabitlenmiş dosyalar). Arka uç sözleşmesi: [`docs/v2/api.md`](../docs/v2/api.md).
+çalışma anı bağımlılığı yok (yalnız `vendor/` altındaki sabitlenmiş dosyalar). Arka uç sözleşmesi: [`docs/api.md`](../docs/api.md).
 
 ## Çalıştırma (yalnız Docker)
 
@@ -101,7 +101,7 @@ ekran olur; Wi-Fi seçildiyse cihazın ağ değiştireceği ve `http://<ad>.loca
 `su.*`. `POST /setup/complete` oturum çerezi verir; kabuk `location.replace("/")` ile doğrudan masaüstüne geçer. `409` →
 "zaten kurulu" + giriş ekranı.
 
-API (docs/v2/api.md → "İlk açılış kurulumu"; sahte uygulama: `dev-server.mjs --fresh`, gerçek: `MAKERD_MOCK_FRESH=1 makerd --mock`):
+API (docs/api.md → "İlk açılış kurulumu"; sahte uygulama: `dev-server.mjs --fresh`, gerçek: `MAKERD_MOCK_FRESH=1 makerd --mock`):
 `GET /setup` → `{hostname, defaults:{lang,keymap,timezone}, languages:[{id,name}], keymaps:[{id,name}], timezones[], online, wifi_needed, hotspot, min_password}`;
 Wi-Fi adımına girilince `POST /setup/wifi/scan` (kimliksiz); `POST /setup/complete {user,password,fullname?,hostname,timezone,lang,keymap,wifi?:{ssid,password?,hidden?}}`
 → `{user,admin,job?,warnings?}` + çerez (`warnings` Bitti ekranında gösterilir).

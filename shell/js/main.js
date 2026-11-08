@@ -227,7 +227,6 @@ async function pendingSetup(session) {
 
 async function start() {
   layout();
-  if (qs.get("perf") === "1") import("./perf.js").then(m => m.perfHUD());
   let session = null;
   for (let i = 0; ; i++) {
     try { session = await get("/session"); break; }
