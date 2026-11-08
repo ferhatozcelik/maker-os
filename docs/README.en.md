@@ -11,6 +11,7 @@ The MakerOS documentation covers the operating system architecture, Rust backend
 - [Boot and Storage](architecture/boot-and-storage.en.md) — Read-only EROFS rootfs, ext4 `/data`, and RAUC + `tryboot` A/B updates
 - [Desktop and Web Shell](architecture/desktop.en.md) — `/` desktop and `/web` mobile interface, window manager, and themes
 - [Rust Backend Services](architecture/backend.en.md) — `makerd`, `makerd-priv`, `makerd-user`, and privilege separation
+- [Package Manager](architecture/packages.en.md) — `mos pkg` / `apt`: user-level Debian packages stored on the microSD
 - [Local AI Assistant](architecture/ai-assistant.en.md) — `makeros-ai`, Qwen2.5-0.5B-Instruct, conversational and command execution modes
 - [Network and Security](architecture/network-security.en.md) — Session auth, CSRF, WebSocket Origin validation, Hotspot, and USB-C networking
 - [Hardware Support](architecture/hardware.en.md) — Pi 4 / 400 compatible ARM64 boards, GPIO, I²C, SPI, UART, and Camera stack

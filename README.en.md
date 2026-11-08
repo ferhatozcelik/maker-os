@@ -105,35 +105,20 @@ MakerOS is built in layers; each layer lives in its own directory and has its ow
 
 ```mermaid
 flowchart TB
-  subgraph UI["🖥️ User interface — shell/"]
-    direction LR
-    LOCAL["Local display<br/>labwc + Cog/WPE"]
-    WEB["Browser on the network<br/>/ ve /web"]
-    PHONE["Phone<br/>mobile view"]
-  end
-  subgraph SVC["⚙️ Rust services — makerd/"]
-    direction LR
-    MAKERD["makerd<br/>HTTP/WS API"]
-    PRIV["makerd-priv<br/>privileged operations"]
-    USER["makerd-user<br/>processes + PTY"]
-    AI["makeros-ai<br/>local LLM"]
-  end
-  subgraph BOX["📦 Package box — mos pkg"]
-    DEB["Debian trixie (podman, rootless)<br/>apt install …"]
-  end
-  subgraph OS["🧱 Operating system — os/"]
-    direction LR
-    KERNEL["Linux 6.18 ARM64<br/>systemd"]
-    RO["EROFS root (read-only)"]
-    RAUC["RAUC A/B OTA"]
-  end
-  HW["🔌 Pi 4 / 400 compatible ARM64 board<br/>GPIO · I²C · SPI · UART · CSI camera"]
-
+  UI["🖥️ <b>User interface</b> · shell/<br/>Local display (labwc + Cog/WPE) · Network browser · Phone"]
+  SVC["⚙️ <b>Rust services</b> · makerd/<br/>makerd (HTTP/WS API) · makerd-priv · makerd-user · makeros-ai (local LLM)"]
+  BOX["📦 <b>Package box</b> · mos pkg / apt<br/>Debian trixie · rootless podman"]
+  OS["🧱 <b>Operating system</b> · os/<br/>Linux 6.18 ARM64 · systemd · read-only EROFS root · RAUC A/B OTA"]
+  HW["🔌 <b>Pi 4 / 400 compatible ARM64 board</b><br/>GPIO · I²C · SPI · UART · CSI camera"]
   UI -- "HTTPS + WebSocket" --> SVC
+  UI -- "apt install · commands and apps exported back" --> BOX
   SVC --> OS
-  BOX -. "commands + apps exported" .-> UI
   BOX --> OS
   OS --> HW
+  classDef ui fill:#fff4ea,stroke:#f07a1a,color:#17181b
+  classDef core fill:#f3f1ed,stroke:#8b8e96,color:#17181b
+  class UI,BOX ui
+  class SVC,OS,HW core
 ```
 
 **Layer documents:** [Desktop shell](docs/architecture/desktop.en.md) · [Rust backend](docs/architecture/backend.en.md) · [Local AI](docs/architecture/ai-assistant.en.md) · [Package manager](docs/architecture/packages.en.md) · [Boot & storage](docs/architecture/boot-and-storage.en.md) · [Network & security](docs/architecture/network-security.en.md) · [Hardware](docs/architecture/hardware.en.md)

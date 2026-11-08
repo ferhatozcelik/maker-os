@@ -11,6 +11,7 @@ MakerOS dokümantasyonu; işletim sistemi mimarisini, arka uç servislerini, mas
 - [Önyükleme ve Depolama](architecture/boot-and-storage.md) — EROFS kök dosya sistemi, ext4 `/data` ve RAUC + `tryboot` A/B güncelleme
 - [Masaüstü ve Web Kabuğu](architecture/desktop.md) — `/` masaüstü ve `/web` mobil arayüzü, pencere yönetimi ve temalar
 - [Rust Arka Uç Servisleri](architecture/backend.md) — `makerd`, `makerd-priv`, `makerd-user` ve süreç koordinasyonu
+- [Paket Yöneticisi](architecture/packages.md) — `mos pkg` / `apt`: microSD'deki Debian kutusuna kullanıcı yetkisiyle paket kurma
 - [Yerel AI Asistanı](architecture/ai-assistant.md) — `makeros-ai`, Qwen2.5-0.5B-Instruct, sohbet ve komut çalıştırma modları
 - [Ağ ve Güvenlik](architecture/network-security.md) — Oturum, CSRF, WebSocket Origin denetimi, Hotspot ve USB-C ağı
 - [Donanım Desteği](architecture/hardware.md) — Pi 4 / 400 uyumlu ARM64 kartlar, GPIO, I²C, SPI, UART ve Kamera altyapısı

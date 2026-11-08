@@ -105,35 +105,20 @@ MakerOS katmanlardan oluşur; her katman kendi dizininde durur ve kendi belgesiy
 
 ```mermaid
 flowchart TB
-  subgraph UI["🖥️ Kullanıcı arayüzü — shell/"]
-    direction LR
-    LOCAL["Yerel ekran<br/>labwc + Cog/WPE"]
-    WEB["Ağdaki tarayıcı<br/>/ ve /web"]
-    PHONE["Telefon<br/>mobil görünüm"]
-  end
-  subgraph SVC["⚙️ Rust servisleri — makerd/"]
-    direction LR
-    MAKERD["makerd<br/>HTTP/WS API"]
-    PRIV["makerd-priv<br/>ayrıcalıklı işlemler"]
-    USER["makerd-user<br/>süreçler + PTY"]
-    AI["makeros-ai<br/>yerel LLM"]
-  end
-  subgraph BOX["📦 Paket kutusu — mos pkg"]
-    DEB["Debian trixie (podman, rootless)<br/>apt install …"]
-  end
-  subgraph OS["🧱 İşletim sistemi — os/"]
-    direction LR
-    KERNEL["Linux 6.18 ARM64<br/>systemd"]
-    RO["EROFS kök (salt okunur)"]
-    RAUC["RAUC A/B OTA"]
-  end
-  HW["🔌 Pi 4 / 400 uyumlu ARM64 kart<br/>GPIO · I²C · SPI · UART · CSI kamera"]
-
+  UI["🖥️ <b>Kullanıcı arayüzü</b> · shell/<br/>Yerel ekran (labwc + Cog/WPE) · Ağdaki tarayıcı · Telefon"]
+  SVC["⚙️ <b>Rust servisleri</b> · makerd/<br/>makerd (HTTP/WS API) · makerd-priv · makerd-user · makeros-ai (yerel LLM)"]
+  BOX["📦 <b>Paket kutusu</b> · mos pkg / apt<br/>Debian trixie · rootless podman"]
+  OS["🧱 <b>İşletim sistemi</b> · os/<br/>Linux 6.18 ARM64 · systemd · EROFS kök (salt okunur) · RAUC A/B OTA"]
+  HW["🔌 <b>Pi 4 / 400 uyumlu ARM64 kart</b><br/>GPIO · I²C · SPI · UART · CSI kamera"]
   UI -- "HTTPS + WebSocket" --> SVC
+  UI -- "apt install · komutlar ve uygulamalar geri aktarılır" --> BOX
   SVC --> OS
-  BOX -. "komutlar + uygulamalar aktarılır" .-> UI
   BOX --> OS
   OS --> HW
+  classDef ui fill:#fff4ea,stroke:#f07a1a,color:#17181b
+  classDef core fill:#f3f1ed,stroke:#8b8e96,color:#17181b
+  class UI,BOX ui
+  class SVC,OS,HW core
 ```
 
 **Katman belgeleri:** [Masaüstü kabuğu](docs/architecture/desktop.md) · [Rust arka uç](docs/architecture/backend.md) · [Yerel AI](docs/architecture/ai-assistant.md) · [Paket yöneticisi](docs/architecture/packages.md) · [Önyükleme ve depolama](docs/architecture/boot-and-storage.md) · [Ağ ve güvenlik](docs/architecture/network-security.md) · [Donanım](docs/architecture/hardware.md)
