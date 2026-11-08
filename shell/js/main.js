@@ -83,9 +83,19 @@ S.launch = async (app, o = {}) => {
   closeOverlay();
   // MakerOS yerleşik tarayıcısı: hem Pi ekranında hem uzaktan her zaman pencere içinde açılır.
   if (isBrowser(app)) {
+    let p = o.path || "";
+    if (p) {
+      try {
+        const u = new URL(p, location.origin);
+        const LOOP = /^(localhost|0\.0\.0\.0|127(\.\d{1,3}){3}|\[::1?\])$/i;
+        if (u.port && (LOOP.test(u.hostname) || u.hostname === location.hostname)) {
+          p = `/port/${u.port}${u.pathname || "/"}${u.search}${u.hash}`;
+        }
+      } catch {}
+    }
     const br = { ...app, kind: "web", url: "/shell/apps/browser/", w: 1180, h: 760, single: true };
     // Adresle açılış (ör. terminaldeki bağlantı): açık pencere varsa o adrese gider.
-    return o.path ? wm.open(br, { path: o.path }) : wm.activateApp(br);
+    return p ? wm.open(br, { path: p }) : wm.activateApp(br);
   }
   if (app.kind === "native") {
     // Diğer yerel uygulamalar Pi'nin kendi ekranında (labwc) açılır.

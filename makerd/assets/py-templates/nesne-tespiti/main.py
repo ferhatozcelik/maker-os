@@ -308,7 +308,7 @@ def main():
         def enc(img):  # yazılım JPEG yalnız deneme kaynağında
             frames.write(cv2.imencode(".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, 70])[1])
     serve(a.port, frames, state, det)
-    print(f"Arayüz: http://0.0.0.0:{a.port}   (Ctrl+C ile durdur)", flush=True)
+    print(f"Arayüz: http://localhost:{a.port}  (/port/{a.port}/)   (Ctrl+C ile durdur)", flush=True)
     n, t_last, ms_acc = 0, time.perf_counter(), 0.0
     while True:
         img = src.lores()

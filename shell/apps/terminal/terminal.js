@@ -45,7 +45,15 @@ function newTab(existing) {
     const line = tab.term.buffer.active.getLine(y - 1)?.translateToString(true) || "";
     const out = [];
     for (const m of line.matchAll(/https?:\/\/[^\s"'<>()]+[^\s"'<>().,;:]/g)) {
-      out.push({ text: m[0], range: { start: { x: m.index + 1, y }, end: { x: m.index + m[0].length, y } }, activate: (_, u) => app.open("chromium", u) });
+      let u = m[0];
+      try {
+        const x = new URL(u, location.origin);
+        const LOOP = /^(localhost|0\.0\.0\.0|127(\.\d{1,3}){3}|\[::1?\])$/i;
+        if (x.port && (LOOP.test(x.hostname) || x.hostname === location.hostname)) {
+          u = `/port/${x.port}${x.pathname || "/"}${x.search}${x.hash}`;
+        }
+      } catch {}
+      out.push({ text: m[0], range: { start: { x: m.index + 1, y }, end: { x: m.index + m[0].length, y } }, activate: () => app.open("chromium", u) });
     }
     cb(out.length ? out : undefined);
   } });

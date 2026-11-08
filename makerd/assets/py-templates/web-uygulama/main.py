@@ -22,5 +22,5 @@ class App(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
 
-print(f"http://0.0.0.0:{PORT}")
+print(f"Arayüz: http://localhost:{PORT}  (/port/{PORT}/)")
 ThreadingHTTPServer(("", PORT), App).serve_forever()

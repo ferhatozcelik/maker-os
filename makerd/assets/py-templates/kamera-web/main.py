@@ -70,5 +70,5 @@ class Handler(server.BaseHTTPRequestHandler):
 
 
 threading.Thread(target=camera, daemon=True).start()
-print("Yayın: http://0.0.0.0:8000  (Ctrl+C ile durdur)")
+print("Yayın: http://localhost:8000  (/port/8000/)  (Ctrl+C ile durdur)")
 server.ThreadingHTTPServer(("", 8000), Handler).serve_forever()
