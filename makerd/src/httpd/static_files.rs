@@ -124,8 +124,14 @@ impl Static {
         }
         let Some((mut file, mut md)) = found.filter(|(_, m)| m.is_file()) else { return not_found() };
         let mut headers = vec![(header::CONTENT_TYPE, HeaderValue::from_static(content_type(&rel)))];
-        // Yalnız yazı tipleri değişmez kabul edilir; diğer her şey ETag ile yeniden doğrulanır.
-        headers.push((header::CACHE_CONTROL, HeaderValue::from_static(if rel.ends_with(".woff2") { "public, max-age=31536000, immutable" } else { "no-cache" })));
+        let cc = if rel.ends_with(".woff2") {
+            "public, max-age=31536000, immutable"
+        } else if rel.ends_with(".html") || rel.ends_with(".js") || rel.ends_with(".json") || rel.ends_with(".webmanifest") {
+            "no-cache, no-store, must-revalidate, max-age=0"
+        } else {
+            "no-cache, must-revalidate"
+        };
+        headers.push((header::CACHE_CONTROL, HeaderValue::from_static(cc)));
         let ae = req.headers.get(header::ACCEPT_ENCODING).and_then(|v| v.to_str().ok()).unwrap_or("");
         let mut suffix = "";
         for (ext, enc) in [(".br", "br"), (".gz", "gzip")] {

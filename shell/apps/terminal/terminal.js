@@ -53,7 +53,7 @@ function newTab(existing) {
           u = `/port/${x.port}${x.pathname || "/"}${x.search}${x.hash}`;
         }
       } catch {}
-      out.push({ text: m[0], range: { start: { x: m.index + 1, y }, end: { x: m.index + m[0].length, y } }, activate: () => app.open("chromium", u) });
+      out.push({ text: m[0], range: { start: { x: m.index + 1, y }, end: { x: m.index + m[0].length, y } }, activate: () => app.open("makeros.browser", u) });
     }
     cb(out.length ? out : undefined);
   } });
@@ -62,8 +62,15 @@ function newTab(existing) {
     tab.term.parser?.registerOscHandler(777, data => {
       const s = String(data || "").trim();
       if (s.startsWith("open;")) {
-        const u = s.slice(5).trim();
-        app.open("chromium", u);
+        let u = s.slice(5).trim();
+        try {
+          const x = new URL(u, location.origin);
+          const LOOP = /^(localhost|0\.0\.0\.0|127(\.\d{1,3}){3}|\[::1?\])$/i;
+          if (x.port && (LOOP.test(x.hostname) || x.hostname === location.hostname)) {
+            u = `/port/${x.port}${x.pathname || "/"}${x.search}${x.hash}`;
+          }
+        } catch {}
+        app.open("makeros.browser", u);
         return true;
       }
       return false;

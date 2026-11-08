@@ -287,8 +287,9 @@ async function start() {
   if (mq.matches) layout(); // mobil başlatıcıyı yükle
   else wm.restoreSession(appById); // telefonda her zaman ana ekrandan başla
   const page = qs.get("open") || pref("startupApp"); // ?open=makeros.terminal ya da otomatik başlatma uygulaması
+  const openPath = qs.get("path") || "";
   if (page) {
-    S.launch(page).then(w => {
+    S.launch(page, { path: openPath }).then(w => {
       if (w && !qs.get("open") && pref("startupFullscreen") && w.state !== "full") wm.fullscreen(w);
     });
   }

@@ -59,6 +59,7 @@ function renderTabbar() {
 }
 
 function show(id, path = "") {
+  if (id === "makeros.chromium" || id === "chromium") id = "makeros.browser";
   if (id !== "home" && !APPS.some(a => a.id === id)) id = "home";
   cur = id;
   document.body.classList.remove("drawer");
@@ -69,17 +70,29 @@ function show(id, path = "") {
   if (id === "home") { ttl.textContent = t("web.home"); document.title = "MakerOS"; renderHome(); return; }
   const app = APPS.find(a => a.id === id);
   ttl.textContent = app.name; document.title = app.name + " · MakerOS";
+  let targetPath = path;
+  if (id === "makeros.browser" && targetPath) {
+    try {
+      const u = new URL(targetPath, location.origin);
+      const LOOP = /^(localhost|0\.0\.0\.0|127(\.\d{1,3}){3}|\[::1?\])$/i;
+      if (u.port && (LOOP.test(u.hostname) || u.hostname === location.hostname)) {
+        targetPath = `/port/${u.port}${u.pathname || "/"}${u.search}${u.hash}`;
+      }
+    } catch {}
+  }
   let f = frames.get(id);
   if (!f) {
-    f = h("iframe", { src: app.url + (path ? "#" + path : ""), title: app.name, allow: "clipboard-read; clipboard-write; fullscreen; camera; microphone" });
+    f = h("iframe", { src: app.url + (targetPath ? "#" + targetPath : ""), title: app.name, allow: "clipboard-read; clipboard-write; fullscreen; camera; microphone" });
     frames.set(id, f); view.append(f);
-  } else if (path) f.contentWindow?.postMessage({ mk: "navigate", path }, location.origin);
+  } else if (targetPath) f.contentWindow?.postMessage({ mk: "navigate", path: targetPath }, location.origin);
 }
 
 function route() {
   const [a, ...rest] = location.hash.slice(1).split("/");
+  let appId = a ? (a.startsWith("makeros.") ? a : "makeros." + a) : "home";
+  if (appId === "makeros.chromium") appId = "makeros.browser";
   const path = decodeURIComponent(rest.join("/"));
-  show(a ? (a.startsWith("makeros.") ? a : "makeros." + a) : "home", path);
+  show(appId, path);
 }
 addEventListener("hashchange", route);
 
@@ -88,7 +101,22 @@ addEventListener("message", e => {
   if (e.origin !== location.origin || !e.data?.mk) return;
   const m = e.data, src = [...frames].find(([, f]) => f.contentWindow === e.source)?.[0];
   if (m.mk === "title" && src === cur && m.title) ttl.textContent = m.title;
-  else if (m.mk === "open") { const id = m.app; location.hash = short(id) + (m.path ? "/" + encodeURIComponent(m.path) : ""); if (m.path && frames.has(id)) frames.get(id).contentWindow?.postMessage({ mk: "navigate", path: m.path }, location.origin); }
+  else if (m.mk === "open") {
+    let id = m.app;
+    if (id === "chromium") id = "makeros.browser";
+    let p = m.path || "";
+    if (id === "makeros.browser" && p) {
+      try {
+        const u = new URL(p, location.origin);
+        const LOOP = /^(localhost|0\.0\.0\.0|127(\.\d{1,3}){3}|\[::1?\])$/i;
+        if (u.port && (LOOP.test(u.hostname) || u.hostname === location.hostname)) {
+          p = `/port/${u.port}${u.pathname || "/"}${u.search}${u.hash}`;
+        }
+      } catch {}
+    }
+    location.hash = short(id) + (p ? "/" + encodeURIComponent(p) : "");
+    if (p && frames.has(id)) frames.get(id).contentWindow?.postMessage({ mk: "navigate", path: p }, location.origin);
+  }
   else if (m.mk === "widget-size" && widgetEl && e.source === widgetEl.contentWindow && m.h > 40 && m.h < 800) widgetEl.style.height = m.h + "px";
   else if (m.mk === "close") location.hash = "";
   else if (m.mk === "unauthorized") location.replace("/?next=/web");

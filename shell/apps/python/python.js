@@ -151,7 +151,7 @@ async function openProject(name) {
   const dot = h("span.dot"), meta = h("span.meta"), runB = btn(t("py.run"), toggleRun, ".primary");
   // Web arayüzlü projeler (şablonda "ui": port): çalışınca arayüz MakerOS Tarayıcı penceresinde açılır (/port/<port>/ vekili).
   const uiURL = () => `/port/${P.status.ui}/`;
-  const uiB = btn("", () => app.open("chromium", uiURL()), ".primary");
+  const uiB = btn("", () => app.open("makeros.browser", uiURL()), ".primary");
   uiB.innerHTML = icon("app-window", 13, 2.2) + " " + t("py.openUi"); uiB.hidden = true;
   const tabsEl = h("div.seg", ...[["code", t("py.tab.code")], ["packages", t("py.tab.packages")], ["output", t("py.tab.output")], ["settings", t("py.tab.settings")]]
     .map(([id, l]) => h("button" + (id === P.tab ? ".on" : ""), { "data-t": id, onclick: () => setTab(id) }, l)));
@@ -185,7 +185,7 @@ async function openProject(name) {
     while (P === me && P.status?.running && Date.now() < until) {
       try {
         const r = await fetch(relUrl, { cache: "no-store" });
-        if (r.status < 500) { app.open("chromium", relUrl); return; }
+        if (r.status < 500) { app.open("makeros.browser", relUrl); return; }
       } catch { /* henüz hazır değil */ }
       await new Promise(r => setTimeout(r, 1500));
       if (P === me) await P.refresh().catch(() => {});

@@ -211,12 +211,12 @@ function piLocal(u) {
     const isSameHost = x.hostname === location.hostname;
     if (!isLoop && !isSameHost) return null;
     // Yerel bir port varsa /port/<port>/ vekil yoluna çevir (Cloudflare Tunnel ve uzak bağlantılarda çalışabilmesi için)
-    if (x.port && (isLoop || x.port !== (location.port || (location.protocol === "https:" ? "443" : "80")))) {
-      return new URL(`/port/${x.port}${x.pathname || "/"}${x.search}${x.hash}`, location.origin);
+    const p = x.port;
+    if (p && p !== "80" && p !== "443" && p !== (location.port || (location.protocol === "https:" ? "443" : "80"))) {
+      return new URL(`/port/${p}${x.pathname || "/"}${x.search}${x.hash}`, location.origin);
     }
     if (isLoop) {
-      x.hostname = location.hostname;
-      return x;
+      return new URL(`${x.pathname || "/"}${x.search}${x.hash}`, location.origin);
     }
     return x;
   } catch { return null; }

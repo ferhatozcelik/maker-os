@@ -2,7 +2,7 @@
 // Strateji: ağ önce. Kabuk dosyaları başarılı her yanıtta önbelleğe yazılır; Pi'ye ulaşılamazsa
 // önbellekten açılır (en azından "bağlantı yok" ekranı ve son görülen arayüz). API, WebSocket,
 // akışlar (kamera/terminal) ve dosya indirmeleri hiç önbelleklenmez.
-const CACHE = "makeros-shell-v5";
+const CACHE = "makeros-shell-v6";
 const SKIP = /^\/(api|plugin|port)\//;
 
 self.addEventListener("install", e => { self.skipWaiting(); e.waitUntil(caches.open(CACHE).then(c => c.addAll(["/web", "/shell/icons/pwa-192.png"]).catch(() => {}))); });
