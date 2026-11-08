@@ -1,21 +1,42 @@
-//! Türkçe Linux asistanı: sistem istemi ve doğrulanmış komut kartları.
+//! Türkçe MakerOS ve Linux asistanı: sistem istemleri, MakerOS bilgi bankası ve doğrulanmış komut kartları.
 //!
-//! Pi 4'te istem işleme yavaştır (~20 token/sn): sistem istemi kısa ve SABİT tutulur ki llama-server önbelleği
-//! (aynı önek bir kez hesaplanır) her istekte işe yarasın. Soruya göre seçilen "bilgi kartları" (0.5B modelin
-//! komut uydurmaması için doğrulanmış komutlar) değişken kısma, yani son kullanıcı iletisine eklenir.
+//! Asistan üç modda doğal olarak yanıt verir:
+//! 1. **Sohbet & MakerOS & Genel Konular (`CHAT_SYSTEM`):** Kullanıcı MakerOS özelliklerini, uygulamalarını,
+//!    Python/elektronik/yazılım konularını sorduğunda ya da günlük sohbet ettiğinde kalıp komut şablonuna
+//!    girmeden doğal, samimi ve bilgilendirici Türkçe yanıt verir.
+//! 2. **Linux Komut İstemi (`SYSTEM`):** Kullanıcı sistem durumu, dosya/ağ/servis işlemi veya terminal komutu
+//!    istediğinde çalıştırılabilir ```bash bloğu ve açıklamasıyla yanıt verir.
+//! 3. **Hata Çözümleme & Olay Özeti:** Hata mesajlarını neden-çözüm olarak açıklar; bildirim sorularında
+//!    son olayları özetler.
 
-/// Varsayılan sistem istemi (Türkçe).
-pub const SYSTEM: &str = "Sen MakerOS'un Türkçe Linux asistanısın; Raspberry Pi 4 üzerinde internetsiz çalışıyorsun.
+/// Komut ve hata çözümleme için sistem istemi (Türkçe).
+pub const SYSTEM: &str = "Sen MakerOS 2.0'ın yerleşik Türkçe yapay zeka asistanısın; Raspberry Pi 4 üzerinde çalışıyorsun.
+MakerOS Hakkında:
+- MakerOS; Dosyalar, Terminal, Python Yöneticisi (uv tabanlı sanal ortam ve GPIO/Kamera/Web/AI proje şablonları), AI Ajanları (Claude Code, Codex, Gemini, OpenCode, Ollama), Kamera, GPIO (40-pin kontrolü), Eklentiler, Etkinlik Monitörü, Tarayıcı ve Ayarlar (Wi-Fi, Ağ/Hotspot, Görünüm/Sistem UI gizleme, Otomatik Başlatma & Cron Zamanlayıcı, OTA Güncelleme, Kullanıcı, Güç) uygulamalarını içeren modern bir masaüstü işletim sistemidir.
 Kurallar:
-- Her zaman Türkçe yanıt ver.
-- Komutları asla kendin çalıştırmazsın; yalnızca önerirsin, kullanıcı çalıştırır.
-- Önce salt okunur komutları öner. Silme, biçimlendirme, izin veya kullanıcı değiştirme gerekiyorsa açıkça uyar.
-- Bilmiyorsan uydurma; \"emin değilim\" de. \"Bilgi\" bölümü verilmişse oradaki komutları kullan.
-Komut istenirse örnekteki biçimi aynen kullan: Komut, Ne yapar, Parametreler, Beklenen çıktı, Olası hatalar, Alternatif, Risk.
+- Her zaman Türkçe, net ve yardımcı yanıt ver.
+- Komutları asla kendin çalıştırmazsın; ```bash bloğu içinde önerirsin, arayüz çalıştırır.
+- Önce salt okunur komutları öner. Silme, biçimlendirme veya izin değişikliği gerekiyorsa açıkça uyar.
+- \"Bilgi\" bölümü verilmişse oradaki doğrulanmış bilgileri ve komutları kullan.
+Komut istenirse örnekteki biçimi kullan: Komut, Ne yapar, Parametreler, Beklenen çıktı, Olası hatalar, Alternatif, Risk.
 Hata mesajı verilirse: **Anlamı**, **Olası nedenler** (madde madde), **Çözüm** (güvenli komutlarla).";
 
-/// Biçim örneği (few-shot): sistem isteminden hemen sonra sabit bir kullanıcı/asistan çifti. Küçük model biçimi
-/// talimattan çok örnekten öğrenir; sabit önekin parçası olduğu için önbellekte bir kez hesaplanır.
+/// Doğal sohbet, MakerOS soruları ve genel konular için sistem istemi.
+pub const CHAT_SYSTEM: &str = "Sen MakerOS 2.0'ın yerleşik Türkçe yapay zeka asistanısın; Raspberry Pi 4 üzerinde çalışıyorsun.
+MakerOS 2.0 Özellikleri:
+- Masaüstü Uygulamaları: Dosyalar (~/Projeler, ~/Belgeler, ~/Resimler, ~/İndirilenler), Terminal (sekmeli kabuk), Python Yöneticisi (uv ile hızlı sanal ortam, paket yönetimi, hazır proje şablonları: LED, Buton+LED, I2C tarayıcı, Kamera fotoğraf/web, Web uygulaması, Nesne tespiti), AI Ajanları (Claude Code, Codex CLI, Gemini CLI, OpenCode, Ollama), Kamera (canlı MJPEG yayın ve fotoğraf çekimi), GPIO (40-pin Raspberry Pi pinlerini canlı izleme ve HIGH/LOW sürme), Eklentiler (.zip eklenti mağazası ve Konya HackerSpace teması), Etkinlik Monitörü (CPU/RAM/sıcaklık ve süreç yönetimi), Tarayıcı (Raspberry Pi internetini kullanan yerleşik web tarayıcısı) ve Ayarlar.
+- Ayarlar Sayfaları: Wi-Fi, Ağ (Ethernet, Hotspot erişim noktası, varsayılan yerel IP 10.42.0.0, USB-C bağlantısı 10.55.0.1 / makeros.local), Genel (cihaz adı, OTA yazılım güncellemesi), Tarih ve Saat, Dil ve Klavye, Görünüm (açık/koyu tema, duvar kâğıdı, Üst Menü Çubuğu / Raf / AI Asistan / Sıcaklık / Bildirim gizleme), Otomatik Başlatma (açılışta uygulama/Python projesi/betik çalıştırma ve Cron zamanlayıcı), Kullanıcı ve Parola, Güç (yeniden başlat / kapat).
+Kurallar:
+- Her zaman doğal, akıcı ve samimi Türkçe ile yanıt ver.
+- Kullanıcı MakerOS, yazılım, Python, elektronik, Raspberry Pi veya genel konular hakkında sohbet ediyorsa doğrudan sohbet ederek açıkla; gereksiz yere 'Komut / Parametreler / Risk' şablonu kullanma.
+- Eğer sorunun yanıtında bir kod veya komut örneği yararlı olacaksa kısa bir kod bloğu ekleyebilirsin.
+- \"Bilgi\" bölümü verilmişse yanıtında o bilgileri esas al.";
+
+/// Sohbet modu için kısa örnek çifti (modelin kalıp komut şablonuna kaymadan doğal konuşmasını sağlar).
+pub const CHAT_EXAMPLE_Q: &str = "Merhaba! MakerOS nedir ve neler yapabilirim?";
+pub const CHAT_EXAMPLE_A: &str = "Merhaba! **MakerOS**, Raspberry Pi 4 için geliştirilmiş Türkçe masaüstü ve maker işletim sistemidir.\n\nMakerOS ile şunları yapabilirsiniz:\n- **Python Yöneticisi** ile `uv` tabanlı sanal ortamlarda GPIO, kamera, web ve yapay zeka projeleri oluşturup çalıştırabilirsiniz.\n- **GPIO** ve **Kamera** uygulamalarıyla devrelerinizi ve kameranızı doğrudan arayüzden kontrol edebilirsiniz.\n- **AI Ajanları** ile Claude Code, Gemini, Codex, OpenCode veya Ollama'yı tek tıkla başlatabilirsiniz.\n- **Ayarlar › Otomatik Başlatma** bölümünden açılışta veya belirli saatlerde (Cron) çalışacak Python projeleri ve betikler tanımlayabilirsiniz.\n\nBana istediğiniz zaman bir uygulama açtırabilir, sistem komutu çalıştırtabilir ya da Python, elektronik ve genel konularda soru sorabilirsiniz!";
+
+/// Biçim örneği (few-shot): komut istemleri için.
 pub const EXAMPLE_Q: &str = "Disk alanını kontrol et.";
 pub const EXAMPLE_A: &str = "**Komut:**
 ```bash
@@ -44,11 +65,55 @@ sudo cat /var/log/syslog
 ```
 Risk: dikkat, sudo yönetici yetkisi kullanır. İzinleri chmod 777 ile herkese açmayın.";
 
-/// Doğrulanmış komut kartı: anahtar sözcükler (küçük harf, Türkçe) ve modele verilecek kısa bilgi.
+/// Doğrulanmış bilgi/komut kartı: anahtar sözcükler (küçük harf, Türkçe) ve modele verilecek kısa bilgi.
 struct Card {
     keys: &'static [&'static str],
     text: &'static str,
 }
+
+/// MakerOS'a özgü uygulama, özellik ve kullanım kartları.
+const MAKEROS_CARDS: &[Card] = &[
+    Card {
+        keys: &["makeros", "maker os", "işletim sistemi", "masaüstü", "özellik", "neler var", "ne işe yarar"],
+        text: "MakerOS 2.0: Raspberry Pi 4 üzerinde çalışan Türkçe masaüstü işletim sistemidir. Yerleşik uygulamaları: Dosyalar, Terminal, Python Yöneticisi (uv tabanlı), AI Ajanları (Claude Code, Codex, Gemini, OpenCode, Ollama), Kamera, GPIO, Eklentiler, Etkinlik Monitörü, Tarayıcı ve Ayarlar. USB-C ile bilgisayara takıldığında 10.55.0.1 (makeros.local) adresinden doğrudan masaüstü açılır.",
+    },
+    Card {
+        keys: &["python yöneticisi", "proje oluştur", "yeni proje", "şablon", "uv ", "pyproject", "sanal ortam", "projeler"],
+        text: "MakerOS Python Yöneticisi: Projeler `~/Projeler/<ad>` dizininde `uv` ile sanal ortamda oluşturulur. Hazır şablonlar: Boş Proje, LED Yak-Söndür (GPIO), Buton ve LED, I2C Aygıt Tarayıcı, Kamera Fotoğraf Çekici, Kamera Web Yayını, Web Uygulaması (HTTP sunucu) ve Nesne Tespiti. Paket eklemek için Python Yöneticisi'ndeki Paketler sekmesi veya `uv add <paket>` kullanılır.",
+    },
+    Card {
+        keys: &["otomatik başlat", "başlangıç", "cron", "zamanlayıcı", "zamanlanmış", "açılışta", "autostart"],
+        text: "MakerOS Otomatik Başlatma & Zamanlayıcı (Ayarlar › Otomatik Başlatma): 1) Açılışta masaüstü uygulaması başlatma (tam ekran seçeneğiyle), 2) Python projelerinin sistem açılışında otomatik çalışması, 3) Sistem açılışında (@reboot) veya belirli zamanlarda (5 alanlı Cron ifadesiyle, ör. `*/5 * * * *` veya `0 9 * * *`) Python projesi ya da kabuk/Python betiği çalıştırma.",
+    },
+    Card {
+        keys: &["gpio", "pin", "led", "buton", "sensör", "i2c", "spi", "pwm", "donanım"],
+        text: "MakerOS GPIO Uygulaması: Raspberry Pi 40-pin başlığını canlı gösterir; pinleri giriş/çıkış olarak ayarlayıp HIGH (3.3V) veya LOW (0V) sürebilirsiniz. Python'da `gpiod` kütüphanesi (ör. GPIO 17 = Fiziksel Pin 11) kullanılır. I2C aygıtlarını taramak için `i2cdetect -y 1`, pin durumu için `gpioinfo` veya `pinctrl` kullanılabilir.",
+    },
+    Card {
+        keys: &["kamera", "fotoğraf", "mjpeg", "video", "rpicam", "picamera", "csi"],
+        text: "MakerOS Kamera Uygulaması: Bağlı CSI veya USB kameradan canlı MJPEG görüntü akışı sağlar ve tek tıkla fotoğraf çeker. Çekilen fotoğraflar `~/Resimler/Kamera/` klasörüne tarih-saat adıyla kaydedilir. Asistana 'Fotoğraf çek' yazarak da doğrudan fotoğraf çekebilirsiniz.",
+    },
+    Card {
+        keys: &["ajan", "claude", "codex", "gemini", "opencode", "ollama", "yapay zeka"],
+        text: "MakerOS AI Ajanları: Claude Code, Codex CLI, Gemini CLI, OpenCode ve Ollama desteklenir. AI Ajanları uygulamasından veya asistana 'Claude Code'u aç' yazarak kurabilir ve doğrudan Terminal sekmesinde başlatabilirsiniz.",
+    },
+    Card {
+        keys: &["eklenti", "plugin", "mağaza", "khs", "hackerspace", "konya"],
+        text: "MakerOS Eklentiler: `~/.local/share/makeros/plugins/<id>` altında çalışan `.zip` paketleridir (`plugin.json` + `main.py`). Web arayüzü, masaüstü widget'ı, menü çubuğu durumu ve özel tema getirebilir (ör. Konya HackerSpace eklentisi kapı durumunu ve temasını sağlar).",
+    },
+    Card {
+        keys: &["görünüm", "tema", "duvar kağıdı", "duvar kâğıdı", "üst çubuk", "menü çubuğu", "raf", "dock", "gizle"],
+        text: "MakerOS Görünüm Ayarları (Ayarlar › Görünüm): Açık/Koyu mod, vurgu rengi, tema ve duvar kâğıdı (masaüstü ve kilit ekranı ortak) değiştirilebilir. 'Sistem Arayüzü (UI) Öğeleri' bölümünden Üst Menü Çubuğu, Uygulama Rafı (Dock), Masaüstü AI Asistan Widget'ı, Tema Widget'ı, CPU Sıcaklığı ve Bildirim Balonları ayrı ayrı gizlenip gösterilebilir.",
+    },
+    Card {
+        keys: &["tarayıcı", "browser", "chromium", "internet sitesi", "web sitesi"],
+        text: "MakerOS Tarayıcı: Tüm web sayfalarını, alt kaynakları (resim, CSS, JS, form) ve aramaları host bilgisayarın internetini kullanmadan doğrudan Raspberry Pi'nin internet bağlantısı (`/api/v1/browse`) üzerinden MakerOS penceresi içinde açar.",
+    },
+    Card {
+        keys: &["güncelleme", "ota", "yeni sürüm", "rauc", "sistem güncelle"],
+        text: "MakerOS Yazılım Güncellemesi (Ayarlar › Genel): A/B çift bölümlü RAUC güncelleme yapısıyla GitHub Releases üzerinden yeni sürümü denetler, indirir ve güvenli şekilde uygular.",
+    },
+];
 
 const CARDS: &[Card] = &[
     Card { keys: &["sıcaklı", "sicakli", "ısı", "derece", "temperature", "ısın", "soğu"], text: "CPU sıcaklığı: `cat /sys/class/thermal/thermal_zone0/temp` (milli-°C; 1000'e bölün, ör. 48312 = 48,3 °C). Raspberry Pi OS'ta alternatif: `vcgencmd measure_temp`." },
@@ -104,13 +169,11 @@ pub fn lower_tr(s: &str) -> String {
     o.replace("i̇", "i")
 }
 
-/// Soruyla en ilgili en fazla `max` kart (eşleşen anahtar sayısına göre).
-pub fn cards_for(question: &str, max: usize) -> Vec<&'static str> {
+fn score_cards(pool: &[Card], question: &str, max: usize) -> Vec<&'static str> {
     let q = lower_tr(question);
-    // "ip" gibi kısa anahtarlar yalnız tam sözcük olarak sayılır ("ipucu" değil).
     let words: Vec<&str> = q.split(|c: char| !c.is_alphanumeric() && c != '-').filter(|w| !w.is_empty()).collect();
     let hit = |k: &str| if k.chars().count() <= 3 { words.iter().any(|w| *w == k) } else { q.contains(k) };
-    let mut scored: Vec<(usize, usize, &'static str)> = CARDS
+    let mut scored: Vec<(usize, usize, &'static str)> = pool
         .iter()
         .enumerate()
         .filter_map(|(i, c)| {
@@ -122,7 +185,17 @@ pub fn cards_for(question: &str, max: usize) -> Vec<&'static str> {
     scored.into_iter().take(max).map(|x| x.2).collect()
 }
 
-/// Soru son olaylarla/bildirimlerle mi ilgili? (Pi'de istem işleme yavaş: olaylar yalnız gerekince eklenir.)
+/// Soruyla en ilgili en fazla `max` Linux komut kartı.
+pub fn cards_for(question: &str, max: usize) -> Vec<&'static str> {
+    score_cards(CARDS, question, max)
+}
+
+/// Soruyla en ilgili en fazla `max` MakerOS bilgi kartı.
+pub fn makeros_cards_for(question: &str, max: usize) -> Vec<&'static str> {
+    score_cards(MAKEROS_CARDS, question, max)
+}
+
+/// Soru son olaylarla/bildirimlerle mi ilgili?
 pub fn wants_events(question: &str) -> bool {
     let q = lower_tr(question);
     ["bildirim", "olay", "ne oldu", "neler oldu", "son durum", "uyarı", "haber", "ne değişti", "son gelen"].iter().any(|k| q.contains(k))
@@ -145,20 +218,67 @@ pub fn events_context(lines: &[String], n: usize) -> String {
     s
 }
 
-/// Soru bir hata mesajı mı (açıklama biçimi) yoksa komut isteği mi?
+/// Soru bir hata mesajı mı (açıklama biçimi) yoksa komut/sohbet isteği mi?
 pub fn is_error_report(question: &str) -> bool {
     let q = lower_tr(question);
     const ERR: [&str; 22] = ["hata", "error", "failed", "denied", "not found", "cannot", "can't", "could not", "unable", "no such", "refused", "segmentation", "killed", "timeout", "warning:", "e: ", "fatal", "bulunamadı", "başarısız", "reddedildi", "çöktü", "invalid"];
     ERR.iter().any(|k| q.contains(k)) && !q.starts_with("son sistem hata") && !q.contains("hataları göster") && !q.contains("hatalarını göster")
 }
 
-/// Son kullanıcı iletisine eklenen kısa biçim ipucu ve bilgi bölümü.
+/// Soru doğrudan bir Linux sistem komutu / sistem ölçümü mü istiyor, yoksa sohbet / MakerOS / genel soru mu?
+pub fn wants_command(question: &str) -> bool {
+    if is_error_report(question) || wants_events(question) {
+        return false;
+    }
+    let q = lower_tr(question);
+    // Selamlaşma, genel sohbet veya "MakerOS nedir / nasıl kullanılır" tarzı kavramsal sorular sohbet modunda yanıtlanır.
+    let chat_markers = [
+        "merhaba", "selam", "nasılsın", "nasilsin", "kimsin", "sen kimsin", "ne yapabilirsin", "neler yapabilirsin",
+        "makeros nedir", "maker os nedir", "nedir", "ne işe yarar", "anlat", "hakkında bilgi", "farkı nedir",
+        "nasıl yazılır", "örnek kod", "python'da", "pythonda", "teşekkür", "sağ ol", "iyi günler", "günaydın",
+    ];
+    if chat_markers.iter().any(|k| q.contains(k)) && !q.contains("komut") {
+        return false;
+    }
+    // MakerOS'a özgü kavramsal kart eşleşiyorsa ve açıkça terminal/bash komutu istenmiyorsa sohbet modunu tercih et.
+    if !makeros_cards_for(question, 1).is_empty() && !q.contains("komut") && !q.contains("terminal") {
+        let sys_check = ["sıcaklı", "ram ", "disk", "ip adres", "ping", "journalctl", "systemctl", "df ", "free "];
+        if !sys_check.iter().any(|k| q.contains(k)) {
+            return false;
+        }
+    }
+    // Açık komut isteği ya da sistem ölçüm kartı eşleşmesi:
+    let cmd_verbs = ["komut", "kontrol et", "listele", "göster", "öğren", "raporla", "ölç", "boyutunu", "loglarını", "hatalarını"];
+    !cards_for(question, 1).is_empty() || cmd_verbs.iter().any(|k| q.contains(k))
+}
+
+/// Son kullanıcı iletisine eklenen biçim ipucu ve bilgi bölümü.
 pub fn knowledge(question: &str) -> String {
-    let mut s = String::from(if is_error_report(question) { "\n\n(Hata açıklaması biçiminde yanıtla: Anlamı, Olası nedenler, Çözüm.)" } else { "\n\n(Komut biçiminde yanıtla: Komut, Ne yapar, Parametreler, Beklenen çıktı, Olası hatalar, Alternatif, Risk.)" });
-    let c = cards_for(question, 1);
-    if !c.is_empty() {
-        s.push_str("\nBilgi (doğrulanmış, bunu kullan):\n");
-        for t in c {
+    if is_error_report(question) {
+        let mut s = String::from("\n\n(Hata açıklaması biçiminde yanıtla: Anlamı, Olası nedenler, Çözüm.)");
+        for t in cards_for(question, 1) {
+            s.push_str("\nBilgi (doğrulanmış, bunu kullan):\n- ");
+            s.push_str(t);
+            s.push('\n');
+        }
+        return s;
+    }
+    if wants_command(question) {
+        let mut s = String::from("\n\n(Komut biçiminde yanıtla: Komut, Ne yapar, Parametreler, Beklenen çıktı, Olası hatalar, Alternatif, Risk.)");
+        for t in cards_for(question, 1) {
+            s.push_str("\nBilgi (doğrulanmış, bunu kullan):\n- ");
+            s.push_str(t);
+            s.push('\n');
+        }
+        return s;
+    }
+    // Doğal sohbet / MakerOS / genel konu modu:
+    let mut s = String::new();
+    let mk = makeros_cards_for(question, 2);
+    let lx = cards_for(question, 1);
+    if !mk.is_empty() || !lx.is_empty() {
+        s.push_str("\n\nBilgi (MakerOS bağlamı, yanıtında kullan):\n");
+        for t in mk.into_iter().chain(lx.into_iter()) {
             s.push_str("- ");
             s.push_str(t);
             s.push('\n');
@@ -195,6 +315,17 @@ mod tests {
         assert!(first("E: Could not get lock /var/lib/dpkg/lock-frontend").contains("lock"));
         assert!(cards_for("merhaba nasılsın", 2).is_empty());
         assert!(cards_for("bir ipucu ver", 2).is_empty()); // "ip" tam sözcük değil
+    }
+
+    #[test]
+    fn makeros_chat_and_cards() {
+        assert!(!wants_command("Merhaba nasılsın?"));
+        assert!(!wants_command("MakerOS nedir ve neler yapabilirim?"));
+        assert!(!wants_command("Otomatik başlatma ve cron nasıl ayarlanır?"));
+        assert!(wants_command("Disk alanını kontrol et."));
+        assert!(wants_command("CPU sıcaklığını göster."));
+        assert!(!makeros_cards_for("MakerOS nedir?", 1).is_empty());
+        assert!(!makeros_cards_for("Otomatik başlatma cron görevi", 1).is_empty());
     }
 
     #[test]

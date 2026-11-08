@@ -45,6 +45,7 @@ pub fn router(llama: Arc<Llama>) -> Router {
         .route("/v1/makeros/durum", get(status))
         .route("/v1/makeros/risk", post(risk_ep))
         .route("/v1/makeros/bosalt", post(unload))
+        .route("/v1/makeros/temizle", post(|| async { Json(json!({"ok": true, "cleared": true})) }))
         .route("/v1/makeros/olaylar", get(|| async { Json(json!({"olaylar": read_events()})) }))
         .with_state(app)
 }
@@ -164,24 +165,33 @@ async fn chat(State(a): State<Arc<App>>, body: Bytes) -> Response {
     if !msgs.last().is_some_and(|(r, _)| r == "user") {
         return err(StatusCode::BAD_REQUEST, "son ileti kullanıcıdan (role: user) olmalı");
     }
-    // Varsayılan Türkçe Linux asistanı; istemci kendi sistem iletisini verirse o kullanılır.
+    // Varsayılan Türkçe MakerOS ve Linux asistanı; istemci kendi sistem iletisini verirse o kullanılır.
     let default_sys = !msgs.iter().any(|(r, _)| r == "system");
-    let events_q = default_sys && msgs.last().is_some_and(|(_, q)| prompt::wants_events(q));
-    if events_q {
+    let last_q = msgs.last().map(|(_, q)| q.clone()).unwrap_or_default();
+    let events_q = default_sys && prompt::wants_events(&last_q);
+    let cmd_or_err_q = default_sys && !events_q && (prompt::is_error_report(&last_q) || prompt::wants_command(&last_q));
+    let protect = if events_q {
         msgs.insert(0, ("system".into(), prompt::EVENTS_SYSTEM.into()));
-    } else if default_sys {
+        1
+    } else if cmd_or_err_q {
         msgs.insert(0, ("system".into(), prompt::SYSTEM.into()));
         // Komut örneği en sonda: en sık istek odur ve küçük model en son örneğin biçimine yaslanır.
         msgs.insert(1, ("user".into(), prompt::EXAMPLE2_Q.into()));
         msgs.insert(2, ("assistant".into(), prompt::EXAMPLE2_A.into()));
         msgs.insert(3, ("user".into(), prompt::EXAMPLE_Q.into()));
         msgs.insert(4, ("assistant".into(), prompt::EXAMPLE_A.into()));
-    }
-    // Doğrulanmış komut kartları (kapatmak için: "makeros_bilgi": false).
+        5
+    } else if default_sys {
+        msgs.insert(0, ("system".into(), prompt::CHAT_SYSTEM.into()));
+        msgs.insert(1, ("user".into(), prompt::CHAT_EXAMPLE_Q.into()));
+        msgs.insert(2, ("assistant".into(), prompt::CHAT_EXAMPLE_A.into()));
+        3
+    } else {
+        0
+    };
+    // Doğrulanmış komut ve MakerOS bilgi kartları (kapatmak için: "makeros_bilgi": false).
     if req.get("makeros_bilgi").and_then(Value::as_bool) != Some(false) {
         let last = msgs.len() - 1;
-        // Son olaylar (bildirimler) yalnız soru onlarla ilgiliyse: her istekte eklemek ilk yanıtı geciktirir.
-        // Bu sorularda komut biçimi istenmez (küçük model biçime uyup komut uydurur).
         let k = if prompt::wants_events(&msgs[last].1) {
             prompt::events_context(&read_events(), 5)
         } else {
@@ -197,7 +207,6 @@ async fn chat(State(a): State<Arc<App>>, body: Bytes) -> Response {
         Err(e) => return err(StatusCode::SERVICE_UNAVAILABLE, e),
     }
     let busy = a.llama.busy();
-    let protect = if default_sys && !events_q { 5 } else { 0 };
     let (dropped, prompt_tokens) = fit(&a, &mut msgs, ctx - max_tokens - 8, protect).await;
     let stream = req.get("stream").and_then(Value::as_bool).unwrap_or(false);
     let o = req.as_object_mut().unwrap();

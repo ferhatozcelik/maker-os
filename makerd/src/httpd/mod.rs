@@ -154,7 +154,7 @@ impl Server {
             .route("/api/v1/term/{id}", get(ws::term_ws).delete(ws::term_close))
             .route("/api/v1/term/{id}/ticket", post(ws::term_ticket))
             .route("/api/v1/events", get(ws::events_ws))
-            .route("/api/v1/browse", get(api::browse))
+            .route("/api/v1/browse", get(api::browse).post(api::browse))
             .route("/api/v1/wallpaper/{name}", get(api::wallpaper_get).put(api::wallpaper_put).delete(api::wallpaper_delete))
             .route("/api/v1/browse/ticket", post(api::browse_ticket))
             .route("/api/v1/system/update", get(api::update_status))

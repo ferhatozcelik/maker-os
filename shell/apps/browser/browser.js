@@ -12,9 +12,10 @@ import { BOOKMARKS } from "/shell/js/bookmarks.js";
 app.init({ title: t("app.browser"), standaloneBar: false });
 
 const SEARCH = q => "https://html.duckduckgo.com/html/?q=" + encodeURIComponent(q);
-const favicon = u => { try { return `https://www.google.com/s2/favicons?sz=32&domain=${new URL(u).hostname}`; } catch { return ""; } };
+const EMBED = new URLSearchParams(location.search).get("embed") === "1";
 
 const page = $(".page"), home = $(".home"), addr = $(".addr"), hint = $(".hint");
+if (EMBED) { $(".tb").hidden = true; $(".bm").hidden = true; }
 const back = $(".b-back"), fwd = $(".b-fwd");
 const btn = (el, ic, label, fn) => { el.innerHTML = icon(ic, 16, 2); el.title = label; el.setAttribute("aria-label", label); el.onclick = fn; };
 btn(back, "chevron-left", t("br.back"), () => go(hist[--pos], false));
@@ -31,7 +32,7 @@ home.querySelector(".go").textContent = "Ara";
 home.querySelector("p").textContent = "";
 home.querySelector(".hs").onsubmit = e => { e.preventDefault(); submit(q.value); };
 home.querySelector(".groups").append(...BOOKMARKS.map(g => h("div.grp", h("h3", g.name),
-  ...g.items.map(b => h("button", { onclick: () => go(b.url, true), title: b.url }, h("img", { src: favicon(b.url), alt: "", loading: "lazy", referrerpolicy: "no-referrer" }), b.name)))));
+  ...g.items.map(b => h("button", { onclick: () => go(b.url, true), title: b.url }, h("span.fav", { html: icon("globe", 14, 1.8) }), b.name)))));
 // Sık kullanılanlar çubuğu: klasör → açılır menü.
 let menu = null;
 const closeMenu = () => { menu?.remove(); menu = null; document.querySelectorAll(".bm button.on").forEach(b => b.classList.remove("on")); };

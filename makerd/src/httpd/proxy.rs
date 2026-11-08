@@ -67,7 +67,7 @@ pub async fn plugin_proxy(State(s): State<S>, mut req: Request) -> R {
 pub async fn ai_proxy(State(s): State<S>, mut req: Request) -> R {
     let _sess = session_of(&s, req.headers())?;
     let rest = req.uri().path().trim_start_matches("/api/v1/ai/").to_string();
-    if !matches!(rest.as_str(), "v1/chat/completions" | "v1/models" | "v1/makeros/durum" | "v1/makeros/risk" | "v1/makeros/olaylar" | "health") {
+    if !matches!(rest.as_str(), "v1/chat/completions" | "v1/models" | "v1/makeros/durum" | "v1/makeros/risk" | "v1/makeros/olaylar" | "v1/makeros/bosalt" | "v1/makeros/temizle" | "health") {
         return Err(ApiError::not_found("Bilinmeyen asistan ucu."));
     }
     let host = "127.0.0.1:8091";

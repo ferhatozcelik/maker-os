@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AI Asistan</title>
 <link rel="stylesheet" href="/shell/css/tokens.css">
-<!-- Masaüstü widget'ı: yerel MakerOS AI asistanı (uygulama açar, ajan başlatır, komut çalıştırır). -->
+<!-- Masaüstü widget'ı: yerel MakerOS AI asistanı (MakerOS ve genel konularda sohbet eder, uygulama açar, ajan başlatır, komut çalıştırır). -->
 <style>
 html, body { margin: 0; background: transparent; }
 body { font: 13px/1.45 var(--font-sans, system-ui, sans-serif); color: var(--text); }
 .card { margin: 2px; border-radius: 18px; background: var(--bg-content, #fff);
   border: .5px solid color-mix(in srgb, var(--text) 14%, transparent); box-shadow: 0 10px 30px rgba(0,0,0,.18); overflow: hidden; }
-.hd { display: flex; align-items: center; gap: 8px; padding: 10px 10px 6px 12px; }
+.hd { display: flex; align-items: center; gap: 6px; padding: 10px 10px 6px 12px; }
 .logo { width: 24px; height: 24px; border-radius: 7px; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, #ff9a3d, #ff5a1a); flex: none; }
 .hd b { font-size: 13px; }
 .st { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-2); }
@@ -21,6 +21,8 @@ body { font: 13px/1.45 var(--font-sans, system-ui, sans-serif); color: var(--tex
 .grow { flex: 1; }
 .ib { width: 24px; height: 24px; border: 0; border-radius: 7px; background: none; color: var(--text-2); display: grid; place-items: center; cursor: pointer; padding: 0; }
 .ib:hover { background: var(--bg-hover); color: var(--text); }
+.clr { height: 24px; padding: 0 8px; border: 0; border-radius: 7px; background: var(--bg-hover); color: var(--text-2); font: inherit; font-size: 11px; font-weight: 500; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+.clr:hover { background: color-mix(in srgb, #e0393f 15%, var(--bg-hover)); color: #e0393f; }
 form { display: flex; gap: 6px; padding: 4px 10px 8px; }
 input { flex: 1; min-width: 0; height: 32px; padding: 0 11px; border-radius: 10px; border: .5px solid var(--border, rgba(0,0,0,.15)); background: var(--bg, #fff); color: var(--text); font: inherit; outline: none; }
 input:focus { border-color: var(--accent, #ff7a1a); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, #ff7a1a) 22%, transparent); }
@@ -54,8 +56,7 @@ input:focus { border-color: var(--accent, #ff7a1a); box-shadow: 0 0 0 3px color-
 .why { grid-column: 1 / 4; font-size: 11px; color: var(--text-2); margin-top: -2px; }
 .note { font-size: 10.5px; color: var(--text-2); margin-top: 6px; }
 .err { color: #e0393f; margin: 8px 0; }
-.ft { display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; color: var(--text-2); padding: 6px 12px 9px; }
-.ft button { border: 0; background: none; color: var(--accent, #ff7a1a); font: inherit; cursor: pointer; padding: 0; }
+.ft { display: flex; justify-content: space-between; align-items: center; gap: 6px; font-size: 10.5px; color: var(--text-2); padding: 6px 12px 9px; }
 .ft select { border: 0; background: var(--bg-hover); color: var(--text); font: inherit; font-size: 10.5px; border-radius: 6px; padding: 2px 6px; cursor: pointer; }
 .cmd .run { width: auto; padding: 0 7px; gap: 3px; display: inline-flex; align-items: center; font: inherit; font-size: 11px; color: var(--accent, #ff7a1a); }
 .cmd .acts { display: flex; gap: 2px; }
@@ -76,9 +77,10 @@ input:focus { border-color: var(--accent, #ff7a1a); box-shadow: 0 0 0 3px color-
 <div class="card">
   <div class="hd">
     <span class="logo"></span><b>AI Asistan</b><span class="st" id="st"><i></i><span>…</span></span><span class="grow"></span>
-    <button class="ib" id="new" title="Yeni sohbet"></button><button class="ib" id="close" title="Widget'ı gizle (Ayarlar › Görünüm'den geri açılır)"></button>
+    <button type="button" class="clr" id="new" title="Sohbet geçmişini ve bağlamı temizle"></button>
+    <button type="button" class="ib" id="close" title="Widget'ı gizle (Ayarlar › Görünüm'den geri açılır)"></button>
   </div>
-  <form id="f"><input id="in" autocomplete="off" spellcheck="false" placeholder="Ne yapmak istersiniz?"><button class="go" id="go" title="Gönder"></button></form>
+  <form id="f"><input id="in" autocomplete="off" spellcheck="false" placeholder="Ne yapmak istersiniz? (Sohbet, MakerOS, komut…)"><button class="go" id="go" title="Gönder"></button></form>
   <div class="prog-wrap" id="prog" hidden><div class="prog-bar"><i></i></div><button type="button" class="prog-stop" id="stop">Durdur</button></div>
   <div class="chips" id="chips"></div>
   <div class="out" id="out" hidden></div>

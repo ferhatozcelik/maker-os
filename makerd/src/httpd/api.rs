@@ -674,7 +674,7 @@ pub async fn browse_ticket(State(s): State<S>, h: HeaderMap) -> R {
     Ok(json(&Resp { ticket: crate::browse::ticket(&sess.user), walled: crate::browse::walled_hosts() }))
 }
 
-pub async fn browse(Query(q): Query<HashMap<String, String>>, h: HeaderMap) -> R {
+pub async fn browse(method: Method, Query(q): Query<HashMap<String, String>>, h: HeaderMap, req_body: Bytes) -> R {
     let t = q.get("t").map(String::as_str).unwrap_or("");
     let url = q.get("url").cloned().unwrap_or_default();
     let Some(user) = crate::browse::check(t) else {
@@ -688,11 +688,20 @@ pub async fn browse(Query(q): Query<HashMap<String, String>>, h: HeaderMap) -> R
             .map_err(|e| ApiError::internal(e.to_string()));
     };
     let lang = h.get(header::ACCEPT_LANGUAGE).and_then(|v| v.to_str().ok()).unwrap_or("");
-    let (status, ct, body) = match crate::browse::fetch(&url, lang).await {
+    let req_ct = h.get(header::CONTENT_TYPE).and_then(|v| v.to_str().ok());
+    let b_slice = if req_body.is_empty() { None } else { Some(req_body.as_ref()) };
+    let (status, ct, body) = match crate::browse::fetch_req(method.as_str(), &url, lang, req_ct, b_slice).await {
         Ok(p) => {
             let html = p.content_type.contains("text/html") || p.content_type.contains("xhtml");
+            let css = p.content_type.contains("text/css");
             tracing::debug!(user = %user, url = %p.url, status = p.status, "tarayıcı");
-            let body = if html { crate::browse::rewrite(&p.body, &p.url, t) } else { p.body };
+            let body = if html {
+                crate::browse::rewrite(&p.body, &p.url, t)
+            } else if css {
+                crate::browse::rewrite_css(&p.body, &p.url, t)
+            } else {
+                p.body
+            };
             (StatusCode::from_u16(p.status).unwrap_or(StatusCode::OK), p.content_type, body)
         }
         Err(e) => (StatusCode::BAD_GATEWAY, "text/html; charset=utf-8".to_string(), crate::browse::error_page(&url, &e)),
@@ -700,8 +709,12 @@ pub async fn browse(Query(q): Query<HashMap<String, String>>, h: HeaderMap) -> R
     Response::builder()
         .status(status)
         .header(header::CONTENT_TYPE, HeaderValue::from_str(&ct).unwrap_or(HeaderValue::from_static("application/octet-stream")))
-        // Opak köken: aktarılan sayfa MakerOS ile aynı adreste olsa da kabuğa/API'ye erişemez.
-        .header("content-security-policy", "sandbox allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals allow-downloads")
+        // Opak köken + yalnız 'self' (Raspberry Pi /api/v1/browse): host PC tarayıcısı doğrudan dış internete bağlanamaz,
+        // tüm kaynaklar (HTML, CSS, JS, resim, font, fetch/XHR) Raspberry Pi üzerinden gelir.
+        .header(
+            "content-security-policy",
+            "sandbox allow-scripts allow-forms allow-modals allow-downloads; default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data: blob:; connect-src 'self'",
+        )
         .body(Body::from(body))
         .map_err(|e| ApiError::internal(e.to_string()))
 }

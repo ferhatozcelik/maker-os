@@ -1,5 +1,6 @@
-// AI Asistan widget'ı: masaüstünde MakerOS eylemlerini (uygulama açma, Claude Code / ajan başlatma,
-// ayarlar, kamera vb.) ve Linux komutlarını yürütür.
+// AI Asistan widget'ı: masaüstünde MakerOS ve genel konularda Türkçe sohbet eder,
+// MakerOS eylemlerini (uygulama açma, Claude Code / ajan başlatma, ayarlar, kamera vb.)
+// ve Linux komutlarını yürütür.
 // İzin modu (tercih aiMode):
 // - bypass = Full Bypass (varsayılan): komutları ve eylemleri onay sormadan doğrudan çalıştırır.
 // - sor    = İzin iste: çalıştırmadan önce kullanıcıdan onay alır.
@@ -12,20 +13,21 @@ addEventListener("storage", () => apply());
 
 const $ = id => document.getElementById(id);
 const AI = "/api/v1/ai";
-const out = $("out"), input = $("in"), go = $("go"), st = $("st"), prog = $("prog"), stopBtn = $("stop");
+const STORAGE_KEY = "mk.ai.history";
+const out = $("out"), input = $("in"), go = $("go"), st = $("st"), prog = $("prog"), stopBtn = $("stop"), clearBtn = $("new");
 document.querySelector(".logo").innerHTML = icon("sparkles", 14, 2.2);
 go.innerHTML = icon("arrow-up", 16, 2.4);
 stopBtn.innerHTML = icon("square", 10, 2.6) + "Durdur";
-$("new").innerHTML = icon("rotate-ccw", 13, 2);
+clearBtn.innerHTML = icon("trash-2", 12, 2) + "Temizle";
 $("close").innerHTML = icon("x", 13, 2.2);
 
 const CHIPS = [
+  ["MakerOS nedir?", "MakerOS nedir ve neler yapabilirim?"],
   ["Claude Code'u aç", "Claude Code'u aç"],
   ["Terminali aç", "Terminali aç"],
   ["CPU sıcaklığı", "CPU sıcaklığını göster."],
   ["RAM", "RAM kullanımını kontrol et."],
   ["Disk", "Disk alanını kontrol et."],
-  ["IP adresi", "IP adresimi öğren."],
 ];
 $("chips").append(...CHIPS.map(([l, q]) => {
   const b = document.createElement("button");
@@ -43,6 +45,12 @@ new ResizeObserver(size).observe(document.querySelector(".card"));
 const tell = m => parent.postMessage(m, location.origin);
 
 function status(cls, text) { st.className = "st " + cls; st.lastElementChild.textContent = text; }
+
+function saveHistory() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(history.slice(-16)));
+  } catch { /* depolama dolu */ }
+}
 
 function updateWorkingUI() {
   const working = busy || activeTasks > 0;
@@ -82,7 +90,20 @@ function stopAll() {
   updateWorkingUI();
 }
 
+function clearChatAndContext() {
+  stopAll();
+  history = [];
+  try { localStorage.removeItem(STORAGE_KEY); } catch { /* yok */ }
+  out.replaceChildren();
+  out.hidden = true;
+  $("chips").hidden = false;
+  fetch(AI + "/v1/makeros/temizle", { method: "POST", credentials: "same-origin", headers: { "X-Maker": "1" } }).catch(() => {});
+  status("ok", "Temizlendi");
+  input.focus();
+}
+
 stopBtn.onclick = stopAll;
+clearBtn.onclick = clearChatAndContext;
 
 async function poll() {
   try {
@@ -103,6 +124,32 @@ function md(s) {
   return parts.map((p, i) => i % 2 ? `<pre><code>${p.replace(/\n$/, "")}</code></pre>`
     : p.replace(/`([^`\n]+)`/g, "<code>$1</code>").replace(/\*\*([^*\n]+)\*\*/g, "<b>$1</b>").split(/\n{2,}/).map(x => `<p>${x.replace(/\n/g, "<br>")}</p>`).join("")).join("");
 }
+
+// Kayıtlı sohbet geçmişini yükle
+(() => {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    if (Array.isArray(saved) && saved.length) {
+      history = saved.filter(m => m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string");
+      if (history.length) {
+        $("chips").hidden = true;
+        out.hidden = false;
+        for (const m of history) {
+          const el = document.createElement("div");
+          if (m.role === "user") {
+            el.className = "q";
+            el.textContent = m.content;
+          } else {
+            el.className = "a";
+            el.innerHTML = md(m.content);
+          }
+          out.append(el);
+        }
+        out.scrollTop = out.scrollHeight;
+      }
+    }
+  } catch { /* bozuk geçmiş */ }
+})();
 
 const modeSel = $("mode");
 const mode = () => pref("aiMode") === "sor" ? "sor" : "bypass";
@@ -137,10 +184,16 @@ async function launchAgent(id, label, signal) {
   return `**${label}** için AI Ajanları uygulaması açıldı.`;
 }
 
-// Doğal dildeki MakerOS uygulama/sistem isteklerini yakalar.
+// Doğal dildeki doğrudan MakerOS uygulama/sistem eylemlerini yakalar.
+// Sorular ("nedir", "nasıl", "ne işe yarar", "?") eylem olarak yakalanmaz; sohbet modeline gider.
 function matchAction(raw) {
   const q = fold(raw).trim();
   const rawTrim = raw.trim();
+
+  // Soru cümleleri doğrudan sohbet modeline yönlendirilir
+  if (rawTrim.includes("?") || /\b(nedir|nasil|ne ise|ne yapar|anlat|hakkinda|bilgi|farki|neden|niye|kac|kimsin|merhaba|selam|nasilsin)\b/.test(q)) {
+    return null;
+  }
 
   // "terminalde <komut> çalıştır" veya "<komut> komutunu çalıştır"
   const termMatch = rawTrim.match(/^(?:terminalde|terminal'de)\s+`?([^`]+?)`?\s+(?:calistir|çalıştır|ac|aç)$/i)
@@ -175,8 +228,9 @@ function matchAction(raw) {
     { id: "ollama", name: "Ollama", keys: ["ollama"] },
   ];
   const actionVerb = /\b(ac|acabilir|acar|baslat|calistir|kur|yukle|open|start|run|launch|yap)\b/.test(q);
+  const words = q.split(/\s+/).filter(Boolean);
   for (const a of agents) {
-    if (a.keys.some(k => q === k || (q.includes(k) && (actionVerb || q.endsWith(k))))) {
+    if (a.keys.some(k => q === k || (words.length <= 5 && q.includes(k) && (actionVerb || q.endsWith(k))))) {
       return {
         label: `${a.name} başlat`,
         desc: `**${a.name}** Terminal'de başlatılıyor…`,
@@ -251,7 +305,7 @@ function matchAction(raw) {
     { app: "makeros.files", name: "Dosyalar", path: "/home/makeros/Resimler", keys: ["resimler", "resimleri", "galeri"] },
     { app: "makeros.files", name: "Dosyalar", path: "/home/makeros/Projeler", keys: ["proje klasor", "projeler klasor"] },
     { app: "makeros.files", name: "Dosyalar", keys: ["dosyalar", "dosyalari", "dosya yoneticisi", "klasorler", "klasorleri", "files"] },
-    { app: "makeros.python", name: "Python Yöneticisi", keys: ["python", "python yoneticisi", "python'u", "pythonu", "projeler", "projeleri"] },
+    { app: "makeros.python", name: "Python Yöneticisi", keys: ["python yoneticisi", "projeler", "projeleri"] },
     { app: "makeros.agents", name: "AI Ajanları", keys: ["ai ajan", "ajanlar", "ajanlari", "kodlama ajan"] },
     { app: "makeros.camera", name: "Kamera", keys: ["kamera", "kamerayi", "camera"] },
     { app: "makeros.gpio", name: "GPIO", keys: ["gpio", "pinler", "pinleri"] },
@@ -261,7 +315,7 @@ function matchAction(raw) {
     { app: "makeros.settings", name: "Ayarlar › Wi-Fi", path: "wifi", keys: ["wifi ayar", "wi-fi ayar", "kablosuz ayar"] },
     { app: "makeros.settings", name: "Ayarlar › Ağ", path: "network", keys: ["ag ayar", "network ayar"] },
     { app: "makeros.settings", name: "Ayarlar › Görünüm", path: "appearance", keys: ["gorunum ayar", "tema ayar", "duvar kagidi ayar"] },
-    { app: "makeros.settings", name: "Ayarlar › Otomatik Başlatma", path: "startup", keys: ["otomatik baslat", "baslangic ayar", "cron", "zamanlayici"] },
+    { app: "makeros.settings", name: "Ayarlar › Otomatik Başlatma", path: "startup", keys: ["otomatik baslat", "baslangic ayar", "cron ayar", "zamanlayici ayar"] },
     { app: "makeros.settings", name: "Ayarlar › Genel", path: "general", keys: ["yazilim guncelle", "guncelleme ayar", "sistem bilgi"] },
     { app: "makeros.settings", name: "Ayarlar › Kullanıcı", path: "user", keys: ["kullanici ayar", "parola degistir", "sifre degistir"] },
     { app: "makeros.settings", name: "Ayarlar › Güç", path: "power", keys: ["guc ayar"] },
@@ -269,7 +323,6 @@ function matchAction(raw) {
   ];
 
   const openVerb = /\b(ac|acabilir|acar|baslat|calistir|goster|open|start|launch)\b/.test(q);
-  const words = q.split(/\s+/).filter(Boolean);
   for (const item of apps) {
     if (item.keys.some(k => q === k || (words.length <= 5 && q.includes(k) && openVerb))) {
       return {
@@ -429,11 +482,13 @@ async function ask(q) {
     aEl.classList.remove("cur");
     await runActionCard(act, aEl);
     history.push({ role: "user", content: q }, { role: "assistant", content: aEl.textContent || act.label });
+    saveHistory();
     busy = false; updateWorkingUI(); out.scrollTop = out.scrollHeight;
     return;
   }
 
   history.push({ role: "user", content: q });
+  saveHistory();
   let text = "", extra = null, timings = null;
   status("load", "Düşünüyor…");
   ctrl = new AbortController();
@@ -461,6 +516,7 @@ async function ask(q) {
     aEl.classList.remove("cur");
     const box = commands(extra?.commands); if (box) aEl.after(box);
     history.push({ role: "assistant", content: text });
+    saveHistory();
     if (timings?.predicted_per_second) $("meta").textContent = `MakerOS AI · ${timings.predicted_per_second.toFixed(1)} token/sn`;
     if (activeTasks === 0) status("ok", "Hazır");
   } catch (e) {
@@ -470,6 +526,7 @@ async function ask(q) {
       status("ok", "Durduruldu");
     } else {
       history.pop();
+      saveHistory();
       const er = document.createElement("div"); er.className = "err"; er.textContent = e.message || "Asistana ulaşılamadı."; aEl.after(er);
       poll();
     }
@@ -483,5 +540,4 @@ $("f").onsubmit = e => {
   if (busy || activeTasks > 0) stopAll();
   else ask(input.value);
 };
-$("new").onclick = () => { stopAll(); history = []; out.replaceChildren(); out.hidden = true; $("chips").hidden = false; input.focus(); };
 $("close").onclick = () => setPref("aiWidget", false);
