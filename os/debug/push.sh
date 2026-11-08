@@ -5,7 +5,7 @@
 #   os/debug/push.sh shell      yalnız web kabuk (saniyeler)
 #   os/debug/push.sh makerd     yalnız makerd
 #   os/debug/push.sh os         yalnız rootfs-overlay (betikler, birimler, ayarlar)
-#   os/debug/push.sh llama      llama.cpp (llama-server/cli/bench; önce os/debug/build-llama.sh)
+#   os/debug/push.sh llama      llama.cpp (llama-server/cli; önce os/debug/build-llama.sh)
 #   os/debug/push.sh ssh [komut]  Pi'de kabuk/komut
 #   os/debug/push.sh reset      tüm push'ları geri al (/data/dev silinir, yeniden açılır)
 #

@@ -4,7 +4,7 @@
 //   node shell/tools/dev-server.mjs --fresh &   node shell/tools/smoke.mjs --fresh    (önce kurulum sihirbazı)
 // Önerilen: yalnız Docker ile → shell/Makefile (make smoke | smoke-fresh | smoke-makerd)
 // Oturum açar, uygulamaları açar, kısayolları dener, ekran görüntüsü alır ve konsol hatalarını raporlar.
-// M2: kurulum sihirbazı (--fresh), tercih eşitlemesi (GET/PUT /prefs), tembel yükleme, Wi-Fi anahtarı, perf HUD.
+// M2: kurulum sihirbazı (--fresh), tercih eşitlemesi (GET/PUT /prefs), tembel yükleme, Wi-Fi anahtarı .
 import { spawn } from "node:child_process";
 import { mkdirSync, writeFileSync, mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -121,7 +121,7 @@ await js(`localStorage.removeItem("mk.wm.session")`);
 // tembel yükleme: masaüstü açılışında katman/kilit/mobil/sihirbaz modülleri yüklenmemeli
 const res0 = await js(`performance.getEntriesByType("resource").map(e => [new URL(e.name).pathname, e.decodedBodySize])`);
 const loaded = new Set(res0.map(r => r[0]));
-for (const m of ["/shell/js/ui/launchpad.js", "/shell/js/ui/overview.js", "/shell/js/ui/cc.js", "/shell/js/ui/lock.js", "/shell/js/ui/mobile.js", "/shell/setup/setup.js", "/shell/js/perf.js", "/shell/css/lock.css", "/shell/css/mobile.css"])
+for (const m of ["/shell/js/ui/launchpad.js", "/shell/js/ui/overview.js", "/shell/js/ui/cc.js", "/shell/js/ui/lock.js", "/shell/js/ui/mobile.js", "/shell/setup/setup.js", "/shell/css/lock.css", "/shell/css/mobile.css"])
   ok(!loaded.has(m), "tembel: açılışta yüklenmedi " + m);
 const PREFETCH = /\/(find|switcher|layer)\.js$|overlays\.css$/;
 const own = res0.filter(([p]) => /^\/shell\/(js|css|apps|setup)\/.*\.(js|css)$/.test(p) && !PREFETCH.test(p));
@@ -219,10 +219,6 @@ await shot("13-dark-lite");
 await js(`import("/shell/js/prefs.js").then(async m => { m.setPref("lang", "en"); await m.flushPrefs(); })`); await cdp("Page.reload"); await sleep(800); await waitFor(`document.querySelector('.mb-item[data-k=file]')?.textContent === "File"`); await sleep(300);
 ok(await js(`document.querySelector('.mb-item[data-k=file]')?.textContent === "File"`), "İngilizce arayüz");
 await js(`import("/shell/js/prefs.js").then(async m => { m.setPref("lang", "tr"); await m.flushPrefs(); })`);
-// perf HUD
-await cdp("Page.navigate", { url: URL0 + "/?ui=desktop&perf=1&fx=lite" }); await sleep(2600);
-ok(/fps/.test(await js(`document.querySelector('#perf')?.textContent || ""`)), "?perf=1 → fps/uzun görev göstergesi");
-await shot("13b-perf-hud");
 // mobil
 await cdp("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
 await cdp("Page.navigate", { url: URL0 + "/?ui=desktop" }); await sleep(2500);

@@ -2,7 +2,7 @@
 
 Pi 4'te WPE/cog içinde (1080p, zayıf GPU) ve uzaktan herhangi bir masaüstü/telefon tarayıcısında çalışan
 masaüstü kabuğu ve sistem uygulamaları. **Derleme adımı yok**: yerel ES modülleri + Web Components (`mk-*`),
-çalışma anı bağımlılığı yok (yalnız `vendor/` altındaki sabitlenmiş dosyalar). Arka uç sözleşmesi: [`docs/v2/api.md`](../docs/v2/api.md).
+çalışma anı bağımlılığı yok (yalnız `vendor/` altındaki sabitlenmiş dosyalar). Arka uç sözleşmesi: [`docs/v2/api.md`](../docs/api.md).
 
 ## Çalıştırma (yalnız Docker)
 
@@ -25,7 +25,7 @@ Duman testi kapsayıcısı hedefe `makeros-shell` Docker ağı üzerinden bağla
 Önizleme için tüm yığın: depo kökünde `docker-compose up -d --build` → http://localhost/.
 `dev-server.mjs` uçları: `--fresh` (kurulumsuz başla), `POST /api/v1/dev/reset` (yalnız dev-server; kurulumsuz duruma dön).
 
-URL parametreleri: `?fx=full|lite|flat` (efekt katmanını zorla), `?open=makeros.terminal` (açılışta uygulama aç),
+URL parametreleri: `?fx=full|lite|flat` (efekt katmanını zorla), `?open=makeros.terminal` (açılışta uygulama aç).
 `?perf=1` (sol altta kare hızı, en kötü kare, uzun görevler, pencere sayısı, JS yığını; WPE'de `longtask` yoksa rAF aralığından tahmin, `*` ile işaretli).
 
 ## Dizin yapısı
@@ -42,7 +42,6 @@ js/shell.js           S: bileşenler arası paylaşılan bağlam (wm, events, la
 js/api.js             fetch sarmalayıcı (X-Maker, hata gövdesi, 401 → kilit) + Events (WS, yeniden bağlanma, konu aboneliği)
 js/keys.js            kısayol tablosu, eşleştirici, ⌘/Ctrl yedeği
 js/prefs.js           tema / fx / vurgu / raf / dil — kaynak GET/PUT /prefs, localStorage önbellek (tüm pencerelerde canlı)
-js/perf.js            ?perf=1 performans göstergesi (tembel)
 js/apps.js            uygulama kaydı (GET /apps + yerleşik meta), Ayarlar sayfa listesi
 js/wm/index.js        WindowManager — arka uçtan bağımsız durum, odak, z-sırası, yerleşim, genel bakış, kalıcılık
 js/wm/web.js          <mk-window> + WebBackend (iframe), uygulama↔kabuk postMessage köprüsü

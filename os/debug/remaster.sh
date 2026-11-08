@@ -75,7 +75,7 @@ ln -sf /usr/lib/systemd/system/makeros-ai.service $R/etc/systemd/system/multi-us
 
 # llama.cpp (os/package/llama-cpp ile aynı yerleşim)
 if [ -d /llama/bin ]; then
-	install -m 0755 /llama/bin/llama-server /llama/bin/llama-cli /llama/bin/llama-bench $R/usr/bin/
+	install -m 0755 /llama/bin/llama-server /llama/bin/llama-cli $R/usr/bin/
 	install -D -m 0644 /llama/LICENSE $R/usr/share/licenses/llama.cpp/LICENSE
 fi
 

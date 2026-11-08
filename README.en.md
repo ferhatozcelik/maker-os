@@ -22,7 +22,7 @@
   <a href="#setup-guide">Setup guide</a> ·
   <a href="#features">Features</a> ·
   <a href="#build-from-source">Building from source</a> ·
-  <a href="docs/v2/api.md">API</a> ·
+  <a href="docs/api.md">API</a> ·
   <a href="CONTRIBUTING.md">Contributing</a>
 </p>
 
@@ -44,23 +44,39 @@
     <th align="center" colspan="2">Desktop · Chromium window (in the browser)</th>
   </tr>
   <tr>
-    <td align="center" colspan="2"><img src="docs/v2/screenshots/desktop.png" alt="Chromium window on the MakerOS desktop" width="850"></td>
+    <td align="center" colspan="2"><img src="docs/assets/screenshots/desktop.png" alt="Chromium window on the MakerOS desktop" width="850"></td>
   </tr>
   <tr>
     <th align="center">Web interface</th>
     <th align="center">Phone</th>
   </tr>
   <tr>
-    <td align="center" valign="top"><img src="docs/v2/screenshots/web.png" alt="MakerOS web interface home" width="560"></td>
-    <td align="center" valign="top"><img src="docs/v2/screenshots/mobile.png" alt="MakerOS web interface on a phone" width="200"></td>
+    <td align="center" valign="top"><img src="docs/assets/screenshots/web.png" alt="MakerOS web interface home" width="560"></td>
+    <td align="center" valign="top"><img src="docs/assets/screenshots/mobile.png" alt="MakerOS web interface on a phone" width="200"></td>
   </tr>
   <tr>
     <th align="center" colspan="2">Settings · Software update</th>
   </tr>
   <tr>
-    <td align="center" colspan="2"><img src="docs/v2/screenshots/update.png" alt="Settings, General: software update" width="640"></td>
+    <td align="center" colspan="2"><img src="docs/assets/screenshots/update.png" alt="Settings, General: software update" width="640"></td>
   </tr>
 </table>
+
+## Technical documentation
+
+Browse the [documentation tree](docs/README.en.md) for architecture and implementation details:
+
+- [System architecture](docs/architecture/overview.en.md)
+- [Boot chain and storage](docs/architecture/boot-and-storage.en.md)
+- [Desktop and web shell](docs/architecture/desktop.en.md)
+- [Rust backend and API](docs/architecture/backend.en.md)
+- [Networking and security](docs/architecture/network-security.en.md)
+- [Hardware and peripherals](docs/architecture/hardware.en.md)
+- [Build and test](docs/development/build-and-test.en.md)
+- [Verification status](docs/verification/validation.en.md)
+- [Branding and licensing](docs/project/branding-and-licensing.en.md)
+
+Türkçe: [Dokümantasyon dizini](docs/README.md).
 
 ## Download
 
@@ -73,7 +89,7 @@
 | Operating system (Buildroot external tree, kernel, packages, image) | [`os/`](os/) |
 | Backend service (Rust: API, terminal, files, plugin store, OTA, Chromium session) | [`makerd/`](makerd/) |
 | Web desktop shell and system apps (zero-dependency ES modules) | [`shell/`](shell/) |
-| Architecture plan, API contract, benchmark report and roadmap | [`docs/v2/`](docs/v2/) |
+| Technical documentation (architecture, development, verification, API) | [`docs/`](docs/README.en.md) |
 
 ```bash
 make -C makerd preview                # local preview: makerd (sample data) + shell → http://localhost/
@@ -153,13 +169,15 @@ All build and test tools run inside Docker; nothing is installed on the host mac
 
 ## Verification status
 
-Screenshots were taken from the current build in Docker; device data such as temperature, memory and network are sample values. The interface, `makerd` and the Chromium window have been tested end to end in Docker with the built root file system. There is no performance data measured on real Raspberry Pi hardware yet; see [`docs/v2/BENCHMARK.md`](docs/v2/BENCHMARK.md) for the virtual benchmark report. Please report issues on [Issues](https://github.com/ferhatozcelik/maker-os/issues).
+Docker/mock-based tests are available for the interface and backend. See [Verification status](docs/verification/validation.en.md) for test coverage and areas that still require validation on physical Raspberry Pi hardware. Please report issues on [Issues](https://github.com/ferhatozcelik/maker-os/issues).
 
 ## License
 
 [GPL-3.0-or-later](LICENSE) — See [`NOTICE.md`](NOTICE.md) for third-party component licenses and copyright notices.
 
 ## Trademarks and legal notice
+
+Details: [Branding, licensing and third-party components](docs/project/branding-and-licensing.en.md).
 
 The original source code, build scripts, configuration and examples developed in this repository are provided under the **GNU General Public License version 3 or any later version** (`GPL-3.0-or-later`). This does not mean all software in the image has the same license: the Linux kernel, Raspberry Pi firmware, Chromium, WPE WebKit, Mesa and other third-party components belong to their respective owners and licenses ([`NOTICE.md`](NOTICE.md)).
 

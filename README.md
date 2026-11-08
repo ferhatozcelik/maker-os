@@ -22,7 +22,7 @@
   <a href="#setup-guide">Kurulum rehberi</a> ·
   <a href="#features">Özellikler</a> ·
   <a href="#build-from-source">Kaynaktan derleme</a> ·
-  <a href="docs/v2/api.md">API</a> ·
+  <a href="docs/api.md">API</a> ·
   <a href="CONTRIBUTING.md">Katkıda bulun</a>
 </p>
 
@@ -44,23 +44,39 @@
     <th align="center" colspan="2">Masaüstü · Chromium penceresi (tarayıcıda)</th>
   </tr>
   <tr>
-    <td align="center" colspan="2"><img src="docs/v2/screenshots/desktop.png" alt="MakerOS masaüstünde Chromium penceresi" width="850"></td>
+    <td align="center" colspan="2"><img src="docs/assets/screenshots/desktop.png" alt="MakerOS masaüstünde Chromium penceresi" width="850"></td>
   </tr>
   <tr>
     <th align="center">Web arayüzü</th>
     <th align="center">Telefon</th>
   </tr>
   <tr>
-    <td align="center" valign="top"><img src="docs/v2/screenshots/web.png" alt="MakerOS Web arayüzü" width="560"></td>
-    <td align="center" valign="top"><img src="docs/v2/screenshots/mobile.png" alt="Telefonda MakerOS Web arayüzü" width="200"></td>
+    <td align="center" valign="top"><img src="docs/assets/screenshots/web.png" alt="MakerOS Web arayüzü" width="560"></td>
+    <td align="center" valign="top"><img src="docs/assets/screenshots/mobile.png" alt="Telefonda MakerOS Web arayüzü" width="200"></td>
   </tr>
   <tr>
     <th align="center" colspan="2">Ayarlar · Yazılım güncelleme</th>
   </tr>
   <tr>
-    <td align="center" colspan="2"><img src="docs/v2/screenshots/update.png" alt="Ayarlar, Genel: yazılım güncelleme" width="640"></td>
+    <td align="center" colspan="2"><img src="docs/assets/screenshots/update.png" alt="Ayarlar, Genel: yazılım güncelleme" width="640"></td>
   </tr>
 </table>
+
+## Teknik dokümantasyon
+
+Mimariyi ve teknik ayrıntıları konu başlıklarına göre incelemek için [dokümantasyon ağacına](docs/README.md) gidin:
+
+- [Sistem mimarisi](docs/architecture/overview.md)
+- [Açılış zinciri ve depolama](docs/architecture/boot-and-storage.md)
+- [Masaüstü ve web kabuğu](docs/architecture/desktop.md)
+- [Rust arka uç ve API](docs/architecture/backend.md)
+- [Ağ ve güvenlik](docs/architecture/network-security.md)
+- [Donanım ve çevre birimleri](docs/architecture/hardware.md)
+- [Derleme ve test](docs/development/build-and-test.md)
+- [Doğrulama durumu](docs/verification/validation.md)
+- [Marka ve lisans](docs/project/branding-and-licensing.md)
+
+English: [Documentation index](docs/README.en.md).
 
 ## İndir
 
@@ -73,7 +89,7 @@
 | İşletim sistemi (Buildroot dış ağacı, çekirdek, paketler, imaj) | [`os/`](os/) |
 | Arka uç hizmeti (Rust: API, terminal, dosyalar, eklenti mağazası, OTA, Chromium oturumu) | [`makerd/`](makerd/) |
 | Web masaüstü kabuğu ve sistem uygulamaları (bağımlılıksız ES modülleri) | [`shell/`](shell/) |
-| Mimari plan, API sözleşmesi, kıyaslama raporu ve yol haritası | [`docs/v2/`](docs/v2/) |
+| Teknik dokümantasyon (mimari, geliştirme, doğrulama, API) | [`docs/`](docs/README.md) |
 
 ```bash
 make -C makerd preview                # yerel önizleme: makerd (örnek veri) + kabuk → http://localhost/
@@ -160,6 +176,8 @@ Görüntüler güncel derlemenin Docker ortamında çekilmiştir; sıcaklık, be
 [GPL-3.0-or-later](LICENSE) — Üçüncü taraf bileşenlerin lisans ve telif bildirimleri için bkz. [`NOTICE.md`](NOTICE.md).
 
 ## Marka ve sorumluluk açıklaması
+
+Ayrıntılar: [Marka, lisans ve üçüncü taraf bileşenler](docs/project/branding-and-licensing.md).
 
 MakerOS için bu depoda geliştirilen özgün kaynak kodu, derleme betikleri, yapılandırmalar ve örnekler **GNU Genel Kamu Lisansı sürüm 3 veya sonraki herhangi bir sürüm** (`GPL-3.0-or-later`) kapsamında sunulur. Bu lisans, imajdaki bütün yazılımların aynı lisansa sahip olduğu anlamına gelmez; Linux çekirdeği, Raspberry Pi açılış yazılımı, Chromium, WPE WebKit, Mesa ve diğer üçüncü taraf bileşenler kendi hak sahiplerine ve lisanslarına tabidir ([`NOTICE.md`](NOTICE.md)).
 

@@ -166,7 +166,11 @@ S.act = id => {
     case "lock": return S.lock();
     case "nc": return toggleNC();
     case "left": case "right": return f && wm.tile(f, id);
-    case "terminal": return S.launch("makeros.terminal", { force: wm.byApp("makeros.terminal").length > 0 });
+    case "terminal": {
+      const ex = wm.byApp("makeros.terminal")[0];
+      if (ex) { ex.view.send({ mk: "command", cmd: "new" }); return wm.restore(ex); }
+      return S.launch("makeros.terminal");
+    }
     case "activity": return S.launch("makeros.activity");
     case "help": return S.openSettings("keyboard");
   }
@@ -223,7 +227,6 @@ async function pendingSetup(session) {
 
 async function start() {
   layout();
-  if (qs.get("perf") === "1") import("./perf.js").then(m => m.perfHUD());
   let session = null;
   for (let i = 0; ; i++) {
     try { session = await get("/session"); break; }

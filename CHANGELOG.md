@@ -36,5 +36,4 @@ MakerOS 2'nin ilk sürümü: Buildroot ile Linux çekirdeği üzerine sıfırdan
 
 ### Doğrulama
 
-Arayüz, makerd ve Chromium penceresi Docker içinde derlenmiş kök dosya sistemiyle test edildi.
-Gerçek donanımda ölçülmüş performans verisi henüz yok (bkz. `docs/v2/BENCHMARK.md`).
+Arayüz ve arka uç için Docker/mock tabanlı testler bulunur. Gerçek donanım doğrulaması için [teknik dokümantasyondaki doğrulama rehberine](docs/verification/validation.md) bakın.
