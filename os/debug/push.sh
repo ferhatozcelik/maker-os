@@ -34,7 +34,7 @@ docker run --rm -v "$ROOT":/src:ro -v mk-target:/target:ro -v mk-llama:/llama:ro
 set -e; R=/tmp/p; mkdir -p $R
 if [ "$WHAT" = all ] || [ "$WHAT" = os ]; then
 	(cd /src/os/board/rpi4/rootfs-overlay && tar cf - --exclude=.DS_Store usr etc) | tar -C $R -xf - --no-same-owner
-	for f in $R/usr/lib/makeros/* $R/usr/bin/mos $R/usr/bin/docker; do [ -f "$f" ] && chmod 0755 "$f"; done
+	for f in $R/usr/lib/makeros/* $R/usr/bin/*; do [ -f "$f" ] && chmod 0755 "$f"; done
 fi
 if [ "$WHAT" = all ] || [ "$WHAT" = makerd ]; then
 	mkdir -p $R/usr/bin; for b in makerd makerd-priv makerd-user makeros-ai; do [ -f /target/release/$b ] && install -m 0755 /target/release/$b $R/usr/bin/$b; done

@@ -1,0 +1,44 @@
+#!/bin/sh
+# getent - minimal fallback for MakerOS (Buildroot/musl/glibc)
+db="${1:-}"
+key="${2:-}"
+case "${db}" in
+passwd)
+	if [ -n "${key}" ]; then
+		grep -E "^(${key}:|[^:]*:[^:]*:${key}:)" /etc/passwd 2>/dev/null
+	else
+		cat /etc/passwd 2>/dev/null
+	fi
+	;;
+group)
+	if [ -n "${key}" ]; then
+		grep -E "^(${key}:|[^:]*:[^:]*:${key}:)" /etc/group 2>/dev/null
+	else
+		cat /etc/group 2>/dev/null
+	fi
+	;;
+shadow)
+	if [ -n "${key}" ]; then
+		grep -E "^${key}:" /etc/shadow 2>/dev/null
+	else
+		cat /etc/shadow 2>/dev/null
+	fi
+	;;
+hosts)
+	if [ -n "${key}" ]; then
+		grep -w "${key}" /etc/hosts 2>/dev/null
+	else
+		cat /etc/hosts 2>/dev/null
+	fi
+	;;
+protocols)
+	[ -f /etc/protocols ] && { [ -n "${key}" ] && grep -w "${key}" /etc/protocols 2>/dev/null || cat /etc/protocols; }
+	;;
+services)
+	[ -f /etc/services ] && { [ -n "${key}" ] && grep -w "${key}" /etc/services 2>/dev/null || cat /etc/services; }
+	;;
+*)
+	echo "getent: unsupported database '${db}'" >&2
+	exit 2
+	;;
+esac

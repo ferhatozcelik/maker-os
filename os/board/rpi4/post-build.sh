@@ -97,8 +97,8 @@ rm -rf "${TARGET_DIR}/usr/share/man" "${TARGET_DIR}/usr/share/info" \
 rm -f "${TARGET_DIR}/etc/systemd/system/multi-user.target.wants/sshd.service"
 
 # --- Calistirilabilir izinleri (overlay git/zip'ten bozulmus olabilir) ----------------
-for f in "${TARGET_DIR}"/usr/lib/makeros/* "${TARGET_DIR}"/usr/bin/mos \
-         "${TARGET_DIR}"/usr/bin/docker "${TARGET_DIR}"/usr/lib/rauc/rpi-tryboot-backend; do
+for f in "${TARGET_DIR}"/usr/lib/makeros/* "${TARGET_DIR}"/usr/bin/* \
+         "${TARGET_DIR}"/usr/lib/rauc/rpi-tryboot-backend; do
 	[ -f "${f}" ] && chmod 0755 "${f}"
 done
 
