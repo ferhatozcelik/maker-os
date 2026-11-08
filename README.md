@@ -6,20 +6,19 @@
 
 <h1 align="center">MakerOS</h1>
 
-<p align="center">Raspberry Pi üzerinde çalışan, macOS'un kullanım deneyiminden ilham alan bağımsız ve açık kaynaklı Linux işletim sistemi.</p>
+<p align="center">ARM64 tabanlı, Pi 4 uyumlu kartlarda çalışan bağımsız ve tamamen açık kaynaklı Linux işletim sistemi.</p>
 
 <p align="center"><strong>Make it yours. Build what matters.</strong> · <em>Kendine ait kıl. Değerli olanı üret.</em></p>
 
 <p align="center">
   <a href="https://github.com/ferhatozcelik/maker-os/releases/tag/v1.0.0"><img src="https://img.shields.io/badge/release-v1.0.0-f07a1c" alt="Release v1.0.0"></a>
-  <img src="https://img.shields.io/badge/platform-Raspberry%20Pi%204%20%7C%20400-f07a1c" alt="Platform: Raspberry Pi 4, 400">
+  <img src="https://img.shields.io/badge/platform-ARM64%20%C2%B7%20Pi%204%20uyumlu-f07a1c" alt="Platform: ARM64, Pi 4 uyumlu">
   <img src="https://img.shields.io/badge/taban-Buildroot%20%2B%20Linux%206.18-f07a1c" alt="Taban: Buildroot ve Linux 6.18">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-f07a1c" alt="GPL-3.0 lisansı"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-f07a1c" alt="MIT lisansı"></a>
 </p>
 
 <p align="center">
   <a href="https://github.com/ferhatozcelik/maker-os/releases/latest">İndir</a> ·
-  <a href="#philosophy">Felsefe</a> ·
   <a href="#features">Özellikler</a> ·
   <a href="#setup-guide">Kurulum rehberi</a> ·
   <a href="#documentation">Dokümantasyon</a> ·
@@ -65,15 +64,11 @@
 
 ## Nedir?
 
-MakerOS, Raspberry Pi gibi erişilebilir donanımlar üzerinde çalışan, kullanıcıya kendi bilgisayarını ve dijital üretim ortamını yönetme özgürlüğü sunan bağımsız bir Linux işletim sistemidir. Hazır bir dağıtımın üzerine masaüstü giydirmek yerine; kendi önyükleme zincirini, Rust tabanlı sistem servislerini (`makerd`), web masaüstü kabuğunu, A/B güncelleme altyapısını ve yerel yapay zekâ asistanını tek bir bütün olarak sunar.
+MakerOS, Pi 4 uyumlu ARM64 kartlar gibi erişilebilir donanımlar üzerinde çalışan, kullanıcıya kendi bilgisayarını ve dijital üretim ortamını yönetme özgürlüğü sunan bağımsız bir Linux işletim sistemidir. Hazır bir dağıtımın üzerine masaüstü giydirmek yerine; kendi önyükleme zincirini, Rust tabanlı sistem servislerini (`makerd`), web masaüstü kabuğunu, A/B güncelleme altyapısını ve yerel yapay zekâ asistanını tek bir bütün olarak sunar.
 
-macOS'un sadeliğinden ve kullanım kolaylığından ilham alır; ancak bir kopya olmayı değil, Linux'un esnekliğiyle birleşen özgün bir üretim atölyesi olmayı hedefler.
+Sadeliği ve kullanım kolaylığını Linux'un esnekliğiyle birleştiren özgün bir üretim atölyesi olmayı hedefler.
 
-<a id="philosophy"></a>
-
-## Felsefe, Hikâye ve Manifesto
-
-**Bilgisayar yeniden kişisel olmalı.** Geleneksel sistemlerde kullanıcılar çoğu zaman kapalı ekosistemlerin ve kara kutu servislerin sınırları içinde hareket eder. MakerOS, *"Bir bilgisayarı gerçekten kendimiz için tasarlayabilir miyiz?"* sorusuyla Raspberry Pi üzerinde doğdu. Amacımız pahalı donanımlara ihtiyaç duymadan, kullanıcının sistemini anlayabildiği, değiştirebildiği ve kendi fikirlerini hayata geçirebildiği şeffaf bir ortam kurmaktır.
+**Bilgisayar yeniden kişisel olmalı.** Geleneksel sistemlerde kullanıcılar çoğu zaman kapalı ekosistemlerin ve kara kutu servislerin sınırları içinde hareket eder. MakerOS, *"Bir bilgisayarı gerçekten kendimiz için tasarlayabilir miyiz?"* sorusuyla küçük bir ARM kart üzerinde doğdu. Amacımız pahalı donanımlara ihtiyaç duymadan, kullanıcının sistemini anlayabildiği, değiştirebildiği ve kendi fikirlerini hayata geçirebildiği şeffaf bir ortam kurmaktır.
 
 MakerOS beş temel ilkeye dayanır: **Özgürlük** (kontrol kullanıcıdadır), **Basitlik** (güçlü teknoloji karmaşık olmamalıdır), **Üretkenlik** (tüketim değil üretim odaklıdır), **Şeffaflık** (sistem nasıl çalıştığını açıkça gösterir) ve **Erişilebilirlik** (uygun maliyetli ARM64 donanımlarda çalışır). Yapay zekâ ise bilgisayarın kontrolünü kullanıcıdan alan bir mekanizma değil, kullanıcının yeteneklerini genişleten yerel bir yardımcıdır.
 
@@ -83,7 +78,7 @@ MakerOS beş temel ilkeye dayanır: **Özgürlük** (kontrol kullanıcıdadır),
 
 ## İndir
 
-[Sürüm 1.0.0](https://github.com/ferhatozcelik/maker-os/releases/latest): `makeros-1.0.0-rpi4.img.xz` (Raspberry Pi 4 / 400, 64 bit). İndirdikten sonra `sha256sum -c makeros-*.img.xz.sha256` ile doğrulayın.
+[Sürüm 1.0.0](https://github.com/ferhatozcelik/maker-os/releases/latest): `makeros-1.0.0-rpi4.img.xz` (Pi 4 / 400 uyumlu kartlar, ARM64). İndirdikten sonra `sha256sum -c makeros-*.img.xz.sha256` ile doğrulayın.
 
 <a id="features"></a>
 
@@ -134,8 +129,8 @@ maker-os/
 
 ## Kurulum Rehberi
 
-1. **SD Karta Yazın:** [Sürüm sayfasından](https://github.com/ferhatozcelik/maker-os/releases/latest) `makeros-1.0.0-rpi4.img.xz` dosyasını indirin ve Raspberry Pi Imager (*Use custom*) ile SD karta yazın. İsteğe bağlı olarak `MOSCFG` bölümündeki `wifi-example.txt` dosyasını `wifi.txt` adıyla kopyalayıp Wi-Fi bilgilerinizi girebilirsiniz.
-2. **Başlatın ve Bağlanın:** SD kartı Raspberry Pi 4 / 400'e takıp gücü verin. Aynı ağdaysanız `http://maker-os.local/`, USB-C ile bağlıysanız `http://10.55.0.1/`, ağ tanımlı değilse `MakerOS` kurulum Wi-Fi ağına bağlanarak `http://10.42.0.1/kurulum` adresini açın.
+1. **SD Karta Yazın:** [Sürüm sayfasından](https://github.com/ferhatozcelik/maker-os/releases/latest) `makeros-1.0.0-rpi4.img.xz` dosyasını indirin ve herhangi bir imaj yazma aracıyla (ör. balenaEtcher ya da `dd`) SD karta yazın. İsteğe bağlı olarak `MOSCFG` bölümündeki `wifi-example.txt` dosyasını `wifi.txt` adıyla kopyalayıp Wi-Fi bilgilerinizi girebilirsiniz.
+2. **Başlatın ve Bağlanın:** SD kartı Pi 4 / 400 uyumlu kartınıza takıp gücü verin. Aynı ağdaysanız `http://maker-os.local/`, USB-C ile bağlıysanız `http://10.55.0.1/`, ağ tanımlı değilse `MakerOS` kurulum Wi-Fi ağına bağlanarak `http://10.42.0.1/kurulum` adresini açın.
 3. **Oturum Açın:** İlk kurulumdan sonra varsayılan hesap **`makeros` / `makeros`** olarak oluşturulur; parolanızı **Ayarlar › Kullanıcı** bölümünden değiştirebilirsiniz.
 4. **OTA Güncelleme:** **Ayarlar › Genel › Yazılım güncelleme** üzerinden yeni sürümler denetlenir, imzalı `.raucb` paketi boştaki bölüme (`ROOT_A` / `ROOT_B`) kurulur ve `tryboot` ile güvenle devreye alınır.
 
@@ -146,17 +141,17 @@ maker-os/
 ```bash
 make -C makerd preview     # yerel önizleme: makerd (mock) + kabuk → http://localhost:8080/
 make -C shell smoke        # kabuk duman testi (Docker içinde başsız Chromium)
-./os/build.sh build        # Raspberry Pi imajı → os/out/makeros-1.0.0-rpi4.img.xz
+./os/build.sh build        # ARM64 (Pi 4 uyumlu) imaj → os/out/makeros-1.0.0-rpi4.img.xz
 ```
 
 Ayrıntılı derleme ve geliştirme adımları için bkz. [`docs/development/build-and-test.md`](docs/development/build-and-test.md).
 
 ## Doğrulama Durumu
 
-Masaüstü kabuğu (`shell/`), `makerd` servis ailesi, yerel AI asistanı (`makeros-ai`), terminal oturumları, Python Yöneticisi, Otomatik Başlatma / Cron zamanlayıcı ve OTA güncelleme akışı hem Docker duman testleriyle hem de gerçek Raspberry Pi 4 donanımı üzerinde doğrulanmıştır. Nelerin gerçek donanımda doğrulandığı ve gelecek planlarının ayrımı için bkz. [`docs/verification/validation.md`](docs/verification/validation.md).
+Masaüstü kabuğu (`shell/`), `makerd` servis ailesi, yerel AI asistanı (`makeros-ai`), terminal oturumları, Python Yöneticisi, Otomatik Başlatma / Cron zamanlayıcı ve OTA güncelleme akışı hem Docker duman testleriyle hem de gerçek Pi 4 uyumlu ARM64 donanım üzerinde doğrulanmıştır. Nelerin gerçek donanımda doğrulandığı ve gelecek planlarının ayrımı için bkz. [`docs/verification/validation.md`](docs/verification/validation.md).
 
-## Lisans ve Marka Açıklaması
+## Lisans
 
-[GPL-3.0-or-later](LICENSE) — Üçüncü taraf bileşenlerin lisans bildirimleri için [`NOTICE.md`](NOTICE.md) ve [`docs/project/branding-and-licensing.md`](docs/project/branding-and-licensing.md) belgelerine bakın.
+[MIT](LICENSE) — Üçüncü taraf bileşenlerin lisans bildirimleri için [`NOTICE.md`](NOTICE.md) ve [`docs/project/branding-and-licensing.md`](docs/project/branding-and-licensing.md) belgelerine bakın.
 
-**MakerOS bağımsız bir açık kaynak projesidir.** Raspberry Pi Ltd adına geliştirilmez ve resmî ortaklık iddia edilmez. **Raspberry Pi is a trademark of Raspberry Pi Ltd.**
+**MakerOS bağımsız bir açık kaynak projesidir.** Herhangi bir donanım ya da yazılım üreticisiyle ortaklık, sponsorluk veya resmî bağ iddia etmez. Anılan ürün adları sahiplerinin markalarıdır ve yalnız uyumluluğu belirtmek için kullanılır.

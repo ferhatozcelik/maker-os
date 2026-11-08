@@ -2,7 +2,7 @@
 
 [Türkçe](desktop.md) · [English](desktop.en.md)
 
-MakerOS kabuğu ([`shell/`](../../shell/)), harici JavaScript çerçevesi veya derleme adımı gerektirmeyen yalın ES modülleriyle geliştirilmiştir. Raspberry Pi 4 üzerinde düşük GPU/CPU tüketimi için düz (`flat`) yüzey katmanını kullanır.
+MakerOS kabuğu ([`shell/`](../../shell/)), harici JavaScript çerçevesi veya derleme adımı gerektirmeyen yalın ES modülleriyle geliştirilmiştir. Pi 4 uyumlu kartlarda düşük GPU/CPU tüketimi için düz (`flat`) yüzey katmanını kullanır.
 
 ## İki Görünüm Modu
 

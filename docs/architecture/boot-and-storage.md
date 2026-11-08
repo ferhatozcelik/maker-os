@@ -13,4 +13,4 @@ MakerOS, güç kesintilerine ve hatalı güncellemelere karşı dayanıklı olma
 
 ## A/B OTA Güncelleme Akışı
 
-Yeni sürüm paketleri (`.raucb`) X.509 imzasıyla doğrulanarak boştaki bölüme (`A` veya `B`) yazılır. Yeniden başlatmada Raspberry Pi `tryboot` mekanizması yeni bölümü tek seferlik dener; sistem sağlıklı açılıp `makeros-mark-good` servisi çalıştığında yeni bölüm kalıcı hâle getirilir, aksi durumda donanım otomatik olarak önceki çalışan sürüme döner.
+Yeni sürüm paketleri (`.raucb`) X.509 imzasıyla doğrulanarak boştaki bölüme (`A` veya `B`) yazılır. Yeniden başlatmada önyükleyicinin `tryboot` mekanizması yeni bölümü tek seferlik dener; sistem sağlıklı açılıp `makeros-mark-good` servisi çalıştığında yeni bölüm kalıcı hâle getirilir, aksi durumda donanım otomatik olarak önceki çalışan sürüme döner.

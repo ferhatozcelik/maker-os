@@ -7,10 +7,10 @@ MakerOS uses a read-only EROFS root filesystem and an A/B partition layout to en
 ## Partition Layout
 
 - **`MOSCFG` (FAT32):** Holds `autoboot.txt` for A/B slot selection and the optional `wifi.txt` preconfiguration file.
-- **`BOOT_A` / `BOOT_B` (FAT32):** Kernel (`kernel8.img`), device trees, and Raspberry Pi firmware files.
+- **`BOOT_A` / `BOOT_B` (FAT32):** Kernel (`kernel8.img`), device trees, and board firmware files.
 - **`ROOT_A` / `ROOT_B` (EROFS):** Read-only compressed root filesystem slots.
 - **`DATA` (ext4):** Persistent storage automatically expanded on first boot (`/home`, `/var`, `/etc` overlay, and user projects).
 
 ## A/B OTA Update Flow
 
-Signed `.raucb` update bundles are verified with X.509 certificates and written to the inactive slot. On reboot, the Raspberry Pi `tryboot` mechanism boots the new slot once; once `makeros-mark-good` confirms a healthy boot, the slot becomes permanent—otherwise the bootloader automatically falls back to the previous working slot.
+Signed `.raucb` update bundles are verified with X.509 certificates and written to the inactive slot. On reboot, the bootloader's `tryboot` mechanism boots the new slot once; once `makeros-mark-good` confirms a healthy boot, the slot becomes permanent—otherwise the bootloader automatically falls back to the previous working slot.

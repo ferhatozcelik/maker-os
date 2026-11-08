@@ -13,10 +13,10 @@ The MakerOS documentation covers the operating system architecture, Rust backend
 - [Rust Backend Services](architecture/backend.en.md) — `makerd`, `makerd-priv`, `makerd-user`, and privilege separation
 - [Local AI Assistant](architecture/ai-assistant.en.md) — `makeros-ai`, Qwen2.5-0.5B-Instruct, conversational and command execution modes
 - [Network and Security](architecture/network-security.en.md) — Session auth, CSRF, WebSocket Origin validation, Hotspot, and USB-C networking
-- [Hardware Support](architecture/hardware.en.md) — Raspberry Pi 4 / 400, GPIO, I²C, SPI, UART, and Camera stack
+- [Hardware Support](architecture/hardware.en.md) — Pi 4 / 400 compatible ARM64 boards, GPIO, I²C, SPI, UART, and Camera stack
 
 ### Development, Verification & Project
 - [Build and Test](development/build-and-test.en.md) — Docker-based image build, local preview, and smoke tests
 - [Validation Processes](verification/validation.en.md) — Verified capabilities, test environments, and future roadmap
-- [Branding and Licensing](project/branding-and-licensing.en.md) — GPL-3.0-or-later licensing and third-party trademark policy
+- [Branding and Licensing](project/branding-and-licensing.en.md) — MIT licensing and third-party trademark policy
 - [HTTP & WebSocket API Reference](api.en.md) — `/api/v1` endpoints and real-time event stream

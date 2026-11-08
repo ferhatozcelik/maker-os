@@ -34,4 +34,4 @@ Tüm derleme ve testler **Docker içinde** çalışır; ana makineye Go, Node ve
 
 ## Lisans
 
-Katkılarınız [GPL-3.0-or-later](LICENSE) kapsamında yayımlanır.
+Katkılarınız [MIT](LICENSE) lisansı kapsamında yayımlanır.

@@ -77,18 +77,17 @@ S.launch = async (app, o = {}) => {
   if (typeof app === "string") {
     // Tarayıcı istenirse (ör. terminaldeki bağlantı): Chromium girdisi yoksa /web'deki Tarayıcı, o da yoksa pencerenin kendisi.
     const br = app === "chromium" || app === "makeros.browser";
-    app = appById(app) || (br ? appById("chromium") || appById("makeros.browser") || { id: "chromium", name: t("app.browser"), kind: "native", categories: ["WebBrowser"] } : null);
+    app = appById(app) || (br ? appById("chromium") || appById("makeros.browser") || { id: "chromium", name: t("app.browser"), kind: "web", categories: ["WebBrowser"] } : null);
   }
   if (!app) return;
   closeOverlay();
+  // MakerOS yerleşik tarayıcısı: hem Pi ekranında hem uzaktan her zaman pencere içinde açılır.
+  if (isBrowser(app)) {
+    const br = { ...app, kind: "web", url: "/shell/apps/browser/", w: 1180, h: 760, single: true };
+    // Adresle açılış (ör. terminaldeki bağlantı): açık pencere varsa o adrese gider.
+    return o.path ? wm.open(br, { path: o.path }) : wm.activateApp(br);
+  }
   if (app.kind === "native") {
-    // Uzaktan "Chromium": MakerOS'un kendi Tarayıcı penceresi (sayfalar Pi üzerinden aktarılır, bkz. apps/browser).
-    // Açılışta Google; sık kullanılanlar çubuğunda maker siteleri. Pencere kimliği Chromium'unki: raf simgesi çalışıyor görünür.
-    if (!S.local && isBrowser(app)) {
-      const br = { ...app, kind: "web", url: "/shell/apps/browser/", w: 1180, h: 760, single: true };
-      // Adresle açılış (ör. terminaldeki bağlantı): açık pencere varsa o adrese gider.
-      return o.path ? wm.open(br, { path: o.path }) : wm.activateApp(br);
-    }
     // Diğer yerel uygulamalar Pi'nin kendi ekranında (labwc) açılır.
     toast(t("launch.native", { app: app.name }), "app-window");
     try { native ??= new (await M.native()).NativeBackend(); await native.launch(app); } catch (e) { toast(t("launch.fail", { app: app.name }) + ": " + e.message, "circle-alert"); return; }

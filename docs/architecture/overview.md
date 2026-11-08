@@ -9,10 +9,10 @@ MakerOS, hazır bir Linux dağıtımının üzerine masaüstü kurmak yerine Bui
 | Bileşen | Teknoloji | Kaynak |
 | --- | --- | --- |
 | Derleme sistemi | Buildroot 2026.02 LTS | [`os/`](../../os/) |
-| Çekirdek | Raspberry Pi Linux 6.18 (ARM64) | [`os/board/rpi4/`](../../os/board/rpi4/) |
+| Çekirdek | Linux 6.18 (ARM64) | [`os/board/rpi4/`](../../os/board/rpi4/) |
 | Başlatma ve servisler | systemd | [`os/board/rpi4/rootfs-overlay/`](../../os/board/rpi4/rootfs-overlay/) |
 | Kök dosya sistemi | EROFS (salt okunur) + ext4 (`/data`) | [`os/board/rpi4/genimage.cfg.in`](../../os/board/rpi4/genimage.cfg.in) |
-| OTA güncelleme | RAUC + Raspberry Pi `tryboot` | [`makerd/src/ota.rs`](../../makerd/src/ota.rs) |
+| OTA güncelleme | RAUC + önyükleyici `tryboot` | [`makerd/src/ota.rs`](../../makerd/src/ota.rs) |
 | Arka uç servisleri | Rust (`makerd`, `makerd-priv`, `makerd-user`, `makeros-ai`) | [`makerd/src/`](../../makerd/src/) |
 | Yerel ekran | Wayland (`labwc`) + Cog (WPE WebKit) | [`os/package/labwc/`](../../os/package/labwc/) |
 | Masaüstü ve Web kabuğu | Bağımlılıksız ES modülleri ve CSS | [`shell/`](../../shell/) |

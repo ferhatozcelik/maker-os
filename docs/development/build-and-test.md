@@ -18,7 +18,7 @@ make -C shell smoke
 make -C shell smoke-makerd
 ```
 
-## Raspberry Pi İmajını Derleme (`os/`)
+## ARM64 İmajını Derleme (`os/`)
 
 ```bash
 cd os
@@ -27,4 +27,4 @@ cd os
 # Çıktı: os/out/makeros-1.0.0-rpi4.img.xz (+ .sha256)
 ```
 
-USB-C üzerinden bağlı bir Raspberry Pi üzerindeki geliştirme imajına anında güncelleme göndermek için [`os/debug/push.sh`](../../os/debug/push.sh) betiği kullanılır (`os/debug/push.sh all`).
+USB-C üzerinden bağlı bir kart üzerindeki geliştirme imajına anında güncelleme göndermek için [`os/debug/push.sh`](../../os/debug/push.sh) betiği kullanılır (`os/debug/push.sh all`).

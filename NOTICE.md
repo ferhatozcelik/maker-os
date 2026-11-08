@@ -1,7 +1,7 @@
 # Üçüncü taraf bileşenler ve lisanslar
 
 MakerOS'un kendi kaynak kodu (makerd, web kabuğu, `os/` altındaki derleme betikleri ve
-yapılandırmalar, örnek projeler) **GNU GPL v3 veya sonrası** ile lisanslanmıştır; bkz.
+yapılandırmalar, örnek projeler) **MIT** lisansıyla lisanslanmıştır; bkz.
 [`LICENSE`](LICENSE).
 
 MakerOS 2 imajı Buildroot ile kaynaktan derlenir. Buildroot'un indirip derlediği paketlerin

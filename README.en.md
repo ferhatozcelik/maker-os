@@ -6,20 +6,19 @@
 
 <h1 align="center">MakerOS</h1>
 
-<p align="center">An independent, open-source Linux operating system for Raspberry Pi inspired by the usability of macOS.</p>
+<p align="center">An independent, fully open-source Linux operating system for ARM64, Pi 4 compatible boards.</p>
 
 <p align="center"><strong>Make it yours. Build what matters.</strong></p>
 
 <p align="center">
   <a href="https://github.com/ferhatozcelik/maker-os/releases/tag/v1.0.0"><img src="https://img.shields.io/badge/release-v1.0.0-f07a1c" alt="Release v1.0.0"></a>
-  <img src="https://img.shields.io/badge/platform-Raspberry%20Pi%204%20%7C%20400-f07a1c" alt="Platform: Raspberry Pi 4, 400">
+  <img src="https://img.shields.io/badge/platform-ARM64%20%C2%B7%20Pi%204%20compatible-f07a1c" alt="Platform: ARM64, Pi 4 compatible">
   <img src="https://img.shields.io/badge/base-Buildroot%20%2B%20Linux%206.18-f07a1c" alt="Base: Buildroot and Linux 6.18">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-f07a1c" alt="GPL-3.0 license"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-f07a1c" alt="MIT license"></a>
 </p>
 
 <p align="center">
   <a href="https://github.com/ferhatozcelik/maker-os/releases/latest">Download</a> ·
-  <a href="#philosophy">Philosophy</a> ·
   <a href="#features">Features</a> ·
   <a href="#setup-guide">Setup Guide</a> ·
   <a href="#documentation">Documentation</a> ·
@@ -65,15 +64,11 @@
 
 ## What is MakerOS?
 
-MakerOS is an independent Linux operating system running on accessible hardware like the Raspberry Pi, designed to give users full ownership and freedom over their computer and digital workspace. Instead of layering a theme onto a generic distribution, MakerOS builds its own image from the ground up—unifying its boot chain, Rust system services (`makerd`), web desktop shell, A/B OTA update system, and offline AI assistant into a single cohesive platform.
+MakerOS is an independent Linux operating system running on accessible hardware such as Pi 4 compatible ARM64 boards, designed to give users full ownership and freedom over their computer and digital workspace. Instead of layering a theme onto a generic distribution, MakerOS builds its own image from the ground up—unifying its boot chain, Rust system services (`makerd`), web desktop shell, A/B OTA update system, and offline AI assistant into a single cohesive platform.
 
-It draws inspiration from the clarity and ease of use of macOS, while maintaining its own identity, lightweight technical architecture, and open-source maker philosophy.
+It combines clarity and ease of use with the flexibility of Linux, while maintaining its own identity, lightweight technical architecture, and open-source maker philosophy.
 
-<a id="philosophy"></a>
-
-## Philosophy, Story & Manifesto
-
-**Computing should be personal again.** Modern operating systems increasingly lock users inside black-box ecosystems and opaque background services. MakerOS started on a Raspberry Pi with a simple question: *"Can we design a computer that truly belongs to us?"* Our goal is to make capable computing accessible without expensive hardware—providing a transparent system that you can understand, modify, and use to build what matters to you.
+**Computing should be personal again.** Modern operating systems increasingly lock users inside black-box ecosystems and opaque background services. MakerOS started on a small ARM board with a simple question: *"Can we design a computer that truly belongs to us?"* Our goal is to make capable computing accessible without expensive hardware—providing a transparent system that you can understand, modify, and use to build what matters to you.
 
 MakerOS is guided by five core principles: **Freedom** (you own your machine), **Simplicity** (powerful tools without unnecessary complexity), **Productivity** (built for creation, not just consumption), **Transparency** (clear visibility into services, hardware, and state), and **Accessibility** (engineered for affordable ARM64 devices). Artificial intelligence in MakerOS is designed to expand human capability rather than take control away from the user.
 
@@ -83,7 +78,7 @@ MakerOS is guided by five core principles: **Freedom** (you own your machine), *
 
 ## Download
 
-[Release 1.0.0](https://github.com/ferhatozcelik/maker-os/releases/latest): `makeros-1.0.0-rpi4.img.xz` (Raspberry Pi 4 / 400, 64-bit). Verify after download with `sha256sum -c makeros-*.img.xz.sha256`.
+[Release 1.0.0](https://github.com/ferhatozcelik/maker-os/releases/latest): `makeros-1.0.0-rpi4.img.xz` (Pi 4 / 400 compatible boards, ARM64). Verify after download with `sha256sum -c makeros-*.img.xz.sha256`.
 
 <a id="features"></a>
 
@@ -134,8 +129,8 @@ maker-os/
 
 ## Setup Guide
 
-1. **Flash the Image:** Download `makeros-1.0.0-rpi4.img.xz` from [Releases](https://github.com/ferhatozcelik/maker-os/releases/latest) and flash it to an SD card using Raspberry Pi Imager (*Use custom*). Optionally copy `wifi-example.txt` to `wifi.txt` on the `MOSCFG` partition to preconfigure Wi-Fi.
-2. **Boot & Connect:** Insert the SD card into your Raspberry Pi 4 / 400 and power it on. Open `http://maker-os.local/` on your local network, `http://10.55.0.1/` over USB-C, or connect to the open `MakerOS` setup Wi-Fi hotspot (`http://10.42.0.1/kurulum`).
+1. **Flash the Image:** Download `makeros-1.0.0-rpi4.img.xz` from [Releases](https://github.com/ferhatozcelik/maker-os/releases/latest) and flash it to an SD card with any image writer (e.g. balenaEtcher or `dd`). Optionally copy `wifi-example.txt` to `wifi.txt` on the `MOSCFG` partition to preconfigure Wi-Fi.
+2. **Boot & Connect:** Insert the SD card into your Pi 4 / 400 compatible board and power it on. Open `http://maker-os.local/` on your local network, `http://10.55.0.1/` over USB-C, or connect to the open `MakerOS` setup Wi-Fi hotspot (`http://10.42.0.1/kurulum`).
 3. **Sign In:** Default credentials are **`makeros` / `makeros`**. Change your password anytime under **Settings › User**.
 4. **OTA Updates:** Check and install signed `.raucb` updates from **Settings › General › Software Update** with automatic `tryboot` rollback protection.
 
@@ -146,17 +141,17 @@ maker-os/
 ```bash
 make -C makerd preview     # local preview: makerd (mock) + shell → http://localhost:8080/
 make -C shell smoke        # headless Chromium smoke test in Docker
-./os/build.sh build        # build Raspberry Pi image → os/out/makeros-1.0.0-rpi4.img.xz
+./os/build.sh build        # build ARM64 (Pi 4 compatible) image → os/out/makeros-1.0.0-rpi4.img.xz
 ```
 
 See [`docs/development/build-and-test.en.md`](docs/development/build-and-test.en.md) for full build instructions.
 
 ## Validation Status
 
-The desktop shell (`shell/`), `makerd` service family, local AI assistant (`makeros-ai`), terminal sessions, Python Manager, Autostart / Cron scheduler, and OTA update flow have been verified via automated Docker smoke tests and on real Raspberry Pi 4 hardware. See [`docs/verification/validation.en.md`](docs/verification/validation.en.md) for verified features versus future roadmap items.
+The desktop shell (`shell/`), `makerd` service family, local AI assistant (`makeros-ai`), terminal sessions, Python Manager, Autostart / Cron scheduler, and OTA update flow have been verified via automated Docker smoke tests and on real Pi 4 compatible ARM64 hardware. See [`docs/verification/validation.en.md`](docs/verification/validation.en.md) for verified features versus future roadmap items.
 
 ## License & Trademark Notice
 
-[GPL-3.0-or-later](LICENSE) — See [`NOTICE.md`](NOTICE.md) and [`docs/project/branding-and-licensing.en.md`](docs/project/branding-and-licensing.en.md) for third-party notices.
+[MIT](LICENSE) — See [`NOTICE.md`](NOTICE.md) and [`docs/project/branding-and-licensing.en.md`](docs/project/branding-and-licensing.en.md) for third-party notices.
 
-**MakerOS is an independent open-source project.** It is not affiliated with, endorsed by, or sponsored by Raspberry Pi Ltd. **Raspberry Pi is a trademark of Raspberry Pi Ltd.**
+**MakerOS is an independent open-source project.** It is not affiliated with, endorsed by, or sponsored by any hardware or software vendor. Product names mentioned are trademarks of their respective owners and are used only to describe compatibility.

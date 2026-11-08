@@ -16,7 +16,7 @@ const BUILTIN = {
   camera: { w: 760, h: 520, keys: "kamera fotoğraf video camera picamera rpicam", single: true },
   gpio: { w: 720, h: 640, keys: "gpio pin donanım elektronik led buton hardware header", single: true },
   plugins: { w: 880, h: 580, keys: "eklenti uygulama zip içe aktar dışa aktar paylaş plugin extension import export", single: true },
-  browser: { w: 1100, h: 720, keys: "tarayıcı internet web sitesi chromium chrome browser", single: true },
+  browser: { w: 1180, h: 760, keys: "tarayıcı internet web sitesi chromium chrome browser", single: true },
 };
 export const DEFAULT_DOCK = ["makeros.files", "chromium", "makeros.browser", "makeros.terminal", "makeros.python", "makeros.agents", "makeros.camera", "makeros.gpio", "makeros.plugins", "makeros.activity", "makeros.settings"];
 
@@ -47,14 +47,24 @@ export let APPS = withTheme(builtinList());
 prefs.on("change", k => { if (k === "look") APPS = withTheme(APPS); });
 export const appById = id => APPS.find(a => a.id === id);
 
-const isBrowser = a => a.id === "chromium" || (a.categories || []).includes("WebBrowser");
+const isBrowser = a => !!a && (a.id === "chromium" || a.id === "makeros.browser" || (a.categories || []).includes("WebBrowser"));
 export { isBrowser };
 
 export async function loadApps() {
   try {
     const list = await get("/apps");
     if (Array.isArray(list) && list.length) {
-      const got = list.map(normalize), ids = new Set(got.map(a => a.id));
+      const got = list.map(a => {
+        const item = normalize(a);
+        if (isBrowser(item)) {
+          item.kind = "web";
+          item.url = `${B}apps/browser/`;
+          item.w = 1180;
+          item.h = 760;
+          item.single = true;
+        }
+        return item;
+      }), ids = new Set(got.map(a => a.id));
       APPS = [...got, ...builtinList().filter(a => !ids.has(a.id))];
     }
   } catch (e) { console.warn("GET /apps:", e.message); }

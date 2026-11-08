@@ -18,7 +18,7 @@ make -C shell smoke
 make -C shell smoke-makerd
 ```
 
-## Building the Raspberry Pi Image (`os/`)
+## Building the ARM64 Image (`os/`)
 
 ```bash
 cd os
@@ -27,4 +27,4 @@ cd os
 # Output: os/out/makeros-1.0.0-rpi4.img.xz (+ .sha256)
 ```
 
-To push live updates (`makerd` + `shell` + overlay scripts) to a Raspberry Pi connected over USB-C (`10.55.0.1`), run [`os/debug/push.sh`](../../os/debug/push.sh) (`os/debug/push.sh all`).
+To push live updates (`makerd` + `shell` + overlay scripts) to a board connected over USB-C (`10.55.0.1`), run [`os/debug/push.sh`](../../os/debug/push.sh) (`os/debug/push.sh all`).

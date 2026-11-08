@@ -6,7 +6,7 @@ edition = "2024"
 # Buildroot 2026.02 host-rust sürümü. Bağımlılıklar bu sürümle derlenebilir
 # olanlardan seçilir (resolver 3: MSRV'ye duyarlı çözümleme).
 rust-version = "1.88"
-license = "GPL-3.0-or-later"
+license = "MIT"
 publish = false
 resolver = "3"
 autobins = false

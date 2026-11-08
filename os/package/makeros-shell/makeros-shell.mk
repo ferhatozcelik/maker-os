@@ -7,7 +7,7 @@
 MAKEROS_SHELL_VERSION = $(MAKEROS_VERSION)
 MAKEROS_SHELL_SITE = $(BR2_EXTERNAL_MAKEROS_PATH)/../shell
 MAKEROS_SHELL_SITE_METHOD = local
-MAKEROS_SHELL_LICENSE = GPL-3.0-or-later
+MAKEROS_SHELL_LICENSE = MIT
 MAKEROS_SHELL_DEST = $(TARGET_DIR)/usr/share/makeros/shell
 # Gelistirme dosyalari imaja girmez.
 MAKEROS_SHELL_EXCLUDES = tools node_modules tests test '*.md' '.*'

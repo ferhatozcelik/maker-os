@@ -2,7 +2,7 @@
 
 [Türkçe](desktop.md) · [English](desktop.en.md)
 
-The MakerOS shell ([`shell/`](../../shell/)) is built with standard, dependency-free ES modules and CSS without heavy frontend frameworks. It uses a flat rendering tier (`fx: "flat"`) to keep GPU and CPU usage minimal on Raspberry Pi 4.
+The MakerOS shell ([`shell/`](../../shell/)) is built with standard, dependency-free ES modules and CSS without heavy frontend frameworks. It uses a flat rendering tier (`fx: "flat"`) to keep GPU and CPU usage minimal on Pi 4 compatible boards.
 
 ## Two Interface Modes
 
