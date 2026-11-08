@@ -7,6 +7,7 @@ import { post } from "/shell/js/api.js";
 import { BOOKMARKS } from "/shell/js/bookmarks.js";
 
 app.init({ title: t("app.browser"), standaloneBar: false });
+app.chrome({ title: false });
 
 const SEARCH = q => "https://www.google.com/search?igu=1&hl=tr&q=" + encodeURIComponent(q);
 const EMBED = new URLSearchParams(location.search).get("embed") === "1";

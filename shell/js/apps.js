@@ -18,7 +18,7 @@ const BUILTIN = {
   plugins: { w: 880, h: 580, keys: "eklenti uygulama zip içe aktar dışa aktar paylaş plugin extension import export", single: true },
   browser: { w: 1180, h: 760, keys: "tarayıcı internet web sitesi chromium chrome browser", single: true },
 };
-export const DEFAULT_DOCK = ["makeros.files", "chromium", "makeros.browser", "makeros.terminal", "makeros.python", "makeros.agents", "makeros.camera", "makeros.gpio", "makeros.plugins", "makeros.activity", "makeros.settings"];
+export const DEFAULT_DOCK = ["makeros.files", "makeros.browser", "makeros.terminal", "makeros.python", "makeros.agents", "makeros.camera", "makeros.gpio", "makeros.plugins", "makeros.activity", "makeros.settings"];
 
 // Ayarlar sayfaları (kenar çubuğu + Bul + derin bağlantı #sayfa)
 export const SETTINGS_PAGES = [
@@ -78,9 +78,9 @@ export async function loadApps() {
     APPS = [...APPS.filter(a => !a.id.startsWith("makeros.plugin.")), ...extra];
   } catch { /* eklenti hizmeti yok */ }
   APPS = withTheme(APPS);
-  // Tarayıcı penceresi masaüstünde ayrı listelenmez: uzaktan "Chromium" simgesi onu açar (bkz. main.js).
-  // Web arayüzünde (/web) yerel uygulama olmadığından orada "Tarayıcı" olarak görünür.
-  if (document.documentElement.dataset.ui !== "web" && APPS.some(a => a.id === "chromium")) APPS = APPS.filter(a => a.id !== "makeros.browser");
+  // Tarayıcı tek bir yerleşik uygulama olarak listelenir (makeros.browser - "Tarayıcı").
+  // Mükerrer / yerel Chromium girişi menülerde ve kenar çubuğunda ayrı gösterilmez.
+  if (APPS.some(a => a.id === "makeros.browser")) APPS = APPS.filter(a => a.id !== "chromium");
   prefs.emit("change", "look", pref("look")); // eklenti teması etkinse duvar kâğıdı/marka/raf yenilensin
   return APPS;
 }

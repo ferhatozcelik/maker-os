@@ -17,7 +17,7 @@ const html = document.documentElement;
 html.dataset.ui = "web";
 const view = $(".view"), nav = $(".nav"), ttl = $(".ttl");
 // Web arayüzünde gösterilmeyenler.
-const HIDDEN = new Set();
+const HIDDEN = new Set(["chromium"]);
 const SYSTEM = new Set(["makeros.activity", "makeros.settings"]);
 const ORDER = ["makeros.files", "makeros.browser", "makeros.terminal", "makeros.python", "makeros.agents", "makeros.camera", "makeros.gpio", "makeros.plugins"];
 const frames = new Map(); // uygulama → iframe (açık kalır: terminal oturumu, kamera durumu korunur)

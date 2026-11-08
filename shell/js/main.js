@@ -77,7 +77,7 @@ S.launch = async (app, o = {}) => {
   if (typeof app === "string") {
     // Tarayıcı istenirse (ör. terminaldeki bağlantı): Chromium girdisi yoksa /web'deki Tarayıcı, o da yoksa pencerenin kendisi.
     const br = app === "chromium" || app === "makeros.browser";
-    app = appById(app) || (br ? appById("chromium") || appById("makeros.browser") || { id: "chromium", name: t("app.browser"), kind: "web", categories: ["WebBrowser"] } : null);
+    app = appById(app) || (br ? appById("makeros.browser") || appById("chromium") || { id: "makeros.browser", name: t("app.browser"), kind: "web", categories: ["WebBrowser"] } : null);
   }
   if (!app) return;
   closeOverlay();
