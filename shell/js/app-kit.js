@@ -67,7 +67,8 @@ addEventListener("message", e => {
   const m = e.data;
   if (m.mk === "command") cmds[m.cmd]?.(m);
   else if (m.mk === "visibility") { shellVis = !!m.visible; visChanged(); }
-  else if (m.mk === "navigate") { cmds.navigate ? cmds.navigate(m.path) : (location.hash = m.path); }
+  else if (m.mk === "navigate") { if (m.path != null) location.hash = m.path; cmds.navigate?.(m.path); }
+  else if (m.mk === "closing") cmds.closing?.();
 });
 bus.on("unauthorized", () => {
   if (embedded) post({ mk: "unauthorized" });

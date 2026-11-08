@@ -689,12 +689,6 @@ pub async fn browse(Query(q): Query<HashMap<String, String>>, h: HeaderMap) -> R
     };
     let lang = h.get(header::ACCEPT_LANGUAGE).and_then(|v| v.to_str().ok()).unwrap_or("");
     let (status, ct, body) = match crate::browse::fetch(&url, lang).await {
-        Ok(p) if crate::browse::is_bot_wall(&p) => {
-            crate::browse::mark_walled(&p.url);
-            crate::browse::mark_walled(&url);
-            let msg = "Bu site bot korumalı (Cloudflare); yalnız gerçek tarayıcıda açılır. Bundan sonra doğrudan yeni sekmede açılacak.";
-            (StatusCode::BAD_GATEWAY, "text/html; charset=utf-8".to_string(), crate::browse::error_page(&p.url, msg))
-        }
         Ok(p) => {
             let html = p.content_type.contains("text/html") || p.content_type.contains("xhtml");
             tracing::debug!(user = %user, url = %p.url, status = p.status, "tarayıcı");

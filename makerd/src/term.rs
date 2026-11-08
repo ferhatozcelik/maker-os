@@ -347,10 +347,13 @@ impl Manager {
         self.get(id, &tk.user)
     }
 
-    /// Oturumu sonlandırır.
+    /// Oturumu sonlandırır ve listeden hemen kaldırır.
     pub fn close(&self, id: &str) {
-        let s = self.0.sessions.lock().unwrap().get(id).cloned();
+        let s = self.0.sessions.lock().unwrap().remove(id);
         if let Some(s) = s {
+            if let Some(t) = s.inner.lock().unwrap().timer.take() {
+                t.abort();
+            }
             s.kill();
         }
     }

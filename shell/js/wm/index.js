@@ -44,6 +44,7 @@ export class WindowManager extends Emitter {
   async close(win) {
     if (!win || win.closing) return;
     win.closing = true;
+    win.view.send?.({ mk: "closing" });
     await win.view.play("close");
     win.view.destroy();
     this.wins = this.wins.filter(w => w !== win);
@@ -176,6 +177,11 @@ export class WindowManager extends Emitter {
   restoreSession(appById) {
     const s = store.get("wm.session", []);
     if (!Array.isArray(s)) return;
-    for (const e of s) { const app = appById(e.app); if (app && app.kind === "web") try { this.open(app, { rect: e.rect, state: e.state, min: e.min, path: e.path, force: true }); } catch (x) { console.warn(x); } }
+    for (const e of s) {
+      const app = appById(e.app);
+      if (!app || app.kind !== "web") continue;
+      if (app.single && this.byApp(app.id).length) continue;
+      try { this.open(app, { rect: e.rect, state: e.state, min: e.min, path: e.path, force: true }); } catch (x) { console.warn(x); }
+    }
   }
 }

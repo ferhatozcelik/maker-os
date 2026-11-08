@@ -106,29 +106,81 @@ fn has_default_route() -> bool {
     v4 || v6
 }
 
+/// Sunucu çerez deposu (alan adı → ad=değer çiftleri): yönlendirme ve oturum çerezleri korunsun.
+fn cookies() -> &'static Mutex<HashMap<String, HashMap<String, String>>> {
+    static C: OnceLock<Mutex<HashMap<String, HashMap<String, String>>>> = OnceLock::new();
+    C.get_or_init(Default::default)
+}
+
+fn save_cookies(host: &str, set_cookies: &[String]) {
+    if set_cookies.is_empty() {
+        return;
+    }
+    let key = host.trim_start_matches("www.").to_lowercase();
+    let mut jar = cookies().lock().unwrap();
+    let entry = jar.entry(key).or_default();
+    for raw in set_cookies {
+        if let Some(pair) = raw.split(';').next() {
+            if let Some((k, v)) = pair.split_once('=') {
+                let k = k.trim();
+                let v = v.trim();
+                if !k.is_empty() {
+                    entry.insert(k.to_string(), v.to_string());
+                }
+            }
+        }
+    }
+}
+
+fn cookie_header(host: &str) -> Option<String> {
+    let key = host.trim_start_matches("www.").to_lowercase();
+    let jar = cookies().lock().unwrap();
+    let map = jar.get(&key)?;
+    if map.is_empty() {
+        return None;
+    }
+    Some(map.iter().map(|(k, v)| format!("{k}={v}")).collect::<Vec<_>>().join("; "))
+}
+
 /// Sayfayı indirir (yönlendirmeler elle izlenir: her adım yeniden denetlenir).
 pub async fn fetch(start: &str, lang: &str) -> Result<Page, String> {
     let mut u = url::Url::parse(start).map_err(|_| "geçersiz adres".to_string())?;
-    let lang = if lang.is_empty() { "tr-TR,tr;q=0.9,en;q=0.8".to_string() } else { lang.chars().take(200).collect() };
+    let lang = if lang.is_empty() { "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7".to_string() } else { lang.chars().take(200).collect() };
     for _ in 0..=MAX_REDIRECTS {
         vet(&u).await?;
+        let host = u.host_str().unwrap_or("").to_string();
+        let ck = cookie_header(&host);
         let (cur, lang2) = (u.to_string(), lang.clone());
-        let r = tokio::task::spawn_blocking(move || -> Result<(u16, Option<String>, String, Vec<u8>), String> {
+        let r = tokio::task::spawn_blocking(move || -> Result<(u16, Option<String>, String, Vec<String>, Vec<u8>), String> {
             let ag: ureq::Agent = ureq::Agent::config_builder()
                 .timeout_global(Some(Duration::from_secs(20)))
                 .max_redirects(0)
                 .http_status_as_error(false)
                 .build()
                 .into();
-            let mut res = ag.get(&cur).header("User-Agent", UA).header("Accept", "text/html,application/xhtml+xml,*/*;q=0.8").header("Accept-Language", &lang2)
-                .call().map_err(|e| format!("bağlanılamadı: {e}"))?;
+            let mut req = ag
+                .get(&cur)
+                .header("User-Agent", UA)
+                .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8")
+                .header("Accept-Language", &lang2)
+                .header("Upgrade-Insecure-Requests", "1")
+                .header("Sec-Fetch-Dest", "document")
+                .header("Sec-Fetch-Mode", "navigate")
+                .header("Sec-Fetch-Site", "none")
+                .header("Sec-Fetch-User", "?1");
+            if let Some(ref c) = ck {
+                req = req.header("Cookie", c);
+            }
+            let mut res = req.call().map_err(|e| format!("bağlanılamadı: {e}"))?;
             let status = res.status().as_u16();
             let loc = res.headers().get("location").and_then(|v| v.to_str().ok()).map(String::from);
             let ct = res.headers().get("content-type").and_then(|v| v.to_str().ok()).unwrap_or("application/octet-stream").to_string();
+            let set_ck: Vec<String> = res.headers().get_all("set-cookie").iter().filter_map(|v| v.to_str().ok().map(String::from)).collect();
             let body = if (300..400).contains(&status) { Vec::new() } else { res.body_mut().with_config().limit(MAX_BODY).read_to_vec().map_err(|e| format!("sayfa okunamadı: {e}"))? };
-            Ok((status, loc, ct, body))
+            Ok((status, loc, ct, set_ck, body))
         }).await.map_err(|e| e.to_string())??;
-        let (status, loc, ct, body) = r;
+        let (status, loc, ct, set_ck, body) = r;
+        save_cookies(&host, &set_ck);
         if (300..400).contains(&status) {
             if let Some(l) = loc {
                 u = u.join(&l).map_err(|_| "geçersiz yönlendirme".to_string())?;
@@ -172,18 +224,18 @@ fn js_str(s: &str) -> String {
 }
 
 /// HTML'e <base> + gezinti betiği ekler, sayfanın kendi meta CSP'sini etkisizleştirir.
+/// Tüm bağlantılar ve window.open çağrıları host PC tarayıcısına çıkmadan MakerOS Tarayıcı içinde açılır.
 pub fn rewrite(html: &[u8], url: &str, ticket: &str) -> Vec<u8> {
     let attr = url.replace('&', "&amp;").replace('"', "&quot;").replace('<', "&lt;");
     let inject = format!(
         r##"<base href="{attr}"><script>(()=>{{const B=location.protocol+"//"+location.host+"/api/v1/browse?t={t}&url=",U={u};
-const W={w};
-const go=h=>{{try{{const x=new URL(h,document.baseURI);if(!/^https?:$/.test(x.protocol))return false;if((/(^|\.)google\.[a-z.]+$/.test(x.hostname)&&x.pathname==="/search")||W.some(d=>x.hostname===d||x.hostname.endsWith("."+d))){{open(x.href,"_blank");return true}}location.href=B+encodeURIComponent(x.href);return true}}catch(e){{return false}}}};
-document.addEventListener("click",e=>{{if(e.defaultPrevented||e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;const a=e.target.closest&&e.target.closest("a[href]");if(!a)return;const tg=(a.getAttribute("target")||"").toLowerCase();if(tg&&tg!=="_self"&&tg!=="_top"&&tg!=="_parent")return;const h=a.getAttribute("href")||"";if(!h||h[0]==="#"||/^(javascript|mailto|tel):/i.test(h))return;if(go(a.href))e.preventDefault()}},true);
+const go=h=>{{try{{const x=new URL(h,document.baseURI);if(!/^https?:$/.test(x.protocol))return false;location.href=B+encodeURIComponent(x.href);return true}}catch(e){{return false}}}};
+window.open=u=>{{if(u)go(u);return null}};
+document.addEventListener("click",e=>{{if(e.defaultPrevented||e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;const a=e.target.closest&&e.target.closest("a[href]");if(!a)return;const h=a.getAttribute("href")||"";if(!h||h[0]==="#"||/^(javascript|mailto|tel):/i.test(h))return;if(go(a.href))e.preventDefault()}},true);
 document.addEventListener("submit",e=>{{const f=e.target;if((f.getAttribute("method")||"get").toLowerCase()!=="get")return;const x=new URL(f.getAttribute("action")||document.baseURI,document.baseURI);x.search=new URLSearchParams(new FormData(f)).toString();if(go(x.href))e.preventDefault()}},true);
 const tell=()=>parent.postMessage({{mkBrowse:1,url:U,title:document.title}},"*");tell();addEventListener("DOMContentLoaded",tell)}})()</script>"##,
         t = ticket,
         u = js_str(url),
-        w = serde_json::to_string(&walled_hosts()).unwrap_or_else(|_| "[]".into()).replace('<', "\\u003c"),
     );
     let low: Vec<u8> = html.iter().map(|b| b.to_ascii_lowercase()).collect();
     // Sayfanın kendi <meta http-equiv="Content-Security-Policy"> etiketi eklenen betiği engellemesin.
@@ -234,13 +286,12 @@ pub fn expired_page(url: &str) -> Vec<u8> {
     .into_bytes()
 }
 
-/// Hata sayfası (kabuk "yeni sekmede aç" önerir).
+/// Hata sayfası (MakerOS Tarayıcı içinde yeniden deneme sunar).
 pub fn error_page(url: &str, msg: &str) -> Vec<u8> {
     let esc = |s: &str| s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('"', "&quot;");
     format!(
-        r#"<!doctype html><meta charset="utf-8"><body style="margin:0;height:100vh;display:grid;place-items:center;font:14px system-ui;color:#555;background:#fafafa;text-align:center;padding:24px"><div><p style="font-size:16px;color:#222;margin:0 0 6px">Sayfa burada açılamadı</p><p style="margin:0 0 16px">{m}</p><a href="{h}" target="_blank" rel="noopener" style="display:inline-block;padding:9px 18px;border-radius:999px;background:#ff7a1a;color:#fff;text-decoration:none;font-weight:600">Yeni sekmede aç ↗</a></div><script>parent.postMessage({{mkBrowse:1,url:{u},error:{e}}},"*")</script>"#,
+        r#"<!doctype html><meta charset="utf-8"><body style="margin:0;height:100vh;display:grid;place-items:center;font:14px system-ui;color:#555;background:#fafafa;text-align:center;padding:24px"><div><p style="font-size:16px;color:#222;margin:0 0 6px">Sayfa yüklenemedi</p><p style="margin:0 0 16px">{m}</p><button onclick="location.reload()" style="display:inline-block;padding:9px 18px;border:0;border-radius:999px;background:#ff7a1a;color:#fff;font:inherit;font-weight:600;cursor:pointer">Yeniden dene ↻</button></div><script>parent.postMessage({{mkBrowse:1,url:{u},error:{e}}},"*")</script>"#,
         m = esc(msg),
-        h = esc(url),
         u = js_str(url),
         e = js_str(msg),
     )

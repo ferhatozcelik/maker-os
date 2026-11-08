@@ -557,8 +557,9 @@ pub async fn ai_run(State(s): State<S>, h: HeaderMap, axum::Json(r): axum::Json<
         },
         Err(_) => exec::Mode::Bypass,
     };
-    let is_interactive = exec::interactive(&r.command).is_some();
-    if (r.terminal || is_interactive) && !crate::ai::risk::has_placeholder(&r.command) {
+    // Yalnız kullanıcı açıkça `terminal: true` istediyse Terminal penceresi açılır;
+    // normal sohbet komutlarında kendiliğinden Terminal penceresi açılmaz.
+    if r.terminal && !crate::ai::risk::has_placeholder(&r.command) {
         if mode == exec::Mode::Bypass || r.onay {
             let ts = s.d.term.create_with(&sess.user, 100, 30, term::Opts { cmd: r.command.clone(), title: "AI Asistan".into() }).await?;
             let tk = s.d.term.ticket(&ts.id, &sess.user)?;

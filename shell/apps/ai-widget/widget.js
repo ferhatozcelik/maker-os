@@ -128,7 +128,7 @@ async function launchAgent(id, label, signal) {
   const d = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(d.error?.message || `${label} başlatılamadı`);
   if (d.term?.id) {
-    tell({ mk: "open", app: "makeros.terminal", path: `${d.term.id}:${d.term.ticket}` });
+    tell({ mk: "open", app: "makeros.terminal", path: `s=${d.term.id}` });
     return act === "install"
       ? `**${label}** kurulu değildi; kurulumu Terminal'de başlatıldı.`
       : `**${label}** Terminal'de açıldı.`;
@@ -160,7 +160,7 @@ function matchAction(raw) {
         });
         const d = await r.json().catch(() => ({}));
         if (!r.ok) throw new Error(d.error?.message || "Komut başlatılamadı");
-        if (d.term?.id) tell({ mk: "open", app: "makeros.terminal", path: `${d.term.id}:${d.term.ticket}` });
+        if (d.term?.id) tell({ mk: "open", app: "makeros.terminal", path: `s=${d.term.id}` });
         return `\`${cmd}\` Terminal'de başlatıldı.`;
       },
     };
@@ -268,8 +268,10 @@ function matchAction(raw) {
     { app: "makeros.settings", name: "Ayarlar", keys: ["ayarlar", "ayarlari", "sistem ayarlari", "settings"] },
   ];
 
+  const openVerb = /\b(ac|acabilir|acar|baslat|calistir|goster|open|start|launch)\b/.test(q);
+  const words = q.split(/\s+/).filter(Boolean);
   for (const item of apps) {
-    if (item.keys.some(k => q === k || (q.includes(k) && (actionVerb || q.startsWith(k) || q.endsWith(k))))) {
+    if (item.keys.some(k => q === k || (words.length <= 5 && q.includes(k) && openVerb))) {
       return {
         label: `${item.name} aç`,
         desc: `**${item.name}** açılıyor…`,
@@ -311,7 +313,7 @@ async function runCmd(c, row, onay = false, yazilan) {
     }
     if (d.durum === "onay_gerekli") { res.remove(); confirmBox(c, row, d); return; }
     if (d.durum === "terminal" && d.term?.id) {
-      tell({ mk: "open", app: "makeros.terminal", path: `${d.term.id}:${d.term.ticket}` });
+      tell({ mk: "open", app: "makeros.terminal", path: `s=${d.term.id}` });
       res.innerHTML = `<div class="rh"><b class="ok">Terminal'de açıldı</b></div>`;
       return;
     }
@@ -352,7 +354,8 @@ function confirmBox(c, row, d) {
 function commands(list) {
   if (!list?.length) return null;
   const box = document.createElement("div"); box.className = "cmds";
-  for (const c of list) {
+  for (let i = 0; i < list.length; i++) {
+    const c = list[i];
     const row = document.createElement("div"); row.className = "cmd";
     const rk = document.createElement("span"); rk.className = "rk " + c.risk; rk.textContent = c.risk;
     rk.title = { SAFE: "Güvenli: yalnız okur", WARNING: "Dikkat: sistemi değiştirebilir", DANGEROUS: "Tehlikeli: geri alınamayabilir" }[c.risk] || "";
@@ -367,8 +370,8 @@ function commands(list) {
     row.append(rk, code, acts);
     if (c.reasons?.length && c.risk !== "SAFE") { const w = document.createElement("div"); w.className = "why"; w.textContent = c.reasons.join(" · "); row.append(w); }
     box.append(row);
-    // Full Bypass modunda tüm komutlar doğrudan çalışır; İzin iste modunda onay kutusu açılır.
-    if (mode() === "bypass") setTimeout(() => runCmd(c, row, true, c.command), 0);
+    // Full Bypass modunda yalnız ilk (ana) komut doğrudan çalışır; alternatif komutlar düğmeyle çalıştırılır.
+    if (mode() === "bypass" && i === 0) setTimeout(() => runCmd(c, row, true, c.command), 0);
   }
   return box;
 }
