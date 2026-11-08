@@ -5,7 +5,7 @@ name: Tanıtım sayfası
 on:
   push:
     branches: [main]
-    paths: ["site/**", "docs/screenshots/**", "shell/icons/logo.svg", ".github/workflows/pages.yml"]
+    paths: ["site/**", "docs/screenshots/**", "docs/assets/diagrams/**", "flash.sh", "flash.ps1", "flash.cmd", "shell/icons/logo.svg", ".github/workflows/pages.yml"]
   workflow_dispatch:
 
 permissions:
@@ -28,8 +28,9 @@ jobs:
       - name: Sayfayı topla
         run: |
           set -eu
-          mkdir -p _site/assets/fonts _site/assets/screenshots
-          cp site/index.html _site/
+          mkdir -p _site/assets/fonts _site/assets/screenshots _site/assets/diagrams
+          cp site/index.html flash.sh flash.ps1 flash.cmd _site/
+          cp docs/assets/diagrams/*.svg _site/assets/diagrams/
           cp shell/icons/logo.svg shell/icons/apple-touch-icon.png _site/assets/
           cp shell/vendor/fonts/inter-latin-wght-normal.woff2 shell/vendor/fonts/inter-latin-ext-wght-normal.woff2 \
              shell/vendor/fonts/jetbrains-mono-latin-wght-normal.woff2 _site/assets/fonts/

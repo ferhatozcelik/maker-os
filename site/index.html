@@ -113,6 +113,19 @@ figcaption { text-align: center; color: var(--faint); font-size: 13px; margin-to
 .steps h3 { margin: 0 0 6px; font-size: 17px; }
 .steps p { margin: 0; color: var(--muted); font-size: 15px; overflow-wrap: anywhere; }
 
+.flow { width: 100%; height: auto; margin: 0 0 28px; }
+@media (max-width: 600px) { .flow { display: none !important; } }
+.os { display: inline-flex; gap: 4px; padding: 4px; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; margin-bottom: 18px; }
+.os button { border: 0; background: none; color: var(--muted); font: 600 14px/1 Inter, system-ui, sans-serif; padding: 10px 18px; border-radius: 999px; cursor: pointer; }
+.os button[aria-selected="true"] { background: var(--accent); color: var(--on-accent); }
+.pane .hint { color: var(--muted); margin: 0 0 12px; }
+.cmd { display: flex; align-items: center; gap: 10px; background: #17181b; color: #f1f1f3; border-radius: 12px; padding: 12px 12px 12px 16px; margin-bottom: 18px; }
+.cmd code { flex: 1; background: none; border: 0; color: inherit; padding: 0; font-size: 13.5px; overflow-x: auto; white-space: nowrap; scrollbar-width: thin; }
+.copy { flex: none; border: 1px solid #ffffff2e; background: #ffffff14; color: #fff; font: 600 13px/1 Inter, system-ui, sans-serif; padding: 9px 14px; border-radius: 999px; cursor: pointer; }
+.copy.done { background: var(--accent); border-color: transparent; }
+.term { display: block; width: 100%; height: auto; border-radius: 12px; box-shadow: var(--shadow); }
+.pane .note { color: var(--faint); font-size: 14px; margin: 14px 0 0; }
+.steps.after { margin-top: 40px; }
 .final { text-align: center; }
 .final .lead { margin-bottom: 28px; }
 
@@ -167,6 +180,7 @@ html[lang="en"] [data-en] { display: revert; }
       </p>
       <div class="cta">
         <a class="btn primary" href="https://github.com/ferhatozcelik/maker-os/releases/latest"><svg aria-hidden="true"><use href="#i-dl"/></svg><span data-tr>İmajı indir</span><span data-en>Download image</span></a>
+        <a class="btn" href="#setup"><span data-tr>Karta yazma rehberi</span><span data-en>How to flash</span></a>
         <a class="btn" href="https://github.com/ferhatozcelik/maker-os"><svg aria-hidden="true"><use href="#i-gh"/></svg><span data-tr>Kaynak kodu</span><span data-en>Source code</span></a>
       </div>
       <p class="meta"><span data-tr>ARM64 · Pi 4 / 400 uyumlu · MIT lisansı</span><span data-en>ARM64 · Pi 4 / 400 compatible · MIT licensed</span></p>
@@ -230,13 +244,38 @@ html[lang="en"] [data-en] { display: revert; }
   <section id="setup">
     <div class="wrap">
       <p class="kicker"><span data-tr>Kurulum</span><span data-en>Setup</span></p>
-      <h2><span data-tr>Dört adımda hazır.</span><span data-en>Ready in four steps.</span></h2>
-      <p class="sub"><span data-tr>Pi 4 / 400 uyumlu bir kart, bir SD kart ve birkaç dakika yeterli.</span><span data-en>All you need is a Pi 4 / 400 compatible board, an SD card and a few minutes.</span></p>
-      <ol class="steps">
-        <li><h3><span data-tr>İndirin ve yazın</span><span data-en>Download &amp; flash</span></h3><p><span data-tr><code>makeros-1.0.0-rpi4.img.xz</code> dosyasını herhangi bir imaj yazma aracıyla SD karta yazın.</span><span data-en>Flash <code>makeros-1.0.0-rpi4.img.xz</code> to an SD card with any image writer.</span></p></li>
-        <li><h3><span data-tr>Başlatın</span><span data-en>Boot</span></h3><p><span data-tr>Kartı takıp gücü verin. İsterseniz Wi-Fi bilgilerini önceden <code>MOSCFG</code> bölümüne yazın.</span><span data-en>Insert the card and power on. Optionally preconfigure Wi-Fi on the <code>MOSCFG</code> partition.</span></p></li>
-        <li><h3><span data-tr>Bağlanın</span><span data-en>Connect</span></h3><p><span data-tr><code>http://maker-os.local/</code>, USB-C ile <code>http://10.55.0.1/</code> ya da <code>MakerOS</code> kurulum Wi-Fi'ı.</span><span data-en><code>http://maker-os.local/</code>, <code>http://10.55.0.1/</code> over USB-C, or the <code>MakerOS</code> setup Wi-Fi.</span></p></li>
-        <li><h3><span data-tr>Güncel kalın</span><span data-en>Stay updated</span></h3><p><span data-tr>Ayarlar › Genel › Yazılım güncelleme: imzalı paketler boştaki bölüme kurulur, sorun olursa otomatik geri dönülür.</span><span data-en>Settings › General › Software update: signed bundles install to the idle slot with automatic rollback.</span></p></li>
+      <h2><span data-tr>Tek komutla karta yazın.</span><span data-en>Flash the card with one command.</span></h2>
+      <p class="sub"><span data-tr>Betik en son imajı indirir, doğrular, yalnız harici diskleri listeler ve seçtiğiniz microSD karta yazar. İsterseniz Wi-Fi bilgilerinizi de ekler.</span><span data-en>The script downloads the latest image, verifies it, lists only external disks and writes to the microSD card you pick. It can add your Wi-Fi details too.</span></p>
+
+      <img class="flow" src="assets/diagrams/flash.svg" data-tr width="1100" height="140" alt="Komutu çalıştır, İndir, Kartı seç, Yaz ve tak" loading="lazy">
+      <img class="flow" src="assets/diagrams/flash.en.svg" data-en width="1100" height="140" alt="Run the command, Download, Pick the card, Write and insert" loading="lazy">
+
+      <div class="os" role="tablist" aria-label="İşletim sistemi">
+        <button role="tab" id="t-mac" aria-selected="true" data-os="mac">macOS / Linux</button>
+        <button role="tab" id="t-win" aria-selected="false" data-os="win">Windows</button>
+      </div>
+
+      <div class="pane" data-pane="mac" role="tabpanel" aria-labelledby="t-mac">
+        <p class="hint"><span data-tr><b>Terminal</b>'i açın (macOS: Spotlight'ta "Terminal" yazın) ve şu satırı yapıştırıp Enter'a basın:</span><span data-en>Open <b>Terminal</b> (macOS: type "Terminal" in Spotlight), paste this line and press Enter:</span></p>
+        <div class="cmd"><code>sh -c "$(curl -fsSL https://raw.githubusercontent.com/ferhatozcelik/maker-os/main/flash.sh)"</code><button class="copy" type="button"><span data-tr>Kopyala</span><span data-en>Copy</span></button></div>
+        <img class="term" src="assets/diagrams/flash-mac.svg" data-tr width="900" height="292" alt="macOS Terminal'de flash.sh çıktısı" loading="lazy">
+        <img class="term" src="assets/diagrams/flash-mac.en.svg" data-en width="900" height="292" alt="flash.sh output in macOS Terminal" loading="lazy">
+        <p class="note"><span data-tr>Yönetici parolanız istenebilir. Betiği indirip incelemek isterseniz: <a href="flash.sh" download>flash.sh</a></span><span data-en>You may be asked for your password. To download and inspect the script: <a href="flash.sh" download>flash.sh</a></span></p>
+      </div>
+
+      <div class="pane" data-pane="win" role="tabpanel" aria-labelledby="t-win" hidden>
+        <p class="hint"><span data-tr>En kolayı: <a href="flash.cmd" download><b>flash.cmd</b></a> dosyasını indirip çift tıklayın ve yönetici iznini onaylayın. Ya da Başlat menüsünde <b>PowerShell</b>'e sağ tıklayıp <b>Yönetici olarak çalıştır</b>'ı seçin ve yapıştırın:</span><span data-en>Easiest: download <a href="flash.cmd" download><b>flash.cmd</b></a>, double-click it and allow administrator access. Or right-click <b>PowerShell</b> in the Start menu, choose <b>Run as administrator</b> and paste:</span></p>
+        <div class="cmd"><code>irm https://raw.githubusercontent.com/ferhatozcelik/maker-os/main/flash.ps1 | iex</code><button class="copy" type="button"><span data-tr>Kopyala</span><span data-en>Copy</span></button></div>
+        <img class="term" src="assets/diagrams/flash-windows.svg" data-tr width="900" height="292" alt="Windows PowerShell'de flash.ps1 çıktısı" loading="lazy">
+        <img class="term" src="assets/diagrams/flash-windows.en.svg" data-en width="900" height="292" alt="flash.ps1 output in Windows PowerShell" loading="lazy">
+        <p class="note"><span data-tr>Yazma bittikten sonra Windows kartı biçimlendirmeyi önerirse <b>İptal</b>'e basın. Betik: <a href="flash.ps1" download>flash.ps1</a></span><span data-en>If Windows offers to format the card after writing, click <b>Cancel</b>. Script: <a href="flash.ps1" download>flash.ps1</a></span></p>
+      </div>
+
+      <ol class="steps after">
+        <li><h3><span data-tr>Kartı seçin</span><span data-en>Pick the card</span></h3><p><span data-tr>Yalnız harici diskler listelenir. Bilgisayarınızın diski asla gösterilmez; disk adını yazarak onaylarsınız.</span><span data-en>Only external disks are listed. Your computer's disk is never shown; you confirm by typing the disk name.</span></p></li>
+        <li><h3><span data-tr>Başlatın</span><span data-en>Boot</span></h3><p><span data-tr>Kartı cihaza takıp gücü verin. İlk açılış bir iki dakika sürer.</span><span data-en>Insert the card and power on. The first boot takes a minute or two.</span></p></li>
+        <li><h3><span data-tr>Bağlanın</span><span data-en>Connect</span></h3><p><span data-tr><code>http://maker-os.local/</code>, USB-C ile <code>http://10.55.0.1/</code>; ağ yoksa <code>MakerOS</code> Wi-Fi'ı.</span><span data-en><code>http://maker-os.local/</code>, <code>http://10.55.0.1/</code> over USB-C, or the <code>MakerOS</code> Wi-Fi.</span></p></li>
+        <li><h3><span data-tr>Oturum açın</span><span data-en>Sign in</span></h3><p><span data-tr>Varsayılan hesap <code>makeros</code> / <code>makeros</code>; parolayı Ayarlar › Kullanıcı'dan değiştirin.</span><span data-en>Default account <code>makeros</code> / <code>makeros</code>; change it in Settings › User.</span></p></li>
       </ol>
     </div>
   </section>
@@ -278,6 +317,23 @@ html[lang="en"] [data-en] { display: revert; }
   const q = new URLSearchParams(location.search).get("lang");
   set(q === "en" || q === "tr" ? q : saved || (/^tr\b/i.test(navigator.language) ? "tr" : "en"));
   btn.onclick = () => set(root.lang === "tr" ? "en" : "tr");
+  // Kurulum: işletim sistemi sekmeleri (Windows ziyaretçisinde Windows açık gelir) ve kopyala düğmeleri.
+  const tabs = [...document.querySelectorAll(".os button")];
+  const show = os => tabs.forEach(t => {
+    const on = t.dataset.os === os;
+    t.setAttribute("aria-selected", on);
+    document.querySelector(`.pane[data-pane="${t.dataset.os}"]`).hidden = !on;
+  });
+  tabs.forEach(t => t.onclick = () => show(t.dataset.os));
+  if (/Windows/i.test(navigator.userAgent)) show("win");
+  document.querySelectorAll(".copy").forEach(b => b.onclick = async () => {
+    const txt = b.parentElement.querySelector("code").textContent;
+    try { await navigator.clipboard.writeText(txt); } catch {
+      const r = document.createRange(); r.selectNodeContents(b.parentElement.querySelector("code"));
+      const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); document.execCommand("copy");
+    }
+    b.classList.add("done"); setTimeout(() => b.classList.remove("done"), 1500);
+  });
 })();
 </script>
 </body>

@@ -18,7 +18,7 @@ name: MakerOS surum
 on:
   push:
     branches: [main]
-    paths-ignore: ["**.md", "docs/**", "site/**", ".github/workflows/pages.yml"]
+    paths-ignore: ["**.md", "docs/**", "site/**", ".github/workflows/pages.yml", "flash.sh", "flash.ps1", "flash.cmd"]
   workflow_dispatch:
 
 permissions:
