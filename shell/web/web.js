@@ -129,7 +129,7 @@ function renderHome() {
     stat("thermometer", t("web.temp"), s?.cpu.temp_c != null ? `${s.cpu.temp_c.toFixed(1)} °C` : "—", s ? Math.min(1, (s.cpu.temp_c || 0) / 85) : null),
     stat("memory-stick", t("web.mem"), s ? bytes(s.mem.used) : "—", s ? mem : null, s && bytes(s.mem.total)),
     stat("hard-drive", t("web.disk"), s ? bytes(s.disk.used) : "—", s ? disk : null, s && bytes(s.disk.total)),
-    stat("network", t("web.ip"), ip || "10.42.0.0"),
+    stat("network", t("web.ip"), ip || "—"),
     stat("clock", t("web.uptime"), s ? duration(s.uptime_s) : "—"));
   renderWidget(P.wsec);
   const list = sorted(apps()), key = list.map(a => a.id + "|" + a.name + "|" + a.icon).join(",");
@@ -139,7 +139,7 @@ function renderHome() {
   }
 }
 let net = null;
-const netIP = () => (net?.ifaces || []).flatMap(i => i.ipv4 || [])[0]?.split("/")[0] || "10.42.0.0";
+const netIP = () => (net?.ifaces || []).flatMap(i => i.ipv4 || [])[0]?.split("/")[0] || "—";
 
 let door = null;
 watchThemeStatus(s => { door = s; chips(); });

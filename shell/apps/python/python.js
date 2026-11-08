@@ -149,9 +149,9 @@ async function openProject(name) {
   P = { name, tab: "code", dirty: false, logPos: 0 };
   app.path(name);
   const dot = h("span.dot"), meta = h("span.meta"), runB = btn(t("py.run"), toggleRun, ".primary");
-  // Web arayüzlü projeler (şablonda "ui": port): çalışınca arayüz MakerOS Tarayıcı penceresinde açılır.
-  const uiURL = () => `${location.protocol === "https:" ? "http:" : location.protocol}//${location.hostname}:${P.status.ui}/`;
-  const uiB = btn("", () => app.open("chromium", uiURL()), ".primary");
+  // Web arayüzlü projeler (şablonda "ui": port): çalışınca arayüz MakerOS Tarayıcı penceresinde açılır (/port/<port>/ vekili).
+  const uiURL = () => `/port/${P.status.ui}/`;
+  const uiB = btn("", () => app.open("chromium", location.origin + uiURL()), ".primary");
   uiB.innerHTML = icon("app-window", 13, 2.2) + " " + t("py.openUi"); uiB.hidden = true;
   const tabsEl = h("div.seg", ...[["code", t("py.tab.code")], ["packages", t("py.tab.packages")], ["output", t("py.tab.output")], ["settings", t("py.tab.settings")]]
     .map(([id, l]) => h("button" + (id === P.tab ? ".on" : ""), { "data-t": id, onclick: () => setTab(id) }, l)));
@@ -180,10 +180,13 @@ async function openProject(name) {
   // Sunucu ayağa kalkana dek bekle (ilk çalıştırmada paket/model indirmesi sürebilir), sonra arayüzü aç.
   P.openUiWhenReady = async () => {
     if (!P.status?.ui) return;
-    const me = P, url = uiURL(), until = Date.now() + 5 * 60e3;
+    const me = P, relUrl = uiURL(), fullUrl = location.origin + relUrl, until = Date.now() + 5 * 60e3;
     toast(t("py.uiWait"), "app-window");
     while (P === me && P.status?.running && Date.now() < until) {
-      try { await fetch(url, { mode: "no-cors", cache: "no-store" }); app.open("chromium", url); return; } catch { /* henüz hazır değil */ }
+      try {
+        const r = await fetch(relUrl, { cache: "no-store" });
+        if (r.status < 500) { app.open("chromium", fullUrl); return; }
+      } catch { /* henüz hazır değil */ }
       await new Promise(r => setTimeout(r, 1500));
       if (P === me) await P.refresh().catch(() => {});
     }

@@ -12,7 +12,15 @@
 # Hedef: MAKEROS_HOST (varsayılan 10.55.0.1 = USB). Dosyalar debug imajının /usr katmanına yazılır.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-HOST="${MAKEROS_HOST:-10.55.0.1}"
+if [ -z "${MAKEROS_HOST:-}" ]; then
+	if ping -c 1 -t 1 10.42.0.1 >/dev/null 2>&1; then
+		HOST="10.42.0.1"
+	else
+		HOST="10.55.0.1"
+	fi
+else
+	HOST="$MAKEROS_HOST"
+fi
 KEY="${MAKEROS_DEBUG_KEY:-$HOME/.ssh/id_ed25519_makeros}"
 SSH=(ssh -i "$KEY" -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -o ConnectTimeout=5 "root@$HOST")
 what="${1:-all}"

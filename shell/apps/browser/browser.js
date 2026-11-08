@@ -204,9 +204,20 @@ ticket().catch(() => {});
 const LOOP = /^(localhost|0\.0\.0\.0|127(\.\d{1,3}){3}|\[::1?\])$/i;
 function piLocal(u) {
   try {
-    const x = new URL(u);
-    if (!/^https?:$/.test(x.protocol) || !(LOOP.test(x.hostname) || x.hostname === location.hostname)) return null;
-    x.hostname = location.hostname;
+    const x = new URL(u, location.origin);
+    if (!/^https?:$/.test(x.protocol)) return null;
+    if (x.pathname.startsWith("/port/")) return x;
+    const isLoop = LOOP.test(x.hostname);
+    const isSameHost = x.hostname === location.hostname;
+    if (!isLoop && !isSameHost) return null;
+    // Yerel bir port varsa /port/<port>/ vekil yoluna çevir (Cloudflare Tunnel ve uzak bağlantılarda çalışabilmesi için)
+    if (x.port && (isLoop || x.port !== (location.port || (location.protocol === "https:" ? "443" : "80")))) {
+      return new URL(`/port/${x.port}${x.pathname || "/"}${x.search}${x.hash}`, location.origin);
+    }
+    if (isLoop) {
+      x.hostname = location.hostname;
+      return x;
+    }
     return x;
   } catch { return null; }
 }
@@ -216,8 +227,9 @@ const showHint = msg => { hint.querySelector("span").textContent = msg || t("br.
 function toURL(s) {
   s = s.trim();
   if (!s) return "";
+  if (s.startsWith("/port/")) return new URL(s, location.origin).href;
   if (/^https?:\/\//i.test(s)) return s;
-  if (/^(localhost|\d{1,3}(\.\d{1,3}){3}|[\w-]+\.local)(:\d+)?(\/.*)?$/i.test(s)) return "http://" + s;
+  if (/^(localhost|0\.0\.0\.0|\d{1,3}(\.\d{1,3}){3}|[\w-]+\.local)(:\d+)?(\/.*)?$/i.test(s)) return "http://" + s;
   if (/^(localhost|[\w-]+(\.[\w-]+)+|\d{1,3}(\.\d{1,3}){3})(:\d+)?(\/.*)?$/i.test(s) && !/\s/.test(s)) return "https://" + s;
   return SEARCH(s);
 }
@@ -230,13 +242,12 @@ async function load(u) {
   const local = piLocal(u);
   if (local) {
     frame?.remove();
-    const own = local.origin === location.origin;
     frame = h("iframe", {
       onload: () => finishLoading(),
       onerror: () => { finishLoading(); showHint(t("br.failed")); },
       src: local.href,
       allow: "fullscreen; clipboard-write; autoplay; camera; microphone",
-      sandbox: "allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals allow-downloads" + (own ? "" : " allow-same-origin")
+      sandbox: "allow-scripts allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-modals allow-downloads"
     });
     page.append(frame);
     return;
@@ -311,7 +322,12 @@ function go(u, push) {
   }
   try {
     const x = new URL(u);
-    app.title(x.hostname.replace(/^www\./, "") + (piLocal(u) && x.port ? ":" + x.port : ""));
+    if (x.pathname.startsWith("/port/")) {
+      const p = x.pathname.split("/")[2] || "";
+      app.title("localhost:" + p);
+    } else {
+      app.title(x.hostname.replace(/^www\./, "") + (piLocal(u) && x.port ? ":" + x.port : ""));
+    }
   } catch {}
   load(u);
   app.path(u);

@@ -6,7 +6,9 @@ Requires=makeros-usb-gadget.service
 
 [Service]
 ExecStart=/usr/sbin/dnsmasq --keep-in-foreground --conf-file=/dev/null --port=0 --interface=usb0 --bind-dynamic \
-  --dhcp-range=10.55.0.10,10.55.0.50,255.255.255.0,1h --dhcp-option=option:router --dhcp-option=option:dns-server \
+  --dhcp-range=10.42.0.10,10.42.0.50,255.255.255.0,1h \
+  --dhcp-range=10.55.0.10,10.55.0.50,255.255.255.0,1h \
+  --dhcp-option=option:router --dhcp-option=option:dns-server \
   --dhcp-leasefile=/run/makeros/usb-dhcp.leases --dhcp-authoritative
 Restart=always
 RestartSec=2

@@ -62,6 +62,80 @@ pub async fn plugin_proxy(State(s): State<S>, mut req: Request) -> R {
     Ok(Response::from_parts(parts, Body::new(body)))
 }
 
+/// /port/{port}/... → 127.0.0.1:{port}/... yerel geliştirme sunucusu ve uygulama vekili.
+/// Yalnız oturum açmış kullanıcılar erişebilir. 80 ve 443 portları döngüyü önlemek için engellenir.
+pub async fn port_proxy(State(s): State<S>, mut req: Request) -> R {
+    let _sess = session_of(&s, req.headers())?;
+    let path = req.uri().path().to_string();
+    let port_str = path.trim_start_matches("/port/").split('/').next().unwrap_or("");
+    let port: u16 = match port_str.parse() {
+        Ok(p) => p,
+        Err(_) => return Err(ApiError::invalid("Geçersiz port numarası.")),
+    };
+    if port == 0 || port == 80 || port == 443 {
+        return Err(ApiError::invalid("Bu porta vekil üzerinden doğrudan erişilemez."));
+    }
+    let prefix = format!("/port/{port}");
+    if path == prefix {
+        let q = req.uri().query().map(|q| format!("?{q}")).unwrap_or_default();
+        return Ok(Response::builder()
+            .status(StatusCode::MOVED_PERMANENTLY)
+            .header(header::LOCATION, format!("{prefix}/{q}"))
+            .body(Body::empty())
+            .map_err(|_| ApiError::internal("Yönlendirme oluşturulamadı."))?);
+    }
+
+    let rest = path.strip_prefix(&prefix).unwrap_or("").trim_start_matches('/');
+    let pq = match req.uri().query() {
+        Some(q) => format!("/{rest}?{q}"),
+        None => format!("/{rest}"),
+    };
+    let host = format!("127.0.0.1:{port}");
+    *req.uri_mut() = format!("http://{host}{pq}").parse().map_err(|_| ApiError::invalid("Geçersiz adres."))?;
+    let upgrade = req.headers().get(header::UPGRADE).cloned();
+    let h = req.headers_mut();
+    h.remove(header::COOKIE);
+    if upgrade.is_none() {
+        for k in HOP {
+            h.remove(*k);
+        }
+    }
+    h.insert(header::HOST, HeaderValue::from_str(&host).map_err(|_| ApiError::unavailable("Host başlığı oluşturulamadı."))?);
+    h.insert("x-forwarded-prefix", HeaderValue::from_str(&prefix).map_err(|_| ApiError::unavailable("Prefix başlığı oluşturulamadı."))?);
+
+    if upgrade.is_some() {
+        return upgrade_proxy(req).await;
+    }
+    let res = match client().request(req).await {
+        Ok(r) => r,
+        Err(_) => return Err(ApiError::unavailable(format!("127.0.0.1:{port} adresine bağlanılamadı. Uygulama veya servis çalışıyor mu?"))),
+    };
+    let (mut parts, body) = res.into_parts();
+    for k in HOP {
+        parts.headers.remove(*k);
+    }
+    if let Some(loc) = parts.headers.get_mut(header::LOCATION) {
+        if let Ok(l_str) = loc.to_str() {
+            if l_str.starts_with('/') && !l_str.starts_with(&prefix) {
+                if let Ok(new_loc) = HeaderValue::from_str(&format!("{prefix}{l_str}")) {
+                    *loc = new_loc;
+                }
+            } else if let Ok(u) = url::Url::parse(l_str) {
+                if (u.host_str() == Some("127.0.0.1") || u.host_str() == Some("localhost") || u.host_str() == Some("0.0.0.0")) && u.port() == Some(port) {
+                    let new_pq = match u.query() {
+                        Some(q) => format!("{prefix}{}?{q}", u.path()),
+                        None => format!("{prefix}{}", u.path()),
+                    };
+                    if let Ok(new_loc) = HeaderValue::from_str(&new_pq) {
+                        *loc = new_loc;
+                    }
+                }
+            }
+        }
+    }
+    Ok(Response::from_parts(parts, Body::new(body)))
+}
+
 /// /api/v1/ai/<yol> → yerel Türkçe Linux asistanı (makeros-ai, 127.0.0.1:8091). Yalnız oturum sahibi; yalnız
 /// bilinen uçlar. makeros-ai komut çalıştırmaz: yanıtlar yalnız öneri ve risk değerlendirmesidir.
 pub async fn ai_proxy(State(s): State<S>, mut req: Request) -> R {

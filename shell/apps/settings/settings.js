@@ -151,14 +151,14 @@ const PAGES = {
     const n = await get("/net");
     el.append(group(row(t("set.net.online"), null, h("span.badge" + (n.online ? ".ok" : ".bad"), n.online ? t("set.net.yes") : t("set.net.no")))));
     if (!n.ifaces?.length) {
-      el.append(group(row(t("set.net.ip"), null, val("10.42.0.0"))));
+      el.append(group(row(t("set.net.ip"), null, val("—"))));
     }
     for (const i of n.ifaces || []) {
       const up = i.state === "connected";
       el.append(h("h2", `${i.type === "wifi" ? "Wi-Fi" : "Ethernet"} · ${i.name}`), group(
         row(t("set.net.state"), null, h("span.badge" + (up ? ".ok" : ""), up ? t("set.wifi.connected") : i.state)),
         i.ssid ? row("SSID", null, val(i.ssid)) : null,
-        row(t("set.net.ip"), null, val(i.ipv4?.length ? i.ipv4.join(", ") : "10.42.0.0")),
+        row(t("set.net.ip"), null, val(i.ipv4?.length ? i.ipv4.join(", ") : "—")),
         row("MAC", null, val(i.mac)),
         i.speed_mbps ? row(t("set.net.speed"), null, val(i.speed_mbps + " Mb/sn")) : null));
     }

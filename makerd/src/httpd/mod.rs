@@ -201,6 +201,9 @@ impl Server {
             .route("/api/v1/ai/{*rest}", any(proxy::ai_proxy))
             .route("/plugin/{id}/", any(proxy::plugin_proxy))
             .route("/plugin/{id}/{*rest}", any(proxy::plugin_proxy))
+            .route("/port/{port}", any(proxy::port_proxy))
+            .route("/port/{port}/", any(proxy::port_proxy))
+            .route("/port/{port}/{*rest}", any(proxy::port_proxy))
             .route("/", get(|axum::extract::State(s): axum::extract::State<S>, req: Request| async move { let (p, _) = req.into_parts(); s.stat.serve(&p, "index.html").await }))
             // Tarayıcıların kendiliğinden istediği simge: MakerOS logosu.
             .route("/favicon.ico", get(|| async { redirect(StatusCode::MOVED_PERMANENTLY, "/shell/icons/logo.svg") }))
@@ -333,12 +336,29 @@ pub fn client_ip(ci: &ConnectInfo<SocketAddr>) -> String {
     ci.0.ip().to_canonical().to_string()
 }
 
-/// Origin başlığı Host ile aynı olmalı (WS için zorunlu).
+/// Origin başlığı Host veya X-Forwarded-Host ile aynı olmalı (WS için zorunlu; Cloudflare Tunnel uyumlu).
 pub fn origin_ok(h: &HeaderMap) -> bool {
-    let (Some(o), Some(host)) = (h.get(header::ORIGIN).and_then(|v| v.to_str().ok()), h.get(header::HOST).and_then(|v| v.to_str().ok())) else { return false };
+    let Some(o) = h.get(header::ORIGIN).and_then(|v| v.to_str().ok()) else { return false };
     let Some(rest) = o.split_once("://").map(|(_, r)| r) else { return false };
     let oh = rest.split(['/', '?', '#']).next().unwrap_or("");
-    !oh.is_empty() && oh.eq_ignore_ascii_case(host)
+    if oh.is_empty() { return false; }
+    let oh_host = oh.split(':').next().unwrap_or(oh);
+
+    let match_host = |cand: &str| -> bool {
+        let cand = cand.trim();
+        if cand.is_empty() { return false; }
+        if oh.eq_ignore_ascii_case(cand) { return true; }
+        let cand_h = cand.split(':').next().unwrap_or(cand);
+        oh_host.eq_ignore_ascii_case(cand_h)
+    };
+
+    if let Some(host) = h.get(header::HOST).and_then(|v| v.to_str().ok()) {
+        if match_host(host) { return true; }
+    }
+    if let Some(fwd) = h.get("x-forwarded-host").and_then(|v| v.to_str().ok()) {
+        if fwd.split(',').any(match_host) { return true; }
+    }
+    false
 }
 
 /// İstekteki oturum.
