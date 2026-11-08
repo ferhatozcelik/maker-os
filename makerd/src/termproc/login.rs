@@ -82,7 +82,7 @@ pub fn login_command(passwd: &str, fallback_shell: &str) -> Result<CmdSpec, NoSh
         ("SHELL".into(), shell.clone()),
         ("USER".into(), name.clone()),
         ("LOGNAME".into(), name),
-        ("PATH".into(), "/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin".into()),
+        ("PATH".into(), format!("{home}/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin")),
     ];
     for k in ["LANG", "LC_ALL", "TZ", "XDG_RUNTIME_DIR", "WAYLAND_DISPLAY", "DBUS_SESSION_BUS_ADDRESS"] {
         if let Ok(v) = std::env::var(k) {
