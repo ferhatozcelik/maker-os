@@ -1,0 +1,29 @@
+#!/bin/sh
+# MakerOS xdg-open: opens URLs and files in MakerOS Web Desktop
+if [ $# -eq 0 ]; then
+    echo "Kullanım: xdg-open { URL | DOSYA }" >&2
+    exit 1
+fi
+
+TARGET="$1"
+case "$TARGET" in
+    http://*|https://*|ftp://*|about:*|chrome:*)
+        exec /usr/bin/chromium "$TARGET"
+        ;;
+    *.*)
+        case "$TARGET" in
+            www.*|*/*|*.com|*.org|*.net|*.io|*.dev|*.tr|*.cc|*.me)
+                if [ ! -e "$TARGET" ]; then
+                    exec /usr/bin/chromium "https://$TARGET"
+                fi
+                ;;
+        esac
+        ;;
+esac
+
+if [ -e "$TARGET" ]; then
+    echo "[MakerOS] Dosya: $TARGET (MakerOS Dosyalar uygulamasından erişebilirsiniz)"
+    exit 0
+fi
+
+exec /usr/bin/chromium "$TARGET"

@@ -1,17 +1,95 @@
 #!/bin/sh
-# MakerOS Chromium başlatıcı (os/package/chromium-bin): Wayland (labwc), imajın kendi Mesa yığını (V3D/VC4).
-# Paket yalnız Chromium'un kendi bağımlılıklarını taşır; Wayland/EGL/GBM/Mesa sistemden gelir
-# (paketteki eski libwayland, sistem libEGL'i ile çakışıyordu: wl_display_dispatch_queue_timeout).
+# MakerOS Chromium Launcher
+# Runs headless/version queries with native Chromium;
+# otherwise opens the URL directly in the MakerOS Web Desktop Browser.
+
 D=/opt/chromium
-export LD_LIBRARY_PATH="$D/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-export GDK_PIXBUF_MODULE_FILE="$D/lib/gdk-pixbuf/loaders.cache" GSETTINGS_SCHEMA_DIR="$D/share/glib-2.0/schemas" XDG_DATA_DIRS="$D/share:${XDG_DATA_DIRS:-/usr/share}"
-# systemd-run ile açılan birimde XDG_SESSION_TYPE yok; "auto" o zaman X11'e düşüp çıkıyor → Wayland açıkça.
-: "${XDG_RUNTIME_DIR:=/run/user/$(id -u)}"; export XDG_RUNTIME_DIR
-if [ -z "$WAYLAND_DISPLAY" ] && [ -S "$XDG_RUNTIME_DIR/wayland-0" ]; then export WAYLAND_DISPLAY=wayland-0; fi
-if [ -n "$WAYLAND_DISPLAY" ]; then set -- --ozone-platform=wayland "$@"; else set -- --ozone-platform-hint=auto "$@"; fi
-# Chromium root altında korumalı alan olmadan açılmaz (yalnız Docker önizlemesi; Pi'de "maker" kullanıcısı).
-# --test-type: "desteklenmeyen --no-sandbox" uyarı şeridini gizler (yalnız bu Docker durumunda).
-[ "$(id -u)" = 0 ] && set -- --no-sandbox --test-type --user-data-dir=/root/.config/chromium "$@"
-# Pi 4 (4 GB): az süreç, düşük bellek.
-exec "$D/chromium" --renderer-process-limit=4 --disk-cache-size=104857600 --no-default-browser-check --no-first-run \
-  --password-store=basic "$@"
+
+# Headless / cli-only operations -> use native Chromium
+for arg in "$@"; do
+    case "$arg" in
+        --version|-v|--dump-dom*|--screenshot*)
+            if [ -x "$D/chromium" ]; then
+                export LD_LIBRARY_PATH="$D/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+                export GDK_PIXBUF_MODULE_FILE="$D/lib/gdk-pixbuf/loaders.cache"
+                export GSETTINGS_SCHEMA_DIR="$D/share/glib-2.0/schemas"
+                export XDG_DATA_DIRS="$D/share:${XDG_DATA_DIRS:-/usr/share}"
+                [ "$(id -u)" = 0 ] && set -- --no-sandbox --test-type "$@"
+                exec "$D/chromium" --no-default-browser-check --no-first-run --password-store=basic "$@"
+            fi
+            ;;
+        --headless*)
+            if [ -x "$D/chromium" ]; then
+                export LD_LIBRARY_PATH="$D/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+                export GDK_PIXBUF_MODULE_FILE="$D/lib/gdk-pixbuf/loaders.cache"
+                export GSETTINGS_SCHEMA_DIR="$D/share/glib-2.0/schemas"
+                export XDG_DATA_DIRS="$D/share:${XDG_DATA_DIRS:-/usr/share}"
+                [ "$(id -u)" = 0 ] && set -- --no-sandbox --test-type "$@"
+                exec "$D/chromium" --no-default-browser-check --no-first-run --password-store=basic "$@"
+            fi
+            ;;
+        --help|-h)
+            echo "MakerOS Chromium / Web Tarayıcısı"
+            echo "Kullanım: chromium [seçenekler] [URL]"
+            echo ""
+            echo "Seçenekler:"
+            echo "  --version, -v       Chromium sürümünü göster"
+            echo "  --headless          Grafik arayüz olmadan arka planda çalıştır"
+            echo "  --dump-dom <url>    Sayfanın HTML çıktısını terminale bas"
+            echo "  --screenshot <url>  Sayfanın ekran görüntüsünü al"
+            echo ""
+            echo "Terminal veya SSH üzerinden çalıştırıldığında sayfa MakerOS Web Masaüstü"
+            echo "üzerindeki Tarayıcı uygulamasında açılır."
+            exit 0
+            ;;
+    esac
+done
+
+# If an active Wayland display is directly available and accessible to this user
+: "${XDG_RUNTIME_DIR:=/run/user/$(id -u)}"
+if [ -z "$WAYLAND_DISPLAY" ] && [ -S "$XDG_RUNTIME_DIR/wayland-0" ]; then
+    export WAYLAND_DISPLAY=wayland-0
+fi
+
+if [ -n "$WAYLAND_DISPLAY" ] && [ -S "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY" ] && [ -x "$D/chromium" ]; then
+    export LD_LIBRARY_PATH="$D/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+    export GDK_PIXBUF_MODULE_FILE="$D/lib/gdk-pixbuf/loaders.cache"
+    export GSETTINGS_SCHEMA_DIR="$D/share/glib-2.0/schemas"
+    export XDG_DATA_DIRS="$D/share:${XDG_DATA_DIRS:-/usr/share}"
+    export XDG_RUNTIME_DIR
+    [ "$(id -u)" = 0 ] && set -- --no-sandbox --test-type "$@"
+    exec "$D/chromium" --ozone-platform=wayland --renderer-process-limit=4 \
+        --disk-cache-size=104857600 --no-default-browser-check --no-first-run \
+        --password-store=basic "$@"
+fi
+
+# Web Desktop Browser mode (no X11 / Wayland display):
+URL=""
+for arg in "$@"; do
+    case "$arg" in
+        -*|--*)
+            # Flag, skip
+            ;;
+        http://*|https://*|file://*|about:*|chrome:*)
+            URL="$arg"
+            ;;
+        *.*)
+            if [ -z "$URL" ]; then
+                URL="https://$arg"
+            fi
+            ;;
+    esac
+done
+
+# If executed inside a terminal, emit OSC 777 to open the browser window in MakerOS Web Desktop
+if [ -t 1 ] || [ -t 2 ] || [ -n "$TERM" ]; then
+    printf '\033]777;open;%s\007' "$URL" >&2
+fi
+
+if [ -n "$URL" ]; then
+    printf '\033[1;32m[MakerOS Tarayıcı]\033[0m Web masaüstünde açılıyor: \033[4;36m%s\033[0m\n' "$URL"
+else
+    printf '\033[1;32m[MakerOS Tarayıcı]\033[0m Web masaüstünde açılıyor...\n'
+fi
+
+exit 0

@@ -49,6 +49,18 @@ function newTab(existing) {
     }
     cb(out.length ? out : undefined);
   } });
+  // Komut satırından gelen tarayıcı açma istekleri (OSC 777: open;<url>)
+  try {
+    tab.term.parser?.registerOscHandler(777, data => {
+      const s = String(data || "").trim();
+      if (s.startsWith("open;")) {
+        const u = s.slice(5).trim();
+        app.open("chromium", u);
+        return true;
+      }
+      return false;
+    });
+  } catch {}
   tab.term.onTitleChange(s => { tab.title = s || tab.title; renderTabs(); });
   tab.term.onData(d => {
     if (!tab.ws || tab.ws.readyState !== 1) return;
