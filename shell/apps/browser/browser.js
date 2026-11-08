@@ -146,7 +146,12 @@ addEventListener("message", e => {
     if (url !== hist[pos]) { hist = hist.slice(0, pos + 1); hist.push(url); pos = hist.length - 1; }
     cur = url; addr.value = url; back.disabled = pos <= 0; fwd.disabled = pos >= hist.length - 1; app.path(url);
   }
-  if (typeof title === "string" && title.trim()) app.title(title.trim().slice(0, 80));
+  if (typeof title === "string" && title.trim()) {
+    app.title(title.trim().slice(0, 80));
+    if (/just a moment|security verification|performing security/i.test(title)) {
+      showHint("Bot doğrulamasını tamamlamak için sayfayı sekmede açın");
+    }
+  }
   if (error) showHint(t("br.failed") + ": " + error);
 });
 
