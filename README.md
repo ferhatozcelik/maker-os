@@ -20,9 +20,9 @@
 <p align="center">
   <a href="https://github.com/ferhatozcelik/maker-os/releases/latest">İndir</a> ·
   <a href="#features">Özellikler</a> ·
-  <a href="#architecture">Mimari</a> ·
+  <a href="#architecture">Nasıl çalışır?</a> ·
   <a href="#packages">Paketler</a> ·
-  <a href="#setup-guide">Kurulum rehberi</a> ·
+  <a href="#setup-guide">Kurulum</a> ·
   <a href="#documentation">Dokümantasyon</a> ·
   <a href="docs/api.md">API</a> ·
   <a href="CONTRIBUTING.md">Katkıda bulun</a>
@@ -66,15 +66,11 @@
 
 ## Nedir?
 
-MakerOS, Pi 4 uyumlu ARM64 kartlar gibi erişilebilir donanımlar üzerinde çalışan, kullanıcıya kendi bilgisayarını ve dijital üretim ortamını yönetme özgürlüğü sunan bağımsız bir Linux işletim sistemidir. Hazır bir dağıtımın üzerine masaüstü giydirmek yerine; kendi önyükleme zincirini, Rust tabanlı sistem servislerini (`makerd`), web masaüstü kabuğunu, A/B güncelleme altyapısını ve yerel yapay zekâ asistanını tek bir bütün olarak sunar.
+MakerOS, Pi 4 / 400 uyumlu ARM64 kartlar için hazırlanmış bağımsız ve açık kaynaklı bir Linux işletim sistemidir. Kartı bir ekrana bağlayarak masaüstü bilgisayar gibi, ya da ağdaki herhangi bir tarayıcıdan veya telefondan uzaktan kullanabilirsiniz. Terminal, dosyalar, Python projeleri, GPIO, kamera ve internetsiz çalışan bir yapay zekâ asistanı hazır gelir.
 
-Sadeliği ve kullanım kolaylığını Linux'un esnekliğiyle birleştiren özgün bir üretim atölyesi olmayı hedefler.
+**Bilgisayar yeniden kişisel olmalı.** MakerOS, *"Bir bilgisayarı gerçekten kendimiz için tasarlayabilir miyiz?"* sorusuyla küçük bir ARM kart üzerinde doğdu. Amaç; pahalı donanım gerektirmeyen, nasıl çalıştığını anlayabildiğiniz, değiştirebildiğiniz ve fikirlerinizi hayata geçirebildiğiniz bir sistem.
 
-**Bilgisayar yeniden kişisel olmalı.** Geleneksel sistemlerde kullanıcılar çoğu zaman kapalı ekosistemlerin ve kara kutu servislerin sınırları içinde hareket eder. MakerOS, *"Bir bilgisayarı gerçekten kendimiz için tasarlayabilir miyiz?"* sorusuyla küçük bir ARM kart üzerinde doğdu. Amacımız pahalı donanımlara ihtiyaç duymadan, kullanıcının sistemini anlayabildiği, değiştirebildiği ve kendi fikirlerini hayata geçirebildiği şeffaf bir ortam kurmaktır.
-
-MakerOS beş temel ilkeye dayanır: **Özgürlük** (kontrol kullanıcıdadır), **Basitlik** (güçlü teknoloji karmaşık olmamalıdır), **Üretkenlik** (tüketim değil üretim odaklıdır), **Şeffaflık** (sistem nasıl çalıştığını açıkça gösterir) ve **Erişilebilirlik** (uygun maliyetli ARM64 donanımlarda çalışır). Yapay zekâ ise bilgisayarın kontrolünü kullanıcıdan alan bir mekanizma değil, kullanıcının yeteneklerini genişleten yerel bir yardımcıdır.
-
-> **Manifesto:** Bilgisayarların yalnızca tüketmek için var olduğuna ve güçlü deneyimlerin kapalı ekosistemlere ait olması gerektiğine inanmıyoruz. Sadelik ile özgürlüğün, açık kaynak ile iyi tasarımın bir arada bulunabileceğini savunuyoruz. Teknoloji kullanıcıya ne yapacağını söylememeli; kullanıcının ne yapabileceğini genişletmelidir.
+> Teknoloji kullanıcıya ne yapacağını söylememeli; kullanıcının ne yapabileceğini genişletmeli.
 >
 > **Atölyen cebinde.** — *Your workshop, in your pocket.*
 
@@ -86,123 +82,107 @@ MakerOS beş temel ilkeye dayanır: **Özgürlük** (kontrol kullanıcıdadır),
 
 ## Özellikler
 
-| Alan | İçerik |
+| | |
 | --- | --- |
-| **Taban** | Buildroot + Linux 6.18 (ARM64) üzerine kurulu bağımsız sistem; salt okunur EROFS kök dosya sistemi, ext4 `/data` bölmesi, RAUC + `tryboot` A/B güncelleme, systemd |
-| **Masaüstü ve Web** | Yerel ekranda Cog/WPE WebKit ve ağ üzerinden tarayıcıda aynı deneyim: pencereli **Ekran** (`/`) ve mobil uyumlu **Web** (`/web`) görünümü |
-| **Rust Arka Uç** | `makerd` (HTTP/WS API), `makerd-priv` (ayrıcalıklı işlemler), `makerd-user` (kullanıcı süreçleri ve PTY terminal), `makeros-ai` (yerel AI servisi) |
-| **Yerel AI Asistanı** | Qwen2.5-0.5B-Instruct GGUF + `llama.cpp` tabanlı Türkçe asistan; sohbet modu, MakerOS bilgi bankası, bağlam temizleme, risk sınıflandırması ve Full Bypass / İzinli komut çalıştırma |
-| **Paket Yöneticisi** | Debian'daki gibi `apt install` / `mos pkg`: paketler microSD'deki kullanıcı kutusuna (Debian trixie, rootless podman) kurulur; komutlar ve uygulamalar MakerOS'a otomatik aktarılır ([ayrıntı](docs/architecture/packages.md)) |
-| **Python ve Otomasyon** | `uv` tabanlı sanal ortam ve proje yöneticisi, hazır GPIO/Kamera/Web/AI şablonları; **Otomatik Başlatma** ve **Cron** zamanlayıcı ile açılışta veya zamanlanmış görevlerle çalıştırma |
-| **Donanım ve Kamera** | 40-pin GPIO canlı kontrolü, I²C, SPI, UART; CSI ve USB kameralar için canlı MJPEG akışı ve fotoğraf çekimi |
-| **Eklentiler ve Temalar** | Python eklenti mimarisi, Eklenti Mağazası (`makeros-plugins`), `.zip` içe/dışa aktarma; Maker (varsayılan), Donanım, Siber, 3B Baskı ve Konya HackerSpace temaları, düz (flat) düşük GPU modu ve Sistem UI gizleme |
+| **Her yerden aynı masaüstü** | Kartın ekranında, ağdaki bir bilgisayarın tarayıcısında ve telefonda aynı arayüz. |
+| **Güvenli güncelleme** | Yeni sürüm sistemin yedek kopyasına kurulur; bir sorun olursa kart kendiliğinden eski sürüme döner. |
+| **Yerel AI asistanı** | İnternet gerektirmeyen Türkçe asistan; soruları yanıtlar, izin verirseniz komut çalıştırır. |
+| **Paket kurma** | Debian'daki gibi `apt install`; paketler microSD'deki kişisel alanınıza kurulur. |
+| **Python ve otomasyon** | Hazır şablonlarla Python projeleri; açılışta ya da belirli saatlerde otomatik çalıştırma. |
+| **Donanım ve kamera** | GPIO pinlerini canlı kontrol, I²C / SPI / UART, CSI ve USB kameradan canlı görüntü. |
+| **Eklentiler ve temalar** | Eklenti mağazası, hazır temalar ve düşük güç tüketen sade görünüm. |
 
 <a id="architecture"></a>
 
-## Mimari
+## Nasıl Çalışır?
 
-MakerOS katmanlardan oluşur; her katman kendi dizininde durur ve kendi belgesiyle anlatılır.
+<p align="center"><img src="docs/assets/diagrams/architecture.svg" alt="MakerOS katmanları: Donanım, İşletim sistemi, Servisler, Masaüstü" width="100%"></p>
 
-```mermaid
-flowchart TB
-  UI["🖥️ <b>Kullanıcı arayüzü</b> · shell/<br/>Yerel ekran (labwc + Cog/WPE) · Ağdaki tarayıcı · Telefon"]
-  SVC["⚙️ <b>Rust servisleri</b> · makerd/<br/>makerd (HTTP/WS API) · makerd-priv · makerd-user · makeros-ai (yerel LLM)"]
-  BOX["📦 <b>Paket kutusu</b> · mos pkg / apt<br/>Debian trixie · rootless podman"]
-  OS["🧱 <b>İşletim sistemi</b> · os/<br/>Linux 6.18 ARM64 · systemd · EROFS kök (salt okunur) · RAUC A/B OTA"]
-  HW["🔌 <b>Pi 4 / 400 uyumlu ARM64 kart</b><br/>GPIO · I²C · SPI · UART · CSI kamera"]
-  UI -- "HTTPS + WebSocket" --> SVC
-  UI -- "apt install · komutlar ve uygulamalar geri aktarılır" --> BOX
-  SVC --> OS
-  BOX --> OS
-  OS --> HW
-  classDef ui fill:#fff4ea,stroke:#f07a1a,color:#17181b
-  classDef core fill:#f3f1ed,stroke:#8b8e96,color:#17181b
-  class UI,BOX ui
-  class SVC,OS,HW core
-```
+| Katman | Ne işe yarar? |
+| --- | --- |
+| **1. Donanım** | Sistemin çalıştığı kart. Pinler, sensörler ve kamera bu katmandadır. |
+| **2. İşletim sistemi** | Linux çekirdeği ve temel servisler. Sistem dosyaları salt okunurdur, yanlışlıkla bozulmaz. |
+| **3. Servisler** | `makerd`: arayüzün istediği her şeyi (dosyalar, terminal, ağ, AI, güncelleme) güvenli biçimde yapan arka plan programı. |
+| **4. Masaüstü** | Gördüğünüz arayüz. Web tabanlıdır, bu yüzden ekranda, tarayıcıda ve telefonda aynı şekilde çalışır. |
 
-**Katman belgeleri:** [Masaüstü kabuğu](docs/architecture/desktop.md) · [Rust arka uç](docs/architecture/backend.md) · [Yerel AI](docs/architecture/ai-assistant.md) · [Paket yöneticisi](docs/architecture/packages.md) · [Önyükleme ve depolama](docs/architecture/boot-and-storage.md) · [Ağ ve güvenlik](docs/architecture/network-security.md) · [Donanım](docs/architecture/hardware.md)
+Ayrıntılar: [Masaüstü](docs/architecture/desktop.md) · [Servisler](docs/architecture/backend.md) · [Yerel AI](docs/architecture/ai-assistant.md) · [Donanım](docs/architecture/hardware.md)
 
-### microSD bölüm düzeni
+### microSD kart
 
-Sistem salt okunur iki kök bölümle (A/B) çalışır; tüm kullanıcı verisi ve kurulan paketler `DATA` bölümündedir. Bu yüzden güncellemeler verinize dokunmaz. Ayrıntı: [Önyükleme ve Depolama](docs/architecture/boot-and-storage.md).
+<p align="center"><img src="docs/assets/diagrams/sd-card.svg" alt="microSD kart düzeni: MOSCFG, BOOT_A, BOOT_B, ROOT_A, ROOT_B, DATA" width="100%"></p>
 
-```mermaid
-flowchart LR
-  subgraph SD["microSD kart"]
-    direction LR
-    CFG["MOSCFG<br/>FAT32 · 64 MiB<br/>autoboot.txt · wifi.txt"]
-    BA["BOOT_A<br/>FAT32 · 256 MiB"]
-    BB["BOOT_B<br/>FAT32 · 256 MiB"]
-    RA["ROOT_A<br/>EROFS · 2,5 GiB<br/>salt okunur"]
-    RB["ROOT_B<br/>EROFS · 2,5 GiB<br/>OTA hedefi"]
-    DATA["DATA · ext4 · kartın sonuna kadar<br/>/home · /etc katmanı · /var · /usr/local<br/>📦 mos pkg kutuları ve paketleri"]
-  end
-  CFG -- "tryboot" --> BA & BB
-  BA --> RA
-  BB --> RB
-  RA & RB -- "bağlar" --> DATA
-```
+| Bölüm | Ne işe yarar? |
+| --- | --- |
+| **MOSCFG** | Hangi sistem kopyasıyla açılacağını ve isteğe bağlı Wi-Fi ayarını tutar. Bilgisayarınızda açıp düzenleyebilirsiniz. |
+| **BOOT_A / BOOT_B** | Kartı açan dosyalar; her sistem kopyasının kendi açılış bölümü vardır. |
+| **ROOT_A / ROOT_B** | İşletim sisteminin iki kopyası. Biri kullanılırken diğeri güncellemeye hazır bekler. |
+| **DATA** | Sizin alanınız: dosyalar, ayarlar, projeler ve kurduğunuz paketler. Güncellemeler bu bölüme dokunmaz. |
 
-### Açılış ve güncelleme akışı
+### Açılış
 
-```mermaid
-sequenceDiagram
-  autonumber
-  participant E as EEPROM
-  participant B as BOOT_A / BOOT_B
-  participant K as Çekirdek + preinit
-  participant S as systemd
-  participant M as makerd
-  E->>B: autoboot.txt → etkin slot
-  B->>K: kernel8.img (initramfs yok)
-  K->>K: DATA'yı denetle ve /data'ya bağla, /etc katmanı
-  K->>S: exec systemd
-  S->>M: makerd :80/:443 + kiosk (labwc + Cog)
-  Note over M: Ayarlar › Genel › Yazılım güncelleme
-  M->>B: imzalı .raucb → boştaki slota yaz
-  M->>E: reboot "0 tryboot" (tek seferlik)
-  S-->>M: sağlıklı açılış → mark-good, slot kalıcı olur
-```
+<p align="center"><img src="docs/assets/diagrams/boot.svg" alt="Açılış: Güç, Çekirdek, Veriler, Servisler, Masaüstü" width="100%"></p>
+
+1. **Güç:** Kart açılır ve son çalışan sistem kopyası (A ya da B) seçilir.
+2. **Çekirdek:** Linux başlar; sistem dosyaları değiştirilemez (salt okunur) olarak açılır.
+3. **Veriler:** `DATA` bölümü denetlenip bağlanır; ayarlarınız ve dosyalarınız yerine gelir.
+4. **Servisler:** `makerd`, ağ bağlantısı ve yerel AI başlar. Ağ yoksa kart kendi `MakerOS` Wi-Fi'ını açar.
+5. **Masaüstü:** Arayüz ekranda açılır; aynı anda ağdan da erişilebilir.
+
+### Güncelleme
+
+<p align="center"><img src="docs/assets/diagrams/update.svg" alt="Güncelleme: Denetle, İndir, Yaz, Dene, Onayla" width="100%"></p>
+
+1. **Denetle:** Ayarlar › Genel › Yazılım güncelleme yeni sürüm olup olmadığına bakar.
+2. **İndir:** Güncelleme paketi indirilir; imzası doğrulanır, değiştirilmiş paket kurulmaz.
+3. **Yaz:** Paket, o an kullanılmayan sistem kopyasına yazılır. Çalışan sistem etkilenmez.
+4. **Dene:** Kart yeni sürümle **bir kez** açılır.
+5. **Onayla:** Her şey yolundaysa yeni sürüm kalıcı olur; açılış başarısızsa kart otomatik olarak eski sürüme döner.
+
+Ayrıntılar: [Önyükleme ve depolama](docs/architecture/boot-and-storage.md)
 
 <a id="packages"></a>
 
-## Paket Yöneticisi (`mos pkg` / `apt`)
+## Paket Kurma (`apt` / `mos pkg`)
 
-Kök dosya sistemi salt okunur olduğu hâlde Debian'daki gibi paket kurabilirsiniz. `mos pkg` (ya da alışkın olduğunuz `apt` / `apt-get`) paketleri microSD'deki `DATA` bölümünde duran, kullanıcı yetkisiyle çalışan bir Debian trixie kutusuna kurar. Paketin komutları ve masaüstü uygulamaları otomatik olarak MakerOS'a aktarılır: terminalde doğrudan çalışır, uygulamalar menüde görünür. Ayrıntı: [Paket Yöneticisi](docs/architecture/packages.md).
+<p align="center"><img src="docs/assets/diagrams/packages.svg" alt="Paket kurma: apt install, Debian kutusu, Aktarım, Kullan" width="100%"></p>
 
-```mermaid
-flowchart LR
-  U["👤 Kullanıcı<br/>apt install htop"] --> P["mos pkg install"]
-  P --> BX["📦 Debian trixie kutusu<br/>(podman, rootless)<br/>/data/home/… üzerinde"]
-  BX -- "dpkg -L" --> EX{"Aktar"}
-  EX -- "/usr/bin/*" --> BIN["~/.local/bin/htop<br/>→ mos box run …"]
-  EX -- "*.desktop" --> APP["~/.local/share/applications<br/>→ MakerOS menüsü"]
-  BIN --> T["Terminal: htop"]
-  APP --> D["Masaüstünde uygulama"]
-```
+Sistem dosyaları salt okunur olduğu için paketler sisteme değil, microSD'deki **kişisel Debian kutunuza** kurulur. Siz farkı görmezsiniz: komut terminalde çalışır, uygulama menüde görünür.
+
+1. **apt install:** Terminalde Debian'daki gibi paket istersiniz.
+2. **Debian kutusu:** Paket, `DATA` bölümündeki kişisel kutunuza kurulur. Sisteme dokunmaz, güncellemelerde silinmez.
+3. **Aktarım:** Paketin komutları ve uygulamaları MakerOS'a bağlanır.
+4. **Kullan:** Komutu terminalde çalıştırın, uygulamayı menüden açın.
 
 ```bash
-apt install htop           # ya da: mos pkg install htop
-htop                       # MakerOS terminalinde doğrudan çalışır
-mos pkg list               # mos pkg ile kurulan paketler
-apt upgrade                # kutudaki paketleri güncelle, aktarımları yenile
-apt remove htop            # paketi ve aktarılan komutları kaldır
-mos box                    # tam Debian kabuğuna gir (sudo apt, gcc, make …)
+apt install htop      # paketi kur
+htop                  # doğrudan çalıştır
+apt remove htop       # kaldır
+mos box               # tam Debian kabuğuna gir
 ```
+
+Ayrıntılar: [Paket yöneticisi](docs/architecture/packages.md)
+
+<a id="setup-guide"></a>
+
+## Kurulum
+
+1. **Yazın:** [Sürüm sayfasından](https://github.com/ferhatozcelik/maker-os/releases/latest) imajı indirin ve bir imaj yazma aracıyla (ör. balenaEtcher) microSD karta yazın. İsterseniz `MOSCFG` bölümündeki `wifi-example.txt` dosyasını `wifi.txt` olarak kopyalayıp Wi-Fi bilgilerinizi girin.
+2. **Başlatın:** Kartı takıp gücü verin.
+3. **Bağlanın:** Aynı ağda `http://maker-os.local/`, USB-C ile `http://10.55.0.1/`; ağ yoksa `MakerOS` Wi-Fi'ına bağlanıp `http://10.42.0.1/kurulum` adresini açın.
+4. **Oturum açın:** Varsayılan hesap **`makeros` / `makeros`**. Parolayı **Ayarlar › Kullanıcı** bölümünden değiştirin.
 
 <a id="documentation"></a>
 
 ## Dokümantasyon
 
-Tüm belgeler Türkçe ve İngilizcedir; giriş sayfası: [`docs/`](docs/README.md).
+Tüm belgeler Türkçe ve İngilizcedir. Giriş sayfası: [`docs/`](docs/README.md)
 
 | Konu | Türkçe | English |
 | --- | --- | --- |
 | Genel bakış | [overview.md](docs/architecture/overview.md) | [overview.en.md](docs/architecture/overview.en.md) |
 | Önyükleme ve depolama | [boot-and-storage.md](docs/architecture/boot-and-storage.md) | [boot-and-storage.en.md](docs/architecture/boot-and-storage.en.md) |
-| Masaüstü kabuğu | [desktop.md](docs/architecture/desktop.md) | [desktop.en.md](docs/architecture/desktop.en.md) |
-| Rust arka uç | [backend.md](docs/architecture/backend.md) | [backend.en.md](docs/architecture/backend.en.md) |
+| Masaüstü | [desktop.md](docs/architecture/desktop.md) | [desktop.en.md](docs/architecture/desktop.en.md) |
+| Servisler (Rust) | [backend.md](docs/architecture/backend.md) | [backend.en.md](docs/architecture/backend.en.md) |
 | Paket yöneticisi | [packages.md](docs/architecture/packages.md) | [packages.en.md](docs/architecture/packages.en.md) |
 | Yerel AI asistanı | [ai-assistant.md](docs/architecture/ai-assistant.md) | [ai-assistant.en.md](docs/architecture/ai-assistant.en.md) |
 | Ağ ve güvenlik | [network-security.md](docs/architecture/network-security.md) | [network-security.en.md](docs/architecture/network-security.en.md) |
@@ -212,35 +192,20 @@ Tüm belgeler Türkçe ve İngilizcedir; giriş sayfası: [`docs/`](docs/README.
 | Marka ve lisans | [branding-and-licensing.md](docs/project/branding-and-licensing.md) | [branding-and-licensing.en.md](docs/project/branding-and-licensing.en.md) |
 | HTTP/WS API | [api.md](docs/api.md) | [api.en.md](docs/api.en.md) |
 
-Kaynak dizinleri: [`os/`](os/README.md) (Buildroot dış ağacı, çekirdek, paketler, imaj) · [`makerd/`](makerd/) (Rust sistem servisleri ve AI) · [`shell/`](shell/README.md) (web masaüstü ve uygulamalar) · [`site/`](site/index.html) ([tanıtım sayfası](https://ferhatozcelik.github.io/maker-os/)).
-
-<a id="setup-guide"></a>
-
-## Kurulum Rehberi
-
-1. **SD Karta Yazın:** [Sürüm sayfasından](https://github.com/ferhatozcelik/maker-os/releases/latest) `makeros-1.0.0-rpi4.img.xz` dosyasını indirin ve herhangi bir imaj yazma aracıyla (ör. balenaEtcher ya da `dd`) SD karta yazın. İsteğe bağlı olarak `MOSCFG` bölümündeki `wifi-example.txt` dosyasını `wifi.txt` adıyla kopyalayıp Wi-Fi bilgilerinizi girebilirsiniz.
-2. **Başlatın ve Bağlanın:** SD kartı Pi 4 / 400 uyumlu kartınıza takıp gücü verin. Aynı ağdaysanız `http://maker-os.local/`, USB-C ile bağlıysanız `http://10.55.0.1/`, ağ tanımlı değilse `MakerOS` kurulum Wi-Fi ağına bağlanarak `http://10.42.0.1/kurulum` adresini açın.
-3. **Oturum Açın:** İlk kurulumdan sonra varsayılan hesap **`makeros` / `makeros`** olarak oluşturulur; parolanızı **Ayarlar › Kullanıcı** bölümünden değiştirebilirsiniz.
-4. **OTA Güncelleme:** **Ayarlar › Genel › Yazılım güncelleme** üzerinden yeni sürümler denetlenir, imzalı `.raucb` paketi boştaki bölüme (`ROOT_A` / `ROOT_B`) kurulur ve `tryboot` ile güvenle devreye alınır.
-
 <a id="build-from-source"></a>
 
-## Kaynaktan Derleme ve Hızlı Komutlar
+## Kaynaktan Derleme
 
 ```bash
-make -C makerd preview     # yerel önizleme: makerd (mock) + kabuk → http://localhost:8080/
-make -C shell smoke        # kabuk duman testi (Docker içinde başsız Chromium)
-./os/build.sh build        # ARM64 (Pi 4 uyumlu) imaj → os/out/makeros-1.0.0-rpi4.img.xz
+make -C makerd preview     # bilgisayarınızda önizleme → http://localhost:8080/
+make -C shell smoke        # arayüz testleri
+./os/build.sh build        # microSD imajını derle → os/out/
 ```
 
-Ayrıntılı derleme ve geliştirme adımları için bkz. [`docs/development/build-and-test.md`](docs/development/build-and-test.md).
-
-## Doğrulama Durumu
-
-Masaüstü kabuğu (`shell/`), `makerd` servis ailesi, yerel AI asistanı (`makeros-ai`), terminal oturumları, Python Yöneticisi, Otomatik Başlatma / Cron zamanlayıcı ve OTA güncelleme akışı hem Docker duman testleriyle hem de gerçek Pi 4 uyumlu ARM64 donanım üzerinde doğrulanmıştır. Nelerin gerçek donanımda doğrulandığı ve gelecek planlarının ayrımı için bkz. [`docs/verification/validation.md`](docs/verification/validation.md).
+Kaynak dizinleri: [`os/`](os/README.md) (işletim sistemi ve imaj) · [`makerd/`](makerd/) (servisler) · [`shell/`](shell/README.md) (masaüstü) · [`site/`](site/index.html) ([tanıtım sayfası](https://ferhatozcelik.github.io/maker-os/)). Ayrıntılar: [Derleme ve test](docs/development/build-and-test.md) · [Doğrulama durumu](docs/verification/validation.md)
 
 ## Lisans
 
-[MIT](LICENSE) — Üçüncü taraf bileşenlerin lisans bildirimleri için [`NOTICE.md`](NOTICE.md) ve [`docs/project/branding-and-licensing.md`](docs/project/branding-and-licensing.md) belgelerine bakın.
+[MIT](LICENSE). Üçüncü taraf bileşenler: [`NOTICE.md`](NOTICE.md).
 
-**MakerOS bağımsız bir açık kaynak projesidir.** Herhangi bir donanım ya da yazılım üreticisiyle ortaklık, sponsorluk veya resmî bağ iddia etmez. Anılan ürün adları sahiplerinin markalarıdır ve yalnız uyumluluğu belirtmek için kullanılır.
+MakerOS bağımsız bir açık kaynak projesidir; herhangi bir donanım ya da yazılım üreticisiyle bağı yoktur. Anılan ürün adları sahiplerinin markalarıdır.

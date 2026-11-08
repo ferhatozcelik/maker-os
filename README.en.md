@@ -20,9 +20,9 @@
 <p align="center">
   <a href="https://github.com/ferhatozcelik/maker-os/releases/latest">Download</a> ·
   <a href="#features">Features</a> ·
-  <a href="#architecture">Architecture</a> ·
+  <a href="#architecture">How it works</a> ·
   <a href="#packages">Packages</a> ·
-  <a href="#setup-guide">Setup Guide</a> ·
+  <a href="#setup-guide">Setup</a> ·
   <a href="#documentation">Documentation</a> ·
   <a href="docs/api.en.md">API</a> ·
   <a href="CONTRIBUTING.md">Contribute</a>
@@ -66,15 +66,11 @@
 
 ## What is MakerOS?
 
-MakerOS is an independent Linux operating system running on accessible hardware such as Pi 4 compatible ARM64 boards, designed to give users full ownership and freedom over their computer and digital workspace. Instead of layering a theme onto a generic distribution, MakerOS builds its own image from the ground up—unifying its boot chain, Rust system services (`makerd`), web desktop shell, A/B OTA update system, and offline AI assistant into a single cohesive platform.
+MakerOS is an independent, open-source Linux operating system for Pi 4 / 400 compatible ARM64 boards. Plug the board into a display and use it like a desktop computer, or use it remotely from any browser on your network or from your phone. A terminal, file manager, Python projects, GPIO, camera and an offline AI assistant come built in.
 
-It combines clarity and ease of use with the flexibility of Linux, while maintaining its own identity, lightweight technical architecture, and open-source maker philosophy.
+**Computing should be personal again.** MakerOS started on a small ARM board with a simple question: *"Can we design a computer that truly belongs to us?"* The goal is a system that needs no expensive hardware, that you can understand and change, and that helps you build your ideas.
 
-**Computing should be personal again.** Modern operating systems increasingly lock users inside black-box ecosystems and opaque background services. MakerOS started on a small ARM board with a simple question: *"Can we design a computer that truly belongs to us?"* Our goal is to make capable computing accessible without expensive hardware—providing a transparent system that you can understand, modify, and use to build what matters to you.
-
-MakerOS is guided by five core principles: **Freedom** (you own your machine), **Simplicity** (powerful tools without unnecessary complexity), **Productivity** (built for creation, not just consumption), **Transparency** (clear visibility into services, hardware, and state), and **Accessibility** (engineered for affordable ARM64 devices). Artificial intelligence in MakerOS is designed to expand human capability rather than take control away from the user.
-
-> **Manifesto:** We do not believe computers exist merely for consumption, nor that great design must come at the cost of user freedom. Simplicity and openness belong together. Technology should not tell you what to do—it should expand what you can build.
+> Technology should not tell you what to do — it should expand what you can build.
 >
 > **Your workshop, in your pocket.**
 
@@ -86,123 +82,107 @@ MakerOS is guided by five core principles: **Freedom** (you own your machine), *
 
 ## Features
 
-| Area | Overview |
+| | |
 | --- | --- |
-| **Base System** | Custom Buildroot + Linux 6.18 (ARM64) distribution; read-only EROFS rootfs, persistent ext4 `/data` partition, RAUC + `tryboot` A/B updates, systemd |
-| **Desktop & Web** | Shared experience on local display (Cog/WPE WebKit) and remote browsers: windowed **Desktop** (`/`) and mobile-ready **Web** (`/web`) interface |
-| **Rust Backend** | `makerd` (HTTP/WS API), `makerd-priv` (privileged operations), `makerd-user` (user processes & PTY terminal), `makeros-ai` (local AI daemon) |
-| **Local AI Assistant** | Offline assistant powered by Qwen2.5-0.5B-Instruct GGUF + `llama.cpp`; conversational mode, MakerOS knowledge cards, context reset, risk classification, and Full Bypass / Ask execution modes |
-| **Package Manager** | Debian-style `apt install` / `mos pkg`: packages install into a per-user box on the microSD (Debian trixie, rootless podman); commands and apps are exported to MakerOS automatically ([details](docs/architecture/packages.en.md)) |
-| **Python & Automation** | `uv`-based virtual environment and project manager with ready-made GPIO/Camera/Web/AI templates; **Autostart** and **Cron** scheduler for boot and periodic execution |
-| **Hardware & Camera** | Live 40-pin GPIO control, I²C, SPI, UART; live MJPEG streaming and photo capture for CSI and USB cameras |
-| **Plugins & Themes** | Python plugin architecture, Plugin Store (`makeros-plugins`), `.zip` import/export; Maker (default), Hardware, Cyber, 3D Print, and Konya HackerSpace themes, flat low-GPU mode, and granular System UI toggles |
+| **One desktop, everywhere** | The same interface on the board's display, in a browser on your network, and on your phone. |
+| **Safe updates** | New versions install to a spare copy of the system; if anything goes wrong, the board rolls back on its own. |
+| **Local AI assistant** | An assistant that works without internet; it answers questions and runs commands only with your permission. |
+| **Package installs** | Debian-style `apt install`; packages go into your personal space on the microSD. |
+| **Python & automation** | Python projects from ready-made templates; run them at boot or on a schedule. |
+| **Hardware & camera** | Live GPIO control, I²C / SPI / UART, live video from CSI and USB cameras. |
+| **Plugins & themes** | A plugin store, ready-made themes and a light, low-power look. |
 
 <a id="architecture"></a>
 
-## Architecture
+## How It Works
 
-MakerOS is built in layers; each layer lives in its own directory and has its own document.
+<p align="center"><img src="docs/assets/diagrams/architecture.en.svg" alt="MakerOS layers: Hardware, Operating system, Services, Desktop" width="100%"></p>
 
-```mermaid
-flowchart TB
-  UI["🖥️ <b>User interface</b> · shell/<br/>Local display (labwc + Cog/WPE) · Network browser · Phone"]
-  SVC["⚙️ <b>Rust services</b> · makerd/<br/>makerd (HTTP/WS API) · makerd-priv · makerd-user · makeros-ai (local LLM)"]
-  BOX["📦 <b>Package box</b> · mos pkg / apt<br/>Debian trixie · rootless podman"]
-  OS["🧱 <b>Operating system</b> · os/<br/>Linux 6.18 ARM64 · systemd · read-only EROFS root · RAUC A/B OTA"]
-  HW["🔌 <b>Pi 4 / 400 compatible ARM64 board</b><br/>GPIO · I²C · SPI · UART · CSI camera"]
-  UI -- "HTTPS + WebSocket" --> SVC
-  UI -- "apt install · commands and apps exported back" --> BOX
-  SVC --> OS
-  BOX --> OS
-  OS --> HW
-  classDef ui fill:#fff4ea,stroke:#f07a1a,color:#17181b
-  classDef core fill:#f3f1ed,stroke:#8b8e96,color:#17181b
-  class UI,BOX ui
-  class SVC,OS,HW core
-```
+| Layer | What it does |
+| --- | --- |
+| **1. Hardware** | The board the system runs on. Pins, sensors and the camera live here. |
+| **2. Operating system** | The Linux kernel and core services. System files are read-only, so they can't be broken by accident. |
+| **3. Services** | `makerd`: the background program that safely does everything the interface asks for (files, terminal, network, AI, updates). |
+| **4. Desktop** | The interface you see. It is web-based, so it works the same on screen, in a browser and on a phone. |
 
-**Layer documents:** [Desktop shell](docs/architecture/desktop.en.md) · [Rust backend](docs/architecture/backend.en.md) · [Local AI](docs/architecture/ai-assistant.en.md) · [Package manager](docs/architecture/packages.en.md) · [Boot & storage](docs/architecture/boot-and-storage.en.md) · [Network & security](docs/architecture/network-security.en.md) · [Hardware](docs/architecture/hardware.en.md)
+Details: [Desktop](docs/architecture/desktop.en.md) · [Services](docs/architecture/backend.en.md) · [Local AI](docs/architecture/ai-assistant.en.md) · [Hardware](docs/architecture/hardware.en.md)
 
-### microSD partition layout
+### microSD card
 
-The system runs from two read-only root slots (A/B); all user data and installed packages live on the `DATA` partition, so updates never touch your data. Details: [Boot & Storage](docs/architecture/boot-and-storage.en.md).
+<p align="center"><img src="docs/assets/diagrams/sd-card.en.svg" alt="microSD layout: MOSCFG, BOOT_A, BOOT_B, ROOT_A, ROOT_B, DATA" width="100%"></p>
 
-```mermaid
-flowchart LR
-  subgraph SD["microSD card"]
-    direction LR
-    CFG["MOSCFG<br/>FAT32 · 64 MiB<br/>autoboot.txt · wifi.txt"]
-    BA["BOOT_A<br/>FAT32 · 256 MiB"]
-    BB["BOOT_B<br/>FAT32 · 256 MiB"]
-    RA["ROOT_A<br/>EROFS · 2,5 GiB<br/>read-only"]
-    RB["ROOT_B<br/>EROFS · 2,5 GiB<br/>OTA target"]
-    DATA["DATA · ext4 · to end of card<br/>/home · /etc overlay · /var · /usr/local<br/>📦 mos pkg boxes and packages"]
-  end
-  CFG -- "tryboot" --> BA & BB
-  BA --> RA
-  BB --> RB
-  RA & RB -- "mounts" --> DATA
-```
+| Partition | What it does |
+| --- | --- |
+| **MOSCFG** | Stores which system copy to boot and optional Wi-Fi settings. You can open and edit it on your computer. |
+| **BOOT_A / BOOT_B** | Files that start the board; each system copy has its own boot partition. |
+| **ROOT_A / ROOT_B** | Two copies of the operating system. One is in use while the other waits for the next update. |
+| **DATA** | Your space: files, settings, projects and installed packages. Updates never touch it. |
 
-### Boot and update flow
+### Boot
 
-```mermaid
-sequenceDiagram
-  autonumber
-  participant E as EEPROM
-  participant B as BOOT_A / BOOT_B
-  participant K as Kernel + preinit
-  participant S as systemd
-  participant M as makerd
-  E->>B: autoboot.txt → active slot
-  B->>K: kernel8.img (no initramfs)
-  K->>K: fsck DATA, mount /data, /etc overlay
-  K->>S: exec systemd
-  S->>M: makerd :80/:443 + kiosk (labwc + Cog)
-  Note over M: Settings › General › Software update
-  M->>B: signed .raucb → write to idle slot
-  M->>E: reboot "0 tryboot" (one-shot)
-  S-->>M: healthy boot → mark-good, slot becomes permanent
-```
+<p align="center"><img src="docs/assets/diagrams/boot.en.svg" alt="Boot: Power, Kernel, Data, Services, Desktop" width="100%"></p>
+
+1. **Power:** The board starts and picks the last working system copy (A or B).
+2. **Kernel:** Linux starts; system files are mounted read-only.
+3. **Data:** The `DATA` partition is checked and mounted; your settings and files come back.
+4. **Services:** `makerd`, networking and the local AI start. Without a network, the board opens its own `MakerOS` Wi-Fi.
+5. **Desktop:** The interface opens on screen and is reachable over the network at the same time.
+
+### Update
+
+<p align="center"><img src="docs/assets/diagrams/update.en.svg" alt="Update: Check, Download, Write, Try, Confirm" width="100%"></p>
+
+1. **Check:** Settings › General › Software update looks for a new version.
+2. **Download:** The update bundle is downloaded and its signature verified; tampered bundles are rejected.
+3. **Write:** The bundle is written to the system copy that is not in use. The running system is untouched.
+4. **Try:** The board boots the new version **once**.
+5. **Confirm:** If all is well, the new version becomes permanent; if boot fails, the board automatically returns to the previous version.
+
+Details: [Boot & storage](docs/architecture/boot-and-storage.en.md)
 
 <a id="packages"></a>
 
-## Package Manager (`mos pkg` / `apt`)
+## Installing Packages (`apt` / `mos pkg`)
 
-Even though the root filesystem is read-only, you can install packages just like on Debian. `mos pkg` (or the familiar `apt` / `apt-get`) installs packages into a rootless Debian trixie box stored on the microSD `DATA` partition. The package's commands and desktop apps are exported to MakerOS automatically: they run straight from the terminal and show up in the app menu. Details: [Package Manager](docs/architecture/packages.en.md).
+<p align="center"><img src="docs/assets/diagrams/packages.en.svg" alt="Installing packages: apt install, Debian box, Export, Use" width="100%"></p>
 
-```mermaid
-flowchart LR
-  U["👤 User<br/>apt install htop"] --> P["mos pkg install"]
-  P --> BX["📦 Debian trixie box<br/>(podman, rootless)<br/>on /data/home/…"]
-  BX -- "dpkg -L" --> EX{"Export"}
-  EX -- "/usr/bin/*" --> BIN["~/.local/bin/htop<br/>→ mos box run …"]
-  EX -- "*.desktop" --> APP["~/.local/share/applications<br/>→ MakerOS menu"]
-  BIN --> T["Terminal: htop"]
-  APP --> D["App on the desktop"]
-```
+Because system files are read-only, packages are installed into your **personal Debian box** on the microSD instead of the system. You won't notice the difference: commands run in the terminal and apps appear in the menu.
+
+1. **apt install:** Ask for a package in the terminal, just like on Debian.
+2. **Debian box:** The package is installed into your personal box on the `DATA` partition. The system is untouched and updates never remove it.
+3. **Export:** The package's commands and apps are linked into MakerOS.
+4. **Use:** Run the command in the terminal or open the app from the menu.
 
 ```bash
-apt install htop           # or: mos pkg install htop
-htop                       # runs directly in the MakerOS terminal
-mos pkg list               # packages installed with mos pkg
-apt upgrade                # upgrade box packages, refresh exports
-apt remove htop            # remove package and its exported commands
-mos box                    # enter a full Debian shell (sudo apt, gcc, make …)
+apt install htop      # install a package
+htop                  # run it directly
+apt remove htop       # remove it
+mos box               # enter a full Debian shell
 ```
+
+Details: [Package manager](docs/architecture/packages.en.md)
+
+<a id="setup-guide"></a>
+
+## Setup
+
+1. **Flash:** Download the image from [Releases](https://github.com/ferhatozcelik/maker-os/releases/latest) and write it to a microSD card with an image writer (e.g. balenaEtcher). Optionally copy `wifi-example.txt` to `wifi.txt` on the `MOSCFG` partition and fill in your Wi-Fi details.
+2. **Boot:** Insert the card and power on.
+3. **Connect:** Open `http://maker-os.local/` on the same network or `http://10.55.0.1/` over USB-C; without a network, join the `MakerOS` Wi-Fi and open `http://10.42.0.1/kurulum`.
+4. **Sign in:** The default account is **`makeros` / `makeros`**. Change the password in **Settings › User**.
 
 <a id="documentation"></a>
 
 ## Documentation
 
-All documents are available in English and Turkish; start at [`docs/`](docs/README.en.md).
+All documents are available in English and Turkish. Start here: [`docs/`](docs/README.en.md)
 
 | Topic | English | Türkçe |
 | --- | --- | --- |
 | Overview | [overview.en.md](docs/architecture/overview.en.md) | [overview.md](docs/architecture/overview.md) |
 | Boot & storage | [boot-and-storage.en.md](docs/architecture/boot-and-storage.en.md) | [boot-and-storage.md](docs/architecture/boot-and-storage.md) |
-| Desktop shell | [desktop.en.md](docs/architecture/desktop.en.md) | [desktop.md](docs/architecture/desktop.md) |
-| Rust backend | [backend.en.md](docs/architecture/backend.en.md) | [backend.md](docs/architecture/backend.md) |
+| Desktop | [desktop.en.md](docs/architecture/desktop.en.md) | [desktop.md](docs/architecture/desktop.md) |
+| Services (Rust) | [backend.en.md](docs/architecture/backend.en.md) | [backend.md](docs/architecture/backend.md) |
 | Package manager | [packages.en.md](docs/architecture/packages.en.md) | [packages.md](docs/architecture/packages.md) |
 | Local AI assistant | [ai-assistant.en.md](docs/architecture/ai-assistant.en.md) | [ai-assistant.md](docs/architecture/ai-assistant.md) |
 | Network & security | [network-security.en.md](docs/architecture/network-security.en.md) | [network-security.md](docs/architecture/network-security.md) |
@@ -212,35 +192,20 @@ All documents are available in English and Turkish; start at [`docs/`](docs/READ
 | Branding & licensing | [branding-and-licensing.en.md](docs/project/branding-and-licensing.en.md) | [branding-and-licensing.md](docs/project/branding-and-licensing.md) |
 | HTTP/WS API | [api.en.md](docs/api.en.md) | [api.md](docs/api.md) |
 
-Source directories: [`os/`](os/README.md) (Buildroot external tree, kernel, packages, image) · [`makerd/`](makerd/) (Rust system services and AI) · [`shell/`](shell/README.md) (web desktop and apps) · [`site/`](site/index.html) ([project website](https://ferhatozcelik.github.io/maker-os/)).
-
-<a id="setup-guide"></a>
-
-## Setup Guide
-
-1. **Flash the Image:** Download `makeros-1.0.0-rpi4.img.xz` from [Releases](https://github.com/ferhatozcelik/maker-os/releases/latest) and flash it to an SD card with any image writer (e.g. balenaEtcher or `dd`). Optionally copy `wifi-example.txt` to `wifi.txt` on the `MOSCFG` partition to preconfigure Wi-Fi.
-2. **Boot & Connect:** Insert the SD card into your Pi 4 / 400 compatible board and power it on. Open `http://maker-os.local/` on your local network, `http://10.55.0.1/` over USB-C, or connect to the open `MakerOS` setup Wi-Fi hotspot (`http://10.42.0.1/kurulum`).
-3. **Sign In:** Default credentials are **`makeros` / `makeros`**. Change your password anytime under **Settings › User**.
-4. **OTA Updates:** Check and install signed `.raucb` updates from **Settings › General › Software Update** with automatic `tryboot` rollback protection.
-
 <a id="build-from-source"></a>
 
-## Build from Source & Quick Commands
+## Build from Source
 
 ```bash
-make -C makerd preview     # local preview: makerd (mock) + shell → http://localhost:8080/
-make -C shell smoke        # headless Chromium smoke test in Docker
-./os/build.sh build        # build ARM64 (Pi 4 compatible) image → os/out/makeros-1.0.0-rpi4.img.xz
+make -C makerd preview     # preview on your computer → http://localhost:8080/
+make -C shell smoke        # interface tests
+./os/build.sh build        # build the microSD image → os/out/
 ```
 
-See [`docs/development/build-and-test.en.md`](docs/development/build-and-test.en.md) for full build instructions.
-
-## Validation Status
-
-The desktop shell (`shell/`), `makerd` service family, local AI assistant (`makeros-ai`), terminal sessions, Python Manager, Autostart / Cron scheduler, and OTA update flow have been verified via automated Docker smoke tests and on real Pi 4 compatible ARM64 hardware. See [`docs/verification/validation.en.md`](docs/verification/validation.en.md) for verified features versus future roadmap items.
+Source directories: [`os/`](os/README.md) (operating system and image) · [`makerd/`](makerd/) (services) · [`shell/`](shell/README.md) (desktop) · [`site/`](site/index.html) ([project website](https://ferhatozcelik.github.io/maker-os/)). Details: [Build & test](docs/development/build-and-test.en.md) · [Validation status](docs/verification/validation.en.md)
 
 ## License
 
-[MIT](LICENSE) — See [`NOTICE.md`](NOTICE.md) and [`docs/project/branding-and-licensing.en.md`](docs/project/branding-and-licensing.en.md) for third-party notices.
+[MIT](LICENSE). Third-party components: [`NOTICE.md`](NOTICE.md).
 
-**MakerOS is an independent open-source project.** It is not affiliated with, endorsed by, or sponsored by any hardware or software vendor. Product names mentioned are trademarks of their respective owners and are used only to describe compatibility.
+MakerOS is an independent open-source project, not affiliated with any hardware or software vendor. Product names are trademarks of their respective owners.

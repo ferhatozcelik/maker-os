@@ -8,15 +8,7 @@ Uygulama: [`os/board/rpi4/rootfs-overlay/usr/bin/mos`](../../os/board/rpi4/rootf
 
 ## Nasıl çalışır?
 
-```mermaid
-flowchart LR
-  U["apt install htop"] --> P["mos pkg install htop"]
-  P -- "podman exec (root, kutu içinde)" --> A["apt install htop"]
-  A --> L["dpkg -L htop"]
-  L -- "/usr/bin, /usr/sbin, /usr/games" --> B["~/.local/bin/htop<br/>exec mos box run debian -- /usr/bin/htop"]
-  L -- "/usr/share/applications/*.desktop" --> D["~/.local/share/applications/mosbox-debian-*.desktop<br/>Exec=mos box run debian -- …"]
-  D --> M["makerd uygulama listesi<br/>(MakerOS menüsü)"]
-```
+<p align="center"><img src="../assets/diagrams/packages.svg" alt="Paket kurma: apt install, Debian kutusu, Aktarım, Kullan" width="100%"></p>
 
 1. Kutu yoksa ilk kullanımda oluşturulur (`mos box` ile aynı kutu: `mosbox-debian`). `$HOME` paylaşılır; GPIO, I²C, SPI, kamera ve seri aygıtlar kutuya geçirilir.
 2. `apt` kutunun içinde root olarak çalışır; kutu rootless olduğu için bu yetki ana sisteme taşmaz.

@@ -8,15 +8,7 @@ Implementation: [`os/board/rpi4/rootfs-overlay/usr/bin/mos`](../../os/board/rpi4
 
 ## How it works
 
-```mermaid
-flowchart LR
-  U["apt install htop"] --> P["mos pkg install htop"]
-  P -- "podman exec (root, inside the box)" --> A["apt install htop"]
-  A --> L["dpkg -L htop"]
-  L -- "/usr/bin, /usr/sbin, /usr/games" --> B["~/.local/bin/htop<br/>exec mos box run debian -- /usr/bin/htop"]
-  L -- "/usr/share/applications/*.desktop" --> D["~/.local/share/applications/mosbox-debian-*.desktop<br/>Exec=mos box run debian -- …"]
-  D --> M["makerd app list<br/>(MakerOS menu)"]
-```
+<p align="center"><img src="../assets/diagrams/packages.en.svg" alt="Installing packages: apt install, Debian box, Export, Use" width="100%"></p>
 
 1. The box is created on first use (the same box as `mos box`: `mosbox-debian`). `$HOME` is shared; GPIO, I²C, SPI, camera and serial devices are passed through.
 2. `apt` runs as root inside the box; since the box is rootless, that privilege does not reach the host.
