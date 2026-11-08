@@ -18,6 +18,12 @@ def text(x, y, s, size, weight=400, color=INK, anchor="middle", mono=False):
     return f'<text x="{x}" y="{y}" font-family="{fam}" font-size="{size}" font-weight="{weight}" fill="{color}" text-anchor="{anchor}">{escape(s)}</text>'
 
 
+def fit(s, width, size):
+    """Yaklaşık metin genişliği kutuya sığmıyorsa uyarır (ortalama glif ≈ 0,54 em)."""
+    if len(s) * size * 0.54 > width:
+        print(f"UYARI: sığmayabilir ({len(s)} karakter, {width:.0f}px): {s}")
+
+
 def arrow(x1, x2, y):
     return (f'<line x1="{x1}" y1="{y}" x2="{x2 - 7}" y2="{y}" stroke="{ACCENT}" stroke-width="2.4" stroke-linecap="round"/>'
             f'<path d="M{x2 - 9} {y - 6} L{x2} {y} L{x2 - 9} {y + 6} Z" fill="{ACCENT}"/>')
@@ -29,31 +35,32 @@ def frame(w, h, body, title):
             f'{body}</svg>\n')
 
 
-def flow(steps, title, w=1200, box_h=96, top=58, highlight=()):
+def flow(steps, title, w=1100, box_h=104, top=18, highlight=()):
     """Soldan sağa numaralı kutular: (başlık, alt satır)."""
-    n, gap, pad = len(steps), 34, 28
+    n, gap, pad = len(steps), 30, 18
     bw = (w - 2 * pad - gap * (n - 1)) / n
-    h = top + box_h + 26
-    out = [text(pad, 36, title, 17, 700, INK, "start")]
+    h = top + box_h + 18
+    out = []
     for i, (t, sub) in enumerate(steps):
         x = pad + i * (bw + gap)
         hl = i in highlight
         out.append(f'<rect x="{x:.1f}" y="{top}" width="{bw:.1f}" height="{box_h}" rx="12" fill="{SOFT if hl else "#faf9f7"}" stroke="{ACCENT if hl else LINE}" stroke-width="1.6"/>')
-        out.append(f'<circle cx="{x + 22:.1f}" cy="{top + 24}" r="12" fill="{ACCENT}"/>')
-        out.append(text(x + 22, top + 29, str(i + 1), 13, 700, "#fff"))
-        out.append(text(x + bw / 2 + 10, top + 30, t, 17, 700))
+        out.append(f'<circle cx="{x + 22:.1f}" cy="{top + 25}" r="13" fill="{ACCENT}"/>')
+        out.append(text(x + 22, top + 30.5, str(i + 1), 14, 700, "#fff"))
+        out.append(text(x + bw / 2 + 10, top + 32, t, 20, 700))
         for k, line in enumerate(sub.split("\n")):
-            out.append(text(x + bw / 2, top + 58 + k * 19, line, 13.5, 400, MUTED))
+            fit(line, bw - 16, 15.5)
+            out.append(text(x + bw / 2, top + 63 + k * 21, line, 15.5, 400, MUTED))
         if i < n - 1:
             out.append(arrow(x + bw + 5, x + bw + gap - 5, top + box_h / 2))
     return frame(w, h, "".join(out), title)
 
 
-def disk(parts, title, legend, w=1200):
+def disk(parts, title, legend, w=1100):
     """microSD: orantılı bölüm çubuğu ve altında kısa açıklamalar."""
-    pad, top, bar_h = 28, 58, 74
+    pad, top, bar_h = 18, 18, 82
     total = sum(p[2] for p in parts)
-    out = [text(pad, 36, title, 17, 700, INK, "start")]
+    out = []
     x = pad
     inner = w - 2 * pad
     for i, (name, sub, weight, kind) in enumerate(parts):
@@ -62,31 +69,32 @@ def disk(parts, title, legend, w=1200):
         stroke = ACCENT if kind == "data" else LINE
         r = 10
         out.append(f'<rect x="{x + 2:.1f}" y="{top}" width="{pw - 4:.1f}" height="{bar_h}" rx="{r}" fill="{fill}" stroke="{stroke}" stroke-width="1.6"/>')
-        out.append(text(x + pw / 2, top + 31, name, 15.5, 700, INK, mono=True))
-        out.append(text(x + pw / 2, top + 54, sub, 12.5, 400, MUTED))
+        out.append(text(x + pw / 2, top + 35, name, 18, 700, INK, mono=True))
+        fit(sub, pw - 12, 15)
+        out.append(text(x + pw / 2, top + 61, sub, 15, 400, MUTED))
         x += pw
-    ly = top + bar_h + 34
+    ly = top + bar_h + 32
     lx = pad
     for color, label in legend:
-        out.append(f'<rect x="{lx}" y="{ly - 12}" width="14" height="14" rx="4" fill="{color}" stroke="{LINE}"/>')
-        out.append(text(lx + 22, ly, label, 13.5, 400, MUTED, "start"))
-        lx += 22 + len(label) * 7.4 + 34
-    return frame(w, ly + 22, "".join(out), title)
+        out.append(f'<rect x="{lx}" y="{ly - 13}" width="16" height="16" rx="4" fill="{color}" stroke="{ACCENT if color == SOFT else LINE}"/>')
+        out.append(text(lx + 24, ly, label, 15, 400, MUTED, "start"))
+        lx += 24 + len(label) * 8.2 + 34
+    return frame(w, ly + 18, "".join(out), title)
 
 
 DIAGRAMS = {
     "architecture": {
         "tr": lambda: flow([
-            ("Donanım", "Pi 4 / 400 uyumlu ARM64 kart\nGPIO · I²C · SPI · kamera"),
-            ("İşletim sistemi", "Linux 6.18 · systemd\nsalt okunur kök · A/B güncelleme"),
+            ("Donanım", "Pi 4 uyumlu ARM64 kart\nGPIO · I²C · SPI · kamera"),
+            ("İşletim sistemi", "Linux 6.18 · systemd\nsalt okunur · A/B"),
             ("Servisler", "makerd (Rust)\nAPI · terminal · yerel AI"),
-            ("Masaüstü", "Ekranda, tarayıcıda\nve telefonda aynı arayüz"),
+            ("Masaüstü", "Ekranda, tarayıcıda\nve telefonda aynı"),
         ], "MakerOS katmanları", highlight=(3,)),
         "en": lambda: flow([
-            ("Hardware", "Pi 4 / 400 compatible ARM64\nGPIO · I²C · SPI · camera"),
-            ("Operating system", "Linux 6.18 · systemd\nread-only root · A/B updates"),
+            ("Hardware", "Pi 4 compatible ARM64\nGPIO · I²C · SPI · camera"),
+            ("Operating system", "Linux 6.18 · systemd\nread-only · A/B updates"),
             ("Services", "makerd (Rust)\nAPI · terminal · local AI"),
-            ("Desktop", "Same interface on screen,\nin a browser and on a phone"),
+            ("Desktop", "Same on screen, in a\nbrowser and on a phone"),
         ], "MakerOS layers", highlight=(3,)),
     },
     "sd-card": {
@@ -97,7 +105,7 @@ DIAGRAMS = {
             ("ROOT_A", "sistem A", 1.7, "root"),
             ("ROOT_B", "sistem B", 1.7, "root"),
             ("DATA", "dosyalarınız · ayarlar · paketler", 4.0, "data"),
-        ], "microSD kart düzeni", [("#fde7d3", "Açılış dosyaları"), ("#fbd3ae", "Sistem (salt okunur, iki kopya)"), (SOFT, "Sizin verileriniz (güncellemede korunur)")]),
+        ], "microSD kart düzeni", [("#fde7d3", "Açılış dosyaları"), ("#fbd3ae", "Sistem (salt okunur, iki kopya)"), (SOFT, "Verileriniz (güncellemede korunur)")]),
         "en": lambda: disk([
             ("MOSCFG", "settings", 1.1, "cfg"),
             ("BOOT_A", "boot A", 1.1, "boot"),
@@ -110,15 +118,15 @@ DIAGRAMS = {
     "boot": {
         "tr": lambda: flow([
             ("Güç", "Kart açılır,\netkin sistem seçilir"),
-            ("Çekirdek", "Linux başlar,\nsistem salt okunur bağlanır"),
-            ("Veriler", "DATA bölümü bağlanır,\nayarlar ve dosyalar gelir"),
+            ("Çekirdek", "Linux başlar, sistem\nsalt okunur açılır"),
+            ("Veriler", "Ayarlar ve dosyalar\nyerine gelir"),
             ("Servisler", "makerd, ağ ve\nyerel AI başlar"),
             ("Masaüstü", "Ekranda ve ağda\nkullanıma hazır"),
         ], "Açılış", highlight=(4,)),
         "en": lambda: flow([
-            ("Power", "Board starts,\nactive system is chosen"),
-            ("Kernel", "Linux starts, system\nmounted read-only"),
-            ("Data", "DATA partition mounted,\nsettings and files load"),
+            ("Power", "Board starts, active\nsystem is chosen"),
+            ("Kernel", "Linux starts, system\nopens read-only"),
+            ("Data", "Settings and files\nare loaded"),
             ("Services", "makerd, network\nand local AI start"),
             ("Desktop", "Ready on screen\nand over the network"),
         ], "Boot", highlight=(4,)),
@@ -126,31 +134,31 @@ DIAGRAMS = {
     "update": {
         "tr": lambda: flow([
             ("Denetle", "Ayarlar › Genel ›\nYazılım güncelleme"),
-            ("İndir", "İmzalı paket indirilir\nve doğrulanır"),
-            ("Yaz", "Kullanılmayan sistem\nkopyasına yazılır"),
-            ("Dene", "Yeniden başlatılır,\nyeni sürüm bir kez denenir"),
-            ("Onayla", "Sorun yoksa kalıcı olur,\nvarsa eskiye döner"),
+            ("İndir", "İmzalı paket iner\nve doğrulanır"),
+            ("Yaz", "Boştaki sistem\nkopyasına yazılır"),
+            ("Dene", "Yeni sürüm bir kez\ndenenir"),
+            ("Onayla", "Sorun yoksa kalıcı,\nvarsa eskiye döner"),
         ], "Güncelleme", highlight=(4,)),
         "en": lambda: flow([
             ("Check", "Settings › General ›\nSoftware update"),
-            ("Download", "Signed bundle is\ndownloaded and verified"),
-            ("Write", "Written to the unused\nsystem copy"),
-            ("Try", "Reboots and tries\nthe new version once"),
+            ("Download", "Signed bundle is\nfetched and verified"),
+            ("Write", "Written to the spare\nsystem copy"),
+            ("Try", "New version is\ntried once"),
             ("Confirm", "Kept if healthy,\notherwise rolls back"),
         ], "Update", highlight=(4,)),
     },
     "packages": {
         "tr": lambda: flow([
-            ("apt install", "Terminalde her zamanki\ngibi paket istersiniz"),
-            ("Debian kutusu", "Paket, microSD'deki\nkişisel kutunuza kurulur"),
+            ("apt install", "Terminalde her zamanki\ngibi paket istenir"),
+            ("Debian kutusu", "microSD'deki kişisel\nkutunuza kurulur"),
             ("Aktarım", "Komutlar ve uygulamalar\nMakerOS'a bağlanır"),
             ("Kullan", "Terminalde çalıştırın,\nmenüden açın"),
         ], "Paket kurma", highlight=(3,)),
         "en": lambda: flow([
-            ("apt install", "Ask for a package in the\nterminal as usual"),
-            ("Debian box", "Installed into your personal\nbox on the microSD"),
+            ("apt install", "Ask for a package in\nthe terminal as usual"),
+            ("Debian box", "Installed into your box\non the microSD"),
             ("Export", "Commands and apps are\nlinked into MakerOS"),
-            ("Use", "Run it in the terminal,\nopen it from the menu"),
+            ("Use", "Run in the terminal,\nopen from the menu"),
         ], "Installing packages", highlight=(3,)),
     },
 }

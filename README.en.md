@@ -82,7 +82,7 @@ MakerOS is an independent, open-source Linux operating system for Pi 4 / 400 com
 
 ## Features
 
-| | |
+| Feature | Description |
 | --- | --- |
 | **One desktop, everywhere** | The same interface on the board's display, in a browser on your network, and on your phone. |
 | **Safe updates** | New versions install to a spare copy of the system; if anything goes wrong, the board rolls back on its own. |
