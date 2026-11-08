@@ -49,20 +49,10 @@ function wallpaper() {
   document.querySelectorAll("img.brand-logo").forEach(i => { i.src = b.logo; });
   setFavicon(b.favicon); // sekme simgesi de temaya göre (ör. KHS)
   html.style.setProperty("--wall", `url("${wallURL(id, d)}")`);
-  html.style.setProperty("--wall-blur", `url("${wallURL(id, d, true)}")`);
+  html.style.setProperty("--wall-blur", `url("${wallURL(id, d, false)}")`);
   html.dataset.look = themeById(pref("look")).id;
 }
 wallpaper(); prefs.on("change", wallpaper);
-// Kilit ekranı arka planı (cihaz geneli, Ayarlar › Görünüm): yüklenmişse onu, yoksa bulanık masaüstünü kullanır.
-// Girişten önce de görünür (makerd GET /api/v1/wallpaper/lock herkese açık).
-function lockWall() {
-  const v = store.get("lockWallV") || "", src = `/api/v1/wallpaper/lock?v=${encodeURIComponent(pref("lockWall") || v)}`;
-  const img = new Image();
-  img.onload = () => html.style.setProperty("--lock-wall", `url("${src}")`);
-  img.onerror = () => html.style.removeProperty("--lock-wall");
-  img.src = src;
-}
-lockWall(); prefs.on("change", k => { if (k === "lockWall") { store.set("lockWallV", pref("lockWall") || ""); lockWall(); } });
 
 // Çalışma alanı (menü çubuğu altı, raf üstü). Raf yüksekliği ResizeObserver ile önbelleğe alınır:
 // render() her çağrıda offsetHeight okumaz (zorunlu eşzamanlı yerleşim yok).
@@ -71,7 +61,9 @@ new ResizeObserver(([e]) => { const v = Math.round(e.borderBoxSize?.[0]?.blockSi
 const area = () => {
   const vw = innerWidth, vh = innerHeight, mob = mq.matches;
   const full = S.wm?.focused?.state === "full";
-  const top = mob ? 0 : 28, bottom = mob ? 0 : full ? 0 : dockH + 4;
+  const showMb = pref("uiMenubar") !== false;
+  const showDock = pref("uiDock") !== false;
+  const top = mob || !showMb ? 0 : 28, bottom = mob || full || !showDock ? 0 : dockH + 4;
   return { x: 0, y: top, w: vw, h: vh - top - bottom, vw, vh, mt: mob ? 26 : 0, mb: mob ? 20 : 0 };
 };
 
@@ -281,8 +273,12 @@ async function start() {
   started = true;
   if (mq.matches) layout(); // mobil başlatıcıyı yükle
   else wm.restoreSession(appById); // telefonda her zaman ana ekrandan başla
-  const page = qs.get("open"); // ?open=makeros.terminal
-  if (page) S.launch(page);
+  const page = qs.get("open") || pref("startupApp"); // ?open=makeros.terminal ya da otomatik başlatma uygulaması
+  if (page) {
+    S.launch(page).then(w => {
+      if (w && !qs.get("open") && pref("startupFullscreen") && w.state !== "full") wm.fullscreen(w);
+    });
+  }
   if (!mq.matches) $("#menubar").animate?.([{ transform: "translateY(-100%)" }, { transform: "none" }], { duration: 300, easing: "cubic-bezier(.2,.8,.2,1)" });
   // Sık kullanılan katmanları boşta önceden yükle (⌘Tab/Bul ilk basışta gecikmesin)
   const idle = window.requestIdleCallback ? f => requestIdleCallback(f, { timeout: 4000 }) : f => setTimeout(f, 1500);
@@ -320,7 +316,7 @@ async function renderWidgets() {
     }
   }
   // Tema widget'ı
-  const w = themeById(pref("look")).widget;
+  const w = pref("uiThemeWidget") !== false ? themeById(pref("look")).widget : null;
   const key = w ? w.url : "";
   if (key === themeKey) return;
   themeKey = key;
@@ -338,6 +334,12 @@ addEventListener("message", e => {
   const f = [...document.querySelectorAll("#widgets iframe")].find(x => x.contentWindow === e.source);
   if (!f) return;
   if (e.data.mk === "open" && e.data.app) S.launch(e.data.app, e.data.path ? { path: e.data.path } : {});
+  else if (e.data.mk === "shortcut" && e.data.id) S.act(e.data.id);
+  else if (e.data.mk === "power" && e.data.action) S.power(e.data.action);
+  else if (e.data.mk === "notify") toast(e.data.title || e.data.body, "sparkles");
   else if (e.data.mk === "widget-size" && e.data.h > 40 && e.data.h < 800) f.style.height = e.data.h + "px"; // içeriğe göre (boşluk yok)
 });
-prefs.on("change", k => { if (k === "look" || k === "aiWidget") renderWidgets(); });
+prefs.on("change", k => {
+  if (k === "look" || k === "aiWidget" || k === "uiThemeWidget") renderWidgets();
+  if (k === "uiMenubar" || k === "uiDock") wm.relayout();
+});

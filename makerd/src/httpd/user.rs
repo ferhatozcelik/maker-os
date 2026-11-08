@@ -536,6 +536,9 @@ pub struct AiRunReq {
     /// DANGEROUS komutlarda kullanıcının yeniden yazdığı komut.
     #[serde(default)]
     yazilan: Option<String>,
+    /// Komutu yeni bir Terminal penceresinde etkileşimli çalıştır.
+    #[serde(default)]
+    terminal: bool,
 }
 
 /// POST /api/v1/asistan/calistir — mod (kullanıcı tercihi `aiMode`), risk ve onay sunucuda yeniden denetlenir.
@@ -548,13 +551,26 @@ pub async fn ai_run(State(s): State<S>, h: HeaderMap, axum::Json(r): axum::Json<
         return Err(ApiError::invalid("Komut çok uzun ya da geçersiz."));
     }
     let mode = match uagent::read_all(a.as_ref(), &sess.user, crate::prefs::HOME_PATH).await {
-        Ok(b) => serde_json::from_slice::<serde_json::Value>(&b).ok().and_then(|v| v.get("aiMode").and_then(|m| m.as_str()).map(exec::Mode::parse)).unwrap_or(exec::Mode::Suggest),
-        Err(_) => exec::Mode::Suggest,
+        Ok(b) => match serde_json::from_slice::<serde_json::Value>(&b).ok().and_then(|v| v.get("aiMode").and_then(|m| m.as_str()).map(str::to_string)).as_deref() {
+            Some("sor") | Some("izin") | Some("ask") => exec::Mode::Ask,
+            _ => exec::Mode::Bypass,
+        },
+        Err(_) => exec::Mode::Bypass,
     };
+    let is_interactive = exec::interactive(&r.command).is_some();
+    if (r.terminal || is_interactive) && !crate::ai::risk::has_placeholder(&r.command) {
+        if mode == exec::Mode::Bypass || r.onay {
+            let ts = s.d.term.create_with(&sess.user, 100, 30, term::Opts { cmd: r.command.clone(), title: "AI Asistan".into() }).await?;
+            let tk = s.d.term.ticket(&ts.id, &sess.user)?;
+            return Ok(json(&serde_json::json!({"durum": "terminal", "term": {"id": ts.id, "ticket": tk}})));
+        }
+        let asm = crate::ai::risk::classify(&r.command);
+        return Ok(json(&serde_json::json!({"durum": "onay_gerekli", "risk": asm.risk, "reasons": asm.reasons, "mod": mode.name(), "yeniden_yaz": false})));
+    }
     let (asm, d) = exec::check(mode, &r.command, r.onay, r.yazilan.as_deref());
     match d {
         exec::Decision::Deny(why) => Err(ApiError::forbidden(why)),
-        exec::Decision::Confirm(risk) => Ok(json(&serde_json::json!({"durum": "onay_gerekli", "risk": risk, "reasons": asm.reasons, "mod": mode.name(), "yeniden_yaz": risk == crate::ai::risk::Risk::Dangerous}))),
+        exec::Decision::Confirm(risk) => Ok(json(&serde_json::json!({"durum": "onay_gerekli", "risk": risk, "reasons": asm.reasons, "mod": mode.name(), "yeniden_yaz": false}))),
         exec::Decision::Run => {
             let t0 = std::time::Instant::now();
             let (raw, _) = uagent::output(a.as_ref(), &sess.user, &exec::wrap(&r.command)).await?;
@@ -564,4 +580,56 @@ pub async fn ai_run(State(s): State<S>, h: HeaderMap, axum::Json(r): axum::Json<
             Ok(json(&serde_json::json!({"durum": "calisti", "risk": asm.risk, "cikis": code, "cikti": out, "kesildi": truncated, "not": exec::note(code, &out), "ms": ms})))
         }
     }
+}
+
+// --- Otomatik başlatma & Cron görevleri --------------------------------------
+
+pub async fn autostart_list(State(s): State<S>, h: HeaderMap) -> R {
+    let sess = session_of(&s, &h)?;
+    let a = agent(&s)?;
+    let tasks = crate::autostart::list(a.as_ref(), &sess.user).await;
+    let projects = pyman::projects(a.as_ref(), &sess.user).await.unwrap_or_default();
+    let mut proj_items = Vec::with_capacity(projects.len());
+    for p in projects {
+        let st = pyman::status(a.as_ref(), &sess.user, &p.name).await.unwrap_or_default();
+        proj_items.push(serde_json::json!({
+            "name": p.name,
+            "path": p.path,
+            "template": p.template,
+            "running": st.running,
+            "autostart": st.autostart,
+        }));
+    }
+    Ok(json(&serde_json::json!({ "tasks": tasks, "projects": proj_items })))
+}
+
+pub async fn autostart_upsert(State(s): State<S>, h: HeaderMap, body: Bytes) -> R {
+    let sess = session_of(&s, &h)?;
+    let req: crate::autostart::CreateReq = decode(&body)?;
+    let task = crate::autostart::upsert(agent(&s)?.as_ref(), &sess.user, req).await?;
+    Ok(json(&task))
+}
+
+pub async fn autostart_toggle(State(s): State<S>, h: HeaderMap, Path(id): Path<String>, body: Bytes) -> R {
+    let sess = session_of(&s, &h)?;
+    #[derive(Deserialize, Default)]
+    struct Req {
+        #[serde(default)]
+        enabled: bool,
+    }
+    let req: Req = decode(&body)?;
+    let task = crate::autostart::set_enabled(agent(&s)?.as_ref(), &sess.user, &id, req.enabled).await?;
+    Ok(json(&task))
+}
+
+pub async fn autostart_run(State(s): State<S>, h: HeaderMap, Path(id): Path<String>) -> R {
+    let sess = session_of(&s, &h)?;
+    let task = crate::autostart::run_now(agent(&s)?.as_ref(), &sess.user, &id).await?;
+    Ok(json(&task))
+}
+
+pub async fn autostart_delete(State(s): State<S>, h: HeaderMap, Path(id): Path<String>) -> R {
+    let sess = session_of(&s, &h)?;
+    crate::autostart::remove(agent(&s)?.as_ref(), &sess.user, &id).await?;
+    Ok(no_content())
 }

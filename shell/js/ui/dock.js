@@ -67,22 +67,6 @@ export function mountDock(root) {
   let lastCount = -1;
   S.wm.on("change", () => { const ids = new Set(S.wm.list().map(w => w.app.id)).size; if (ids !== lastCount) { lastCount = ids; render(); } else state(); });
 
-  // Büyütme: imleç uzaklığına göre ölçek + yatay kaydırma (yerleşim değişmez)
-  let raf = 0;
-  inner.addEventListener("pointermove", e => {
-    if (!pref("magnify") || fxTier() !== "full" || e.pointerType === "touch") return;
-    cancelAnimationFrame(raf);
-    raf = requestAnimationFrame(() => {
-      const bs = [...inner.querySelectorAll(".di")], sz = bs[0]?.offsetWidth || 52;
-      const sc = bs.map(b => { const r = b.getBoundingClientRect(), d = Math.abs(e.clientX - (r.left + r.width / 2)); return 1 + .55 * Math.max(0, 1 - d / (sz * 2.4)) ** 1.6; });
-      const extra = sc.map(s => (s - 1) * sz), total = extra.reduce((a, b) => a + b, 0);
-      let acc = 0;
-      bs.forEach((b, i) => { const off = acc + extra[i] / 2 - total / 2; acc += extra[i]; b.firstChild.style.transform = `translateX(${off}px) translateY(${-(sc[i] - 1) * sz * .5}px) scale(${sc[i]})`; });
-      inner.classList.add("mag");
-    });
-  });
-  inner.addEventListener("pointerleave", () => { cancelAnimationFrame(raf); inner.classList.remove("mag"); inner.querySelectorAll(".di img").forEach(i => i.style.transform = ""); });
-
   S.wm.dockRect = id => { const b = items.get(id) || inner.firstChild; return b ? rectOf(b) : null; };
   render();
   prefs.on("change", k => { if (k === "dockApps" || k === "look") setTimeout(render); }); // başka cihazdan/sunucudan gelen raf düzeni

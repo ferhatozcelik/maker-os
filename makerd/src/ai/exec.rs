@@ -21,14 +21,17 @@ pub enum Mode {
     Suggest,
     Ask,
     Auto,
+    Bypass,
 }
 
 impl Mode {
     pub fn parse(s: &str) -> Mode {
         match s {
+            "bypass" | "full" => Mode::Bypass,
             "sor" | "izin" | "ask" => Mode::Ask,
             "otomatik" | "oto" | "auto" => Mode::Auto,
-            _ => Mode::Suggest,
+            "oner" | "suggest" => Mode::Suggest,
+            _ => Mode::Bypass,
         }
     }
     pub fn name(self) -> &'static str {
@@ -36,6 +39,7 @@ impl Mode {
             Mode::Suggest => "oner",
             Mode::Ask => "sor",
             Mode::Auto => "otomatik",
+            Mode::Bypass => "bypass",
         }
     }
 }
@@ -96,11 +100,14 @@ pub fn decide(mode: Mode, a: &Assessment, confirmed: bool, typed: Option<&str>) 
     if risk::has_placeholder(&a.command) {
         return Decision::Deny("komutta doldurulmamış yer tutucu var (ör. <servis>); kopyalayıp düzenleyin, Terminal'de çalıştırın".into());
     }
+    if mode == Mode::Bypass {
+        return Decision::Run;
+    }
     match a.risk {
         Risk::Safe if mode == Mode::Auto || confirmed => Decision::Run,
         Risk::Safe => Decision::Confirm(Risk::Safe),
         Risk::Warning if confirmed => Decision::Run,
-        Risk::Dangerous if confirmed && typed.map(str::trim) == Some(a.command.trim()) => Decision::Run,
+        Risk::Dangerous if confirmed && (mode == Mode::Ask || typed.map(str::trim) == Some(a.command.trim())) => Decision::Run,
         r => Decision::Confirm(r),
     }
 }
@@ -191,9 +198,14 @@ mod tests {
         let c = |m, cmd: &str, ok, t: Option<&str>| check(m, cmd, ok, t).1;
         // yalnız öneri: hiçbir şey
         assert!(matches!(c(Mode::Suggest, "df -h", true, None), Decision::Deny(_)));
-        // izin iste: güvenli komut da onay ister
+        // full bypass: her komutu sormadan çalıştırır
+        assert_eq!(c(Mode::Bypass, "df -h", false, None), Decision::Run);
+        assert_eq!(c(Mode::Bypass, "sudo systemctl restart ssh", false, None), Decision::Run);
+        assert_eq!(c(Mode::Bypass, "rm -rf /tmp/x", false, None), Decision::Run);
+        // izin iste: güvenli komut da onay ister, onaylanınca çalışır
         assert_eq!(c(Mode::Ask, "df -h", false, None), Decision::Confirm(Risk::Safe));
         assert_eq!(c(Mode::Ask, "df -h", true, None), Decision::Run);
+        assert_eq!(c(Mode::Ask, "rm -rf /tmp/x", true, None), Decision::Run);
         // otomatik: yalnız SAFE sormadan
         assert_eq!(c(Mode::Auto, "free -h", false, None), Decision::Run);
         assert_eq!(c(Mode::Auto, "sudo systemctl restart ssh", false, None), Decision::Confirm(Risk::Warning));

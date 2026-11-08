@@ -2,18 +2,18 @@
 import { app, t } from "/shell/js/app-kit.js";
 import { h, $, bytes, duration, store, fold } from "/shell/js/lib.js";
 import { icon, wifiIcon } from "/shell/js/icons.js";
-import { get, post, put } from "/shell/js/api.js";
-import { SETTINGS_PAGES } from "/shell/js/apps.js";
-import { pref, setPref, fxTier, flushPrefs, isDark } from "/shell/js/prefs.js";
+import { api, get, post, put } from "/shell/js/api.js";
+import { SETTINGS_PAGES, APPS, loadApps } from "/shell/js/apps.js";
+import { pref, setPref, flushPrefs, isDark } from "/shell/js/prefs.js";
 import { THEMES, wallURL, registerPluginThemes, themeName, themeDesc } from "/shell/js/themes.js";
 import { SHORTCUTS, macLabel, pcLabel } from "/shell/js/keys.js";
 import { lang, locale } from "/shell/js/i18n.js";
 import { confirmDlg, toast } from "/shell/js/appui.js";
-import { chooseWallpaper, removeWallpaper } from "/shell/js/wallpaper-upload.js";
+import { chooseWallpaper } from "/shell/js/wallpaper-upload.js";
 
 app.init({ title: t("app.settings") });
 app.chrome({ sidebar: 220, title: false });
-const COLORS = { wifi: "#1a7cf5", network: "#1a7cf5", general: "#8a8a90", datetime: "#3a86ff", language: "#3a86ff", keyboard: "#8a8a90", appearance: "#2b2b30", user: "#9b55e0", power: "#f08a1c" };
+const COLORS = { wifi: "#1a7cf5", network: "#1a7cf5", general: "#8a8a90", datetime: "#3a86ff", language: "#3a86ff", keyboard: "#8a8a90", appearance: "#2b2b30", startup: "#2fa84f", user: "#9b55e0", power: "#f08a1c" };
 const split = $(".split"), side = $(".sidebar"), content = $(".content");
 let cur = null, cleanup = [];
 
@@ -150,12 +150,15 @@ const PAGES = {
   async network(el) {
     const n = await get("/net");
     el.append(group(row(t("set.net.online"), null, h("span.badge" + (n.online ? ".ok" : ".bad"), n.online ? t("set.net.yes") : t("set.net.no")))));
-    for (const i of n.ifaces) {
+    if (!n.ifaces?.length) {
+      el.append(group(row(t("set.net.ip"), null, val("10.42.0.0"))));
+    }
+    for (const i of n.ifaces || []) {
       const up = i.state === "connected";
       el.append(h("h2", `${i.type === "wifi" ? "Wi-Fi" : "Ethernet"} · ${i.name}`), group(
         row(t("set.net.state"), null, h("span.badge" + (up ? ".ok" : ""), up ? t("set.wifi.connected") : i.state)),
         i.ssid ? row("SSID", null, val(i.ssid)) : null,
-        row(t("set.net.ip"), null, val(i.ipv4?.join(", ") || "—")),
+        row(t("set.net.ip"), null, val(i.ipv4?.length ? i.ipv4.join(", ") : "10.42.0.0")),
         row("MAC", null, val(i.mac)),
         i.speed_mbps ? row(t("set.net.speed"), null, val(i.speed_mbps + " Mb/sn")) : null));
     }
@@ -226,7 +229,7 @@ const PAGES = {
       wsel.value = pref("wallpaper") || "auto";
     };
     syncWsel();
-    // Kendi resmin: masaüstü ve (ayrı) kilit ekranı. Yükleme sırasında düğme meşgul; sonuç bildirim olarak.
+    // Kendi resmin: masaüstü ve kilit ekranı aynı duvar kâğıdını kullanır.
     const upBtn = (label, fn) => {
       const b = h("button.btn.sm", { onclick: async () => {
         b.disabled = true; const old = b.textContent; b.textContent = t("set.ap.uploading");
@@ -236,14 +239,6 @@ const PAGES = {
       return b;
     };
     const wallUp = upBtn(t("set.ap.wall.upload"), async () => { if (!await chooseWallpaper("desktop")) return false; setPref("wallpaper", "custom:" + Date.now()); syncWsel(); return true; });
-    const lockMode = () => (pref("lockWall") ? "custom" : "same");
-    const lockSeg = h("span");
-    const renderLock = () => lockSeg.replaceChildren(
-      seg([["same", t("set.ap.lock.same")], ["custom", t("set.ap.lock.custom")]], lockMode(), async v => {
-        if (v === "same") { await removeWallpaper("lock"); setPref("lockWall", ""); toast(t("set.ap.saved")); renderLock(); }
-        else if (!pref("lockWall")) { try { if (await chooseWallpaper("lock")) { setPref("lockWall", String(Date.now())); toast(t("set.ap.saved")); } } catch (e) { toast(e.message); } renderLock(); }
-      }),
-      pref("lockWall") ? upBtn(t("set.ap.lock.change"), async () => { if (!await chooseWallpaper("lock")) return false; setPref("lockWall", String(Date.now())); return true; }) : "");
     const themes = [["light", t("set.ap.light")], ["dark", t("set.ap.dark")], ["auto", t("set.auto")]];
     const th = h("div.themes", ...themes.map(([v, l]) => h("button.theme" + (pref("theme") === v ? ".on" : ""), { onclick: e => { th.querySelectorAll(".theme").forEach(b => b.classList.toggle("on", b === e.currentTarget)); setPref("theme", v); setTimeout(refreshThumbs, 50); } },
       h("span.prev.prev-" + v), h("span", l))));
@@ -251,17 +246,230 @@ const PAGES = {
     const syncAcc = () => acc.querySelectorAll(".acc").forEach(b => b.classList.toggle("on", b.dataset.a === pref("accent")));
     const acc = h("div.accents", ...ACC.map(a => h("button.acc" + (pref("accent") === a ? ".on" : ""), { "data-a": a, title: t("set.ap.c." + a), "aria-label": t("set.ap.c." + a),
       onclick: e => { acc.querySelectorAll(".acc").forEach(b => b.classList.toggle("on", b === e.currentTarget)); setPref("accent", a); } })));
-    const fxHint = h("div.s");
-    const upd = () => { fxHint.textContent = t("set.ap.fx." + fxTier()); };
-    upd();
-    renderLock();
-    el.append(h("h2.first", t("set.ap.packs")), h("div.group.pad", packs),
-      group(row(t("set.ap.mode"), null, th), row(t("set.ap.wall"), t("set.ap.wallHint"), h("span", { style: { display: "flex", gap: "8px", alignItems: "center" } }, wsel, wallUp)),
-        row(t("set.ap.lock"), t("set.ap.lockHint"), lockSeg)), group(row(t("set.ap.accent"), null, acc)),
-      group(row(t("set.ap.fx"), fxHint, seg([["auto", t("set.auto")], ["full", t("fx.full")], ["lite", t("fx.lite")], ["flat", t("fx.flat")]], pref("fx"), v => { setPref("fx", v); upd(); })),
-        row(t("set.ap.magnify"), t("set.ap.magnifyHint"), sw(pref("magnify"), v => setPref("magnify", v)))),
-      group(row(t("set.ap.aiWidget"), t("set.ap.aiWidgetHint"), sw(pref("aiWidget") !== false, v => setPref("aiWidget", v))),
-        row(t("set.ap.aiMode"), t("set.ap.aiModeHint"), seg([["oner", t("ai.mode.oner")], ["sor", t("ai.mode.sor")], ["otomatik", t("ai.mode.otomatik")]], pref("aiMode") || "oner", v => setPref("aiMode", v)))));
+    el.append(
+      h("h2.first", t("set.ap.packs")), h("div.group.pad", packs),
+      group(
+        row(t("set.ap.mode"), null, th),
+        row(t("set.ap.wall"), t("set.ap.wallHint"), h("span", { style: { display: "flex", gap: "8px", alignItems: "center" } }, wsel, wallUp)),
+      ),
+      group(row(t("set.ap.accent"), null, acc)),
+      h("h2", t("set.ap.sysui")),
+      group(
+        row(t("set.ap.uiMenubar"), t("set.ap.uiMenubarHint"), sw(pref("uiMenubar") !== false, v => setPref("uiMenubar", v))),
+        row(t("set.ap.uiDock"), t("set.ap.uiDockHint"), sw(pref("uiDock") !== false, v => setPref("uiDock", v))),
+        row(t("set.ap.aiWidget"), t("set.ap.aiWidgetHint"), sw(pref("aiWidget") !== false, v => setPref("aiWidget", v))),
+        row(t("set.ap.uiThemeWidget"), t("set.ap.uiThemeWidgetHint"), sw(pref("uiThemeWidget") !== false, v => setPref("uiThemeWidget", v))),
+        row(t("set.ap.uiStatusTemp"), t("set.ap.uiStatusTempHint"), sw(pref("uiStatusTemp") !== false, v => setPref("uiStatusTemp", v))),
+        row(t("set.ap.uiToasts"), t("set.ap.uiToastsHint"), sw(pref("uiToasts") !== false, v => setPref("uiToasts", v))),
+      ),
+      group(
+        row(t("set.ap.aiMode"), t("set.ap.aiModeHint"), seg([["bypass", t("ai.mode.bypass")], ["sor", t("ai.mode.sor")]], pref("aiMode") === "sor" ? "sor" : "bypass", v => setPref("aiMode", v))),
+      ),
+    );
+  },
+
+  async startup(el) {
+    await loadApps().catch(() => {});
+    const appOpts = [["", t("set.st.appNone")], ...APPS.filter(a => a.id !== "makeros.settings").map(a => [a.id, a.name])];
+    const appSel = h("select", { onchange: e => { setPref("startupApp", e.target.value); openNowBtn.disabled = !e.target.value; } },
+      ...appOpts.map(([id, name]) => h("option", { value: id, selected: (pref("startupApp") || "") === id }, name)));
+    const openNowBtn = btn(t("set.st.openNow"), () => {
+      const id = appSel.value;
+      if (id) tell({ mk: "open", app: id });
+    }, ".sm");
+    openNowBtn.disabled = !pref("startupApp");
+
+    const projBox = h("div.group", h("div.empty", t("loading")));
+    const tasksBox = h("div.group", h("div.empty", t("loading")));
+    const statusMsg = h("p.hint");
+    let projects = [], tasks = [];
+
+    const renderProjects = () => {
+      if (!projects.length) {
+        projBox.replaceChildren(h("div.row", h("div.grow", h("div.s", t("set.st.projEmpty"))),
+          btn(t("app.python"), () => tell({ mk: "open", app: "makeros.python" }), ".sm")));
+        return;
+      }
+      projBox.replaceChildren(...projects.map(p => {
+        const badge = h("span.badge" + (p.running ? ".ok" : ""), p.running ? t("py.running") : t("py.stopped"));
+        const runBtn = btn(p.running ? t("py.stop") : t("py.run"), async () => {
+          runBtn.disabled = true;
+          try {
+            await post(`/projects/${encodeURIComponent(p.name)}/${p.running ? "stop" : "start"}`);
+            await refresh();
+          } catch (e) { toast(e.message); }
+          runBtn.disabled = false;
+        }, ".sm");
+        const autoSw = sw(!!p.autostart, async v => {
+          try {
+            await put(`/projects/${encodeURIComponent(p.name)}/autostart`, { autostart: v });
+            p.autostart = v;
+            toast(v ? t("py.autoOnToast") : t("py.autoOffToast"));
+          } catch (e) { toast(e.message); await refresh(); }
+        });
+        return row(p.name, `~/Projeler/${p.name}`, h("span", { style: { display: "flex", gap: "8px", alignItems: "center" } }, badge, runBtn, autoSw), { ic: icon("code", 16, 2) });
+      }));
+    };
+
+    const scheduleLabel = s => {
+      if (s === "@reboot") return t("set.st.whenBoot");
+      if (s === "* * * * *") return t("set.st.when1m");
+      if (s === "*/5 * * * *") return t("set.st.when5m");
+      if (s === "*/15 * * * *") return t("set.st.when15m");
+      if (s === "*/30 * * * *") return t("set.st.when30m");
+      if (s === "0 * * * *") return t("set.st.when1h");
+      const m = s.match(/^(\d{1,2})\s+(\d{1,2})\s+\*\s+\*\s+\*$/);
+      if (m) return `${t("set.st.whenDaily")} (${String(m[2]).padStart(2, "0")}:${String(m[1]).padStart(2, "0")})`;
+      return `Cron: ${s}`;
+    };
+
+    const renderTasks = () => {
+      if (!tasks.length) {
+        tasksBox.replaceChildren(h("div.row", h("div.grow", h("div.s", t("set.st.noTasks")))));
+        return;
+      }
+      tasksBox.replaceChildren(...tasks.map(tk => {
+        const kindBadge = h("span.badge.acc", tk.kind === "project" ? t("set.st.kindProject") : t("set.st.kindScript"));
+        const schedBadge = h("span.badge", scheduleLabel(tk.schedule));
+        const subParts = [
+          tk.kind === "project" ? `~/Projeler/${tk.target}` : tk.target,
+          tk.last_run ? t("set.st.lastRun", { time: tk.last_run, code: tk.last_code ?? 0 }) : "",
+        ].filter(Boolean).join(" · ");
+        const runNow = btn(t("set.st.runNow"), async () => {
+          runNow.disabled = true; runNow.textContent = t("set.st.running");
+          try {
+            await post(`/autostart/${encodeURIComponent(tk.id)}/run`);
+            toast(t("set.st.ran"));
+            await refresh();
+          } catch (e) { toast(e.message); }
+          runNow.disabled = false; runNow.textContent = t("set.st.runNow");
+        }, ".sm");
+        const delBtn = h("button.btn.sm.danger", { onclick: async () => {
+          try { await api("DELETE", `/autostart/${encodeURIComponent(tk.id)}`); await refresh(); } catch (e) { toast(e.message); }
+        }, html: icon("trash-2", 13, 2), title: t("delete") });
+        const enSw = sw(tk.enabled !== false, async v => {
+          try { await post(`/autostart/${encodeURIComponent(tk.id)}/toggle`, { enabled: v }); tk.enabled = v; }
+          catch (e) { toast(e.message); await refresh(); }
+        });
+        return row(
+          h("span", { style: { display: "inline-flex", gap: "6px", alignItems: "center", flexWrap: "wrap" } }, tk.name, kindBadge, schedBadge),
+          subParts,
+          h("span", { style: { display: "flex", gap: "6px", alignItems: "center" } }, runNow, enSw, delBtn),
+          { ic: icon(tk.schedule === "@reboot" ? "power" : "clock", 16, 2) },
+        );
+      }));
+    };
+
+    // Yeni görev ekleme formu (Python Projesi veya Script/Komut + @reboot veya Cron)
+    let taskKind = "project";
+    const nameIn = h("input", { placeholder: t("set.st.taskNamePh"), style: { width: "220px" } });
+    const projSel = h("select", { style: { width: "220px" } });
+    const scriptIn = h("input", { placeholder: t("set.st.targetScriptPh"), style: { width: "260px" }, spellcheck: "false" });
+    const targetWrap = h("span", projSel);
+    const targetLabel = h("div.t", t("set.st.targetProject"));
+
+    const syncKindUI = () => {
+      if (taskKind === "project" && projects.length) {
+        targetLabel.textContent = t("set.st.targetProject");
+        targetWrap.replaceChildren(projSel);
+      } else {
+        taskKind = "script";
+        targetLabel.textContent = t("set.st.targetScript");
+        targetWrap.replaceChildren(scriptIn);
+      }
+    };
+
+    const whenPresets = [
+      ["@reboot", t("set.st.whenBoot")],
+      ["*/5 * * * *", t("set.st.when5m")],
+      ["*/15 * * * *", t("set.st.when15m")],
+      ["*/30 * * * *", t("set.st.when30m")],
+      ["0 * * * *", t("set.st.when1h")],
+      ["* * * * *", t("set.st.when1m")],
+      ["daily", t("set.st.whenDaily")],
+      ["custom", t("set.st.whenCustom")],
+    ];
+    const timeIn = h("input", { type: "time", value: "08:00", style: { width: "110px" } });
+    const cronIn = h("input", { placeholder: "*/10 * * * *", value: "0 8 * * *", style: { width: "140px" }, spellcheck: "false" });
+    const whenExtra = h("span");
+    const whenSel = h("select", { onchange: () => {
+      whenExtra.replaceChildren(whenSel.value === "daily" ? timeIn : whenSel.value === "custom" ? cronIn : "");
+    } }, ...whenPresets.map(([v, l]) => h("option", { value: v }, l)));
+
+    const addTask = async () => {
+      const target = taskKind === "project" ? projSel.value.trim() : scriptIn.value.trim();
+      if (!target) return flash(statusMsg, t("set.st.targetScriptPh"), false);
+      let schedule = whenSel.value;
+      if (schedule === "daily") {
+        const [hh, mm] = (timeIn.value || "08:00").split(":").map(x => parseInt(x, 10) || 0);
+        schedule = `${mm} ${hh} * * *`;
+      } else if (schedule === "custom") {
+        schedule = cronIn.value.trim();
+      }
+      try {
+        await post("/autostart", {
+          name: nameIn.value.trim() || target,
+          kind: taskKind,
+          target,
+          schedule,
+          enabled: true,
+        });
+        nameIn.value = "";
+        scriptIn.value = "";
+        flash(statusMsg, t("set.saved"));
+        await refresh();
+      } catch (e) {
+        flash(statusMsg, e.message, false);
+      }
+    };
+
+    const kindSeg = seg([["project", t("set.st.kindProject")], ["script", t("set.st.kindScript")]], taskKind, v => {
+      taskKind = v;
+      syncKindUI();
+    });
+
+    const refresh = async () => {
+      try {
+        const d = await get("/autostart");
+        projects = d?.projects || [];
+        tasks = d?.tasks || [];
+        projSel.replaceChildren(...projects.map(p => h("option", { value: p.name }, p.name)));
+        if (!projects.length && taskKind === "project") {
+          taskKind = "script";
+          kindSeg.querySelectorAll("button").forEach((b, i) => b.classList.toggle("on", i === 1));
+        }
+        syncKindUI();
+        renderProjects();
+        renderTasks();
+      } catch (e) {
+        flash(statusMsg, e.message, false);
+      }
+    };
+
+    el.append(
+      h("h2.first", t("set.st.appTitle")),
+      group(
+        row(t("set.st.app"), t("set.st.appHint"), h("span", { style: { display: "flex", gap: "8px", alignItems: "center" } }, appSel, openNowBtn), { ic: icon("app-window", 18, 2) }),
+        row(t("set.st.appFull"), t("set.st.appFullHint"), sw(!!pref("startupFullscreen"), v => setPref("startupFullscreen", v))),
+      ),
+      h("h2", t("set.st.projTitle")),
+      note(t("set.st.projHint")),
+      projBox,
+      h("h2", t("set.st.cronTitle")),
+      note(t("set.st.cronHint")),
+      h("h2", t("set.st.newTask")),
+      group(
+        row(t("set.st.kind"), null, kindSeg),
+        h("div.row", h("div.grow", targetLabel), targetWrap),
+        row(t("set.st.taskName"), null, nameIn),
+        row(t("set.st.when"), null, h("span", { style: { display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" } }, whenSel, whenExtra)),
+        h("div.row", h("div.grow"), btn(t("set.st.add"), addTask, ".primary")),
+      ),
+      statusMsg,
+      h("h2", t("set.st.tasks")),
+      tasksBox,
+    );
+    await refresh();
   },
 
   async user(el) {
@@ -303,7 +511,7 @@ const search = h("input.sb-search", { type: "search", placeholder: t("launch.sea
   side.querySelectorAll(".sb-item").forEach(b => { b.hidden = q && !fold(b.textContent + " " + b.dataset.k).includes(q); });
 } });
 side.append(search, ...SETTINGS_PAGES.flatMap(([id, ic, k], i) => [
-  [2, 4, 7].includes(i) ? h("div.sb-gap") : null,
+  [2, 4, 8].includes(i) ? h("div.sb-gap") : null,
   h("button.sb-item", { "data-p": id, "data-k": k, onclick: () => show(id) }, h("span.sb-ic", { style: { background: COLORS[id] }, html: icon(ic, 14, 2) }), t("set." + id)),
 ].filter(Boolean)));
 app.on("navigate", p => show(p || "wifi"));

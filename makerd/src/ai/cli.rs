@@ -97,13 +97,16 @@ fn print_assessment(c: &Color, a: &Assessment) {
     for r in &a.reasons { println!("        · {r}"); }
 }
 
-/// İzin modu: `--mod` verilmezse kullanıcı tercihi (~/.config/makeros/prefs.json → aiMode), yoksa yalnız öneri.
+/// İzin modu: `--mod` verilmezse kullanıcı tercihi (~/.config/makeros/prefs.json → aiMode), yoksa Full Bypass.
 pub fn mode_from(flag: &str) -> super::exec::Mode {
     if !flag.is_empty() {
         return super::exec::Mode::parse(flag);
     }
     let p = std::env::var("HOME").map(|h| format!("{h}/{}", crate::prefs::HOME_PATH)).unwrap_or_default();
-    std::fs::read(p).ok().and_then(|b| serde_json::from_slice::<Value>(&b).ok()).and_then(|v| v.get("aiMode").and_then(Value::as_str).map(super::exec::Mode::parse)).unwrap_or(super::exec::Mode::Suggest)
+    match std::fs::read(p).ok().and_then(|b| serde_json::from_slice::<Value>(&b).ok()).and_then(|v| v.get("aiMode").and_then(Value::as_str).map(str::to_string)).as_deref() {
+        Some("sor") | Some("izin") | Some("ask") => super::exec::Mode::Ask,
+        _ => super::exec::Mode::Bypass,
+    }
 }
 
 fn ask_line(prompt: &str) -> String {
@@ -166,11 +169,12 @@ pub fn explain_prompt(cmd: &str, out: &str) -> String {
 /// Etkileşimli sohbet (geçmiş oturum boyunca tutulur).
 pub fn chat(mode: super::exec::Mode) -> i32 {
     let c = color();
-    println!("{}", c.c("1", "MakerOS Türkçe Linux asistanı (yerel, internetsiz · Qwen2.5-0.5B)"));
+    println!("{}", c.c("1", "MakerOS AI Asistanı (yerel, internetsiz)"));
     let mtxt = match mode {
-        super::exec::Mode::Suggest => "izin modu: yalnız öneri (komut çalıştırılmaz; --mod sor|otomatik)",
+        super::exec::Mode::Suggest => "izin modu: yalnız öneri",
         super::exec::Mode::Ask => "izin modu: izin iste (her komut için sorulur)",
-        super::exec::Mode::Auto => "izin modu: otomatik (güvenli komutlar sormadan; diğerleri onayla)",
+        super::exec::Mode::Auto => "izin modu: otomatik",
+        super::exec::Mode::Bypass => "izin modu: full bypass (komutlar doğrudan çalıştırılır)",
     };
     println!("{}", c.c("2", &format!("{mtxt}. /yeni: geçmişi sil · /risk <komut> · /cik: çıkış")));
     let mut history: Vec<Value> = Vec::new();

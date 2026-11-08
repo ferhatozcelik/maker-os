@@ -1,11 +1,30 @@
-// Görünüm tercihleri: tema, efekt katmanı (fx), vurgu rengi, raf, dil. Kabuk ve uygulamalar paylaşır.
+// Görünüm tercihleri: tema, düz yüzey (flat), vurgu rengi, sistem UI görünürlüğü, başlangıç uygulaması, dil.
 // Doğruluk kaynağı makerd `GET/PUT /prefs` (kullanıcı başına); localStorage yalnız önbellek.
 // "storage" olayı ile açık tüm pencereler anında güncellenir; PUT'u yalnız değişikliği yapan bağlam gönderir.
 import { store, Emitter } from "./lib.js";
 import { api } from "./api.js";
 
 export const prefs = new Emitter();
-const DEF = { theme: "auto", look: "maker", wallpaper: "auto", fx: "auto", accent: "orange", magnify: false, ctrlCmd: "auto", dockApps: null, lang: "tr", aiWidget: true, aiMode: "oner" };
+const DEF = {
+  theme: "auto",
+  look: "maker",
+  wallpaper: "auto",
+  fx: "flat",
+  accent: "orange",
+  magnify: false,
+  ctrlCmd: "auto",
+  dockApps: null,
+  lang: "tr",
+  aiWidget: true,
+  aiMode: "bypass",
+  uiMenubar: true,
+  uiDock: true,
+  uiThemeWidget: true,
+  uiStatusTemp: true,
+  uiToasts: true,
+  startupApp: "",
+  startupFullscreen: false,
+};
 const SYNC = Object.keys(DEF);
 export const pref = k => store.get(k, DEF[k]);
 export function setPref(k, v) { store.set(k, v); apply(); prefs.emit("change", k, v); push(); }
@@ -38,26 +57,21 @@ export async function syncPrefs() {
 
 // ------------------------------------------------------------ uygulama
 const darkMQ = matchMedia("(prefers-color-scheme: dark)");
-// Düşük donanım: Pi 4 (4 çekirdek, 4 GB), WPE motoru → "lite" (önceden bulanık duvar kâğıdı)
-export function autoFx() {
-  if (matchMedia("(prefers-reduced-transparency: reduce)").matches) return "flat";
-  const hc = navigator.hardwareConcurrency || 4, dm = navigator.deviceMemory;
-  if (/WPE|cog/i.test(navigator.userAgent) || hc <= 4 || (dm && dm <= 4)) return "lite";
-  return "full";
-}
-export function fxTier() {
-  const q = new URLSearchParams(location.search).get("fx");
-  const v = ["full", "lite", "flat"].includes(q) ? q : pref("fx");
-  return v === "auto" ? autoFx() : v;
-}
+// GPU ve CPU'yu yormamak için her zaman düz ("flat") katman kullanılır (saydamlık/bulanıklık kapalı).
+export const autoFx = () => "flat";
+export const fxTier = () => "flat";
 export const isDark = () => { const t = pref("theme"); return t === "dark" || (t === "auto" && darkMQ.matches); };
 
 export function apply(root = document.documentElement) {
   const t = pref("theme");
   t === "auto" ? root.removeAttribute("data-theme") : root.setAttribute("data-theme", t);
-  root.dataset.fx = fxTier();
+  root.dataset.fx = "flat";
   root.dataset.accent = pref("accent");
   root.dataset.dark = isDark() ? "1" : "0";
+  root.dataset.noMenubar = pref("uiMenubar") === false ? "1" : "0";
+  root.dataset.noDock = pref("uiDock") === false ? "1" : "0";
+  root.dataset.noTemp = pref("uiStatusTemp") === false ? "1" : "0";
+  root.dataset.noToasts = pref("uiToasts") === false ? "1" : "0";
 }
 darkMQ.addEventListener?.("change", () => { apply(); prefs.emit("change", "theme"); });
 addEventListener("storage", e => { if (e.key?.startsWith("mk.")) { apply(); prefs.emit("change", e.key.slice(3)); } });

@@ -33,12 +33,8 @@ export function toggleControl(btn, owner) {
     } catch (x) { b.classList.remove("busy"); b.disabled = false; S.toast(x.message, "circle-alert"); }
   }, () => { closePopup(); S.openSettings("wifi"); });
   const dark = tile(isDark() ? "moon" : "sun", t("cc.dark"), isDark() ? t("on") : t("off"), isDark(), () => { setPref("theme", isDark() ? "light" : "dark"); reopen(); });
-  const fxNames = { full: t("fx.full"), lite: t("fx.lite"), flat: t("fx.flat") };
-  const fx = h("div.cc-seg", ...["auto", "full", "lite", "flat"].map(v => h("button" + (pref("fx") === v ? ".on" : ""), {
-    onclick: () => { setPref("fx", v); reopen(); } }, v === "auto" ? t("fx.auto") : fxNames[v])));
   const body = h("div.cc",
     h("div.cc-grid", wifi, dark),
-    h("div.cc-block", h("b", t("cc.fx") + " · " + (fxNames[fxTier()] || "")), fx),
     h("button.cc-link", { onclick: () => { closePopup(); S.webMode(); } }, t("cc.web")),
     h("button.cc-link", { onclick: () => { closePopup(); S.openSettings("network"); } }, t("cc.netSettings")));
   popover(body, rectOf(btn), { owner, onClose: () => btn.classList.remove("open"), cls: "cc-pop" });

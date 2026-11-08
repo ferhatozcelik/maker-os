@@ -28,11 +28,14 @@ export async function removeWallpaper(name) {
   await fetch(`${BASE}/wallpaper/${name}`, { method: "DELETE", headers: { "X-Maker": "1" }, credentials: "same-origin" });
 }
 /** Dosya seçtirir ve yükler. kind: "desktop" | "lock". Seçilmezse false. */
-export async function chooseWallpaper(kind) {
+export async function chooseWallpaper(kind = "desktop") {
   const f = await pick();
   if (!f) return false;
   const bmp = await bitmap(f);
-  await upload(kind, await draw(bmp, 2560));
-  if (kind === "desktop") await upload("desktop-blur", await draw(bmp, 960, 18));
+  const blob = await draw(bmp, 2560);
+  await upload(kind, blob);
+  if (kind === "desktop") {
+    await removeWallpaper("lock").catch(() => {});
+  }
   return true;
 }

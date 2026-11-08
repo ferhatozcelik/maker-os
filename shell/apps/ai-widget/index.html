@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AI Asistan</title>
 <link rel="stylesheet" href="/shell/css/tokens.css">
-<!-- Masaüstü widget'ı: yerel Türkçe Linux asistanı (makeros-ai, makerd /api/v1/ai üzerinden). Komut çalıştırmaz. -->
+<!-- Masaüstü widget'ı: yerel MakerOS AI asistanı (uygulama açar, ajan başlatır, komut çalıştırır). -->
 <style>
 html, body { margin: 0; background: transparent; }
 body { font: 13px/1.45 var(--font-sans, system-ui, sans-serif); color: var(--text); }
@@ -43,20 +43,20 @@ input:focus { border-color: var(--accent, #ff7a1a); box-shadow: 0 0 0 3px color-
 .cmd { display: grid; grid-template-columns: auto 1fr auto; gap: 7px; align-items: center; padding: 6px 7px; border-radius: 9px; background: var(--bg-hover); }
 .cmd code { font: 11.5px ui-monospace, "JetBrains Mono", monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rk { font-size: 9.5px; font-weight: 700; letter-spacing: .03em; padding: 2px 6px; border-radius: 5px; color: #fff; }
-.rk.SAFE { background: #2fa84f; } .rk.WARNING { background: #d99a12; } .rk.DANGEROUS { background: #e0393f; }
+.rk.SAFE { background: #2fa84f; } .rk.WARNING { background: #d99a12; } .rk.DANGEROUS { background: #e0393f; } .rk.ACTION { background: var(--accent, #ff7a1a); }
 .why { grid-column: 1 / 4; font-size: 11px; color: var(--text-2); margin-top: -2px; }
 .note { font-size: 10.5px; color: var(--text-2); margin-top: 6px; }
 .err { color: #e0393f; margin: 8px 0; }
 .ft { display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; color: var(--text-2); padding: 6px 12px 9px; }
 .ft button { border: 0; background: none; color: var(--accent, #ff7a1a); font: inherit; cursor: pointer; padding: 0; }
-.ft select { border: 0; background: var(--bg-hover); color: var(--text); font: inherit; font-size: 10.5px; border-radius: 6px; padding: 2px 4px; cursor: pointer; }
+.ft select { border: 0; background: var(--bg-hover); color: var(--text); font: inherit; font-size: 10.5px; border-radius: 6px; padding: 2px 6px; cursor: pointer; }
 .cmd .run { width: auto; padding: 0 7px; gap: 3px; display: inline-flex; align-items: center; font: inherit; font-size: 11px; color: var(--accent, #ff7a1a); }
 .cmd .acts { display: flex; gap: 2px; }
 .conf { grid-column: 1 / 4; display: flex; flex-direction: column; gap: 6px; padding: 6px 2px 2px; font-size: 11.5px; }
 .conf .row { display: flex; gap: 6px; align-items: center; }
 .conf input { height: 26px; font: 11.5px ui-monospace, monospace; }
 .conf button { border: 0; border-radius: 7px; padding: 4px 10px; font: inherit; cursor: pointer; background: var(--bg-active); color: var(--text); }
-.conf button.ok { background: #d99a12; color: #fff; } .conf button.ok.danger { background: #e0393f; }
+.conf button.ok { background: var(--accent, #ff7a1a); color: #fff; } .conf button.ok.danger { background: #e0393f; }
 .conf button:disabled { opacity: .45; cursor: default; }
 .res { grid-column: 1 / 4; margin-top: 2px; }
 .res pre { margin: 0; max-height: 160px; overflow: auto; padding: 7px 9px; border-radius: 8px; background: #1b1b1f; color: #e6e6ea; font: 11px/1.35 ui-monospace, "JetBrains Mono", monospace; white-space: pre-wrap; word-break: break-word; }
@@ -71,10 +71,10 @@ input:focus { border-color: var(--accent, #ff7a1a); box-shadow: 0 0 0 3px color-
     <span class="logo"></span><b>AI Asistan</b><span class="st" id="st"><i></i><span>…</span></span><span class="grow"></span>
     <button class="ib" id="new" title="Yeni sohbet"></button><button class="ib" id="close" title="Widget'ı gizle (Ayarlar › Görünüm'den geri açılır)"></button>
   </div>
-  <form id="f"><input id="in" autocomplete="off" spellcheck="false" placeholder="Linux'ta ne yapmak istersiniz?"><button class="go" id="go" title="Sor"></button></form>
+  <form id="f"><input id="in" autocomplete="off" spellcheck="false" placeholder="Ne yapmak istersiniz?"><button class="go" id="go" title="Gönder"></button></form>
   <div class="chips" id="chips"></div>
   <div class="out" id="out" hidden></div>
-  <div class="ft"><span id="meta">Yerel · internetsiz · Qwen2.5-0.5B</span><select id="mode" title="İzin modu: Otomatik'te yalnız salt okunur komutlar sormadan çalışır; sistemi değiştirenler her zaman onay ister."><option value="oner">Yalnız öneri</option><option value="sor">İzin iste</option><option value="otomatik">Otomatik</option></select></div>
+  <div class="ft"><span id="meta">MakerOS AI</span><select id="mode" title="İzin modu: Full Bypass komutları ve eylemleri doğrudan çalıştırır; İzin iste çalıştırmadan önce onay alır."><option value="bypass">Full Bypass</option><option value="sor">İzin iste</option></select></div>
 </div>
 <script type="module" src="/shell/apps/ai-widget/widget.js"></script>
 </body>

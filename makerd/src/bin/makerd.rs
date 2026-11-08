@@ -283,12 +283,21 @@ async fn run(o: Opts, fds: Vec<std::os::fd::OwnedFd>) -> Result<(), String> {
         tasks.spawn(srv.clone().serve(l));
     }
     sd::notify("READY=1\nSTATUS=makerd hazır");
-    // Python yöneticisi: birincil kullanıcının "açılışta başlat" işaretli projeleri (makerd-user hazır olsun diye kısa bekleme).
+    // Python yöneticisi ve zamanlanmış görevler (Cron / @reboot): birincil kullanıcının görevlerini çalıştırır.
     if let Some(user) = setup_store_user.clone().filter(|u| !u.is_empty() && !o.mock) {
         let a = agent.clone();
+        let stop2 = stop.clone();
         tokio::spawn(async move {
             tokio::time::sleep(Duration::from_secs(15)).await;
             makerd::pyman::autostart_all(a.as_ref(), &user).await;
+            makerd::autostart::run_boot_tasks(a.as_ref(), &user).await;
+            loop {
+                tokio::select! {
+                    _ = stop2.cancelled() => return,
+                    _ = tokio::time::sleep(Duration::from_secs(30)) => {}
+                }
+                makerd::autostart::tick_cron_tasks(a.as_ref(), &user).await;
+            }
         });
     }
 

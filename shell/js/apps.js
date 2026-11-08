@@ -25,7 +25,8 @@ export const SETTINGS_PAGES = [
   ["wifi", "wifi", "kablosuz wireless ağ"], ["network", "network", "ethernet ip ağ hotspot erişim noktası"],
   ["general", "info", "hakkında genel cihaz adı hostname sürüm about"], ["datetime", "clock", "tarih saat saat dilimi ntp time timezone"],
   ["language", "languages", "dil bölge klavye düzeni language region locale"], ["keyboard", "keyboard", "klavye kısayollar shortcuts keys"],
-  ["appearance", "palette", "görünüm tema koyu açık vurgu rengi efekt bulanıklık appearance dark mode theme"],
+  ["appearance", "palette", "görünüm tema koyu açık vurgu rengi sistem ui menü çubuğu raf gizle appearance dark mode theme"],
+  ["startup", "play", "otomatik başlatma başlangıç cron zamanlayıcı görev python script uygulama autostart schedule"],
   ["user", "user", "kullanıcı parola şifre hesap user password"], ["power", "power", "güç yeniden başlat kapat power reboot shutdown"],
 ];
 

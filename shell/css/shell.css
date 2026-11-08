@@ -157,9 +157,16 @@ html.wm-ov-anim mk-window { transition: transform var(--dur-slow) var(--ease-out
 .ov-layer { position: absolute; inset: 0; }
 /* ---------- oturum / kilit */
 #lock, #boot { position: fixed; inset: 0; z-index: 9800; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff;
-  background: linear-gradient(rgba(0,0,0,.08), rgba(0,0,0,.24)), var(--lock-wall, var(--wall-blur)) center / cover, #222; }
+  background: linear-gradient(rgba(0,0,0,.08), rgba(0,0,0,.24)), var(--wall) center / cover, #222; }
 #boot { z-index: 9900; gap: 20px; }
 #boot p { color: rgba(255,255,255,.8); min-height: 1.3em; }
+/* ---------- sistem UI gizleme tercihleri */
+html[data-no-menubar="1"] #menubar { display: none !important; }
+html[data-no-menubar="1"] #widgets { top: 18px; }
+html[data-no-menubar="1"] #nc, html[data-no-menubar="1"] #toasts { top: 10px; }
+html[data-no-dock="1"] #dock { display: none !important; }
+html[data-no-temp="1"] .mb-temp { display: none !important; }
+html[data-no-toasts="1"] #toasts { display: none !important; }
 /* ---------- mobil düzen: temel görünürlük (ayrıntılar css/mobile.css) */
 .mobile-only { display: none !important; }
 html[data-layout=mobile] .mobile-only { display: revert !important; }

@@ -11,6 +11,7 @@ pub mod agents;
 pub mod apierr;
 pub mod apps;
 pub mod auth;
+pub mod autostart;
 pub mod browse;
 pub mod camera;
 pub mod catalog;
