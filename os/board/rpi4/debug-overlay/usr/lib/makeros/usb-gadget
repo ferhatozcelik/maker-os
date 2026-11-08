@@ -1,6 +1,6 @@
 #!/bin/sh
 # MakerOS debug: Pi 4 USB-C portu -> USB ag karti (CDC-ECM, configfs). Mac/PC'ye takilinca
-# Pi 10.55.0.1 olur, bilgisayar DHCP ile (makeros-usb-dhcp) 10.55.0.x alir; yonlendirici/DNS verilmez.
+# Pi 10.42.0.1 olur, bilgisayar DHCP ile (makeros-usb-dhcp) 10.42.0.x alir; yonlendirici/DNS verilmez.
 # NetworkManager usb0'a dokunmaz (conf.d/60-makeros-usb.conf).
 # Yalniz debug imajinda vardir (os/board/rpi4/debug-overlay). config.txt: dtoverlay=dwc2,dr_mode=peripheral
 set -e
@@ -34,6 +34,5 @@ while [ $i -lt 50 ]; do IF=$(cat "$G/functions/ecm.usb0/ifname" 2>/dev/null); [ 
 if [ "$IF" != usb0 ]; then ip link set "$IF" down; ip link set "$IF" name usb0; fi
 ip addr del 10.55.0.1/24 dev usb0 2>/dev/null || true
 ip addr replace 10.42.0.1/24 dev usb0
-ip addr add 10.55.0.1/24 dev usb0 2>/dev/null || true
 ip link set usb0 up
-echo "usb-gadget: $UDC uzerinde ECM hazir (usb0 = 10.42.0.1, 10.55.0.1, once $IF)"
+echo "usb-gadget: $UDC uzerinde ECM hazir (usb0 = 10.42.0.1, once $IF)"

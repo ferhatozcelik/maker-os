@@ -231,7 +231,8 @@ pub fn user_create(shadow: &str, min_uid: u32, uf: &UserFiles, a: &UserCreateArg
     res.uid = uid as u32;
     if !uf.systemctl.is_empty() && Path::new(&uf.systemctl).exists() {
         let unit = format!("makerd-user@{}.service", a.user);
-        res.service = run_timeout(&uf.systemctl, &["enable", "--now", &unit], Duration::from_secs(20));
+        let _ = run_timeout(&uf.systemctl, &["enable", &unit], Duration::from_secs(3));
+        res.service = run_timeout(&uf.systemctl, &["start", "--no-block", &unit], Duration::from_secs(3));
     }
     Ok(res)
 }

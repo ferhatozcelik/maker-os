@@ -25,7 +25,7 @@ Hata mesajı verilirse: **Anlamı**, **Olası nedenler** (madde madde), **Çöz�
 pub const CHAT_SYSTEM: &str = "Sen MakerOS'un yerleşik Türkçe yapay zeka asistanısın; Raspberry Pi 4 üzerinde çalışıyorsun.
 MakerOS Özellikleri:
 - Masaüstü Uygulamaları: Dosyalar (~/Projeler, ~/Belgeler, ~/Resimler, ~/İndirilenler), Terminal (sekmeli kabuk), Python Yöneticisi (uv ile hızlı sanal ortam, paket yönetimi, hazır proje şablonları: LED, Buton+LED, I2C tarayıcı, Kamera fotoğraf/web, Web uygulaması, Nesne tespiti), AI Ajanları (Claude Code, Codex CLI, Gemini CLI, OpenCode, Ollama), Kamera (canlı MJPEG yayın ve fotoğraf çekimi), GPIO (40-pin Raspberry Pi pinlerini canlı izleme ve HIGH/LOW sürme), Eklentiler (.zip eklenti mağazası ve Konya HackerSpace teması), Etkinlik Monitörü (CPU/RAM/sıcaklık ve süreç yönetimi), Tarayıcı (Raspberry Pi internetini kullanan yerleşik web tarayıcısı) ve Ayarlar.
-- Ayarlar Sayfaları: Wi-Fi, Ağ (Ethernet, Hotspot erişim noktası, varsayılan yerel IP 10.42.0.0, USB-C bağlantısı 10.55.0.1 / makeros.local), Genel (cihaz adı, OTA yazılım güncellemesi), Tarih ve Saat, Dil ve Klavye, Görünüm (açık/koyu tema, duvar kâğıdı, Üst Menü Çubuğu / Raf / AI Asistan / Sıcaklık / Bildirim gizleme), Otomatik Başlatma (açılışta uygulama/Python projesi/betik çalıştırma ve Cron zamanlayıcı), Kullanıcı ve Parola, Güç (yeniden başlat / kapat).
+- Ayarlar Sayfaları: Wi-Fi, Ağ (Ethernet, Hotspot erişim noktası, varsayılan yerel IP 10.42.0.1, USB-C bağlantısı 10.42.0.1 / makeros.local), Genel (cihaz adı, OTA yazılım güncellemesi), Tarih ve Saat, Dil ve Klavye, Görünüm (açık/koyu tema, duvar kâğıdı, Üst Menü Çubuğu / Raf / AI Asistan / Sıcaklık / Bildirim gizleme), Otomatik Başlatma (açılışta uygulama/Python projesi/betik çalıştırma ve Cron zamanlayıcı), Kullanıcı ve Parola, Güç (yeniden başlat / kapat).
 Kurallar:
 - Her zaman doğal, akıcı ve samimi Türkçe ile yanıt ver.
 - Kullanıcı MakerOS, yazılım, Python, elektronik, Raspberry Pi veya genel konular hakkında sohbet ediyorsa doğrudan sohbet ederek açıkla; gereksiz yere 'Komut / Parametreler / Risk' şablonu kullanma.
@@ -75,7 +75,7 @@ struct Card {
 const MAKEROS_CARDS: &[Card] = &[
     Card {
         keys: &["makeros", "maker os", "işletim sistemi", "masaüstü", "özellik", "neler var", "ne işe yarar"],
-        text: "MakerOS: Raspberry Pi 4 üzerinde çalışan Türkçe masaüstü işletim sistemidir. Yerleşik uygulamaları: Dosyalar, Terminal, Python Yöneticisi (uv tabanlı), AI Ajanları (Claude Code, Codex, Gemini, OpenCode, Ollama), Kamera, GPIO, Eklentiler, Etkinlik Monitörü, Tarayıcı ve Ayarlar. USB-C ile bilgisayara takıldığında 10.55.0.1 (makeros.local) adresinden doğrudan masaüstü açılır.",
+        text: "MakerOS: Raspberry Pi 4 üzerinde çalışan Türkçe masaüstü işletim sistemidir. Yerleşik uygulamaları: Dosyalar, Terminal, Python Yöneticisi (uv tabanlı), AI Ajanları (Claude Code, Codex, Gemini, OpenCode, Ollama), Kamera, GPIO, Eklentiler, Etkinlik Monitörü, Tarayıcı ve Ayarlar. USB-C veya Wi-Fi ile bağlanıldığında 10.42.0.1 (makeros.local) adresinden doğrudan masaüstü açılır.",
     },
     Card {
         keys: &["python yöneticisi", "proje oluştur", "yeni proje", "şablon", "uv ", "pyproject", "sanal ortam", "projeler"],

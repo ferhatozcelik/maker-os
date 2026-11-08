@@ -332,6 +332,19 @@ impl network::Provider for Network {
         })
     }
 
+    fn cached_scan(&self) -> BoxFuture<'_, Vec<Ap>> {
+        let st = self.st.lock().unwrap();
+        if !st.radio {
+            return Box::pin(async { Vec::new() });
+        }
+        let list = st
+            .nets
+            .iter()
+            .map(|x| Ap { ssid: x.ssid.clone(), signal: x.signal, security: x.security.into(), known: st.known.contains(&x.ssid), active: x.ssid == st.active })
+            .collect();
+        Box::pin(async move { network::dedupe_aps(list) })
+    }
+
     /// Parola "wrong" veya 8 karakterden kısa (WPA) ise başarısız.
     fn connect<'a>(&'a self, req: ConnectRequest, p: Progress<'a>) -> BoxFuture<'a, ApiResult<()>> {
         Box::pin(async move {

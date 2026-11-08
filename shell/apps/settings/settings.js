@@ -155,10 +155,11 @@ const PAGES = {
     }
     for (const i of n.ifaces || []) {
       const up = i.state === "connected";
+      const validIpv4 = (i.ipv4 || []).filter(ip => !ip.startsWith("0.0.0.0") && !ip.includes(".0/"));
       el.append(h("h2", `${i.type === "wifi" ? "Wi-Fi" : "Ethernet"} · ${i.name}`), group(
         row(t("set.net.state"), null, h("span.badge" + (up ? ".ok" : ""), up ? t("set.wifi.connected") : i.state)),
         i.ssid ? row("SSID", null, val(i.ssid)) : null,
-        row(t("set.net.ip"), null, val(i.ipv4?.length ? i.ipv4.join(", ") : "—")),
+        row(t("set.net.ip"), null, val((up || i.name === "usb0") && validIpv4.length ? validIpv4.join(", ") : "—")),
         row("MAC", null, val(i.mac)),
         i.speed_mbps ? row(t("set.net.speed"), null, val(i.speed_mbps + " Mb/sn")) : null));
     }

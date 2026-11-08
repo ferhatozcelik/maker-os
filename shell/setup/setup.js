@@ -39,8 +39,8 @@ export function runSetup(info) {
       timezone: zones.includes(here) ? here : zones.includes(D.timezone) ? D.timezone : zones.includes("Europe/Istanbul") ? "Europe/Istanbul" : zones[0],
       hostname: info.hostname || "maker-os", wifi: null,
     };
-    let networks = (info.wifi_networks || []).filter(n => n.ssid), scanned = !!info.wifi_networks;
-    const scan = async () => { try { const r = await api("POST", "/setup/wifi/scan", {}, { timeout: 30000 }); if (Array.isArray(r)) networks = r.filter(n => n.ssid); } catch { /* yok */ } scanned = true; };
+    let networks = (info.wifi_networks || []).filter(n => n.ssid), scanned = !!(info.wifi_networks && info.wifi_networks.length);
+    const scan = async () => { try { const r = await api("POST", "/setup/wifi/scan", {}, { timeout: 15000 }); if (Array.isArray(r)) networks = r.filter(n => n.ssid); } catch { /* yok */ } scanned = true; };
     const kiosk = /WPE|cog/i.test(navigator.userAgent);
     const steps = ["wifi", "done"];
     let idx = 0, busy = false;
@@ -157,8 +157,13 @@ export function runSetup(info) {
         S.warnings = Array.isArray(r?.warnings) ? r.warnings : [];
         busy = false; next.classList.remove("busy"); go(1);
       } catch (e) {
+        // Kurulum sunucuda tamamlandıktan sonra (409) veya Wi-Fi ağı değişirken bağlantı koptuysa başarı kabul et
+        if (e.status === 409 || (S.wifi && (e.name === "AbortError" || e.message?.includes("aşım") || !navigator.onLine))) {
+          store.set("lastUser", S.user);
+          busy = false; next.classList.remove("busy"); go(1);
+          return;
+        }
         busy = false; next.disabled = false; next.classList.remove("busy"); next.textContent = S.wifi ? t("su.wifi.connect") : t("su.wifi.skipGo");
-        if (e.status === 409) { status.textContent = t("su.already"); next.textContent = t("su.toLogin"); next.onclick = ev => { ev.preventDefault(); root.remove(); done(null); }; return; }
         status.textContent = e.message || t("su.fail");
       }
     }

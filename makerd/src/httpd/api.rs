@@ -253,8 +253,8 @@ fn start_connect(s: &S, user: &str, req: ConnectRequest) -> ApiResult<String> {
     let s2 = s.clone();
     Ok(s.d.jobs.start("net.connect", user, move |h| async move {
         let _permit = permit;
-        // HTTP yanıtı radyo değişmeden istemciye ulaşsın.
-        tokio::time::sleep(Duration::from_millis(300)).await;
+        // HTTP yanıtı radyo değişmeden ve istemci TCP bağlantısı kopmadan istemciye tam olarak ulaşsın.
+        tokio::time::sleep(Duration::from_millis(1500)).await;
         let ssid = req.ssid.clone();
         let step = move |p: i32, l: &str| h.step(p, l);
         let res = s2.d.network.connect(req, &step).await;
@@ -442,6 +442,8 @@ struct SetupState {
     wifi_needed: bool,
     hotspot: bool,
     min_password: usize,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    wifi_networks: Vec<network::Ap>,
 }
 
 pub async fn setup_state(State(s): State<S>, ci: Ci) -> R {
@@ -457,6 +459,7 @@ pub async fn setup_state(State(s): State<S>, ci: Ci) -> R {
         wifi_needed: false,
         hotspot: false,
         min_password: privsep::MIN_PASSWORD_LEN,
+        wifi_networks: s.d.network.cached_scan().await,
     };
     if let Ok(l) = s.d.system.locale().await {
         if !l.lang.is_empty() && l.lang != "C.UTF-8" {
@@ -590,7 +593,7 @@ pub async fn setup_complete(State(s): State<S>, ci: Ci, body: Bytes) -> R {
         }
         let work = async {
             // Ayarlar birbirinden bağımsız: paralel ve her biri kısa süre sınırıyla; hata yalnız uyarıdır.
-            const STEP: Duration = Duration::from_secs(12);
+            const STEP: Duration = Duration::from_secs(3);
             let step = |what: &'static str, r: Result<ApiResult<()>, tokio::time::error::Elapsed>| match r {
                 Ok(Ok(())) => None,
                 Ok(Err(e)) => Some(format!("{what} ayarlanamadı: {}", err_msg(&e))),

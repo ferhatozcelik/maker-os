@@ -89,6 +89,10 @@ pub type Progress<'a> = &'a (dyn Fn(i32, &str) + Send + Sync);
 pub trait Provider: Send + Sync {
     fn status(&self) -> BoxFuture<'_, ApiResult<Status>>;
     fn scan(&self) -> BoxFuture<'_, ApiResult<Vec<Ap>>>;
+    /// Kurulum sayfası ve hızlı durum için önbellekteki ağlar (cihazı kapatmaz veya engellemez).
+    fn cached_scan(&self) -> BoxFuture<'_, Vec<Ap>> {
+        Box::pin(async { Vec::new() })
+    }
     fn connect<'a>(&'a self, req: ConnectRequest, p: Progress<'a>) -> BoxFuture<'a, ApiResult<()>>;
     fn forget<'a>(&'a self, ssid: &'a str) -> BoxFuture<'a, ApiResult<()>>;
     /// Wi-Fi radyosunu açar/kapatır.
@@ -288,12 +292,100 @@ impl SavedConn {
     }
 }
 
+fn unwrap_val<'a>(mut v: &'a Value<'static>) -> &'a Value<'static> {
+    while let Value::Value(inner) = v {
+        v = inner;
+    }
+    v
+}
+
 fn str_of(v: Option<&OwnedValue>) -> String {
-    v.and_then(|v| <&str>::try_from(&**v).ok()).unwrap_or("").to_string()
+    let Some(v) = v else { return String::new() };
+    let cur = unwrap_val(&**v);
+    <&str>::try_from(cur).unwrap_or("").to_string()
 }
 
 fn bytes_of(v: Option<&OwnedValue>) -> Vec<u8> {
-    v.and_then(|v| v.try_clone().ok()).and_then(|v| Vec::<u8>::try_from(v).ok()).unwrap_or_default()
+    let Some(v) = v else { return Vec::new() };
+    let cur = unwrap_val(&**v);
+    if let Ok(vec) = Vec::<u8>::try_from(cur.clone()) {
+        return vec;
+    }
+    if let Value::Array(arr) = cur {
+        let mut out = Vec::with_capacity(arr.len());
+        for item in arr.iter() {
+            if let Ok(b) = u8::try_from(item) {
+                out.push(b);
+            }
+        }
+        return out;
+    }
+    Vec::new()
+}
+
+fn u32_of(v: Option<&OwnedValue>) -> u32 {
+    let Some(v) = v else { return 0 };
+    let cur = unwrap_val(&**v);
+    u32::try_from(cur)
+        .ok()
+        .or_else(|| u8::try_from(cur).ok().map(u32::from))
+        .or_else(|| u16::try_from(cur).ok().map(u32::from))
+        .or_else(|| i32::try_from(cur).ok().map(|x| x as u32))
+        .unwrap_or(0)
+}
+
+/// nmcli -t -f IN-USE,SSID,SIGNAL,SECURITY çıktısını veya wifi-scan.txt dosyasını ayrıştırır.
+pub fn parse_wifi_scan_text(text: &str) -> Vec<Ap> {
+    let mut list = Vec::new();
+    for line in text.lines() {
+        let line = line.trim();
+        if line.is_empty() {
+            continue;
+        }
+        let mut fields = Vec::new();
+        let mut cur = String::new();
+        let mut esc = false;
+        for c in line.chars() {
+            if esc {
+                cur.push(c);
+                esc = false;
+            } else if c == '\\' {
+                esc = true;
+            } else if c == ':' {
+                fields.push(std::mem::take(&mut cur));
+            } else {
+                cur.push(c);
+            }
+        }
+        fields.push(cur);
+        if fields.len() < 3 {
+            continue;
+        }
+        let in_use = fields[0].trim() == "*";
+        let ssid = fields[1].trim().to_string();
+        if ssid.is_empty() {
+            continue;
+        }
+        let signal: i32 = fields[2].trim().parse().unwrap_or(0);
+        let sec_str = fields.get(3).map(|s| s.as_str()).unwrap_or("").to_uppercase();
+        let sec = if sec_str.contains("802.1X") {
+            "enterprise"
+        } else if sec_str.contains("WPA3") && !sec_str.contains("WPA2") {
+            "wpa3"
+        } else if sec_str.contains("WPA") || sec_str.contains("WEP") {
+            "wpa2"
+        } else {
+            "open"
+        };
+        list.push(Ap {
+            ssid,
+            signal,
+            security: sec.into(),
+            known: false,
+            active: in_use,
+        });
+    }
+    dedupe_aps(list)
 }
 
 fn new_uuid() -> String {
@@ -415,9 +507,16 @@ impl Nm {
                     for a in ad {
                         let addr = str_of(a.get("address"));
                         let pfx = a.get("prefix").and_then(|v| u32::try_from(&**v).ok()).unwrap_or(0);
-                        if !addr.is_empty() {
+                        if !addr.is_empty() && addr != "0.0.0.0" && !addr.ends_with(".0") {
                             ifc.ipv4.push(format!("{addr}/{pfx}"));
                         }
+                    }
+                }
+            }
+            if ifc.ipv4.is_empty() {
+                for (_, (_, cidr)) in ipv4_addrs().into_iter().filter(|(n, _)| n == &ifc.name) {
+                    if !cidr.starts_with("0.0.0.0") && !cidr.contains(".0/") {
+                        ifc.ipv4.push(cidr);
                     }
                 }
             }
@@ -542,52 +641,127 @@ impl Nm {
         "wpa-psk"
     }
 
-    /// Tek radyo erişim noktası kipindeyken tarayamaz: kurulum ağı birkaç saniye
-    /// kapatılır ve tarama sonunda geri açılır.
+    /// /run/makeros/wifi-scan.txt dosyasından veya yerel önbellekten okur.
+    fn read_cached_scan(&self) -> Vec<Ap> {
+        let p = Path::new(&self.root).join("run/makeros/wifi-scan.txt");
+        if let Ok(text) = std::fs::read_to_string(&p) {
+            let list = parse_wifi_scan_text(&text);
+            if !list.is_empty() {
+                return list;
+            }
+        }
+        Vec::new()
+    }
+
+    /// NM içindeki erişim noktalarını GetAll ile paralel okur.
+    async fn read_nm_aps(&self, dev: &str) -> Vec<Ap> {
+        let known: std::collections::HashSet<String> = self.saved_wifi().await.into_iter().filter(|s| !s.is_hotspot()).map(|s| s.ssid).collect();
+        let active = path_prop(dev, IF_WIRELESS, "ActiveAccessPoint").await.unwrap_or_default();
+        let Ok(m) = nm_call(dev, IF_WIRELESS, "GetAllAccessPoints", &()).await else { return Vec::new() };
+        let Ok(aps) = m.body().deserialize::<Vec<OwnedObjectPath>>() else { return Vec::new() };
+        if aps.is_empty() {
+            return Vec::new();
+        }
+        let fetches = aps.iter().map(|ap| {
+            let a = ap.as_str().to_string();
+            async move {
+                let props: Option<HashMap<String, OwnedValue>> = match nm_call(&a, "org.freedesktop.DBus.Properties", "GetAll", &(IF_AP,)).await {
+                    Ok(m) => m.body().deserialize().ok(),
+                    Err(_) => None,
+                };
+                (a, props)
+            }
+        });
+        let results = futures_util::future::join_all(fetches).await;
+        let mut list = Vec::with_capacity(results.len());
+        for (a, props) in results {
+            let (ssid, strength, flags, wpa, rsn) = if let Some(p) = props {
+                let ssid = String::from_utf8_lossy(&bytes_of(p.get("Ssid"))).into_owned();
+                let strength = u32_of(p.get("Strength")) as u8;
+                let flags = u32_of(p.get("Flags"));
+                let wpa = u32_of(p.get("WpaFlags"));
+                let rsn = u32_of(p.get("RsnFlags"));
+                (ssid, strength, flags, wpa, rsn)
+            } else {
+                let ssid = String::from_utf8_lossy(&p::<Vec<u8>>(&a, IF_AP, "Ssid").await.unwrap_or_default()).into_owned();
+                let strength: u8 = p(&a, IF_AP, "Strength").await.unwrap_or(0);
+                let flags: u32 = p(&a, IF_AP, "Flags").await.unwrap_or(0);
+                let wpa: u32 = p(&a, IF_AP, "WpaFlags").await.unwrap_or(0);
+                let rsn: u32 = p(&a, IF_AP, "RsnFlags").await.unwrap_or(0);
+                (ssid, strength, flags, wpa, rsn)
+            };
+            list.push(Ap {
+                known: known.contains(&ssid),
+                active: a == active,
+                ssid,
+                signal: i32::from(strength),
+                security: security(flags, wpa, rsn).into(),
+            });
+        }
+        dedupe_aps(list)
+    }
+
+    /// Kurulum sayfası ve hızlı durum için önbellekteki ağları döner (cihazı kapatmaz veya engellemez).
+    pub async fn cached_scan(&self) -> Vec<Ap> {
+        let cached = self.read_cached_scan();
+        if !cached.is_empty() {
+            return cached;
+        }
+        if let Ok((dev, _)) = self.wifi_device().await {
+            let nm_aps = self.read_nm_aps(&dev).await;
+            if !nm_aps.is_empty() {
+                return nm_aps;
+            }
+        }
+        Vec::new()
+    }
+
+    /// Wi-Fi taraması: AP modundaysa istemci oturumunu koparmamak için AP'yi kapatmaz.
     async fn nm_scan(&self) -> ApiResult<Vec<Ap>> {
         let _g = self.mu.lock().await;
-        self.bus().await?;
+        let cached = self.read_cached_scan();
+        if self.bus().await.is_err() {
+            if !cached.is_empty() {
+                return Ok(cached);
+            }
+            return Err(fail("NetworkManager çalışmıyor."));
+        }
         let (dev, _) = self.wifi_device().await?;
         let was_ap = self.in_ap_mode(&dev).await;
         if was_ap {
-            self.deactivate_device(&dev).await;
-            tokio::time::sleep(Duration::from_secs(2)).await;
-        }
-        let res = self.scan_inner(&dev).await;
-        if was_ap {
-            if let Err(e) = self.activate_hotspot(&dev).await {
-                tracing::error!(err = %e, "tarama sonrası erişim noktası açılamadı");
+            // Erişim noktası (AP) modundayken arayüz ASLA kapatılmamalıdır!
+            // Kullanıcı bu AP üzerinden bağlıdır; kapatılırsa istemcinin oturumu ve bağlantısı kopar.
+            if !cached.is_empty() {
+                return Ok(cached);
+            }
+            let cached_nm = self.read_nm_aps(&dev).await;
+            if !cached_nm.is_empty() {
+                return Ok(cached_nm);
             }
         }
-        res
+        self.scan_inner(&dev).await
     }
 
     async fn scan_inner(&self, dev: &str) -> ApiResult<Vec<Ap>> {
         self.radio_on().await;
         let before: i64 = p(dev, IF_WIRELESS, "LastScan").await.unwrap_or(0);
         let _ = nm_call(dev, IF_WIRELESS, "RequestScan", &(HashMap::<&str, Value>::new(),)).await;
-        let deadline = Instant::now() + Duration::from_secs(12);
+        let deadline = Instant::now() + Duration::from_secs(3);
         while Instant::now() < deadline {
             if p::<i64>(dev, IF_WIRELESS, "LastScan").await.unwrap_or(0) != before {
                 break;
             }
-            tokio::time::sleep(Duration::from_millis(400)).await;
+            tokio::time::sleep(Duration::from_millis(200)).await;
         }
-        let known: std::collections::HashSet<String> = self.saved_wifi().await.into_iter().filter(|s| !s.is_hotspot()).map(|s| s.ssid).collect();
-        let active = path_prop(dev, IF_WIRELESS, "ActiveAccessPoint").await.unwrap_or_default();
-        let m = nm_call(dev, IF_WIRELESS, "GetAllAccessPoints", &()).await.map_err(|_| fail("Wi-Fi taraması başarısız oldu."))?;
-        let aps: Vec<OwnedObjectPath> = m.body().deserialize().map_err(|_| fail("Wi-Fi taraması başarısız oldu."))?;
-        let mut list = Vec::with_capacity(aps.len());
-        for ap in aps {
-            let a = ap.as_str();
-            let ssid = String::from_utf8_lossy(&p::<Vec<u8>>(a, IF_AP, "Ssid").await.unwrap_or_default()).into_owned();
-            let strength: u8 = p(a, IF_AP, "Strength").await.unwrap_or(0);
-            let flags: u32 = p(a, IF_AP, "Flags").await.unwrap_or(0);
-            let wpa: u32 = p(a, IF_AP, "WpaFlags").await.unwrap_or(0);
-            let rsn: u32 = p(a, IF_AP, "RsnFlags").await.unwrap_or(0);
-            list.push(Ap { known: known.contains(&ssid), active: a == active, ssid, signal: i32::from(strength), security: security(flags, wpa, rsn).into() });
+        let aps = self.read_nm_aps(dev).await;
+        if !aps.is_empty() {
+            return Ok(aps);
         }
-        Ok(dedupe_aps(list))
+        let cached = self.read_cached_scan();
+        if !cached.is_empty() {
+            return Ok(cached);
+        }
+        Ok(Vec::new())
     }
 
     /// Bağlantı mantığı:
@@ -711,6 +885,9 @@ impl Provider for Nm {
     fn scan(&self) -> BoxFuture<'_, ApiResult<Vec<Ap>>> {
         Box::pin(self.nm_scan())
     }
+    fn cached_scan(&self) -> BoxFuture<'_, Vec<Ap>> {
+        Box::pin(self.cached_scan())
+    }
     fn connect<'a>(&'a self, req: ConnectRequest, p: Progress<'a>) -> BoxFuture<'a, ApiResult<()>> {
         Box::pin(self.nm_connect(req, p))
     }
@@ -789,5 +966,28 @@ mod tests {
         use zbus::zvariant::Type;
         assert_eq!(Out::SIGNATURE.to_string(), "a{sa{sv}}");
         assert!(hotspot_settings("wlan0")["ipv4"].contains_key("address-data"));
+    }
+
+    #[test]
+    fn parse_wifi_scan() {
+        let text = "\
+*:EvAgi:85:WPA2
+ :Komsu:42:WPA2 WPA3
+ :AcikKafe:60:
+ :Universite:95:WPA2 802.1X
+ :Nokta\\:Isim:70:WPA3
+ :MakerOS:99:
+";
+        let list = parse_wifi_scan_text(text);
+        assert_eq!(list.len(), 5); // MakerOS hotspot çıkarılır
+        assert_eq!(list[0].ssid, "EvAgi");
+        assert!(list[0].active);
+        assert_eq!(list[0].security, "wpa2");
+        assert_eq!(list[1].ssid, "Universite");
+        assert_eq!(list[1].security, "enterprise");
+        assert_eq!(list[2].ssid, "Nokta:Isim");
+        assert_eq!(list[2].security, "wpa3");
+        assert_eq!(list[3].ssid, "AcikKafe");
+        assert_eq!(list[3].security, "open");
     }
 }

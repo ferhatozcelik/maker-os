@@ -1,4 +1,4 @@
-# MakerOS debug: USB-C uzerinden ag (usb-gadget). NetworkManager usb0'a 10.55.0.1 verir.
+# MakerOS debug: USB-C uzerinden ag (usb-gadget). usb0 10.42.0.1 alir.
 [Unit]
 Description=MakerOS debug USB ag karti
 DefaultDependencies=no

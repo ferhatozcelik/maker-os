@@ -11,7 +11,7 @@
 <style>
 body { display: flex; flex-direction: column; height: 100vh; margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-sans); }
 .tb { display: flex; align-items: center; gap: 6px; padding: 4px 10px 4px 84px; min-height: 38px; border-bottom: .5px solid var(--separator); background: var(--bg-window, var(--bg)); position: relative; user-select: none; box-sizing: border-box; }
-html[data-embed=page] .tb, html[data-embed=standalone] .tb, html[data-embed=mobile] .tb { padding-left: 10px; }
+html[data-embed=page] .tb, html[data-embed=mobile] .tb { padding-left: 10px; }
 .nav-cluster { display: inline-flex; align-items: center; gap: 2px; background: var(--bg-hover); border-radius: 8px; padding: 2px; flex: none; }
 .nav-cluster button { width: 28px; height: 26px; display: grid; place-items: center; border: 0; border-radius: 6px; background: none; color: var(--fg); cursor: pointer; transition: background .15s, opacity .15s; }
 .nav-cluster button:hover:not(:disabled) { background: var(--bg-active, rgba(0,0,0,.08)); }
@@ -94,6 +94,6 @@ html[data-embed=page] .tb, html[data-embed=standalone] .tb, html[data-embed=mobi
   </div>
   <div class="hint" hidden><span></span><button class="h-open"></button><button class="x"></button></div>
 </div>
-<script type="module" src="/shell/apps/browser/browser.js?v=1.0.3"></script>
+<script type="module" src="/shell/apps/browser/browser.js?v=1.0.4"></script>
 </body>
 </html>

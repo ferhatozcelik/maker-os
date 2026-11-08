@@ -8,7 +8,7 @@ import { icon } from "./icons.js";
 import { t } from "./i18n.js";
 
 const html = document.documentElement;
-const embedded = (() => { try { return window.parent !== window && !!window.frameElement; } catch { return false; } })();
+const embedded = (() => { try { return window.self !== window.top || (window.parent !== window); } catch { return true; } })();
 const post = m => { if (embedded) parent.postMessage(m, location.origin); };
 const cmds = {};
 // Görünürlük: kabuk {mk:"visibility"} gönderir (küçültme/gizleme/masaüstü); sekme gizlenmesi de sayılır

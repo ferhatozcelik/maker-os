@@ -9,14 +9,14 @@
 #   os/debug/push.sh ssh [komut]  Pi'de kabuk/komut
 #   os/debug/push.sh reset      tüm push'ları geri al (/data/dev silinir, yeniden açılır)
 #
-# Hedef: MAKEROS_HOST (varsayılan 10.55.0.1 = USB). Dosyalar debug imajının /usr katmanına yazılır.
+# Hedef: MAKEROS_HOST (varsayılan 10.42.0.1 = USB/Wi-Fi). Dosyalar debug imajının /usr katmanına yazılır.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 if [ -z "${MAKEROS_HOST:-}" ]; then
 	if ping -c 1 -t 1 10.42.0.1 >/dev/null 2>&1; then
 		HOST="10.42.0.1"
 	else
-		HOST="10.55.0.1"
+		HOST="10.42.0.1"
 	fi
 else
 	HOST="$MAKEROS_HOST"
