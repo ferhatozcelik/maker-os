@@ -17,6 +17,10 @@ MakerOS 2'nin ilk sürümü: Buildroot ile Linux çekirdeği üzerine sıfırdan
 - **makerd** (Rust): tek HTTP portundan API, WebSocket olaylar, terminal, dosyalar, kamera, GPIO,
   Python projeleri, AI ajanları, eklenti mağazası (`makeros-plugins` deposundan doğrudan kurulum ve güncelleme);
   kök yetkili işler dar izin listeli `makerd-priv`'de
+- **makeros-ai (İnternetsiz Türkçe Linux Asistanı):** Qwen2.5-0.5B Q4_K_M ve `llama.cpp` tabanlı yerel asistan;
+  OpenAI uyumlu API, kurallı komut risk sınıflandırması (`SAFE` / `WARNING` / `DANGEROUS`), üç çalıştırma izin modu
+  (*yalnız öneri*, *izin iste*, *otomatik*), masaüstü **AI Asistan** widget'ı, `makeros-ai` terminal istemcisi ve
+  bildirim olay günlüğü (`/run/makeros/olaylar.log`) entegrasyonu
 
 ### Arayüz
 

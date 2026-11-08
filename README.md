@@ -93,7 +93,7 @@ make -C shell smoke                   # kabuk duman testi (başsız Chromium)
 | Chromium | Masaüstünde normal bir pencere: Pi’de çalışan gerçek tarayıcı, ayrı ve görünmez bir ekranda çizilir, yalnız o pencere aktarılır; pencereyle birlikte boyutlanır, kapanınca durur |
 | Dosyalar ve terminal | Dosya yükleme ve indirme; `.py` dosyasına tıklayınca çalışır. Web terminali Pi’nin ekranıyla aynı oturumu paylaşır, telefon için ek tuş çubuğu sunar |
 | Python | `uv` ile sanal ortamlı projeler ve Python sürümleri; hazır şablonlar: LED, buton, I2C tarayıcı, kamera, web, yapay zekâ nesne tespiti |
-| AI ajanları | Claude Code, Codex CLI, Gemini CLI, OpenCode ve Ollama (yerel modeller): tek tıklamayla kur, güncelle, başlat |
+| AI ajanları ve Yerel Asistan | **makeros-ai** (Qwen2.5-0.5B + `llama.cpp` ile internetsiz Türkçe Linux asistanı, risk sınıflandırmalı komut çalıştırma ve masaüstü AI Asistan widget'ı); Claude Code, Codex CLI, Gemini CLI, OpenCode ve Ollama: tek tıklamayla kur, güncelle, başlat |
 | Donanım | GPIO (40 pin), I2C, SPI, UART; Pi kamera ve USB kamera (`libcamera`) |
 | Eklentiler ve Mağaza | Python eklentileri, **Eklenti Mağazası** ([`makeros-plugins`](https://github.com/ferhatozcelik/makeros-plugins) deposundan tek tıkla kurulum ve güncelleme), zip içe/dışa aktarma, hazır şablon; eklentiyle tema, menü çubuğu göstergesi ve masaüstü/web kartı (widget) ekleme |
 | Yazılım güncelleme | Ayarlar › Genel: yeni sürüm GitHub’dan bulunur; imzalı RAUC paketi indirilir, doğrulanır, boştaki bölüme kurulur. Yeni sürüm açılamazsa Pi önceki sürüme kendiliğinden döner; dosyalar ve ayarlar korunur |

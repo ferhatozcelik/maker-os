@@ -93,7 +93,7 @@ make -C shell smoke                   # shell smoke test (headless Chromium)
 | Chromium | A normal window on the desktop: the real browser running on the Pi, drawn on a separate invisible display with only that window streamed; resizes with the window and stops when closed |
 | Files and terminal | Upload and download; click a `.py` file to run it. The web terminal shares its session with the Pi’s screen, with an extra key bar for phones |
 | Python | `uv` projects with virtual environments and Python versions; templates: LED, button, I2C scanner, camera, web, AI object detection |
-| AI agents | Claude Code, Codex CLI, Gemini CLI, OpenCode and Ollama (local models): install, update, run |
+| AI agents and Local Assistant | **makeros-ai** (offline Turkish Linux assistant powered by Qwen2.5-0.5B + `llama.cpp`, risk-classified command execution and desktop AI Assistant widget); Claude Code, Codex CLI, Gemini CLI, OpenCode and Ollama: install, update, run |
 | Hardware | GPIO (40-pin), I2C, SPI, UART; Pi camera and USB cameras (`libcamera`) |
 | Plugins and Store | Python plugins, **Plugin Store** (one-click install and update directly from the [`makeros-plugins`](https://github.com/ferhatozcelik/makeros-plugins) repository), zip import/export, template; plugins can add themes, menu bar indicators and desktop/web widgets |
 | Software update | Settings › General finds a new release on GitHub, downloads and verifies the signed RAUC package and installs it to the spare partition. If the new version fails to start, the Pi returns to the previous one; files and settings are kept |
