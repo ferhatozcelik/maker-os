@@ -120,19 +120,28 @@ pkg_files() {
 }
 
 # export_bin <yol> <paket>: ~/.local/bin altina kutuya yonlenen kucuk bir betik yazar.
+# Statik ikili dosyalar (or. cloudflared vb.) dogrudan /usr/local/bin altina kopyalanir.
 export_bin() {
 	path="$1"; pkg="$2"; cmd="${path##*/}"; dst="${BIN_DIR}/${cmd}"
 	if PATH="${SYS_PATH}" command -v "${cmd}" >/dev/null 2>&1; then
-		echo "mos: '${cmd}' MakerOS'ta zaten var; aktarilmadi (kutuda: mos box run ${PKG_BOX} -- ${cmd})" >&2
-		return 1
+		[ -f "/usr/local/bin/${cmd}" ] || {
+			echo "mos: '${cmd}' MakerOS'ta zaten var; aktarilmadi (kutuda: mos box run ${PKG_BOX} -- ${cmd})" >&2
+			return 1
+		}
 	fi
-	if [ -e "${dst}" ] && ! grep -q "^${EXPORT_TAG}" "${dst}" 2>/dev/null; then
+	if [ -e "${dst}" ] && ! grep -q "^${EXPORT_TAG}" "${dst}" 2>/dev/null && [ ! -L "${dst}" ]; then
 		echo "mos: ${dst} size ait; uzerine yazilmadi" >&2
 		return 1
 	fi
 	mkdir -p "${BIN_DIR}"
-	printf '#!/bin/sh\n%s %s/%s\nexec mos box run %s -- %s "$@"\n' "${EXPORT_TAG}" "${PKG_BOX}" "${pkg}" "${PKG_BOX}" "${path}" > "${dst}"
-	chmod 0755 "${dst}"
+	is_static=$(box_exec "${PKG_BOX}" root sh -c 'ldd "$1" 2>&1 | grep -q "not a dynamic" && echo 1 || true' sh "${path}" 2>/dev/null)
+	if [ "${is_static}" = "1" ] && [ -d /usr/local/bin ] && [ -w /usr/local/bin ]; then
+		podman cp "${BOX_PREFIX}${PKG_BOX}:${path}" "/usr/local/bin/${cmd}" 2>/dev/null && chmod 0755 "/usr/local/bin/${cmd}" || true
+		ln -sf "/usr/local/bin/${cmd}" "${dst}"
+	else
+		printf '#!/bin/sh\n%s %s/%s\nexec mos box run %s -- %s "$@"\n' "${EXPORT_TAG}" "${PKG_BOX}" "${pkg}" "${PKG_BOX}" "${path}" > "${dst}"
+		chmod 0755 "${dst}"
+	fi
 	echo "${dst}"
 }
 

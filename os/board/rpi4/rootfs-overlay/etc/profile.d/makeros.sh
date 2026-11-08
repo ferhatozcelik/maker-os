@@ -1,5 +1,5 @@
 # MakerOS kabuk ortami
-export PATH="$HOME/.local/bin:/opt/node/bin:/opt/data/bin:$PATH"
+export PATH="/usr/local/bin:$HOME/.local/bin:/opt/node/bin:/opt/data/bin:$PATH"
 # uv: Python kurulumlari ve onbellek kullanicinin evinde (/data)
 export UV_PYTHON_INSTALL_DIR="$HOME/.local/share/uv/python"
 export UV_LINK_MODE=copy

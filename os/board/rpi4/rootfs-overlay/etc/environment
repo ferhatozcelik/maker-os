@@ -1,1 +1,1 @@
-PATH=/home/makeros/.local/bin:/opt/node/bin:/opt/data/bin:/usr/local/bin:/usr/bin:/bin
+PATH=/usr/local/bin:/home/makeros/.local/bin:/opt/node/bin:/opt/data/bin:/usr/bin:/bin
