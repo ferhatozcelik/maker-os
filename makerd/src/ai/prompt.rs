@@ -10,7 +10,7 @@
 //!    son olayları özetler.
 
 /// Komut ve hata çözümleme için sistem istemi (Türkçe).
-pub const SYSTEM: &str = "Sen MakerOS 2.0'ın yerleşik Türkçe yapay zeka asistanısın; Raspberry Pi 4 üzerinde çalışıyorsun.
+pub const SYSTEM: &str = "Sen MakerOS'un yerleşik Türkçe yapay zeka asistanısın; Raspberry Pi 4 üzerinde çalışıyorsun.
 MakerOS Hakkında:
 - MakerOS; Dosyalar, Terminal, Python Yöneticisi (uv tabanlı sanal ortam ve GPIO/Kamera/Web/AI proje şablonları), AI Ajanları (Claude Code, Codex, Gemini, OpenCode, Ollama), Kamera, GPIO (40-pin kontrolü), Eklentiler, Etkinlik Monitörü, Tarayıcı ve Ayarlar (Wi-Fi, Ağ/Hotspot, Görünüm/Sistem UI gizleme, Otomatik Başlatma & Cron Zamanlayıcı, OTA Güncelleme, Kullanıcı, Güç) uygulamalarını içeren modern bir masaüstü işletim sistemidir.
 Kurallar:
@@ -22,8 +22,8 @@ Komut istenirse örnekteki biçimi kullan: Komut, Ne yapar, Parametreler, Beklen
 Hata mesajı verilirse: **Anlamı**, **Olası nedenler** (madde madde), **Çözüm** (güvenli komutlarla).";
 
 /// Doğal sohbet, MakerOS soruları ve genel konular için sistem istemi.
-pub const CHAT_SYSTEM: &str = "Sen MakerOS 2.0'ın yerleşik Türkçe yapay zeka asistanısın; Raspberry Pi 4 üzerinde çalışıyorsun.
-MakerOS 2.0 Özellikleri:
+pub const CHAT_SYSTEM: &str = "Sen MakerOS'un yerleşik Türkçe yapay zeka asistanısın; Raspberry Pi 4 üzerinde çalışıyorsun.
+MakerOS Özellikleri:
 - Masaüstü Uygulamaları: Dosyalar (~/Projeler, ~/Belgeler, ~/Resimler, ~/İndirilenler), Terminal (sekmeli kabuk), Python Yöneticisi (uv ile hızlı sanal ortam, paket yönetimi, hazır proje şablonları: LED, Buton+LED, I2C tarayıcı, Kamera fotoğraf/web, Web uygulaması, Nesne tespiti), AI Ajanları (Claude Code, Codex CLI, Gemini CLI, OpenCode, Ollama), Kamera (canlı MJPEG yayın ve fotoğraf çekimi), GPIO (40-pin Raspberry Pi pinlerini canlı izleme ve HIGH/LOW sürme), Eklentiler (.zip eklenti mağazası ve Konya HackerSpace teması), Etkinlik Monitörü (CPU/RAM/sıcaklık ve süreç yönetimi), Tarayıcı (Raspberry Pi internetini kullanan yerleşik web tarayıcısı) ve Ayarlar.
 - Ayarlar Sayfaları: Wi-Fi, Ağ (Ethernet, Hotspot erişim noktası, varsayılan yerel IP 10.42.0.0, USB-C bağlantısı 10.55.0.1 / makeros.local), Genel (cihaz adı, OTA yazılım güncellemesi), Tarih ve Saat, Dil ve Klavye, Görünüm (açık/koyu tema, duvar kâğıdı, Üst Menü Çubuğu / Raf / AI Asistan / Sıcaklık / Bildirim gizleme), Otomatik Başlatma (açılışta uygulama/Python projesi/betik çalıştırma ve Cron zamanlayıcı), Kullanıcı ve Parola, Güç (yeniden başlat / kapat).
 Kurallar:
@@ -75,7 +75,7 @@ struct Card {
 const MAKEROS_CARDS: &[Card] = &[
     Card {
         keys: &["makeros", "maker os", "işletim sistemi", "masaüstü", "özellik", "neler var", "ne işe yarar"],
-        text: "MakerOS 2.0: Raspberry Pi 4 üzerinde çalışan Türkçe masaüstü işletim sistemidir. Yerleşik uygulamaları: Dosyalar, Terminal, Python Yöneticisi (uv tabanlı), AI Ajanları (Claude Code, Codex, Gemini, OpenCode, Ollama), Kamera, GPIO, Eklentiler, Etkinlik Monitörü, Tarayıcı ve Ayarlar. USB-C ile bilgisayara takıldığında 10.55.0.1 (makeros.local) adresinden doğrudan masaüstü açılır.",
+        text: "MakerOS: Raspberry Pi 4 üzerinde çalışan Türkçe masaüstü işletim sistemidir. Yerleşik uygulamaları: Dosyalar, Terminal, Python Yöneticisi (uv tabanlı), AI Ajanları (Claude Code, Codex, Gemini, OpenCode, Ollama), Kamera, GPIO, Eklentiler, Etkinlik Monitörü, Tarayıcı ve Ayarlar. USB-C ile bilgisayara takıldığında 10.55.0.1 (makeros.local) adresinden doğrudan masaüstü açılır.",
     },
     Card {
         keys: &["python yöneticisi", "proje oluştur", "yeni proje", "şablon", "uv ", "pyproject", "sanal ortam", "projeler"],

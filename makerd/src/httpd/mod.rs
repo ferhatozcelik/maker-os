@@ -154,7 +154,7 @@ impl Server {
             .route("/api/v1/term/{id}", get(ws::term_ws).delete(ws::term_close))
             .route("/api/v1/term/{id}/ticket", post(ws::term_ticket))
             .route("/api/v1/events", get(ws::events_ws))
-            .route("/api/v1/browse", get(api::browse).post(api::browse))
+            .route("/api/v1/browse", get(api::browse).post(api::browse).options(api::browse_options))
             .route("/api/v1/wallpaper/{name}", get(api::wallpaper_get).put(api::wallpaper_put).delete(api::wallpaper_delete))
             .route("/api/v1/browse/ticket", post(api::browse_ticket))
             .route("/api/v1/system/update", get(api::update_status))
@@ -241,7 +241,7 @@ async fn guard(req: Request, next: Next) -> Response {
     let start = Instant::now();
     let (method, path) = (req.method().clone(), req.uri().path().to_string());
     let api = path.starts_with("/api/");
-    let csrf_bad = api && matches!(method, Method::POST | Method::PUT | Method::DELETE | Method::PATCH) && req.headers().get("x-maker").map(|v| v.as_bytes()) != Some(b"1");
+    let csrf_bad = api && path != "/api/v1/browse" && matches!(method, Method::POST | Method::PUT | Method::DELETE | Method::PATCH) && req.headers().get("x-maker").map(|v| v.as_bytes()) != Some(b"1");
     let mut res = if csrf_bad {
         ApiError::forbidden("Geçersiz istek (X-Maker başlığı eksik).").into_response()
     } else {

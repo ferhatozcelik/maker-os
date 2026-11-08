@@ -1,6 +1,6 @@
-# MakerOS 2 — işletim sistemi ağacı (`os/`)
+# MakerOS — işletim sistemi ağacı (`os/`)
 
-Bu dizin, MakerOS 2'nin Raspberry Pi 4 / 400 imajını üreten **Buildroot
+Bu dizin, MakerOS'un Raspberry Pi 4 / 400 imajını üreten **Buildroot
 `BR2_EXTERNAL` ağacıdır** (adı `MAKEROS`). Derleme tamamen Docker içinde
 yapılır; Mac'e (veya Linux'a) Docker dışında hiçbir araç kurulmaz.
 
@@ -23,7 +23,7 @@ Gereken: Docker (Mac'te colima, arm64 yerel; önerilen 6 CPU / 10 GB RAM / 80 GB
 cd os
 ./build.sh defconfig      # makeros_rpi4_defconfig'i uygula
 ./build.sh build          # tam derleme (ilk sefer ~1,5–3 saat)
-# sonuç: os/out/makeros-2.0.0-rpi4.img.xz (+ .sha256)
+# sonuç: os/out/makeros-1.0.0-rpi4.img.xz (+ .sha256)
 ```
 
 Diğer komutlar:
@@ -103,7 +103,7 @@ nedeniyle); `.xz` hâli çok daha küçüktür.
 
 ```
 os/
-  build.sh  docker/Dockerfile  VERSION (2.0.0)
+  build.sh  docker/Dockerfile  VERSION (1.0.0)
   external.desc  external.mk  Config.in
   configs/makeros_rpi4_defconfig
   patches/linux/linux.hash               sabit çekirdek tarball'unun sha256'sı

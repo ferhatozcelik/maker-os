@@ -11,8 +11,17 @@ import { BOOKMARKS } from "/shell/js/bookmarks.js";
 
 app.init({ title: t("app.browser"), standaloneBar: false });
 
-const SEARCH = q => "https://html.duckduckgo.com/html/?q=" + encodeURIComponent(q);
+const SEARCH = q => "https://www.google.com/search?igu=1&hl=tr&q=" + encodeURIComponent(q);
 const EMBED = new URLSearchParams(location.search).get("embed") === "1";
+// Yerel ekran (cog → 127.0.0.1): window.open gerçek bir sekme açamaz; sayfa yerel Chromium penceresinde açılır.
+// Cloudflare gibi bot doğrulamaları yalnız gerçek tarayıcıda geçilebilir (doğrulamayı kullanıcı orada yapar).
+const KIOSK = /^(localhost|127(\.\d{1,3}){3}|\[::1\])$/i.test(location.hostname);
+async function openExt(u) {
+  if (!u) return;
+  if (!KIOSK) { window.open(u, "_blank", "noopener"); return; }
+  try { await post("/apps/chromium/launch", { url: u }); showHint(t("br.inChromium")); }
+  catch (e) { showHint(t("br.failed") + ": " + e.message); }
+}
 
 const page = $(".page"), home = $(".home"), addr = $(".addr"), hint = $(".hint");
 if (EMBED) { $(".tb").hidden = true; $(".bm").hidden = true; }
@@ -23,12 +32,12 @@ btn(fwd, "chevron-right", t("br.forward"), () => go(hist[++pos], false));
 btn($(".b-reload"), "rotate-cw", t("br.reload"), () => cur && load(cur));
 btn($(".b-home"), "house", t("br.home"), () => go("", true));
 const extBtn = $(".b-ext");
-if (extBtn) extBtn.hidden = true;
+if (extBtn) btn(extBtn, "external-link", t("br.newTab"), () => openExt(cur));
 addr.placeholder = t("br.placeholder");
-// Başlangıç: web araması + maker sık kullanılanları (tümü pencerede açılır).
+// Başlangıç: Google araması + maker sık kullanılanları.
 const q = home.querySelector(".q");
 q.placeholder = t("br.placeholder");
-home.querySelector(".go").textContent = "Ara";
+home.querySelector(".go").textContent = t("br.searchGoogle");
 home.querySelector("p").textContent = "";
 home.querySelector(".hs").onsubmit = e => { e.preventDefault(); submit(q.value); };
 home.querySelector(".groups").append(...BOOKMARKS.map(g => h("div.grp", h("h3", g.name),
@@ -51,16 +60,23 @@ $(".bm").append(...BOOKMARKS.map(g => {
 }));
 addEventListener("click", closeMenu);
 addEventListener("blur", closeMenu);
-hint.querySelector("span").textContent = t("br.failed");
-hint.querySelector(".h-open").textContent = t("br.reload");
-hint.querySelector(".h-open").onclick = () => cur && load(cur);
+hint.querySelector("span").textContent = t("br.blocked");
+hint.querySelector(".h-open").textContent = t("br.openTab");
+hint.querySelector(".h-open").onclick = () => openExt(cur);
 hint.querySelector(".x").innerHTML = icon("x", 12, 2.4);
 hint.querySelector(".x").onclick = () => { hint.hidden = true; };
 
 let frame = null, cur = "", hist = [""], pos = 0, tk = null;
+// Bot korumalı alan adları (makerd bildirir): yerel ekranda vekile hiç gitmeden Chromium'da açılır.
+const walled = new Set();
+const hostOf = u => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return ""; } };
+const isWalled = u => { const x = hostOf(u); return !!x && [...walled].some(w => x === w || x.endsWith("." + w)); };
 // Aktarım bileti (makerd, oturuma bağlı; 12 sa). Saatte bir yenilenir.
 async function ticket() {
-  if (!tk || Date.now() - tk.at > 3600e3) { const r = await post("/browse/ticket"); tk = { v: r.ticket, at: Date.now() }; }
+  if (!tk || Date.now() - tk.at > 3600e3) {
+    const r = await post("/browse/ticket"); tk = { v: r.ticket, at: Date.now() };
+    (r.walled || []).forEach(w => walled.add(String(w).replace(/^www\./, "")));
+  }
   return tk.v;
 }
 ticket().catch(() => {});
@@ -96,24 +112,35 @@ async function load(u) {
     frame?.remove();
     const own = local.origin === location.origin;
     frame = h("iframe", { src: local.href, allow: "fullscreen; clipboard-write; autoplay; camera; microphone",
-      sandbox: "allow-scripts allow-forms allow-modals allow-downloads" + (own ? "" : " allow-same-origin") });
+      sandbox: "allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals allow-downloads" + (own ? "" : " allow-same-origin") });
+    page.append(frame);
+    return;
+  }
+  // Google araması (?igu=1): X-Frame-Options göndermez; doğrudan iframe içinde kendi kökeninde çalışır.
+  if (/^https:\/\/(www\.)?google\.com\/search\b/i.test(u)) {
+    frame?.remove();
+    frame = h("iframe", { src: u, allow: "fullscreen; clipboard-write; autoplay",
+      sandbox: "allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals allow-downloads" });
     page.append(frame);
     return;
   }
   let v;
   try { v = await ticket(); } catch (e) { showHint(e.message); return; }
   if (u !== cur) return; // bu arada başka adrese geçildi
+  if (KIOSK && isWalled(u)) { frame?.remove(); frame = null; openExt(u); return; }
   frame?.remove();
   frame = h("iframe", { src: proxied(v, u), allow: "fullscreen; clipboard-write; autoplay",
-    sandbox: "allow-scripts allow-forms allow-modals allow-downloads" });
+    sandbox: "allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals allow-downloads" });
   page.append(frame);
 }
 
 // Aktarılan sayfa her açılışta adresini/başlığını bildirir (sayfa içi bağlantılar da aktarımdan geçer).
 addEventListener("message", e => {
   if (!frame || e.source !== frame.contentWindow || !e.data?.mkBrowse) return;
-  const { url, title, error, expired } = e.data;
+  const { url, title, error, expired, open, walled: wall } = e.data;
   if (typeof url !== "string" || !/^https?:/i.test(url)) return;
+  if (open) { openExt(url); return; }
+  if (wall) { const x = hostOf(url); if (x) walled.add(x); if (KIOSK) { openExt(url); return; } }
   if (expired) { if (!retried) { retried = true; tk = null; load(cur); } else showHint(t("br.failed")); return; }
   retried = false;
   if (url !== cur) {

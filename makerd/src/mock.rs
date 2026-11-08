@@ -526,7 +526,7 @@ mod tests {
         let st = State::new();
         assert!(Checker(st.clone()).check("maker", "maker").await.unwrap().ok);
         assert!(!Checker(st.clone()).check("maker", "x").await.unwrap().ok);
-        let sys = System::new(st.clone(), "2.0.0");
+        let sys = System::new(st.clone(), "1.0.0");
         assert_eq!(sys.set_password("maker", "yanlis", "yeni-parola").await.unwrap_err().code, "forbidden");
         sys.set_password("maker", "maker", "yeni-parola").await.unwrap();
         assert!(Checker(st.clone()).check("maker", "yeni-parola").await.unwrap().ok);

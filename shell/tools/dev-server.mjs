@@ -28,11 +28,11 @@ let hostname = "makeros", tz = "Europe/Istanbul", ntp = true, locale = { lang: "
 let load = [0.42, 0.38, 0.31], usage = 12, temp = 47.5, memUsed = 1.1e9;
 const knownWifi = new Set(["Atölye", "eduroam"]);
 let activeSsid = FRESH ? "" : "Atölye";
-// Yazılım güncellemesi benzetimi: 2.0.1 yayında; kurulum ~12 sn sürer (indirme → doğrulama → kurulum → yeniden başlatma).
+// Yazılım güncellemesi benzetimi: 1.0.1 yayında; kurulum ~12 sn sürer (indirme → doğrulama → kurulum → yeniden başlatma).
 const update = { checked: "", started: 0 };
 const updateState = () => {
-  const st = { current: "2.0.0", repo: "ferhatozcelik/maker-os", checked: update.checked || undefined, phase: "idle", progress: 0, can_apply: true,
-    available: { version: "2.0.1", tag: "v2.0.1", name: "MakerOS 2.0.1", notes: "- Ekran Modu varsayılan kapalı\n- Chromium penceresi\n- Yazılım güncelleme", published: "2026-11-05T10:00:00Z", url: "https://github.com/ferhatozcelik/maker-os/releases", size: 420e6 } };
+  const st = { current: "1.0.0", repo: "ferhatozcelik/maker-os", checked: update.checked || undefined, phase: "idle", progress: 0, can_apply: true,
+    available: { version: "1.0.1", tag: "v1.0.1", name: "MakerOS 1.0.1", notes: "- Yerel AI Asistanı ve sohbet modu\n- Otomatik Başlatma ve Cron zamanlayıcı\n- Yazılım güncelleme iyileştirmeleri", published: "2026-11-08T10:00:00Z", url: "https://github.com/ferhatozcelik/maker-os/releases", size: 420e6 } };
   if (update.started) {
     const p = Math.min(100, Math.round((Date.now() - update.started) / 120));
     Object.assign(st, { progress: p, phase: p < 60 ? "downloading" : p < 62 ? "verifying" : p < 100 ? "installing" : "rebooting",
@@ -42,7 +42,7 @@ const updateState = () => {
 };
 const notifications = [
   { id: "n1", app: "makeros.system", title: "MakerOS'a hoş geldiniz", body: "Kısayollar için Ayarlar → Klavye bölümüne bakın.", time: new Date(t0 - 6e5).toISOString(), read: false },
-  { id: "n2", app: "makeros.update", title: "Sistem güncel", body: "MakerOS 2.0.0-dev çalışıyor.", time: new Date(t0 - 36e5).toISOString(), read: true },
+  { id: "n2", app: "makeros.update", title: "Sistem güncel", body: "MakerOS 1.0.0 çalışıyor.", time: new Date(t0 - 36e5).toISOString(), read: true },
 ];
 const procNames = ["makerd", "cog", "WPEWebProcess", "WPENetworkProcess", "cage", "systemd", "NetworkManager", "systemd-journald", "bash", "python3", "node", "wpa_supplicant", "systemd-resolved", "rauc", "dbus-daemon", "zram-mon", "kworker/0:1", "avahi-daemon"];
 const procs = procNames.map((name, i) => ({ pid: [412, 655, 702, 703, 640, 1, 380, 210, 1288, 1402, 1530, 395, 301, 520, 290, 233, 18, 344][i], name,
@@ -59,7 +59,7 @@ setInterval(() => {
   load = [wobble(load[0], .3, .05, 3.8), wobble(load[1], .08, .05, 3), wobble(load[2], .03, .05, 2.5)];
   for (const p of procs) p.cpu_pct = Math.max(0, +(Math.random() ** 3 * (p.name === "cog" || p.name.startsWith("WPE") ? 30 : 12)).toFixed(1));
 }, 1000);
-const system = () => ({ hostname, os: { name: "MakerOS", version: "2.0.0-dev" }, kernel: "6.18.4-v8+ #1 SMP PREEMPT", model: "Raspberry Pi 4 Model B Rev 1.5",
+const system = () => ({ hostname, os: { name: "MakerOS", version: "1.0.0" }, kernel: "6.18.4-v8+ #1 SMP PREEMPT", model: "Raspberry Pi 4 Model B Rev 1.5",
   uptime_s: Math.round((Date.now() - t0) / 1000) + 8040,
   cpu: { cores: 4, freq_mhz: Math.round(1200 + usage * 6), temp_c: +temp.toFixed(1), load: load.map(v => +v.toFixed(2)), usage_pct: +usage.toFixed(1) },
   mem: { total: 4031e6, used: Math.round(memUsed), available: Math.round(4031e6 - memUsed), zram_used: 12e6 }, disk: { total: 31.2e9, used: 6.4e9 }, throttled: false });
@@ -280,7 +280,7 @@ function fakeShell(ws, t) {
       ls: "\x1b[1;34mMasaüstü  Projeler  Belgeler\x1b[0m  notlar.txt  blink.py", pwd: "/home/maker", whoami: "maker",
       uname: a[0] === "-a" ? "Linux " + hostname + " 6.18.4-v8+ #1 SMP PREEMPT aarch64 GNU/Linux" : "Linux", date: new Date().toString(), echo: a.join(" "),
       clear: "\x1b[2J\x1b[H", python3: "Python 3.13.5 (sahte) — gerçek yorumlayıcı makerd ile gelir.",
-      neofetch: `\x1b[1;31m  ███╗   ███╗\x1b[0m  maker@${hostname}\n\x1b[1;31m  ████╗ ████║\x1b[0m  OS: MakerOS 2.0.0-dev aarch64\n\x1b[1;31m  ██╔████╔██║\x1b[0m  Host: Raspberry Pi 4 Model B\n\x1b[1;31m  ██║╚██╔╝██║\x1b[0m  Kernel: 6.18.4-v8+\n\x1b[1;31m  ██║ ╚═╝ ██║\x1b[0m  CPU: BCM2711 (4) @ 1.8GHz\n\x1b[1;31m  ╚═╝     ╚═╝\x1b[0m  Bellek: ${(memUsed / 1e9).toFixed(1)} GB / 4.0 GB`,
+      neofetch: `\x1b[1;31m  ███╗   ███╗\x1b[0m  maker@${hostname}\n\x1b[1;31m  ████╗ ████║\x1b[0m  OS: MakerOS 1.0.0 aarch64\n\x1b[1;31m  ██╔████╔██║\x1b[0m  Host: Raspberry Pi 4 Model B\n\x1b[1;31m  ██║╚██╔╝██║\x1b[0m  Kernel: 6.18.4-v8+\n\x1b[1;31m  ██║ ╚═╝ ██║\x1b[0m  CPU: BCM2711 (4) @ 1.8GHz\n\x1b[1;31m  ╚═╝     ╚═╝\x1b[0m  Bellek: ${(memUsed / 1e9).toFixed(1)} GB / 4.0 GB`,
     }[c];
     if (c === "exit") { out("çıkış\n"); setTimeout(() => ws.socket.end(), 50); return; }
     out((r ?? `${c}: komut bulunamadı`) + (r === "\x1b[2J\x1b[H" || r === "" ? "" : "\n"));

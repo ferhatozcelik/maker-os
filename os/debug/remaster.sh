@@ -35,7 +35,7 @@ docker run --rm -i \
 	debian:trixie-slim bash -s <<'EOS'
 set -euo pipefail
 apt-get update -qq >/dev/null
-apt-get install -y -qq xz-utils erofs-utils mtools fdisk gzip rauc openssl >/dev/null 2>&1
+apt-get install -y -qq xz-utils erofs-utils mtools fdisk gzip rauc openssl squashfs-tools >/dev/null 2>&1
 cd /r
 if [ ! -f base.img ]; then
 	echo "taban açılıyor…"; xz -T0 -dc "$BASE" > base.img
@@ -51,6 +51,22 @@ put() { (cd "$1" && tar cf - --exclude=.DS_Store .) | tar -C "$R" -xf - --no-sam
 
 # rootfs-overlay (depodaki güncel hâl) + depodan silinmiş eski dosyalar
 put /src/os/board/rpi4/rootfs-overlay
+rm -f $R/etc/os-release
+cat > $R/usr/lib/os-release <<OSREL
+NAME="MakerOS"
+PRETTY_NAME="MakerOS ${VERSION}"
+ID=makeros
+VERSION="${VERSION}"
+VERSION_ID=${VERSION%%-*}
+BUILD_ID=$(date -u +%Y%m%d%H%M)
+IMAGE_ID=makeros-rpi4
+IMAGE_VERSION=${VERSION}
+HOME_URL="https://github.com/ferhatozcelik/maker-os"
+SUPPORT_URL="https://github.com/ferhatozcelik/maker-os/issues"
+ANSI_COLOR="0;36"
+OSREL
+ln -sf ../usr/lib/os-release $R/etc/os-release
+echo "${VERSION}" > $R/etc/makeros-version
 rm -rf $R/usr/lib/makeros/browser-session $R/usr/lib/systemd/user/makeros-browser.service $R/usr/share/makeros/labwc-browser
 rm -rf $R/usr/bin/wayvnc $R/usr/bin/wayvncctl $R/usr/lib/libneatvnc.so* $R/usr/lib/libaml.so* $R/usr/lib/systemd/user/makeros-vnc.service $R/usr/share/makeros/shell
 install -m 0755 /src/os/package/makeros-firstboot/files/makeros-firstboot $R/usr/lib/makeros/firstboot
@@ -75,7 +91,7 @@ ln -sf /usr/lib/systemd/system/makeros-ai.service $R/etc/systemd/system/multi-us
 
 # llama.cpp (os/package/llama-cpp ile aynı yerleşim)
 if [ -d /llama/bin ]; then
-	install -m 0755 /llama/bin/llama-server /llama/bin/llama-cli /llama/bin/llama-bench $R/usr/bin/
+	install -m 0755 /llama/bin/llama-server /llama/bin/llama-cli $R/usr/bin/
 	install -D -m 0644 /llama/LICENSE $R/usr/share/licenses/llama.cpp/LICENSE
 fi
 

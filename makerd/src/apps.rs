@@ -121,6 +121,12 @@ impl Registry {
 
     /// Uygulamayı başlatır: web → invalid (kabuk açar), yok → not_found.
     pub async fn start(&self, id: &str) -> ApiResult<()> {
+        self.start_with(id, None).await
+    }
+
+    /// Uygulamayı bir adresle başlatır (ör. Chromium'da sayfa). Adres yalnız http(s) olabilir ve
+    /// yalnız Exec satırında %u/%U alan kodu olan uygulamalara verilir (bayrak olarak yorumlanamaz).
+    pub async fn start_with(&self, id: &str, url: Option<&str>) -> ApiResult<()> {
         let a = self.list().into_iter().find(|a| a.id == id).ok_or_else(|| ApiError::not_found("Uygulama bulunamadı."))?;
         if a.kind == "web" {
             return Err(ApiError::invalid("Web uygulamalarını kabuk kendisi açar."));
@@ -128,6 +134,16 @@ impl Registry {
         let mut argv = if a.argv.is_empty() { split_exec(&a.exec) } else { a.argv.clone() };
         if argv.is_empty() {
             return Err(ApiError::invalid("Uygulamanın Exec satırı boş."));
+        }
+        if let Some(u) = url.map(str::trim).filter(|u| !u.is_empty()) {
+            let parsed = url::Url::parse(u).map_err(|_| ApiError::invalid("Geçersiz adres."))?;
+            if !matches!(parsed.scheme(), "http" | "https") {
+                return Err(ApiError::invalid("Yalnız http(s) adresleri açılabilir."));
+            }
+            if !accepts_url(&a.exec) {
+                return Err(ApiError::invalid("Bu uygulama adres açamaz."));
+            }
+            argv.push(parsed.to_string());
         }
         if a.terminal {
             argv.insert(0, "foot".into());
@@ -175,9 +191,28 @@ pub fn parse_desktop(path: &Path) -> Option<App> {
     })
 }
 
+/// Exec satırı adres kabul ediyor mu (%u / %U alan kodu)?
+pub fn accepts_url(exec: &str) -> bool {
+    split_raw(exec).iter().any(|a| a == "%u" || a == "%U")
+}
+
 /// Exec satırını (çift tırnak ve ters bölü kaçışlarıyla) argümanlara böler ve
 /// alan kodlarını (%f %U ...) kaldırır. Kabuk kullanılmaz.
 pub fn split_exec(s: &str) -> Vec<String> {
+    split_raw(s)
+        .into_iter()
+        .filter_map(|a| {
+            let b = a.as_bytes();
+            if b.len() == 2 && b[0] == b'%' {
+                return (b[1] == b'%').then(|| "%".to_string()); // %f %F %u %U %i %c %k ...
+            }
+            Some(a.replace("%%", "%"))
+        })
+        .collect()
+}
+
+/// Exec satırını alan kodlarına dokunmadan argümanlara böler.
+fn split_raw(s: &str) -> Vec<String> {
     let mut out = Vec::new();
     let mut cur = String::new();
     let (mut in_q, mut has, mut esc) = (false, false, false);
@@ -202,15 +237,7 @@ pub fn split_exec(s: &str) -> Vec<String> {
     if has || !cur.is_empty() {
         out.push(cur);
     }
-    out.into_iter()
-        .filter_map(|a| {
-            let b = a.as_bytes();
-            if b.len() == 2 && b[0] == b'%' {
-                return (b[1] == b'%').then(|| "%".to_string()); // %f %F %u %U %i %c %k ...
-            }
-            Some(a.replace("%%", "%"))
-        })
-        .collect()
+    out
 }
 
 fn sanitize(s: &str) -> String {
@@ -287,6 +314,14 @@ mod tests {
         ] {
             assert_eq!(split_exec(i), w, "{i}");
         }
+    }
+
+    #[test]
+    fn url_field_codes() {
+        assert!(accepts_url("chromium %U"));
+        assert!(accepts_url("firefox %u"));
+        assert!(!accepts_url("thonny %F"));
+        assert!(!accepts_url("app 100%%U"));
     }
 
     #[tokio::test]

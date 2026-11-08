@@ -46,7 +46,7 @@ export function mountDock(root) {
   }
 
   function render() {
-    const pins = pinned(), running = [...new Set(S.wm.list().map(w => w.app.id))].filter(id => !pins.includes(id));
+    const pins = pinned(), running = [...new Set(S.wm.list().map(w => w.app.id))].filter(id => !pins.includes(id) && appById(id));
     items.clear();
     const lp = item({ id: "launchpad", name: t("dock.apps"), icon: themeIcon(pref("look"), "launchpad", "/shell/icons/launchpad.svg") }, true);
     const kids = [lp, ...pins.map(id => item(appById(id))), ...(running.length ? [h("div.dsep")] : []), ...running.map(id => item(appById(id)))];

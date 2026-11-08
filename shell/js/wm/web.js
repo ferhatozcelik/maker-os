@@ -23,15 +23,10 @@ class MkWindow extends HTMLElement {
     tb.addEventListener("pointermove", e => { if (!e.buttons && e.pointerType === "mouse" && this.#hit(e)) tb.classList.add("pass"); });
     tb.addEventListener("dblclick", e => { if (!e.target.closest(".traffic") && !this.#hit(e)) wm.zoom(win); });
     this.tb = tb;
-    // Dış site (ör. Konya HackerSpace): host PC internetini değil, Raspberry Pi'nin internetini (/api/v1/browse) kullanır.
-    let ext = false;
-    try { ext = new URL(win.app.url, location.href).origin !== location.origin; } catch { /* geçersiz adres */ }
-    if (ext) this.classList.add("ext");
-    const frameSrc = ext
-      ? `/shell/apps/browser/?embed=1#${encodeURIComponent(win.app.url)}`
-      : win.app.url + (win.path ? "#" + win.path : "");
-    this.frame = h("iframe", { src: frameSrc, title: win.app.name, allow: "clipboard-read; clipboard-write; fullscreen; camera; microphone" });
+    this.frame = h("iframe", { src: win.app.url + (win.path ? "#" + win.path : ""), title: win.app.name, allow: "clipboard-read; clipboard-write; fullscreen; camera; microphone" });
     this.frame.addEventListener("load", () => this.#bind());
+    // Dış site (ör. Konya HackerSpace): başlık çubuğu için ayrı şerit; içerik onun altında başlar.
+    try { if (new URL(win.app.url, location.href).origin !== location.origin) this.classList.add("ext"); } catch { /* geçersiz adres */ }
     this.append(tb, h("div.body", this.frame, h("div.spin", { html: icon("loader-circle", 22) })));
     for (const d of ["n", "s", "e", "w", "ne", "nw", "se", "sw"]) this.append(h("div.rz", { "data-d": d, onpointerdown: e => this.#resize(e, d) }));
     this.addEventListener("pointerdown", () => wm.focus(win), true);

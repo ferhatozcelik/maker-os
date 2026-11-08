@@ -1,8 +1,8 @@
-# Değişiklik günlüğü
+# Değişiklik Günlüğü
 
-## 2.0.0
+## 1.0.0
 
-MakerOS 2'nin ilk sürümü: Buildroot ile Linux çekirdeği üzerine sıfırdan kurulan bağımsız sistem.
+MakerOS'un ilk kararlı sürümü: Buildroot ile Linux çekirdeği üzerine sıfırdan kurulan bağımsız işletim sistemi.
 
 ### Sistem
 
@@ -15,26 +15,25 @@ MakerOS 2'nin ilk sürümü: Buildroot ile Linux çekirdeği üzerine sıfırdan
 - **Ekransız kurulum:** `wifi.txt` ya da şifresiz `MakerOS` kurulum ağı; tek adımlı ilk açılış sihirbazı
   (varsayılan `makeros` / `makeros` hesabı)
 - **makerd** (Rust): tek HTTP portundan API, WebSocket olaylar, terminal, dosyalar, kamera, GPIO,
-  Python projeleri, AI ajanları, eklenti mağazası (`makeros-plugins` deposundan doğrudan kurulum ve güncelleme);
+  Python projeleri, Otomatik Başlatma ve Cron zamanlayıcı, AI ajanları, eklenti mağazası (`makeros-plugins` deposundan doğrudan kurulum ve güncelleme);
   kök yetkili işler dar izin listeli `makerd-priv`'de
 - **makeros-ai (İnternetsiz Türkçe Linux Asistanı):** Qwen2.5-0.5B Q4_K_M ve `llama.cpp` tabanlı yerel asistan;
-  OpenAI uyumlu API, kurallı komut risk sınıflandırması (`SAFE` / `WARNING` / `DANGEROUS`), üç çalıştırma izin modu
-  (*yalnız öneri*, *izin iste*, *otomatik*), masaüstü **AI Asistan** widget'ı, `makeros-ai` terminal istemcisi ve
+  OpenAI uyumlu API, kurallı komut risk sınıflandırması (`SAFE` / `WARNING` / `DANGEROUS`), iki çalıştırma izin modu
+  (*izin iste* ve *otomatik*), masaüstü **AI Asistan** widget'ı, `makeros-ai` terminal istemcisi, masaüstü eylem yönlendiricisi (`[[ACTION:...]]`) ve
   bildirim olay günlüğü (`/run/makeros/olaylar.log`) entegrasyonu
 
 ### Arayüz
 
 - **Ekran** (pencereli masaüstü, raf, masaüstü widget kartları) ve **Web** (telefona uygun) görünümleri,
   üstte *Web | Ekran* geçişi; kurulabilir web uygulaması (PWA), telefonda alt sekme çubuğu
-- **Chromium penceresi:** Pi'de çalışan gerçek Chromium, masaüstünde normal bir pencere olarak açılır
-  (ayrı, görünmez ekran; pencereyle birlikte boyutlanır; kapanınca durur). Pi'nin kendi ekranında
-  doğrudan açılır
-- **Dosyalar:** `.py` dosyasına tıklayınca terminalde çalışır; Bildirimler: "Bildirimleri temizle"
+- **Yerleşik Tarayıcı ve Ters Vekil (`/api/v1/browse`):** Google Arama entegrasyonu, yer imleri ve sekme yönetimi,
+  Raspberry Pi üzerinden vekil tarama ve bot korumalı siteler için yeni sekme yönlendirmesi
+- **Dosyalar ve Otomatik Başlatma:** `.py` dosyasına tıklayınca terminalde çalışır; açılışta uygulama, Python projesi veya
+  betik başlatma ve Cron zamanlayıcı; Bildirimler: "Bildirimleri temizle"
 - **Eklenti Mağazası ve Temalar:** `ferhatozcelik/makeros-plugins` deposundaki eklentileri doğrudan listeleme,
-  SHA-1 doğrulamasıyla kurma ve güncelleme; Maker, Konya HackerSpace (canlı kapı durumu göstergesi ve
+  SHA-1 doğrulamasıyla kurma ve güncelleme; Maker (varsayılan), Konya HackerSpace (canlı kapı durumu göstergesi ve
   masaüstü/web widget kartı), Donanım, Siber güvenlik, 3B baskı temaları
 
 ### Doğrulama
 
-Arayüz, makerd ve Chromium penceresi Docker içinde derlenmiş kök dosya sistemiyle test edildi.
-Gerçek donanımda ölçülmüş performans verisi henüz yok (bkz. `docs/v2/BENCHMARK.md`).
+Arayüz, `makerd` servisleri, yerleşik tarayıcı ve yerel AI asistanı hem otomatik test paketleriyle hem de Raspberry Pi 4 donanımı üzerinde doğrulandı (bkz. `docs/verification/validation.md`).

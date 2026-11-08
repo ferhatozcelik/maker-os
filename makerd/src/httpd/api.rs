@@ -350,9 +350,16 @@ pub async fn apps_list(State(s): State<S>, h: HeaderMap) -> R {
     Ok(json(&s.d.apps.list()))
 }
 
-pub async fn app_launch(State(s): State<S>, h: HeaderMap, Path(id): Path<String>) -> R {
+pub async fn app_launch(State(s): State<S>, h: HeaderMap, Path(id): Path<String>, body: Bytes) -> R {
     session_of(&s, &h)?;
-    s.d.apps.start(&id).await?;
+    #[derive(Deserialize, Default)]
+    struct Req {
+        /// İsteğe bağlı açılacak adres (ör. bot korumalı bir sayfa yerel Chromium'da).
+        #[serde(default)]
+        url: String,
+    }
+    let req: Req = decode(&body)?;
+    s.d.apps.start_with(&id, Some(&req.url)).await?;
     Ok(StatusCode::ACCEPTED.into_response())
 }
 
@@ -674,6 +681,16 @@ pub async fn browse_ticket(State(s): State<S>, h: HeaderMap) -> R {
     Ok(json(&Resp { ticket: crate::browse::ticket(&sess.user), walled: crate::browse::walled_hosts() }))
 }
 
+pub async fn browse_options() -> Response {
+    Response::builder()
+        .status(StatusCode::NO_CONTENT)
+        .header("access-control-allow-origin", "*")
+        .header("access-control-allow-methods", "GET, POST, OPTIONS")
+        .header("access-control-allow-headers", "*")
+        .body(Body::empty())
+        .unwrap()
+}
+
 pub async fn browse(method: Method, Query(q): Query<HashMap<String, String>>, h: HeaderMap, req_body: Bytes) -> R {
     let t = q.get("t").map(String::as_str).unwrap_or("");
     let url = q.get("url").cloned().unwrap_or_default();
@@ -683,6 +700,7 @@ pub async fn browse(method: Method, Query(q): Query<HashMap<String, String>>, h:
         return Response::builder()
             .status(StatusCode::UNAUTHORIZED)
             .header(header::CONTENT_TYPE, "text/html; charset=utf-8")
+            .header("access-control-allow-origin", "*")
             .header("content-security-policy", "sandbox allow-scripts")
             .body(Body::from(crate::browse::expired_page(&url)))
             .map_err(|e| ApiError::internal(e.to_string()));
@@ -691,6 +709,12 @@ pub async fn browse(method: Method, Query(q): Query<HashMap<String, String>>, h:
     let req_ct = h.get(header::CONTENT_TYPE).and_then(|v| v.to_str().ok());
     let b_slice = if req_body.is_empty() { None } else { Some(req_body.as_ref()) };
     let (status, ct, body) = match crate::browse::fetch_req(method.as_str(), &url, lang, req_ct, b_slice).await {
+        Ok(p) if crate::browse::is_bot_wall(&p) => {
+            crate::browse::mark_walled(&p.url);
+            crate::browse::mark_walled(&url);
+            let msg = "Bu site Cloudflare bot doğrulaması kullanıyor; doğrulama yalnız gerçek bir tarayıcıda yapılabilir. Sayfayı Chromium'da (ya da bu cihazın tarayıcı sekmesinde) açıp doğrulama kutusunu orada işaretleyin.";
+            (StatusCode::BAD_GATEWAY, "text/html; charset=utf-8".to_string(), crate::browse::walled_page(&p.url, msg))
+        }
         Ok(p) => {
             let html = p.content_type.contains("text/html") || p.content_type.contains("xhtml");
             let css = p.content_type.contains("text/css");
@@ -709,12 +733,11 @@ pub async fn browse(method: Method, Query(q): Query<HashMap<String, String>>, h:
     Response::builder()
         .status(status)
         .header(header::CONTENT_TYPE, HeaderValue::from_str(&ct).unwrap_or(HeaderValue::from_static("application/octet-stream")))
-        // Opak köken + yalnız 'self' (Raspberry Pi /api/v1/browse): host PC tarayıcısı doğrudan dış internete bağlanamaz,
-        // tüm kaynaklar (HTML, CSS, JS, resim, font, fetch/XHR) Raspberry Pi üzerinden gelir.
-        .header(
-            "content-security-policy",
-            "sandbox allow-scripts allow-forms allow-modals allow-downloads; default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data: blob:; connect-src 'self'",
-        )
+        .header("access-control-allow-origin", "*")
+        .header("access-control-allow-methods", "GET, POST, OPTIONS")
+        .header("access-control-allow-headers", "*")
+        // Opak köken: aktarılan sayfa MakerOS ile aynı adreste olsa da kabuğa/API'ye erişemez; alt kaynaklar CORS hatası vermez.
+        .header("content-security-policy", "sandbox allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals allow-downloads")
         .body(Body::from(body))
         .map_err(|e| ApiError::internal(e.to_string()))
 }

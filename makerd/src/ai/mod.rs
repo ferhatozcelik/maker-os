@@ -4,7 +4,7 @@
 //! - `server`: OpenAI uyumlu yerel API (sistem istemi, geçmiş, bağlam yönetimi, akış).
 //! - `prompt`: Türkçe sistem istemi ve doğrulanmış komut kartları.
 //! - `risk`: komutların kurallı risk sınıflandırması (SAFE / WARNING / DANGEROUS).
-//! - `cli`: terminal istemcisi ve performans ölçümü.
+//! - `cli`: terminal istemcisi.
 //!
 //! İlk aşamada hiçbir komut çalıştırılmaz: yalnız önerilir ve risk düzeyi gösterilir.
 

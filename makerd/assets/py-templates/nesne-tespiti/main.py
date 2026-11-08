@@ -3,7 +3,6 @@
   uv run main.py                 kamera (Pi kamera modülü / USB), arayüz http://<pi>:8000 (ui.html)
   uv run main.py --source test   kamerasız deneme (sentetik görüntü, çıkarım gerçek)
   uv run main.py --image foto.jpg
-  uv run main.py --bench 300     yalnız çıkarım hızı (JSON; `mos bench ai` bunu kullanır)
 
 Neden hızlı (Pi 4, 4 GB):
   * Görüntü: kamera → VideoCore donanım MJPEG kodlayıcı (rpicam-vid) → tarayıcı. Tespit karesi yarım boyutta çözülür.
@@ -279,26 +278,13 @@ def main():
     ap.add_argument("--threads", type=int, default=3)
     ap.add_argument("--cpus", default="1,2,3", help="çıkarım çekirdekleri (0 arayüze kalır)")
     ap.add_argument("--port", type=int, default=8000)
-    ap.add_argument("--bench", type=int, default=0, metavar="N")
     a = ap.parse_args()
     cpus = {int(c) for c in a.cpus.split(",") if c.strip().isdigit() and int(c) < os.cpu_count()} or None
     if cpus:
         pin(cpus)
-        # İş parçacığı > çekirdek: OpenMP dönerek bekler, ölçümde 20 kat yavaşlama görüldü.
         a.threads = min(a.threads, len(cpus))
     det = NanoDet(size=a.size, threads=a.threads)
 
-    if a.bench:
-        img = np.random.randint(0, 255, (180, 320, 3), np.uint8)
-        for _ in range(10):
-            det(img)
-        t0 = time.perf_counter()
-        for _ in range(a.bench):
-            det(img)
-        dt = (time.perf_counter() - t0) / a.bench
-        print(json.dumps({"model": "nanodet-m", "input": f"{a.size}x{(a.size * 9 // 16 + 31) // 32 * 32}", "threads": a.threads,
-                          "cpus": sorted(cpus or []), "ms": round(dt * 1000, 2), "fps": round(1 / dt, 1)}))
-        return
     if a.image:
         import cv2
         img = cv2.imread(a.image)

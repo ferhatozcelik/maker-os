@@ -523,7 +523,7 @@ mod tests {
     async fn info_fixtures() {
         let r = Real::new("testdata/system", "", Client::new("/yok"));
         let i = r.read_info().await;
-        assert_eq!((i.os.name.as_str(), i.os.version.as_str(), i.model.as_str(), i.uptime_s), ("MakerOS", "2.0.0", "Raspberry Pi 4 Model B Rev 1.5", 3600));
+        assert_eq!((i.os.name.as_str(), i.os.version.as_str(), i.model.as_str(), i.uptime_s), ("MakerOS", "1.0.0", "Raspberry Pi 4 Model B Rev 1.5", 3600));
         assert_eq!(i.cpu.temp_c, Some(47.2));
         assert_eq!(i.cpu.load, [0.52, 0.40, 0.31]);
         assert_eq!(i.mem, MemInfo { total: 3981000 * 1024, available: 3000000 * 1024, used: 981000 * 1024, zram_used: 8192 });

@@ -282,20 +282,15 @@ fn urlencoding_simple(s: &str) -> String {
     o
 }
 
-/// HTML'e <base> + Raspberry Pi vekil betiği ekler, sayfanın kendi meta CSP'sini etkisizleştirir.
-/// Tüm alt kaynaklar (img, script, link, iframe, fetch, XHR) ve bağlantılar/formlar
-/// host PC tarayıcısının internetini kullanmadan doğrudan Raspberry Pi üzerinden geçer.
+/// HTML'e <base> + gezinme yakalama betiği ekler, sayfanın kendi meta CSP'sini etkisizleştirir.
+/// Alt kaynaklar (CSS, JS, resim, font, fetch/XHR) `<base href>` sayesinde doğrudan kendi kökeninden
+/// CORS hatası olmadan yüklenir; bağlantılar ve formlar `/api/v1/browse` üzerinden pencerede kalır.
 pub fn rewrite(html: &[u8], url: &str, ticket: &str) -> Vec<u8> {
     let attr = url.replace('&', "&amp;").replace('"', "&quot;").replace('<', "&lt;");
     let inject = format!(
         r##"<base href="{attr}"><script>(()=>{{const B=location.protocol+"//"+location.host+"/api/v1/browse?t={t}&url=",U={u};
+try{{const rS=History.prototype.replaceState,pS=History.prototype.pushState;History.prototype.replaceState=function(...a){{try{{return rS.apply(this,a)}}catch(e){{}}}};History.prototype.pushState=function(...a){{try{{return pS.apply(this,a)}}catch(e){{}}}}}}catch(e){{}}
 const prox=h=>{{try{{if(!h||/^(data:|blob:|javascript:|mailto:|tel:|#)/i.test(h))return null;if(h.includes("/api/v1/browse?t="))return null;const x=new URL(h,U);if(!/^https?:$/.test(x.protocol))return null;if(x.origin===location.origin&&x.pathname.startsWith("/api/v1/browse"))return null;return B+encodeURIComponent(x.href)}}catch(e){{return null}}}};
-const rwEl=el=>{{if(!el||el.nodeType!==1)return;if(el.hasAttribute&&el.hasAttribute("srcset"))el.removeAttribute("srcset");if(el.hasAttribute&&el.hasAttribute("integrity"))el.removeAttribute("integrity");for(const k of["src","href","action","poster"]){{if(!el.hasAttribute(k))continue;if(k==="href"&&el.tagName==="A")continue;const v=el.getAttribute(k),p=prox(v);if(p)el.setAttribute(k,p)}}}};
-const rwTree=root=>{{rwEl(root);if(root.querySelectorAll)root.querySelectorAll("[src],[href],[action],[poster],[srcset]").forEach(rwEl)}};
-new MutationObserver(ms=>{{for(const m of ms){{if(m.type==="attributes")rwEl(m.target);else m.addedNodes.forEach(rwTree)}}}}).observe(document.documentElement,{{childList:true,subtree:true,attributes:true,attributeFilter:["src","href","action","poster","srcset"]}});
-addEventListener("DOMContentLoaded",()=>rwTree(document.documentElement));
-const oFetch=window.fetch;if(oFetch)window.fetch=function(input,init){{try{{const raw=typeof input==="string"?input:(input&&input.url);const p=prox(raw);if(p)input=typeof input==="string"?p:new Request(p,input)}}catch(e){{}}return oFetch.call(this,input,init)}};
-const oOpen=XMLHttpRequest.prototype.open;XMLHttpRequest.prototype.open=function(m,u,...rest){{const p=prox(String(u));return oOpen.call(this,m,p||u,...rest)}};
 const go=h=>{{const p=prox(h);if(!p)return false;location.href=p;return true}};
 window.open=u=>{{if(u)go(u);return null}};
 document.addEventListener("click",e=>{{if(e.defaultPrevented||e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;const a=e.target.closest&&e.target.closest("a[href]");if(!a)return;const h=a.getAttribute("href")||"";if(!h||h[0]==="#"||/^(javascript|mailto|tel):/i.test(h))return;if(go(a.href))e.preventDefault()}},true);
@@ -351,14 +346,26 @@ pub fn expired_page(url: &str) -> Vec<u8> {
     .into_bytes()
 }
 
-/// Hata sayfası (MakerOS Tarayıcı içinde yeniden deneme sunar).
+/// Hata sayfası (MakerOS Tarayıcı içinde yeniden deneme ve yeni sekmede açma sunar).
 pub fn error_page(url: &str, msg: &str) -> Vec<u8> {
+    page_with(url, msg, false)
+}
+
+/// Bot doğrulaması (Cloudflare) sayfası: kabuk sayfayı gerçek tarayıcıda açar (yerel ekranda Chromium).
+pub fn walled_page(url: &str, msg: &str) -> Vec<u8> {
+    page_with(url, msg, true)
+}
+
+fn page_with(url: &str, msg: &str, walled: bool) -> Vec<u8> {
     let esc = |s: &str| s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('"', "&quot;");
     format!(
-        r#"<!doctype html><meta charset="utf-8"><body style="margin:0;height:100vh;display:grid;place-items:center;font:14px system-ui;color:#555;background:#fafafa;text-align:center;padding:24px"><div><p style="font-size:16px;color:#222;margin:0 0 6px">Sayfa yüklenemedi</p><p style="margin:0 0 16px">{m}</p><button onclick="location.reload()" style="display:inline-block;padding:9px 18px;border:0;border-radius:999px;background:#ff7a1a;color:#fff;font:inherit;font-weight:600;cursor:pointer">Yeniden dene ↻</button></div><script>parent.postMessage({{mkBrowse:1,url:{u},error:{e}}},"*")</script>"#,
+        r#"<!doctype html><meta charset="utf-8"><body style="margin:0;height:100vh;display:grid;place-items:center;font:14px system-ui;color:#555;background:#fafafa;text-align:center;padding:24px"><div style="max-width:460px"><p style="font-size:16px;font-weight:600;color:#222;margin:0 0 6px">Sayfa bu pencerede açılamadı</p><p style="margin:0 0 18px;line-height:1.45">{m}</p><div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap"><button onclick="location.reload()" style="padding:9px 18px;border:1px solid #ddd;border-radius:999px;background:#fff;color:#222;font:inherit;font-weight:600;cursor:pointer">Yeniden dene ↻</button><a href="{a}" target="_blank" rel="noopener" onclick="parent.postMessage({{mkBrowse:1,url:{ua},open:1}},'*');return false" style="display:inline-block;padding:9px 18px;border-radius:999px;background:#ff7a1a;color:#fff;text-decoration:none;font-weight:600">Tarayıcı sekmesinde aç ↗</a></div></div><script>parent.postMessage({{mkBrowse:1,url:{u},error:{e},walled:{w}}},"*")</script>"#,
         m = esc(msg),
+        a = esc(url),
         u = js_str(url),
+        ua = esc(&js_str(url)),
         e = js_str(msg),
+        w = if walled { 1 } else { 0 },
     )
     .into_bytes()
 }
@@ -410,6 +417,15 @@ mod tests {
         assert!(is_bot_wall(&p(403, "<title>Just a moment...</title>")));
         assert!(!is_bot_wall(&p(200, "<title>Just a moment...</title>")));
         assert!(!is_bot_wall(&p(404, "<title>Yok</title>")));
+    }
+
+    #[test]
+    fn walled_page_flags_shell() {
+        let w = String::from_utf8(walled_page("https://x.com/\"a", "m")).unwrap();
+        assert!(w.contains("walled:1") && w.contains("open:1"));
+        // onclick özniteliği içinde çift tırnak kaçışlı olmalı.
+        assert!(w.contains("url:&quot;https://x.com/\\&quot;a&quot;,open:1"));
+        assert!(String::from_utf8(error_page("https://x/", "m")).unwrap().contains("walled:0"));
     }
 
     #[test]
