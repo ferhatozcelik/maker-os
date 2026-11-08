@@ -9,23 +9,43 @@
 <link rel="stylesheet" href="/shell/css/kit.css">
 <link rel="stylesheet" href="/shell/css/app.css">
 <style>
-body { display: flex; flex-direction: column; height: 100vh; margin: 0; }
-.tb { display: flex; align-items: center; gap: 4px; padding: 6px 8px; border-bottom: .5px solid var(--separator); background: var(--bg-window, var(--bg)); }
-.tb button { width: 30px; height: 28px; display: grid; place-items: center; border: 0; border-radius: 7px; background: none; color: var(--fg); cursor: pointer; }
-.tb button:hover:not(:disabled) { background: var(--bg-hover); }
-.tb button:disabled { opacity: .35; cursor: default; }
-.tb form { flex: 1; min-width: 0; }
-.tb input { width: 100%; box-sizing: border-box; height: 28px; padding: 0 10px; border-radius: 8px; border: .5px solid var(--border); background: var(--bg-input, var(--bg-hover)); color: var(--fg); font: inherit; font-size: var(--fs-subhead, 13px); }
-.tb input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+body { display: flex; flex-direction: column; height: 100vh; margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-sans); }
+.tb { display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-bottom: .5px solid var(--separator); background: var(--bg-window, var(--bg)); position: relative; user-select: none; }
+.nav-cluster { display: inline-flex; align-items: center; gap: 2px; background: var(--bg-hover); border-radius: 8px; padding: 2px; flex: none; }
+.nav-cluster button { width: 28px; height: 26px; display: grid; place-items: center; border: 0; border-radius: 6px; background: none; color: var(--fg); cursor: pointer; transition: background .15s, opacity .15s; }
+.nav-cluster button:hover:not(:disabled) { background: var(--bg-active, rgba(0,0,0,.08)); }
+.nav-cluster button:disabled { opacity: .25; cursor: default; }
+.tb-btn { width: 30px; height: 30px; display: grid; place-items: center; border: 0; border-radius: 7px; background: none; color: var(--fg); cursor: pointer; transition: background .15s; flex: none; }
+.tb-btn:hover:not(:disabled) { background: var(--bg-hover); }
+.tb-btn:disabled { opacity: .25; cursor: default; }
+.addr-box { flex: 1; min-width: 0; position: relative; display: flex; align-items: center; height: 30px; padding: 0 10px; border-radius: 8px; border: .5px solid var(--border); background: var(--bg-input, var(--bg-hover)); transition: border-color .15s, box-shadow .15s; }
+.addr-box:focus-within { border-color: var(--accent); box-shadow: 0 0 0 1.5px var(--accent); }
+.addr-icon { width: 16px; height: 16px; flex: none; margin-right: 6px; display: grid; place-items: center; color: var(--fg-secondary, #888); }
+.addr-icon.secure { color: #2da44e; }
+.addr-icon.spin { animation: spin .9s linear infinite; color: var(--accent); }
+.addr-form { flex: 1; min-width: 0; height: 100%; display: flex; align-items: center; }
+.addr { width: 100%; border: 0; outline: 0; background: none; color: var(--fg); font: inherit; font-size: var(--fs-subhead, 13px); padding: 0; }
+.progress-bar { position: absolute; left: 0; bottom: 0; height: 2.5px; width: 0%; background: var(--accent, #007aff); border-radius: 0 0 8px 8px; opacity: 0; transition: width .25s ease-out, opacity .3s ease; pointer-events: none; }
+.progress-bar.active { opacity: 1; }
+.progress-bar.done { width: 100% !important; opacity: 0; }
 .page { flex: 1; min-height: 0; position: relative; background: #fff; }
 .page iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #fff; }
-.bm { display: flex; gap: 2px; padding: 3px 8px; border-bottom: .5px solid var(--separator); background: var(--bg-window, var(--bg)); overflow-x: auto; scrollbar-width: none; }
+.loading-overlay { position: absolute; inset: 0; z-index: 8; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.72); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); transition: opacity .2s ease; }
+@media (prefers-color-scheme: dark) {
+  .loading-overlay { background: rgba(22,22,26,.75); }
+}
+.loading-card { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 28px; border-radius: 14px; background: var(--bg-pop, var(--bg-window, #fff)); border: .5px solid var(--border); box-shadow: 0 12px 32px rgba(0,0,0,.14); min-width: 170px; max-width: 85%; text-align: center; }
+.loading-spinner { width: 28px; height: 28px; display: grid; place-items: center; color: var(--accent); animation: spin .85s linear infinite; }
+.loading-text { font-size: 13px; font-weight: 500; color: var(--fg); }
+.loading-host { font-size: 11px; color: var(--fg-secondary, #888); max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@keyframes spin { 100% { transform: rotate(360deg); } }
+.bm { display: flex; gap: 2px; padding: 3px 8px; border-bottom: .5px solid var(--separator); background: var(--bg-window, var(--bg)); overflow-x: auto; scrollbar-width: none; user-select: none; }
 .bm button { flex: none; display: flex; align-items: center; gap: 5px; height: 24px; padding: 0 9px; border: 0; border-radius: 6px; background: none; color: var(--fg); font: inherit; font-size: 12px; cursor: pointer; }
 .bm button:hover, .bm button.on { background: var(--bg-hover); }
-.bm-menu { position: fixed; z-index: 5; min-width: 220px; padding: 5px; border-radius: 10px; background: var(--bg-pop, var(--bg)); border: .5px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,.22); }
+.bm-menu { position: fixed; z-index: 15; min-width: 220px; padding: 5px; border-radius: 10px; background: var(--bg-pop, var(--bg)); border: .5px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,.22); }
 .bm-menu button { display: block; width: 100%; text-align: left; padding: 6px 10px; border: 0; border-radius: 6px; background: none; color: var(--fg); font: inherit; font-size: 13px; cursor: pointer; }
 .bm-menu button:hover { background: var(--accent); color: #fff; }
-.home { position: absolute; inset: 0; overflow: auto; background: var(--bg); color: var(--fg); padding: 48px 24px 32px; }
+.home { position: absolute; inset: 0; overflow: auto; background: var(--bg); color: var(--fg); padding: 48px 24px 32px; z-index: 1; }
 .home .in { max-width: 860px; margin: 0 auto; display: grid; gap: 26px; }
 .home form { display: flex; gap: 8px; max-width: 620px; width: 100%; margin: 0 auto; }
 .home .q { flex: 1; height: 44px; padding: 0 18px; border-radius: 22px; border: 1px solid var(--border); background: var(--bg-input, var(--bg-hover)); color: var(--fg); font: inherit; font-size: 15px; box-shadow: 0 1px 6px rgba(0,0,0,.08); }
@@ -39,8 +59,8 @@ body { display: flex; flex-direction: column; height: 100vh; margin: 0; }
 .grp button:hover { background: var(--bg-window, var(--bg)); }
 .grp img, .grp .fav { width: 16px; height: 16px; border-radius: 3px; flex: none; display: inline-grid; place-items: center; color: var(--fg-secondary, #888); }
 .tb[hidden], .bm[hidden] { display: none !important; }
-.hint { position: absolute; z-index: 2; left: 50%; bottom: 12px; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; padding: 7px 8px 7px 14px; border-radius: 999px;
-  background: rgba(28,28,32,.88); color: #eee; font-size: 12px; box-shadow: 0 4px 16px rgba(0,0,0,.25); white-space: nowrap; max-width: calc(100% - 24px); }
+.hint { position: absolute; z-index: 12; left: 50%; bottom: 14px; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; padding: 7px 8px 7px 14px; border-radius: 999px;
+  background: rgba(28,28,32,.92); color: #eee; font-size: 12px; box-shadow: 0 4px 18px rgba(0,0,0,.28); white-space: nowrap; max-width: calc(100% - 24px); }
 .hint span { overflow: hidden; text-overflow: ellipsis; }
 .hint button { border: 0; border-radius: 999px; padding: 4px 10px; background: var(--accent); color: #fff; font: inherit; cursor: pointer; }
 .hint .x { background: none; padding: 4px 6px; color: #aaa; }
@@ -48,13 +68,29 @@ body { display: flex; flex-direction: column; height: 100vh; margin: 0; }
 </head>
 <body>
 <div class="tb">
-  <button class="b-back" disabled></button><button class="b-fwd" disabled></button><button class="b-reload"></button><button class="b-home"></button>
-  <form><input class="addr" type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false"></form>
-  <button class="b-ext"></button>
+  <div class="nav-cluster">
+    <button class="b-back" disabled></button>
+    <button class="b-fwd" disabled></button>
+  </div>
+  <button class="b-reload tb-btn"></button>
+  <button class="b-home tb-btn"></button>
+  <div class="addr-box">
+    <span class="addr-icon"></span>
+    <form class="addr-form"><input class="addr" type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false"></form>
+    <div class="progress-bar"></div>
+  </div>
+  <button class="b-ext tb-btn"></button>
 </div>
 <div class="bm"></div>
 <div class="page">
   <div class="home"><div class="in"><form class="hs"><input class="q" type="search" autocomplete="off" spellcheck="false"><button class="go" type="submit"></button></form><p></p><div class="groups"></div></div></div>
+  <div class="loading-overlay" hidden>
+    <div class="loading-card">
+      <div class="loading-spinner"></div>
+      <div class="loading-text"></div>
+      <div class="loading-host"></div>
+    </div>
+  </div>
   <div class="hint" hidden><span></span><button class="h-open"></button><button class="x"></button></div>
 </div>
 <script type="module" src="/shell/apps/browser/browser.js"></script>

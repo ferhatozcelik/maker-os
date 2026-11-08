@@ -28,7 +28,7 @@ await cdp("Emulation.setDeviceMetricsOverride", { width: W, height: H, deviceSca
 if (MOBILE) await cdp("Emulation.setTouchEmulationEnabled", { enabled: true });
 if (LOGIN) {
   await cdp("Page.navigate", { url: new URL("/", URL0).href }); await sleep(800);
-  await js(`fetch("/api/v1/auth/login",{method:"POST",headers:{"X-Maker":"1","Content-Type":"application/json"},body:JSON.stringify({user:"maker",password:"maker"})}).then(r=>r.status)`);
+  await js(`(async()=>{let r=await fetch("/api/v1/auth/login",{method:"POST",headers:{"X-Maker":"1","Content-Type":"application/json"},body:JSON.stringify({user:"makeros",password:"makeros"})});if(!r.ok)await fetch("/api/v1/auth/login",{method:"POST",headers:{"X-Maker":"1","Content-Type":"application/json"},body:JSON.stringify({user:"maker",password:"maker"})});})()`);
 }
 await cdp("Page.navigate", { url: URL0 }); await sleep(WAIT);
 if (JS) { const v = await js(`(async()=>{${JS}})()`); if (v !== undefined) console.log("js:", JSON.stringify(v)); await sleep(WAIT); }
