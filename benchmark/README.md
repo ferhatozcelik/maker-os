@@ -18,73 +18,18 @@ rastgele 4K okuma). Raspberry Pi'de sıcaklık ve kısma (throttling) durumu da 
 testlerin, genel puan kategorilerin geometrik ortalamasıdır. Python iş yükü başarımıdır; aynı betik sürümüyle alınan
 sonuçlar karşılaştırılabilir. Kişisel bilgi (makine adı, kullanıcı, IP, seri no) toplanmaz.
 
+**Liste şimdilik Raspberry Pi OS ve MakerOS içindir** (aynı Raspberry Pi'de iki işletim sistemini karşılaştırmak için); betik
+macOS ve diğer Linux'larda da çalışır ama sonuçları listeye alınmaz.
+
 **Listeye ekleme:** `bench-results/` içindeki `.json` (ve isterseniz `.md`) dosyasını bu klasördeki `results/`'a pull request ile
 gönderin. GitHub Actions dosyayı doğrular; birleştirilince aşağıdaki tablo, grafikler ve
 [etkileşimli sayfa](https://ferhatozcelik.github.io/maker-os/benchmark/) kendiliğinden güncellenir.
 
 <!-- BENCH:START -->
 
-_1 sonuç · `tools/render.py` üretir, elle düzenlemeyin._
+_0 sonuç · `tools/render.py` üretir, elle düzenlemeyin._
 
-## Sıralama
-
-| # | Sistem | İşletim sistemi | Genel | CPU 1 | CPU çok | Bellek | Disk | Rapor |
-|---:|---|---|---:|---:|---:|---:|---:|---|
-| 1 | MacBook Pro M1 Pro 16 GB · macOS | macOS 27.2.1 | **1,025** | 1,014 | 1,018 | 988 | 1,081 | [rapor](results/20261121-1611-macos-macbook-pro-m1-pro-16-gb-macos.md) |
-
-Referans (Apple M1 Pro · macOS · Python 3.9) = 1000 puan. Yüksek = iyi. Etkileşimli grafikler: [GitHub Pages](https://ferhatozcelik.github.io/maker-os/benchmark/).
-
-## Grafikler
-
-```mermaid
-%%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#f07a1a"}}}}%%
-xychart-beta
-  title "Genel puan"
-  x-axis ["MacBook Pro M1 Pro 16 GB · …"]
-  y-axis "Puan" 0 --> 1200
-  bar [1025]
-```
-
-```mermaid
-%%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#f07a1a"}}}}%%
-xychart-beta
-  title "CPU tek çekirdek"
-  x-axis ["MacBook Pro M1 Pro 16 GB · …"]
-  y-axis "Puan" 0 --> 1200
-  bar [1014]
-```
-
-```mermaid
-%%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#f07a1a"}}}}%%
-xychart-beta
-  title "CPU çok çekirdek"
-  x-axis ["MacBook Pro M1 Pro 16 GB · …"]
-  y-axis "Puan" 0 --> 1200
-  bar [1018]
-```
-
-```mermaid
-%%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#f07a1a"}}}}%%
-xychart-beta
-  title "Bellek"
-  x-axis ["MacBook Pro M1 Pro 16 GB · …"]
-  y-axis "Puan" 0 --> 1200
-  bar [988]
-```
-
-```mermaid
-%%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#f07a1a"}}}}%%
-xychart-beta
-  title "Disk"
-  x-axis ["MacBook Pro M1 Pro 16 GB · …"]
-  y-axis "Puan" 0 --> 1300
-  bar [1081]
-```
-
-## Analiz
-
-Henüz tek sonuç var. Başka bir sistemde (ör. Raspberry Pi OS ya da MakerOS) çalıştırıp `results/` klasörüne
-eklediğinizde bu bölüm sistemleri kendiliğinden karşılaştırır.
+Henüz sonuç yok. İlk sonuçlar Raspberry Pi OS ya da MakerOS üzerinde alınacak.
 
 <!-- BENCH:END -->
 

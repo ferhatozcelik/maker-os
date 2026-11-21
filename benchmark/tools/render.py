@@ -18,6 +18,13 @@ RES = ROOT / "results"
 CAT = {"cpu": "CPU tek çekirdek", "multi": "CPU çok çekirdek", "mem": "Bellek", "disk": "Disk"}
 CAT_EN = {"cpu": "CPU single-core", "multi": "CPU multi-core", "mem": "Memory", "disk": "Disk"}
 START, END = "<!-- BENCH:START -->", "<!-- BENCH:END -->"
+# Liste şimdilik Raspberry Pi OS ve MakerOS içindir (betik her sistemde çalışır; puan referansı M1 Pro · macOS).
+ALLOWED = "Raspberry Pi OS ya da MakerOS"
+
+
+def allowed(d):
+    s = d.get("system") or {}
+    return s.get("os_id") in ("makeros", "raspbian") or str(s.get("model", "")).startswith("Raspberry Pi")
 
 
 def fail(msg):
@@ -41,6 +48,8 @@ def load():
             fail(f"{p.name}: scores alanı bozuk")
         if len(d["name"]) > 80 or re.search(r"[<>|`\n]", d["name"]):
             fail(f"{p.name}: name en fazla 80 karakter; < > | ` içeremez")
+        if not allowed(d):
+            fail(f"{p.name}: liste şimdilik yalnız {ALLOWED} sonuçlarını kabul eder ({d['system'].get('os', '?')})")
         d["_file"] = p.name
         d["_md"] = p.with_suffix(".md").name if p.with_suffix(".md").exists() else ""
         out.append(d)
@@ -64,8 +73,8 @@ def mermaid_bar(title, labels, values, ymax=None):
 
 def analysis(rows):
     if len(rows) < 2:
-        return ["Henüz tek sonuç var. Başka bir sistemde (ör. Raspberry Pi OS ya da MakerOS) çalıştırıp `results/` klasörüne",
-                "eklediğinizde bu bölüm sistemleri kendiliğinden karşılaştırır."]
+        return ["Henüz tek sonuç var. Diğer sistemde (Raspberry Pi OS ya da MakerOS) çalıştırıp `results/` klasörüne",
+                "eklediğinizde bu bölüm iki sistemi kendiliğinden karşılaştırır."]
     lines = []
     top = rows[0]
     lines.append(f"- **En hızlı:** {top['name']} — genel {top['scores']['total']:,} puan.")
@@ -107,7 +116,7 @@ def analysis(rows):
 def readme_block(rows):
     L = [START, "", f"_{len(rows)} sonuç · `tools/render.py` üretir, elle düzenlemeyin._", ""]
     if not rows:
-        return "\n".join(L + ["Henüz sonuç yok.", "", END])
+        return "\n".join(L + [f"Henüz sonuç yok. İlk sonuçlar {ALLOWED} üzerinde alınacak.", "", END])
     L += ["## Sıralama", "", "| # | Sistem | İşletim sistemi | Genel | CPU 1 | CPU çok | Bellek | Disk | Rapor |",
           "|---:|---|---|---:|---:|---:|---:|---:|---|"]
     for i, d in enumerate(rows, 1):
