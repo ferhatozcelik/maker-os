@@ -151,6 +151,8 @@ html[lang="en"] [data-en] { display: revert; }
   <symbol id="i-spark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/><circle cx="12" cy="12" r="3"/></symbol>
   <symbol id="i-code" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/></symbol>
   <symbol id="i-cpu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="14" height="14" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M7 16v-3M12 16V8M17 16v-6"/></symbol>
   <symbol id="i-puzzle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.4 14.6a2 2 0 1 0 0-3.2V7a1 1 0 0 0-1-1h-4.4a2 2 0 1 0-3.2 0H6.4a1 1 0 0 0-1 1v4a2 2 0 1 1 0 3.2V18a1 1 0 0 0 1 1h4a2 2 0 1 1 3.2 0H18.4a1 1 0 0 0 1-1v-3.4Z"/></symbol>
 </svg>
 
@@ -161,6 +163,7 @@ html[lang="en"] [data-en] { display: revert; }
       <a href="#features"><span data-tr>Özellikler</span><span data-en>Features</span></a>
       <a href="#screens"><span data-tr>Ekranlar</span><span data-en>Screens</span></a>
       <a href="#setup"><span data-tr>Kurulum</span><span data-en>Setup</span></a>
+      <a href="benchmark/"><span data-tr>Benchmark</span><span data-en>Benchmark</span></a>
       <a href="https://github.com/ferhatozcelik/maker-os/tree/main/docs"><span data-tr>Dokümantasyon</span><span data-en>Docs</span></a>
       <a href="https://github.com/ferhatozcelik/maker-os">GitHub</a>
     </nav>
@@ -175,8 +178,8 @@ html[lang="en"] [data-en] { display: revert; }
       <img class="logo" src="assets/logo.svg" alt="MakerOS logosu" width="96" height="96">
       <h1><span data-tr>Atölyen<br><em>cebinde.</em></span><span data-en>Your workshop,<br><em>in your pocket.</em></span></h1>
       <p class="lead">
-        <span data-tr>MakerOS; ARM64 tabanlı, Pi 4 uyumlu kartlar için bağımsız ve açık kaynaklı bir Linux işletim sistemi. Web masaüstü, Rust sistem servisleri, A/B güncelleme ve yerel yapay zekâ asistanı tek bir bütünde.</span>
-        <span data-en>MakerOS is an independent, open-source Linux operating system for ARM64, Pi 4 compatible boards. Web desktop, Rust system services, A/B updates and an on-device AI assistant in one cohesive system.</span>
+        <span data-tr>MakerOS; ARM64 tabanlı, Pi 4 uyumlu kartlar için bağımsız ve açık kaynaklı bir Linux işletim sistemi. Web masaüstü, Rust sistem servisleri, A/B güncelleme, yerel yapay zekâ asistanı ve cihazın içinde çalışan eklentiler tek bir bütünde.</span>
+        <span data-en>MakerOS is an independent, open-source Linux operating system for ARM64, Pi 4 compatible boards. Web desktop, Rust system services, A/B updates, an on-device AI assistant and plugins that run on the board, in one cohesive system.</span>
       </p>
       <div class="cta">
         <a class="btn primary" href="https://github.com/ferhatozcelik/maker-os/releases/latest"><svg aria-hidden="true"><use href="#i-dl"/></svg><span data-tr>İmajı indir</span><span data-en>Download image</span></a>
@@ -205,13 +208,22 @@ html[lang="en"] [data-en] { display: revert; }
           <p><span data-tr><code>makerd</code> ailesi: HTTP/WS API, ayrıcalık ayrımı, PTY terminal ve kullanıcı süreçleri.</span><span data-en>The <code>makerd</code> family: HTTP/WS API, privilege separation, PTY terminal and user processes.</span></p></div>
         <div class="card"><div class="ic"><svg aria-hidden="true"><use href="#i-spark"/></svg></div>
           <h3><span data-tr>Yerel AI asistanı</span><span data-en>On-device AI</span></h3>
-          <p><span data-tr>Qwen2.5 + <code>llama.cpp</code> ile internetsiz çalışan Türkçe asistan; komutlar sizin izninizle çalışır.</span><span data-en>Qwen2.5 + <code>llama.cpp</code>, fully offline; commands run only with your permission.</span></p></div>
+          <p><span data-tr>Qwen2.5 + <code>llama.cpp</code> ile internetsiz çalışan Türkçe asistan; model ilk açılışta kendiliğinden kurulur, komutlar sizin izninizle çalışır.</span><span data-en>Qwen2.5 + <code>llama.cpp</code>, fully offline; the model installs itself on first boot and commands run only with your permission.</span></p></div>
         <div class="card"><div class="ic"><svg aria-hidden="true"><use href="#i-code"/></svg></div>
           <h3><span data-tr>Python ve otomasyon</span><span data-en>Python &amp; automation</span></h3>
           <p><span data-tr><code>uv</code> tabanlı proje yöneticisi, hazır şablonlar, Otomatik Başlatma ve Cron zamanlayıcı.</span><span data-en><code>uv</code>-based project manager, ready templates, Autostart and Cron scheduling.</span></p></div>
         <div class="card"><div class="ic"><svg aria-hidden="true"><use href="#i-cpu"/></svg></div>
           <h3><span data-tr>Donanım ve kamera</span><span data-en>Hardware &amp; camera</span></h3>
           <p><span data-tr>40 pinli GPIO canlı kontrolü, I²C, SPI, UART; CSI ve USB kameralar için canlı akış.</span><span data-en>Live 40-pin GPIO control, I²C, SPI, UART; live streaming from CSI and USB cameras.</span></p></div>
+        <div class="card"><div class="ic"><svg aria-hidden="true"><use href="#i-puzzle"/></svg></div>
+          <h3><span data-tr>Eklentiler</span><span data-en>Plugins</span></h3>
+          <p><span data-tr>Tek tıkla mağazadan kurulur; arayüzleri MakerOS'un temasını ve dilini canlı izler, masaüstüne widget olarak eklenir.</span><span data-en>One-click installs from the store; their UIs follow MakerOS's theme and language live and can live on your desktop as widgets.</span></p></div>
+        <div class="card"><div class="ic"><svg aria-hidden="true"><use href="#i-home"/></svg></div>
+          <h3><span data-tr>Akıllı ev ve ağ, cihazın içinde</span><span data-en>Smart home &amp; network, on the board</span></h3>
+          <p><span data-tr>Home Assistant ve Pi-hole kartın üzerinde çalışır, kendi panelleriyle MakerOS'ta açılır; Chromecast ile ekranı televizyona taşıyın.</span><span data-en>Home Assistant and Pi-hole run on the board and open in MakerOS with their own dashboards; cast the screen to your TV with Chromecast.</span></p></div>
+        <div class="card"><div class="ic"><svg aria-hidden="true"><use href="#i-chart"/></svg></div>
+          <h3><span data-tr>Ölçülebilir başarım</span><span data-en>Measurable performance</span></h3>
+          <p><span data-tr>MakerOS Bench tek dosyalık testle CPU, bellek ve diski ölçer; sonuçlar <a href="benchmark/">canlı grafiklerle</a> karşılaştırılır.</span><span data-en>MakerOS Bench measures CPU, memory and disk with a single-file test; results are compared in <a href="benchmark/">live charts</a>.</span></p></div>
       </div>
     </div>
   </section>
@@ -275,7 +287,7 @@ html[lang="en"] [data-en] { display: revert; }
         <li><h3><span data-tr>Kartı seçin</span><span data-en>Pick the card</span></h3><p><span data-tr>Yalnız harici diskler listelenir. Bilgisayarınızın diski asla gösterilmez; disk adını yazarak onaylarsınız.</span><span data-en>Only external disks are listed. Your computer's disk is never shown; you confirm by typing the disk name.</span></p></li>
         <li><h3><span data-tr>Başlatın</span><span data-en>Boot</span></h3><p><span data-tr>Kartı cihaza takıp gücü verin. İlk açılış bir iki dakika sürer.</span><span data-en>Insert the card and power on. The first boot takes a minute or two.</span></p></li>
         <li><h3><span data-tr>Bağlanın</span><span data-en>Connect</span></h3><p><span data-tr><code>http://maker-os.local/</code>, USB-C ile <code>http://10.42.0.1/</code>; ağ yoksa <code>MakerOS</code> Wi-Fi'ı.</span><span data-en><code>http://maker-os.local/</code>, <code>http://10.42.0.1/</code> over USB-C, or the <code>MakerOS</code> Wi-Fi.</span></p></li>
-        <li><h3><span data-tr>Oturum açın</span><span data-en>Sign in</span></h3><p><span data-tr>Varsayılan hesap <code>makeros</code> / <code>makeros</code>; parolayı Ayarlar › Kullanıcı'dan değiştirin.</span><span data-en>Default account <code>makeros</code> / <code>makeros</code>; change it in Settings › User.</span></p></li>
+        <li><h3><span data-tr>Oturum açın</span><span data-en>Sign in</span></h3><p><span data-tr>Varsayılan hesap <code>maker</code> / <code>maker</code>; parolayı Ayarlar › Kullanıcı'dan değiştirin.</span><span data-en>Default account <code>maker</code> / <code>maker</code>; change it in Settings › User.</span></p></li>
       </ol>
     </div>
   </section>
@@ -287,6 +299,7 @@ html[lang="en"] [data-en] { display: revert; }
       <div class="cta">
         <a class="btn primary" href="https://github.com/ferhatozcelik/maker-os/releases/latest"><svg aria-hidden="true"><use href="#i-dl"/></svg><span data-tr>İmajı indir</span><span data-en>Download image</span></a>
         <a class="btn" href="https://github.com/ferhatozcelik/makeros-plugins"><svg aria-hidden="true"><use href="#i-puzzle"/></svg><span data-tr>Eklenti mağazası</span><span data-en>Plugin store</span></a>
+        <a class="btn" href="benchmark/"><svg aria-hidden="true"><use href="#i-chart"/></svg><span data-tr>Benchmark</span><span data-en>Benchmark</span></a>
         <a class="btn" href="https://buymeacoffee.com/ferhatozcelik"><span data-tr>Projeyi destekle</span><span data-en>Support the project</span></a>
       </div>
     </div>
