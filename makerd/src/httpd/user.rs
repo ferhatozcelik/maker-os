@@ -402,21 +402,30 @@ pub async fn gpio_board(State(s): State<S>, h: HeaderMap) -> R {
 pub async fn gpio_set(State(s): State<S>, h: HeaderMap, Path(n): Path<String>, body: Bytes) -> R {
     session_of(&s, &h)?;
     let g = gpio_p(&s)?;
+    // POST /gpio/scan: tüm boş pinlerde bağlantı taraması.
+    if n == "scan" {
+        let board = tokio::task::spawn_blocking(move || { g.probe(None)?; g.board() }).await.map_err(|e| ApiError::internal(e.to_string()))??;
+        return Ok(json(&board));
+    }
     let n: i32 = n.parse().map_err(|_| ApiError::invalid("Geçersiz GPIO numarası."))?;
     #[derive(Deserialize, Default)]
     struct Req {
         value: Option<i32>,
         #[serde(default)]
         release: bool,
+        #[serde(default)]
+        probe: bool,
     }
     let req: Req = decode(&body)?;
     let board = tokio::task::spawn_blocking(move || {
-        if req.release {
+        if req.probe {
+            g.probe(Some(n))?;
+        } else if req.release {
             g.release(n)?;
         } else if let Some(v) = req.value {
             g.set(n, v)?;
         } else {
-            return Err(ApiError::invalid("value veya release gerekli."));
+            return Err(ApiError::invalid("value, release veya probe gerekli."));
         }
         g.board()
     })
@@ -426,6 +435,12 @@ pub async fn gpio_set(State(s): State<S>, h: HeaderMap, Path(n): Path<String>, b
 }
 
 // --- eklentiler --------------------------------------------------------------
+
+/// Kabuklara "eklenti listesi değişti" der (başlat/durdur/kur/kaldır); menüler, raf ve
+/// Web arayüzü listeyi yeniden çeker. Ayrıntı gönderilmez: her istemci kendi listesini ister.
+fn plugins_changed(s: &S) {
+    s.d.hub.publish("plugins", serde_json::json!({ "changed": true }));
+}
 
 pub async fn plugin_list(State(s): State<S>, h: HeaderMap) -> R {
     let sess = session_of(&s, &h)?;
@@ -445,7 +460,9 @@ pub async fn plugin_import(State(s): State<S>, h: HeaderMap, body: Body) -> R {
     let sess = session_of(&s, &h)?;
     let a = agent(&s)?;
     let data = axum::body::to_bytes(body, plugins::MAX_ZIP + 1).await.map_err(|_| ApiError::invalid("Zip en fazla 15 MB olabilir."))?;
-    Ok(json(&plugins::import(a.as_ref(), &sess.user, &data).await?))
+    let m = plugins::import(a.as_ref(), &sess.user, &data).await?;
+    plugins_changed(&s);
+    Ok(json(&m))
 }
 
 pub async fn plugin_export(State(s): State<S>, h: HeaderMap, Path(id): Path<String>) -> R {
@@ -459,8 +476,11 @@ pub async fn plugin_op(State(s): State<S>, h: HeaderMap, Path((id, op)): Path<(S
     let a = agent(&s)?;
     let work = async {
         match op.as_str() {
-            "start" => Ok(json(&plugins::start(a.as_ref(), &sess.user, &id).await?)),
-            "stop" => Ok(json(&plugins::stop(a.as_ref(), &sess.user, &id).await?)),
+            "start" | "stop" => {
+                let r = if op == "start" { plugins::start(a.as_ref(), &sess.user, &id).await } else { plugins::stop(a.as_ref(), &sess.user, &id).await };
+                plugins_changed(&s); // başarısız başlatmada da durum (devre dışı işareti) değişmiş olabilir
+                Ok(json(&r?))
+            }
             "logs" => Ok(json(&HashMap::from([("log", plugins::logs(a.as_ref(), &sess.user, &id).await?)]))),
             _ => Err(ApiError::invalid("Geçersiz işlem.")),
         }
@@ -470,7 +490,9 @@ pub async fn plugin_op(State(s): State<S>, h: HeaderMap, Path((id, op)): Path<(S
 
 pub async fn plugin_delete(State(s): State<S>, h: HeaderMap, Path(id): Path<String>) -> R {
     let sess = session_of(&s, &h)?;
-    plugins::remove(agent(&s)?.as_ref(), &sess.user, &id).await?;
+    let r = plugins::remove(agent(&s)?.as_ref(), &sess.user, &id).await;
+    plugins_changed(&s);
+    r?;
     Ok(no_content())
 }
 
@@ -490,8 +512,9 @@ pub async fn catalog_install(State(s): State<S>, h: HeaderMap, Path(id): Path<St
     let sess = session_of(&s, &h)?;
     let (c, a) = (catalog(&s)?, agent(&s)?);
     let work = c.install(a.as_ref(), &sess.user, &id);
-    tokio::time::timeout(Duration::from_secs(180), work).await.unwrap_or_else(|_| Err(ApiError::unavailable("İndirme zaman aşımına uğradı.")))
-        .map(|m| json(&m))
+    let r = tokio::time::timeout(Duration::from_secs(180), work).await.unwrap_or_else(|_| Err(ApiError::unavailable("İndirme zaman aşımına uğradı.")));
+    plugins_changed(&s);
+    r.map(|m| json(&m))
 }
 
 /// Eklenti içindeki statik görsel (tema duvar kâğıdı, logo, işaret).
@@ -581,6 +604,54 @@ pub async fn ai_run(State(s): State<S>, h: HeaderMap, axum::Json(r): axum::Json<
             Ok(json(&serde_json::json!({"durum": "calisti", "risk": asm.risk, "cikis": code, "cikti": out, "kesildi": truncated, "not": exec::note(code, &out), "ms": ms})))
         }
     }
+}
+
+// --- AI Asistan: CLI ajanlarıyla sohbet ------------------------------------------
+
+/// GET /asistan/ajanlar → kurulu ajanlar ve model seçenekleri (Maker AI yerel asistanı listede değildir; her zaman var).
+pub async fn ai_agents(State(s): State<S>, h: HeaderMap) -> R {
+    let sess = session_of(&s, &h)?;
+    Ok(json(&crate::agents::chat_agents(agent(&s)?.as_ref(), &sess.user).await?))
+}
+
+#[derive(Deserialize)]
+pub struct AgentChatReq {
+    agent: String,
+    #[serde(default)]
+    model: String,
+    prompt: String,
+}
+
+/// POST /asistan/ajan {agent, model, prompt} → ajanın yanıtı düz metin akışı olarak (geldikçe).
+/// Ajan kullanıcının hesabıyla, kendi oturum/giriş bilgileriyle çalışır.
+pub async fn ai_agent_chat(State(s): State<S>, h: HeaderMap, axum::Json(r): axum::Json<AgentChatReq>) -> R {
+    let sess = session_of(&s, &h)?;
+    let a = agent(&s)?;
+    if r.prompt.trim().is_empty() || r.prompt.len() > 16000 || r.prompt.contains('\0') {
+        return Err(ApiError::invalid("İstem boş ya da çok uzun."));
+    }
+    let cmd = crate::agents::chat_cmd(&r.agent, r.model.trim())?;
+    if !crate::agents::list(a.as_ref(), &sess.user).await?.iter().any(|x| x.id == r.agent && x.installed) {
+        return Err(ApiError::not_found("Bu ajan kurulu değil. AI Ajanları uygulamasından kurun."));
+    }
+    tracing::info!(user = %sess.user, agent = %r.agent, model = %r.model, "AI asistan ajan sohbeti");
+    let (in_tx, in_rx) = tokio::sync::mpsc::channel::<Bytes>(1);
+    let _ = in_tx.send(Bytes::from(r.prompt)).await;
+    drop(in_tx);
+    let (tx, mut rx) = tokio::sync::mpsc::channel::<Bytes>(32);
+    let user = sess.user.clone();
+    tokio::spawn(async move {
+        if let Err(e) = a.exec(&user, &cmd, Some(in_rx), tx.clone()).await {
+            let _ = tx.send(Bytes::from(format!("\n⚠ {}", e.message))).await;
+        }
+    });
+    let st = futures_util::stream::poll_fn(move |cx| rx.poll_recv(cx).map(|o| o.map(Ok::<_, std::io::Error>)));
+    Response::builder()
+        .header(header::CONTENT_TYPE, "text/plain; charset=utf-8")
+        .header(header::CACHE_CONTROL, "no-store")
+        .header("x-accel-buffering", "no")
+        .body(Body::from_stream(st))
+        .map_err(|e| ApiError::internal(e.to_string()))
 }
 
 // --- Otomatik başlatma & Cron görevleri --------------------------------------

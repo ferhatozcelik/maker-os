@@ -2,7 +2,7 @@
 import { get } from "./api.js";
 import { t } from "./i18n.js";
 import { pref, prefs } from "./prefs.js";
-import { themeById, registerPluginThemes, themeIcon, cacheBrand } from "./themes.js";
+import { themeById, syncPluginThemes, themeIcon, cacheBrand } from "./themes.js";
 
 const B = "/shell/";
 // Kısa ad → yerleşik bilgiler. makerd listesinde olmasa da bu uygulamalar her zaman görünür.
@@ -17,12 +17,19 @@ const BUILTIN = {
   gpio: { w: 720, h: 640, keys: "gpio pin donanım elektronik led buton hardware header", single: true },
   plugins: { w: 880, h: 580, keys: "eklenti uygulama zip içe aktar dışa aktar paylaş plugin extension import export", single: true },
   browser: { w: 1180, h: 760, keys: "tarayıcı internet web sitesi chromium chrome browser", single: true },
+  // AI Asistan tam sayfa (masaüstü widget'ıyla aynı kod: apps/ai-widget/?full=1)
+  assistant: { w: 820, h: 640, keys: "ai asistan yapay zeka sohbet chat maker ai claude codex gemini ollama assistant", single: true, url: "apps/ai-widget/?full=1" },
 };
 export const DEFAULT_DOCK = ["makeros.files", "makeros.browser", "makeros.terminal", "makeros.python", "makeros.agents", "makeros.camera", "makeros.gpio", "makeros.plugins", "makeros.activity", "makeros.settings"];
 
+// Ayarlar sayfa simgelerinin renkleri (Ayarlar kenar çubuğu ve Web arayüzü alt menüsü).
+export const SETTINGS_COLORS = { wifi: "#1a7cf5", bluetooth: "#1a7cf5", network: "#1a7cf5", general: "#8a8a90", datetime: "#3a86ff", language: "#3a86ff", keyboard: "#8a8a90", appearance: "#2b2b30", startup: "#2fa84f", user: "#9b55e0", power: "#f08a1c" };
+// Python Yöneticisi bölümleri (derin bağlantı #projects | #templates | #versions; Web arayüzünde sol alt menü).
+export const PYTHON_PAGES = [["projects", "folder", "#3b74c4"], ["templates", "layout-grid", "#9b55e0"], ["versions", "package", "#2fa84f"]];
 // Ayarlar sayfaları (kenar çubuğu + Bul + derin bağlantı #sayfa)
 export const SETTINGS_PAGES = [
-  ["wifi", "wifi", "kablosuz wireless ağ"], ["network", "network", "ethernet ip ağ hotspot erişim noktası"],
+  ["wifi", "wifi", "kablosuz wireless ağ"], ["bluetooth", "bluetooth", "bluetooth kulaklık hoparlör klavye fare kumanda eşleştir bağlan headphones speaker pair"],
+  ["network", "network", "ethernet ip ağ hotspot erişim noktası"],
   ["general", "info", "hakkında genel cihaz adı hostname sürüm about"], ["datetime", "clock", "tarih saat saat dilimi ntp time timezone"],
   ["language", "languages", "dil bölge klavye düzeni language region locale"], ["keyboard", "keyboard", "klavye kısayollar shortcuts keys"],
   ["appearance", "palette", "görünüm tema koyu açık vurgu rengi sistem ui menü çubuğu raf gizle appearance dark mode theme"],
@@ -36,7 +43,7 @@ function normalize(a) {
   return { kind: "web", categories: [], ...a, short: s, w: b.w || a.w || 800, h: b.h || a.h || 540, keys: (b.keys || "") + " " + a.name,
     single: !!b.single, rawCtrl: !!b.rawCtrl, baseIcon: a.icon || `${B}icons/${s}.svg`, icon: a.icon || `${B}icons/${s}.svg` };
 }
-const builtinList = () => Object.keys(BUILTIN).map(s => normalize({ id: "makeros." + s, name: t("app." + s), url: `${B}apps/${s}/` }));
+const builtinList = () => Object.keys(BUILTIN).map(s => normalize({ id: "makeros." + s, name: t("app." + s), url: B + (BUILTIN[s].url || `apps/${s}/`) }));
 
 // Temaya özel uygulamalar (ör. Konya HackerSpace sitesi): yalnız o tema etkinken listede ve rafta.
 const themeApps = () => (themeById(pref("look")).apps || []).map(a => ({ ...normalize({ ...a, categories: ["Theme"] }), theme: true }));
@@ -71,9 +78,9 @@ export async function loadApps() {
   // Web arayüzlü eklentiler uygulama gibi açılır (makerd /plugin/<id>/ yönlendirmesi).
   try {
     const pl = await get("/plugins");
-    registerPluginThemes(pl); // eklenti temaları (ör. Konya HackerSpace)
+    syncPluginThemes(pl); // eklenti temaları (ör. Konya HackerSpace); devre dışıysa varsayılan temaya dönülür
     cacheBrand(pref("look")); // giriş ekranı için marka önbelleği
-    const extra = pl.filter(p => p.web_port && p.app !== false).map(p => normalize({ id: "makeros.plugin." + p.id, name: p.name, url: `/plugin/${p.id}/`, categories: ["Plugin"],
+    const extra = pl.filter(p => !p.disabled && p.web_port && p.app !== false).map(p => normalize({ id: "makeros.plugin." + p.id, name: p.name, url: `/plugin/${p.id}/`, categories: ["Plugin"],
       icon: p.icon ? `/api/v1/files/raw?path=${encodeURIComponent("~/.local/share/makeros/plugins/" + p.id + "/" + p.icon)}` : `${B}icons/plugins.svg` }));
     APPS = [...APPS.filter(a => !a.id.startsWith("makeros.plugin.")), ...extra];
   } catch { /* eklenti hizmeti yok */ }

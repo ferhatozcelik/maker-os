@@ -49,7 +49,7 @@ pub struct NoShell;
 
 impl std::fmt::Display for NoShell {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str("kabuk bulunamadı")
+        f.write_str("terminal (shell) bulunamadı")
     }
 }
 

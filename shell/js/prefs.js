@@ -20,6 +20,7 @@ const DEF = {
   uiMenubar: true,
   uiDock: true,
   uiThemeWidget: true,
+  desktopWidgets: [],
   uiStatusTemp: true,
   uiToasts: true,
   startupApp: "",

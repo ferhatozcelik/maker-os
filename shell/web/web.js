@@ -5,9 +5,9 @@ import { h, $, bytes, duration } from "/shell/js/lib.js";
 import { t } from "/shell/js/i18n.js";
 import { icon } from "/shell/js/icons.js";
 import { get, post, Events, bus } from "/shell/js/api.js";
-import { prefs, pref, isDark, syncPrefs } from "/shell/js/prefs.js";
-import { wallURL, brand, themeById, setFavicon, widgetReady } from "/shell/js/themes.js";
-import { APPS, loadApps } from "/shell/js/apps.js";
+import { prefs, pref, setPref, isDark, syncPrefs } from "/shell/js/prefs.js";
+import { wallURL, brand, themeById, setFavicon, widgetReady, pluginWidget } from "/shell/js/themes.js";
+import { APPS, loadApps, SETTINGS_PAGES, SETTINGS_COLORS, PYTHON_PAGES } from "/shell/js/apps.js";
 import { watchThemeStatus } from "/shell/js/status.js";
 import { registerSW } from "/shell/js/pwa.js";
 
@@ -18,10 +18,19 @@ html.dataset.ui = "web";
 const view = $(".view"), nav = $(".nav"), ttl = $(".ttl");
 // Web arayüzünde gösterilmeyenler.
 const HIDDEN = new Set(["chromium"]);
+// Kenar çubuğunda "Ana sayfa"nın hemen altında (uygulama listesinde ayrıca gösterilmez).
+const PINNED = "makeros.assistant";
 const SYSTEM = new Set(["makeros.activity", "makeros.settings"]);
 const ORDER = ["makeros.files", "makeros.browser", "makeros.terminal", "makeros.python", "makeros.agents", "makeros.camera", "makeros.gpio", "makeros.plugins"];
 const frames = new Map(); // uygulama → iframe (açık kalır: terminal oturumu, kamera durumu korunur)
 let cur = "home", sys = null;
+// Alt menülü uygulamalar: seçilince kenar çubuğunda altında bölümleri açılır (#settings/wifi, #python/versions).
+const SUBNAV = {
+  "makeros.settings": { def: "wifi", items: () => SETTINGS_PAGES.map(([id, ic]) => [id, ic, t("set." + id), SETTINGS_COLORS[id]]) },
+  "makeros.python": { def: "projects", items: () => PYTHON_PAGES.map(([id, ic, c]) => [id, ic, t("py." + id), c]) },
+};
+const subCur = new Map(); // uygulama → seçili bölüm (uygulamanın {mk:"path"} iletisiyle güncellenir)
+const subOf = id => { const s = SUBNAV[id], p = subCur.get(id); if (!s) return null; return s.items().some(([x]) => x === p) ? p : s.def; };
 
 // Ana sayfa görseli: temanın koyu (keskin) duvar kâğıdı; açık modda da yazı okunur kalır.
 function wall() {
@@ -30,19 +39,30 @@ function wall() {
   document.querySelectorAll("img.brand-logo").forEach(i => { i.src = b.logo; }); // temaya özel logo
   setFavicon(b.favicon);
 }
-prefs.on("change", k => { wall(); if (k === "look") setTimeout(() => { renderNav(); renderTabbar(); if (cur === "home") renderHome(); }); });
+prefs.on("change", k => { wall(); if (k === "look" || k === "desktopWidgets") setTimeout(() => { renderNav(); renderTabbar(); if (cur === "home") renderHome(); }); });
 
 const short = id => id.replace(/^makeros\./, "");
 const apps = () => APPS.filter(a => a.kind === "web" && !HIDDEN.has(a.id));
 const sorted = list => list.sort((a, b) => ((ORDER.indexOf(a.id) + 1) || 99) - ((ORDER.indexOf(b.id) + 1) || 99) || a.name.localeCompare(b.name));
 
 function renderNav() {
-  const user = sorted(apps().filter(a => !SYSTEM.has(a.id)));
-  const link = (id, name, img) => h("a" + (cur === id ? ".on" : ""), { href: "#" + (id === "home" ? "" : short(id)), "data-id": id }, img, name);
+  const user = sorted(apps().filter(a => !SYSTEM.has(a.id) && a.id !== PINNED));
+  const pin = APPS.find(a => a.id === PINNED);
+  const link = (id, name, img) => {
+    const s = SUBNAV[id], open = s && cur === id;
+    const a = h("a" + (cur === id ? ".on" : "") + (s ? ".has-sub" : "") + (open ? ".open" : ""), { href: "#" + (id === "home" ? "" : short(id)), "data-id": id },
+      img, h("span.nl", name), s ? h("span.chev", { html: icon("chevron-right", 14, 2.2) }) : "");
+    if (!s) return a;
+    const sel = subOf(id);
+    const list = h("div.sub", { hidden: !open }, ...s.items().map(([sid, ic, label, color]) =>
+      h("a.sub-a" + (open && sid === sel ? ".on" : ""), { href: `#${short(id)}/${sid}`, "data-sub": sid }, h("span.sb-ic", { style: { background: color }, html: icon(ic, 13, 2) }), label)));
+    return [a, list];
+  };
   nav.replaceChildren(
     link("home", t("web.home"), h("span", { html: icon("house", 20, 1.9), style: "width:24px;display:grid;place-items:center" })),
-    h("div.grp", t("web.apps")), ...user.map(a => link(a.id, a.name, h("img", { src: a.icon, alt: "" }))),
-    h("div.grp", t("web.system")), ...sorted(apps().filter(a => SYSTEM.has(a.id))).map(a => link(a.id, a.name, h("img", { src: a.icon, alt: "" }))));
+    pin ? link(pin.id, pin.name, h("img", { src: pin.icon, alt: "" })) : "",
+    h("div.grp", t("web.apps")), ...user.flatMap(a => link(a.id, a.name, h("img", { src: a.icon, alt: "" }))),
+    h("div.grp", t("web.system")), ...sorted(apps().filter(a => SYSTEM.has(a.id))).flatMap(a => link(a.id, a.name, h("img", { src: a.icon, alt: "" }))));
 }
 
 // Telefon: alt sekme çubuğu (sık kullanılanlar). CSS yalnız dar ekranda gösterir.
@@ -61,9 +81,11 @@ function renderTabbar() {
 function show(id, path = "") {
   if (id === "makeros.chromium" || id === "chromium") id = "makeros.browser";
   if (id !== "home" && !APPS.some(a => a.id === id)) id = "home";
+  const prev = cur;
   cur = id;
+  if (SUBNAV[id] && path && SUBNAV[id].items().some(([x]) => x === path)) subCur.set(id, path);
   document.body.classList.remove("drawer");
-  nav.querySelectorAll("a").forEach(a => a.classList.toggle("on", a.dataset.id === id));
+  if (prev !== id || SUBNAV[id]) renderNav(); else nav.querySelectorAll("a[data-id]").forEach(a => a.classList.toggle("on", a.dataset.id === id));
   document.querySelectorAll(".tabbar a").forEach(a => a.classList.toggle("on", a.dataset.id === id));
   for (const [k, f] of frames) f.hidden = k !== id;
   $(".home")?.toggleAttribute("hidden", id !== "home");
@@ -101,6 +123,14 @@ addEventListener("message", e => {
   if (e.origin !== location.origin || !e.data?.mk) return;
   const m = e.data, src = [...frames].find(([, f]) => f.contentWindow === e.source)?.[0];
   if (m.mk === "title" && src === cur && m.title) ttl.textContent = m.title;
+  else if (m.mk === "path" && SUBNAV[src]) {
+    // Uygulama içinde bölüm değişti: alt menüde işaretle, adresi güncelle (yenileyince aynı bölüm açılır).
+    const p = String(m.path || "");
+    if (SUBNAV[src].items().some(([x]) => x === p)) subCur.set(src, p);
+    const sel = subOf(src);
+    nav.querySelectorAll(`a[data-id="${src}"] + .sub .sub-a`).forEach(a => a.classList.toggle("on", a.dataset.sub === sel));
+    if (src === cur) history.replaceState(null, "", "#" + short(src) + "/" + encodeURIComponent(p && !SUBNAV[src].items().some(([x]) => x === p) ? p : sel));
+  }
   else if (m.mk === "open") {
     let id = m.app;
     if (id === "chromium") id = "makeros.browser";
@@ -117,7 +147,11 @@ addEventListener("message", e => {
     location.hash = short(id) + (p ? "/" + encodeURIComponent(p) : "");
     if (p && frames.has(id)) frames.get(id).contentWindow?.postMessage({ mk: "navigate", path: p }, location.origin);
   }
-  else if (m.mk === "widget-size" && widgetEl && e.source === widgetEl.contentWindow && m.h > 40 && m.h < 800) widgetEl.style.height = m.h + "px";
+  else if (widgetEl && (m.mk === "widget-size" || m.mk === "widget-close")) {
+    const f = widgetEl.find(x => x.contentWindow === e.source);
+    if (f && m.mk === "widget-size" && m.h > 40 && m.h < 800) f.style.height = m.h + "px";
+    if (f && m.mk === "widget-close" && f.dataset.plugin) setPref("desktopWidgets", (pref("desktopWidgets") || []).filter(x => x !== f.dataset.plugin));
+  }
   else if (m.mk === "close") location.hash = "";
   else if (m.mk === "unauthorized") location.replace("/?next=/web");
 });
@@ -125,21 +159,29 @@ addEventListener("message", e => {
 // --- ana sayfa ---------------------------------------------------------------
 // İskelet bir kez kurulur; sistem olayında (2 sn) yalnız istatistikler yenilenir. Widget iframe'i DOM'dan hiç
 // sökülmez (sökülürse tarayıcı onu baştan yükler → titreme). Uygulama ızgarası yalnız liste değişince çizilir.
-let homeParts = null, gridKey = "", widgetEl = null;
+let homeParts = null, gridKey = "", widgetEl = null, widgetKey = null;
 function renderWidget(sec) {
-  const w = themeById(pref("look")).widget;
-  if (!w) { widgetEl = null; sec.replaceChildren(); return; }
-  if (widgetEl && widgetEl.dataset.url === w.url) return; // aynı widget: dokunma
-  const f = h("iframe.wdg", { title: "widget" });
-  f.dataset.url = w.url;
-  f.style.cssText = `width:${w.w}px;height:${w.h}px;opacity:0;transition:opacity .25s`;
-  widgetEl = f;
-  sec.replaceChildren(h("h3", t("web.widgets")), h("div.widgets", f));
-  widgetReady(w, id => post(`/plugins/${id}/start`)).then(() => {
-    if (widgetEl !== f) return;
-    f.onload = () => { f.style.opacity = "1"; }; // boş iframe'in ilk "load"ı sayılmaz
-    f.src = w.url;
+  // Etkin temanın widget'ı + kullanıcının masaüstüne eklediği eklenti widget'ları (masaüstüyle aynı liste).
+  const tw = themeById(pref("look")).widget;
+  const list = [tw, ...(pref("desktopWidgets") || []).map(pluginWidget)].filter((x, i, a) => x && a.findIndex(y => y?.url === x.url) === i);
+  const key = list.map(x => x.url).join("|");
+  if (widgetKey === key) return; // aynı widget'lar: dokunma (iframe'ler yeniden yüklenmesin)
+  widgetKey = key;
+  if (!list.length) { widgetEl = null; sec.replaceChildren(); return; }
+  const frames = list.map(w => {
+    const f = h("iframe.wdg", { title: "widget" });
+    f.dataset.url = w.url;
+    if (w !== tw) f.dataset.plugin = w.plugin;
+    f.style.cssText = `width:${w.w}px;height:${w.h}px;opacity:0;transition:opacity .25s`;
+    widgetReady(w, id => post(`/plugins/${id}/start`)).then(() => {
+      if (!f.isConnected) return;
+      f.onload = () => { f.style.opacity = "1"; }; // boş iframe'in ilk "load"ı sayılmaz
+      f.src = w.url;
+    });
+    return f;
   });
+  widgetEl = frames;
+  sec.replaceChildren(h("h3", t("web.widgets")), h("div.widgets", ...frames));
 }
 function renderHome() {
   let home = $(".home");
@@ -210,6 +252,15 @@ let me = null;
   window.__mk = { events: ev }; // uygulamalar kabuğun tek WS bağlantısını paylaşır
   ev.subscribe("system", s => { sys = s; chips(); if (cur === "home") renderHome(); });
   ev.subscribe("net", n => { net = n; chips(); });
+  // Eklenti durumu değişti: gezinme, sekmeler ve ana sayfa yenilenir; kalkan eklentinin çerçevesi kapanır.
+  let appsTimer = 0;
+  const refreshApps = () => { clearTimeout(appsTimer); appsTimer = setTimeout(async () => {
+    await loadApps(); // "look" değişimi yayınlar → renderNav/renderTabbar/renderHome
+    for (const [id, f] of frames) if (id.startsWith("makeros.plugin.") && !APPS.some(a => a.id === id)) { f.remove(); frames.delete(id); }
+    if (cur !== "home" && !APPS.some(a => a.id === cur)) { history.replaceState(null, "", location.pathname); route(); } // ana sayfaya; adres de
+  }, 600); };
+  ev.subscribe("plugins", refreshApps);
+  ev.on("open", refreshApps);
   get("/system").then(s => { sys = s; chips(); if (cur === "home") renderHome(); }).catch(() => {});
   get("/net").then(n => { net = n; chips(); }).catch(() => {});
 })();

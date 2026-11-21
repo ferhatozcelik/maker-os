@@ -84,7 +84,15 @@ pub struct Plugin {
     pub running: bool,
     #[serde(skip_serializing_if = "is_zero")]
     pub pid: i64,
+    /// Kullanıcı durdurdu (devre dışı): teması, kartı ve durum göstergesi kullanılmaz, kendiliğinden başlatılmaz.
+    /// "Başlat" ile yeniden etkinleşir. İşaret: eklenti dizininde `.disabled`.
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub disabled: bool,
 }
+
+/// Aynı anda gelen başlatma istekleri (masaüstü + Web arayüzü + mağaza) eklentiyi iki kez açmasın
+/// (ikinci kopya aynı portu dinleyemeyip "Address already in use" ile düşüyordu).
+static START_LOCK: std::sync::LazyLock<tokio::sync::Mutex<()>> = std::sync::LazyLock::new(|| tokio::sync::Mutex::new(()));
 
 fn json_len(v: &Option<serde_json::Value>) -> usize {
     v.as_ref().map(|v| v.to_string().len()).unwrap_or(0)
@@ -295,12 +303,17 @@ pub async fn get(a: &dyn Agent, user: &str, id: &str) -> ApiResult<Plugin> {
         return Err(ApiError::invalid("plugin.json bozuk."));
     }
     let mut p = Plugin { manifest: m, ..Default::default() };
-    let cmd = format!(r#"p=$(cat ~/{}/.pid 2>/dev/null) && kill -0 "$p" 2>/dev/null && echo "$p""#, root(id));
+    let r = root(id);
+    let cmd = format!(r#"[ -e ~/{r}/.disabled ] && echo kapali; p=$(cat ~/{r}/.pid 2>/dev/null) && kill -0 "$p" 2>/dev/null && echo "$p"; true"#);
     if let Ok((out, _)) = uagent::output(a, user, &cmd).await {
-        if let Ok(pid) = String::from_utf8_lossy(&out).trim().parse::<i64>() {
-            if pid > 0 {
-                p.running = true;
-                p.pid = pid;
+        for line in String::from_utf8_lossy(&out).lines().map(str::trim) {
+            if line == "kapali" {
+                p.disabled = true;
+            } else if let Ok(pid) = line.parse::<i64>() {
+                if pid > 0 {
+                    p.running = true;
+                    p.pid = pid;
+                }
             }
         }
     }
@@ -309,9 +322,13 @@ pub async fn get(a: &dyn Agent, user: &str, id: &str) -> ApiResult<Plugin> {
 
 /// Eklentiyi arka planda başlatır (uv run; ilk seferde bağımlılıklar kurulur).
 pub async fn start(a: &dyn Agent, user: &str, id: &str) -> ApiResult<Plugin> {
+    let _g = START_LOCK.lock().await;
     let p = get(a, user, id).await?;
+    if p.disabled {
+        let _ = uagent::output(a, user, &format!("rm -f ~/{}/.disabled", root(id))).await;
+    }
     if p.running {
-        return Ok(p);
+        return get(a, user, id).await;
     }
     let m = &p.manifest;
     let args: String = m.args.iter().map(|x| format!(" {}", shq(x))).collect();
@@ -336,11 +353,11 @@ fi",
     get(a, user, id).await
 }
 
-/// Eklentiyi durdurur.
+/// Eklentiyi durdurur ve devre dışı işaretler (Başlat ile yeniden etkinleşir).
 pub async fn stop(a: &dyn Agent, user: &str, id: &str) -> ApiResult<Plugin> {
     check_id(id)?;
     let r = root(id);
-    let cmd = format!(r#"systemctl --user stop makeros-plugin-{id} 2>/dev/null; p=$(cat ~/{r}/.pid 2>/dev/null) && kill -TERM -- -"$p" 2>/dev/null || kill -TERM "$p" 2>/dev/null; rm -f ~/{r}/.pid; true"#);
+    let cmd = format!(r#"systemctl --user stop makeros-plugin-{id} 2>/dev/null; p=$(cat ~/{r}/.pid 2>/dev/null) && kill -TERM -- -"$p" 2>/dev/null || kill -TERM "$p" 2>/dev/null; rm -f ~/{r}/.pid; touch ~/{r}/.disabled; true"#);
     let _ = uagent::output(a, user, &cmd).await;
     get(a, user, id).await
 }
@@ -381,7 +398,7 @@ fn walk<'a>(a: &'a dyn Agent, user: &'a str, id: &'a str, rel: String, out: &'a 
         let l: Listing = serde_json::from_slice(&raw).unwrap_or_default();
         for e in l.entries {
             let name = format!("{rel}/{}", e.name).trim_start_matches('/').to_string();
-            if e.link || name == ".venv" || name == ".log" || name == ".pid" || e.name == "__pycache__" {
+            if e.link || name == ".venv" || name == ".log" || name == ".pid" || name == ".disabled" || e.name == "__pycache__" {
                 continue;
             }
             if e.dir {
@@ -513,7 +530,7 @@ mod tests {
         let (m, _) = unpack(&z).unwrap();
         assert!(valid_id(&m.id));
         // Plugin JSON'u manifest alanlarını düz taşır.
-        let j = serde_json::to_value(Plugin { manifest: m, running: true, pid: 7 }).unwrap();
+        let j = serde_json::to_value(Plugin { manifest: m, running: true, pid: 7, disabled: false }).unwrap();
         assert_eq!((j["running"].as_bool(), j["pid"].as_i64()), (Some(true), Some(7)));
         assert!(j["id"].is_string());
     }

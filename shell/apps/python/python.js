@@ -22,6 +22,7 @@ $(".b-new").onclick = () => newProject();
 
 async function show(id) {
   tab = id;
+  if (!P) app.path(id);
   tabs.querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.t === id));
   page.replaceChildren(h("div.empty", t("loading")));
   try { await ({ projects, templates: tplPage, versions })[id](); } catch (e) { page.replaceChildren(h("div.empty.err", e.message)); }
@@ -70,9 +71,13 @@ async function newProject(pre) {
     [{ label: t("cancel"), value: null }, { label: t("py.create"), primary: true, value: "ok" }]);
   if (r !== "ok") return;
   try {
-    openTerm(await post("/projects", { name: name.value.trim(), template: sel, python: py.value }));
+    const nm = name.value.trim();
+    const r = await post("/projects", { name: nm, template: sel, python: py.value });
+    // Proje dosyaları hemen yazılır: doğrudan proje ekranı (kod) açılır; sanal ortam kurulumu alttaki
+    // terminal çekmecesinde sürer (Terminal uygulamasına geçilmez, proje kendiliğinden çalıştırılmaz).
+    await openProject(r?.name || nm);
+    termDrawer(r);
     toast(t("py.creating"));
-    setTimeout(() => show("projects"), 800);
   } catch (e) { fail(e); }
 }
 
@@ -127,10 +132,10 @@ const pd = h("div.pd");
 document.body.append(pd);
 let P = null; // { name, status, file, editor, dirty, logPos, logTimer, tab }
 
-function closeProject() {
+function closeProject(next = "projects") {
   if (P?.dirty && !confirm(t("py.unsaved"))) return;
   clearInterval(P?.logTimer); clearInterval(P?.stTimer);
-  P = null; document.body.classList.remove("detail"); pd.replaceChildren(); app.path(""); show("projects");
+  P = null; document.body.classList.remove("detail"); pd.replaceChildren(); app.path(""); show(next);
 }
 // Uzun işler (paket kurulumu, ortam) alt çekmecede canlı terminal olarak görünür.
 function termDrawer(r, onDone) {
@@ -331,7 +336,13 @@ async function setTab2() {
       }, ".danger")))));
 }
 
-app.on("navigate", p => { if (p && !["projects", "templates", "versions"].includes(p)) openProject(p); });
+app.on("navigate", p => {
+  if (!p) return;
+  if (!["projects", "templates", "versions"].includes(p)) return openProject(p);
+  // Bölüm seçildi (Web arayüzü sol menüsü): açık proje varsa kapat, bölüme geç.
+  if (P) { if (P.dirty && !confirm(t("py.unsaved"))) return; P.dirty = false; return closeProject(p); }
+  show(p);
+});
 const start = location.hash.slice(1);
 if (start && !["projects", "templates", "versions"].includes(start)) { show("projects"); openProject(decodeURIComponent(start)); }
 else show(start || "projects");

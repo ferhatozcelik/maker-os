@@ -106,7 +106,7 @@ pub fn classify(cmd: &str) -> Assessment {
     }
     let (segs, subs, pipe_to_shell) = split(c);
     if pipe_to_shell {
-        acc.add(Risk::Dangerous, "çıktı bir kabuğa aktarılıp çalıştırılıyor (ör. curl … | sh): içeriği görmeden kod çalıştırır");
+        acc.add(Risk::Dangerous, "çıktı bir terminale (sh) aktarılıp çalıştırılıyor (ör. curl … | sh): içeriği görmeden kod çalıştırır");
     }
     for s in subs {
         let inner = classify(&s);

@@ -3,9 +3,9 @@ import { app, t } from "/shell/js/app-kit.js";
 import { h, $, bytes, duration, store, fold } from "/shell/js/lib.js";
 import { icon, wifiIcon } from "/shell/js/icons.js";
 import { api, get, post, put } from "/shell/js/api.js";
-import { SETTINGS_PAGES, APPS, loadApps } from "/shell/js/apps.js";
+import { SETTINGS_PAGES, SETTINGS_COLORS as COLORS, APPS, loadApps } from "/shell/js/apps.js";
 import { pref, setPref, flushPrefs, isDark } from "/shell/js/prefs.js";
-import { THEMES, wallURL, registerPluginThemes, themeName, themeDesc } from "/shell/js/themes.js";
+import { THEMES, wallURL, syncPluginThemes, themeName, themeDesc } from "/shell/js/themes.js";
 import { SHORTCUTS, macLabel, pcLabel } from "/shell/js/keys.js";
 import { lang, locale } from "/shell/js/i18n.js";
 import { confirmDlg, toast } from "/shell/js/appui.js";
@@ -13,7 +13,6 @@ import { chooseWallpaper } from "/shell/js/wallpaper-upload.js";
 
 app.init({ title: t("app.settings") });
 app.chrome({ sidebar: 220, title: false });
-const COLORS = { wifi: "#1a7cf5", network: "#1a7cf5", general: "#8a8a90", datetime: "#3a86ff", language: "#3a86ff", keyboard: "#8a8a90", appearance: "#2b2b30", startup: "#2fa84f", user: "#9b55e0", power: "#f08a1c" };
 const split = $(".split"), side = $(".sidebar"), content = $(".content");
 let cur = null, cleanup = [];
 
@@ -147,6 +146,68 @@ const PAGES = {
     scan();
   },
 
+  // Bluetooth: radyo, eşleşmiş cihazlar (bağlan/kes/unut), yakındaki cihazları arama ve eşleştirme.
+  // Kulaklık/hoparlör bağlanınca sistem sesi ona geçer (makerd: bluez-alsa yönlendirmesi).
+  async bluetooth(el) {
+    const KIND_IC = { audio: "headphones", input: "keyboard", phone: "smartphone", computer: "laptop", other: "bluetooth" };
+    const top = h("div"), mine = h("div"), near = h("div"), msg = h("p.hint");
+    let st = null, busy = null, err = "";
+    const load = async () => { st = await get("/bluetooth"); render(); };
+    const act = async (d, op) => {
+      if (op === "forget" && !(await confirmDlg(d.name, t("set.bt.forgetQ", { name: d.name }), t("set.bt.forget")))) return;
+      busy = d.address + "|" + op; err = ""; render();
+      try { st = await post(`/bluetooth/${d.address}/${op}`); if (op === "pair" || op === "connect") toast(t("set.bt.connectedTo", { name: d.name })); }
+      catch (e) { err = d.address + "|" + e.message; }
+      busy = null; render();
+    };
+    const adapter = async body => { try { st = await post("/bluetooth", body); render(); } catch (e) { flash(msg, e.message, false); } };
+    const spin = label => [h("span.spin", { html: icon("loader-circle", 13, 2) }), " ", label];
+    const bars = r => r == null ? "" : h("span.bt-sig", { title: `${r} dBm` }, ...[-90, -75, -62, -50].map(th => h("i" + (r >= th ? ".on" : ""))));
+    const devRow = d => {
+      const b = op => busy === d.address + "|" + op;
+      const anyBusy = busy && busy.startsWith(d.address);
+      const sub = [d.connected ? t("set.bt.connected") : d.paired ? t("set.bt.notConnected") : t("set.bt.kind." + d.kind)];
+      if (d.audio_out) sub.push(t("set.bt.audioOut"));
+      if (d.battery != null) sub.push(t("set.bt.battery", { n: d.battery }));
+      const e = err.startsWith(d.address + "|") ? err.slice(18) : "";
+      const right = !d.paired
+        ? [bars(d.rssi), btn(b("pair") ? spin(t("set.bt.pairing")) : t("set.bt.pair"), () => act(d, "pair"), ".primary" + (anyBusy ? ".busy" : ""))]
+        : [d.connected ? btn(b("disconnect") ? spin(t("set.bt.disconnect")) : t("set.bt.disconnect"), () => act(d, "disconnect"))
+          : btn(b("connect") ? spin(t("set.bt.connecting")) : t("set.bt.connect"), () => act(d, "connect"), ".primary"),
+          h("button.btn.icon.sm", { title: t("set.bt.forget"), "aria-label": t("set.bt.forget"), html: icon("x", 14, 2), onclick: () => act(d, "forget") })];
+      const r = row(d.name, h("span", sub.join(" · "), e ? h("span.bt-err", " — " + e) : ""), h("div.bt-act", ...right),
+        { ic: `<span class="bt-ic${d.connected ? " on" : ""}">${icon(KIND_IC[d.kind] || "bluetooth", 16, 2)}</span>` });
+      r.querySelectorAll("button").forEach(x => { x.disabled = !!anyBusy; });
+      return r;
+    };
+    function render() {
+      if (!st) return;
+      const a = st.adapter;
+      if (!a.available) {
+        top.replaceChildren(group(h("div.empty", t("set.bt.none"))), note(t("set.bt.noneHint")));
+        mine.replaceChildren(); near.replaceChildren(); return;
+      }
+      top.replaceChildren(group(
+        row(t("set.bluetooth"), a.powered ? t("set.bt.visibleAs", { name: a.name || "MakerOS" }) : t("set.bt.off"), sw(a.powered, v => adapter({ power: v })),
+          { ic: `<span class="bt-ic${a.powered ? " on" : ""}">${icon("bluetooth", 16, 2)}</span>` })));
+      if (!a.powered) { mine.replaceChildren(); near.replaceChildren(note(t("set.bt.offHint"))); return; }
+      const paired = st.devices.filter(d => d.paired), other = st.devices.filter(d => !d.paired);
+      mine.replaceChildren(h("h2", t("set.bt.mine")), paired.length ? group(...paired.map(devRow)) : group(h("div.empty", t("set.bt.noPaired"))));
+      const scanBtn = a.discovering ? btn(spin(t("set.bt.searching")), () => adapter({ discover: false })) : btn([h("span", { html: icon("bluetooth-searching", 14, 2) }), " ", t("set.bt.search")], () => adapter({ discover: true }), ".primary");
+      near.replaceChildren(h("div.bt-h", h("h2", t("set.bt.near")), scanBtn),
+        other.length ? group(...other.map(devRow)) : group(h("div.empty", a.discovering ? t("set.bt.looking") : t("set.bt.noNear"))),
+        note(t("set.bt.hint")));
+    }
+    el.append(h("style", `.bt-ic{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;background:var(--bg-hover);color:var(--text-2);margin-right:10px;flex:none}
+.bt-ic.on{background:#1a7cf5;color:#fff}.bt-act{display:flex;align-items:center;gap:6px;flex:none}
+.bt-sig{display:inline-flex;align-items:flex-end;gap:2px;height:14px;margin-right:6px}.bt-sig i{width:3px;border-radius:1px;background:var(--bg-active)}
+.bt-sig i:nth-child(1){height:4px}.bt-sig i:nth-child(2){height:7px}.bt-sig i:nth-child(3){height:10px}.bt-sig i:nth-child(4){height:13px}.bt-sig i.on{background:var(--text-2)}
+.bt-h{display:flex;align-items:center;justify-content:space-between;gap:10px}.bt-h h2{margin-bottom:6px}.bt-err{color:var(--danger)}
+.btn.busy{opacity:.6}`), top, msg, mine, near);
+    await load();
+    const iv = setInterval(() => { if (!busy) load().catch(() => {}); }, 2000);
+    cleanup.push(() => clearInterval(iv));
+  },
   async network(el) {
     const n = await get("/net");
     el.append(group(row(t("set.net.online"), null, h("span.badge" + (n.online ? ".ok" : ".bad"), n.online ? t("set.net.yes") : t("set.net.no")))));
@@ -216,7 +277,7 @@ const PAGES = {
   },
 
   async appearance(el) {
-    registerPluginThemes(await get("/plugins").catch(() => [])); // eklenti temaları (ör. Konya HackerSpace)
+    syncPluginThemes(await get("/plugins").catch(() => null)); // eklenti temaları (ör. Konya HackerSpace)
     // Tema paketi: duvar kâğıdı + vurgu rengi. Seçim anında tüm pencerelere yayılır (prefs).
     const packs = h("div.packs", ...THEMES.map(p => h("button.pack" + (pref("look") === p.id ? ".on" : ""), { "data-id": p.id,
       onclick: e => { packs.querySelectorAll(".pack").forEach(b => b.classList.toggle("on", b === e.currentTarget)); setPref("look", p.id); setPref("accent", p.accent); setPref("wallpaper", "auto"); if (p.mode) setPref("theme", p.mode); syncAcc(); wsel.value = "auto"; } },
@@ -512,11 +573,12 @@ const search = h("input.sb-search", { type: "search", placeholder: t("launch.sea
   side.querySelectorAll(".sb-item").forEach(b => { b.hidden = q && !fold(b.textContent + " " + b.dataset.k).includes(q); });
 } });
 side.append(search, ...SETTINGS_PAGES.flatMap(([id, ic, k], i) => [
-  [2, 4, 8].includes(i) ? h("div.sb-gap") : null,
+  [3, 5, 9].includes(i) ? h("div.sb-gap") : null,
   h("button.sb-item", { "data-p": id, "data-k": k, onclick: () => show(id) }, h("span.sb-ic", { style: { background: COLORS[id] }, html: icon(ic, 14, 2) }), t("set." + id)),
 ].filter(Boolean)));
 app.on("navigate", p => show(p || "wifi"));
 addEventListener("hashchange", () => { const p = location.hash.slice(1); if (p && p !== cur) show(p, false); });
 const narrow = matchMedia("(max-width: 699px)").matches;
 show(location.hash.slice(1) || "wifi");
-if (narrow && !location.hash) split.classList.remove("detail");
+// Web arayüzünde sayfa listesi kabuğun sol menüsündedir; burada hep ayrıntı gösterilir.
+if (narrow && !location.hash && document.documentElement.dataset.embed !== "page") split.classList.remove("detail");

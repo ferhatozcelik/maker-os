@@ -118,14 +118,14 @@ impl Server {
         let spec = match (self.command)() {
             Ok(s) => s.with_cmd(&op.cmd),
             Err(e) => {
-                let _ = write_frame(&mut w, FRAME_ERROR, format!("Kabuk hazırlanamadı: {e}").as_bytes()).await;
+                let _ = write_frame(&mut w, FRAME_ERROR, format!("Terminal hazırlanamadı: {e}").as_bytes()).await;
                 return;
             }
         };
         let mut proc = match pty::spawn(&spec, cols, rows) {
             Ok(p) => p,
             Err(e) => {
-                let _ = write_frame(&mut w, FRAME_ERROR, format!("Kabuk başlatılamadı: {e}").as_bytes()).await;
+                let _ = write_frame(&mut w, FRAME_ERROR, format!("Terminal başlatılamadı: {e}").as_bytes()).await;
                 return;
             }
         };

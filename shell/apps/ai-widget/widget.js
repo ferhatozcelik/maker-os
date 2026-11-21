@@ -13,6 +13,9 @@ addEventListener("storage", () => apply());
 
 const $ = id => document.getElementById(id);
 const AI = "/api/v1/ai";
+// Tam sayfa (Web arayüzündeki "AI Asistan" uygulaması): ?full=1
+const FULL = new URLSearchParams(location.search).has("full");
+document.documentElement.classList.toggle("full", FULL);
 const STORAGE_KEY = "mk.ai.history";
 const out = $("out"), input = $("in"), go = $("go"), st = $("st"), prog = $("prog"), stopBtn = $("stop"), clearBtn = $("new");
 document.querySelector(".logo").innerHTML = icon("sparkles", 14, 2.2);
@@ -40,7 +43,7 @@ $("chips").append(...CHIPS.map(([l, q]) => {
 let history = [], busy = false, ctrl = null, activeTasks = 0;
 
 // Kabuk widget alanının yüksekliğini içeriğe göre ayarlar.
-const size = () => parent.postMessage({ mk: "widget-size", h: Math.ceil(document.querySelector(".card").getBoundingClientRect().height) + 4 }, location.origin);
+const size = () => FULL ? null : parent.postMessage({ mk: "widget-size", h: Math.ceil(document.querySelector(".card").getBoundingClientRect().height) }, location.origin);
 new ResizeObserver(size).observe(document.querySelector(".card"));
 const tell = m => parent.postMessage(m, location.origin);
 
@@ -96,7 +99,7 @@ function clearChatAndContext() {
   try { localStorage.removeItem(STORAGE_KEY); } catch { /* yok */ }
   out.replaceChildren();
   out.hidden = true;
-  $("chips").hidden = false;
+  $("chips").hidden = false; $("hero").hidden = false;
   fetch(AI + "/v1/makeros/temizle", { method: "POST", credentials: "same-origin", headers: { "X-Maker": "1" } }).catch(() => {});
   status("ok", "Temizlendi");
   input.focus();
@@ -106,6 +109,8 @@ stopBtn.onclick = stopAll;
 clearBtn.onclick = clearChatAndContext;
 
 async function poll() {
+  // CLI ajanı seçiliyse yerel modelin durumu gösterilmez (alt satırda ajan · model yazar).
+  if ((pref("aiProvider") || "maker") !== "maker") { if (!busy && activeTasks === 0) status("ok", "Hazır"); return; }
   try {
     const r = await fetch(AI + "/v1/makeros/durum", { credentials: "same-origin" });
     if (!r.ok) throw new Error();
@@ -132,7 +137,7 @@ function md(s) {
     if (Array.isArray(saved) && saved.length) {
       history = saved.filter(m => m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string");
       if (history.length) {
-        $("chips").hidden = true;
+        $("chips").hidden = true; $("hero").hidden = true;
         out.hidden = false;
         for (const m of history) {
           const el = document.createElement("div");
@@ -470,7 +475,7 @@ async function ask(q) {
   q = (q || "").trim();
   if (!q || busy) return;
   busy = true; input.value = "";
-  $("chips").hidden = true; out.hidden = false;
+  $("chips").hidden = true; out.hidden = false; $("hero").hidden = true;
   const qEl = document.createElement("div"); qEl.className = "q"; qEl.textContent = q;
   const aEl = document.createElement("div"); aEl.className = "a cur";
   out.append(qEl, aEl); out.scrollTop = out.scrollHeight;
@@ -487,6 +492,7 @@ async function ask(q) {
     return;
   }
 
+  if (provider() !== "maker") return askAgent(q, aEl);
   history.push({ role: "user", content: q });
   saveHistory();
   let text = "", extra = null, timings = null;
@@ -541,3 +547,89 @@ $("f").onsubmit = e => {
   else ask(input.value);
 };
 $("close").onclick = () => setPref("aiWidget", false);
+
+// =============================================================== sağlayıcı / model
+// "Maker AI" (yerel makeros-ai, varsayılan) ya da kartta kurulu bir CLI ajanı (Claude Code, Codex, Gemini CLI,
+// OpenCode, Ollama). Ajan kullanıcının kendi hesabıyla, ~/Projeler'de etkileşimsiz çalışır (makerd /asistan/ajan).
+// Seçim tercihlerde: aiProvider, aiModel.<ajan>.
+const provSel = $("prov"), modelSel = $("model");
+let agents = [];
+const provider = () => { const p = pref("aiProvider") || "maker"; return p === "maker" || agents.some(a => a.id === p) ? p : "maker"; };
+const modelOf = id => pref("aiModel." + id) ?? "";
+const provName = id => id === "maker" ? "Maker AI" : agents.find(a => a.id === id)?.name || id;
+function renderModels() {
+  const p = provider(), a = agents.find(x => x.id === p);
+  provSel.value = p;
+  modelSel.hidden = !a;
+  if (!a) { $("meta").textContent = "MakerOS AI"; return; }
+  const cur = modelOf(p) || (a.needs_model ? a.models[0] || "" : "");
+  const list = [...new Set([...a.models, cur].filter(m => m !== undefined))];
+  modelSel.replaceChildren(...list.map(m => new Option(m || "Varsayılan model", m)), new Option("Diğer model…", "__other"));
+  if (a.needs_model && !a.models.length) modelSel.prepend(new Option("Model yok — ollama pull ile indirin", ""));
+  modelSel.value = cur;
+  $("meta").textContent = `${a.name}${cur ? " · " + cur : ""}`;
+}
+async function loadAgents() {
+  try {
+    const r = await fetch("/api/v1/asistan/ajanlar", { credentials: "same-origin" });
+    agents = r.ok ? await r.json() : [];
+  } catch { agents = []; }
+  provSel.replaceChildren(new Option("Maker AI (yerel)", "maker"), ...agents.map(a => new Option(a.name, a.id)));
+  provSel.title = agents.length ? "Asistan: Maker AI (yerel) veya kurulu CLI ajanı" : "Ajan kurmak için: AI Ajanları uygulaması";
+  renderModels();
+}
+provSel.onchange = () => { setPref("aiProvider", provSel.value); renderModels(); poll(); };
+modelSel.onchange = () => {
+  const p = provider();
+  if (modelSel.value === "__other") {
+    const m = (prompt("Model adı (ör. claude-sonnet-4-5, gpt-5, gemini-2.5-pro, llama3.2:1b):", modelOf(p)) || "").trim();
+    if (m && !/^[A-Za-z0-9._:/-]{1,100}$/.test(m)) { alert("Geçersiz model adı."); renderModels(); return; }
+    setPref("aiModel." + p, m);
+  } else setPref("aiModel." + p, modelSel.value);
+  renderModels();
+};
+prefs.on("change", k => { if (k === "aiProvider" || String(k).startsWith("aiModel.")) renderModels(); });
+loadAgents();
+
+/** Seçili CLI ajanına sorar; yanıt geldikçe (akış) gösterilir. Önceki birkaç mesaj bağlam olarak eklenir. */
+async function askAgent(q, aEl) {
+  const p = provider(), a = agents.find(x => x.id === p), model = modelOf(p) || (a?.needs_model ? a.models[0] || "" : "");
+  const ctx = history.slice(-6).map(m => `${m.role === "user" ? "Kullanıcı" : "Asistan"}: ${m.content}`).join("\n\n");
+  const prompt = (ctx ? `Önceki konuşma (bağlam):\n${ctx}\n\n---\n` : "") +
+    `MakerOS (Raspberry Pi tabanlı Linux) üzerinde, kullanıcının ~/Projeler klasöründesin. Türkçe yanıt ver.\n\n${q}`;
+  history.push({ role: "user", content: q });
+  saveHistory();
+  let text = "";
+  status("load", `${provName(p)} çalışıyor…`);
+  ctrl = new AbortController();
+  try {
+    const r = await fetch("/api/v1/asistan/ajan", { method: "POST", credentials: "same-origin", signal: ctrl.signal,
+      headers: { "Content-Type": "application/json", "X-Maker": "1" }, body: JSON.stringify({ agent: p, model, prompt }) });
+    if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.error?.message || `hata ${r.status}`); }
+    const rd = r.body.getReader(), dec = new TextDecoder();
+    for (;;) {
+      const { value, done } = await rd.read();
+      if (done) break;
+      text += dec.decode(value, { stream: true });
+      // Uçbirim renk/denetim kodları (ör. ollama'nın dönen imleci) gösterilmez.
+      const clean = text.replace(/\x1b\[[0-9;?]*[A-Za-z]/g, "").replace(/[\u2800-\u28ff]/g, "");
+      if (clean.trim()) { status("load", "Yazıyor…"); aEl.innerHTML = md(clean.trim()); out.scrollTop = out.scrollHeight; }
+    }
+    text = text.replace(/\x1b\[[0-9;?]*[A-Za-z]/g, "").replace(/[\u2800-\u28ff]/g, "").trim();
+    aEl.classList.remove("cur");
+    if (!text) aEl.innerHTML = `<span style="color:var(--text-2)">Ajan yanıt vermedi. Giriş yapılmamış olabilir: AI Ajanları uygulamasından ajanı bir kez terminalde açıp oturum açın.</span>`;
+    history.push({ role: "assistant", content: text });
+    saveHistory();
+    if (activeTasks === 0) status("ok", "Hazır");
+  } catch (e) {
+    aEl.classList.remove("cur");
+    if (e.name === "AbortError") { if (!text) aEl.innerHTML = `<span style="color:var(--text-2)">Durduruldu.</span>`; status("ok", "Durduruldu"); }
+    else {
+      history.pop(); saveHistory();
+      const er = document.createElement("div"); er.className = "err"; er.textContent = e.message || "Ajana ulaşılamadı."; aEl.after(er);
+      status("off", "Hata");
+    }
+  } finally {
+    busy = false; ctrl = null; updateWorkingUI(); out.scrollTop = out.scrollHeight;
+  }
+}

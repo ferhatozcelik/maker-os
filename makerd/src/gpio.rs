@@ -4,13 +4,13 @@
 //! önizleme) benzetim kullanılır.
 
 use crate::apierr::{ApiError, ApiResult};
-use gpiocdev::line::{Direction, Value};
+use gpiocdev::line::{Bias, Direction, Value};
 use gpiocdev::{Chip, Request};
 use serde::Serialize;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Mutex;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 /// Başlıktaki fiziksel pin.
 #[derive(Serialize, Clone, Debug, PartialEq, Eq)]
@@ -36,6 +36,13 @@ pub struct Pin {
     /// MakerOS (bu panel) çıkış olarak tutuyor.
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     pub held: bool,
+    /// İç direnç: "up" | "down" | "off" (bilinmiyorsa boş).
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub bias: String,
+    /// Bağlantı tahmini (son taramadan): "none" boşta, "high"/"low" dışarıdan 1/0'a sürülüyor,
+    /// "signal" tarama sırasında değişti, "bus" çekirdek/başka program, "out" çıkış. Taranmadıysa boş.
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub conn: String,
 }
 
 /// Panel yanıtı.
@@ -86,6 +93,8 @@ pub fn header() -> Vec<Pin> {
             used: false,
             consumer: String::new(),
             held: false,
+            bias: String::new(),
+            conn: String::new(),
         })
         .collect()
 }
@@ -97,6 +106,28 @@ pub trait Provider: Send + Sync {
     fn set(&self, gpio: i32, value: i32) -> ApiResult<()>;
     /// Tutulan pini bırakır (giriş olarak serbest).
     fn release(&self, gpio: i32) -> ApiResult<()>;
+    /// Bağlantı taraması: boştaki giriş pinine sırayla iç pull-up ve pull-down uygulanıp okunur. Değer dirence
+    /// uyuyorsa pin boşta (bir şey bağlı değil); sabit kalıyorsa dışarıdan sürülüyor (bağlı bir şey var).
+    /// `None`: tüm boş pinler. Sonuç `Pin::conn` alanında görünür.
+    fn probe(&self, gpio: Option<i32>) -> ApiResult<()>;
+}
+
+fn conn_of(up: i32, down: i32) -> &'static str {
+    match (up, down) {
+        (1, 0) => "none",
+        (1, 1) => "high",
+        (0, 0) => "low",
+        _ => "signal",
+    }
+}
+
+fn bias_name(b: Option<Bias>) -> &'static str {
+    match b {
+        Some(Bias::PullUp) => "up",
+        Some(Bias::PullDown) => "down",
+        Some(Bias::Disabled) => "off",
+        None => "",
+    }
 }
 
 const CONSUMER: &str = "makeros-panel";
@@ -123,6 +154,7 @@ pub struct Real {
     chip: PathBuf,
     label: String,
     held: Mutex<HashMap<i32, Request>>,
+    conn: Mutex<HashMap<i32, &'static str>>,
 }
 
 impl Real {
@@ -131,10 +163,30 @@ impl Real {
         for path in gpiocdev::chip::chips().ok()? {
             let Ok(info) = Chip::from_path(&path).and_then(|c| c.info()) else { continue };
             if ["bcm2711", "bcm2835", "rp1"].iter().any(|k| info.label.contains(k)) {
-                return Some(Self { model: model.into(), chip: path, label: info.label, held: Mutex::new(HashMap::new()) });
+                return Some(Self { model: model.into(), chip: path, label: info.label, held: Mutex::new(HashMap::new()), conn: Mutex::new(HashMap::new()) });
             }
         }
         None
+    }
+
+    /// Tek hattı tarar (yalnız boştaki girişler). Tarama sonrası özgün iç direnç geri yüklenir.
+    fn probe_line(&self, off: u32) -> Option<&'static str> {
+        let c = Chip::from_path(&self.chip).ok()?;
+        let info = c.line_info(off).ok()?;
+        if info.used || info.direction != Direction::Input {
+            return None;
+        }
+        let read = |b: Bias| -> Option<i32> {
+            let r = Request::builder().on_chip(&self.chip).with_line(off).as_input().with_bias(b).with_consumer(CONSUMER).request().ok()?;
+            std::thread::sleep(Duration::from_millis(3)); // iç direncin (~50 kΩ) hattı çekmesi için
+            r.value(off).map(val).ok()
+        };
+        let up = read(Bias::PullUp)?;
+        let down = read(Bias::PullDown)?;
+        if let Some(b) = info.bias {
+            let _ = Request::builder().on_chip(&self.chip).with_line(off).as_input().with_bias(b).with_consumer(CONSUMER).request();
+        }
+        Some(conn_of(up, down))
     }
 
     fn chip_name(&self) -> String {
@@ -152,12 +204,15 @@ impl Provider for Real {
             if let Some(r) = held.get(&p.gpio) {
                 p.held = true;
                 p.dir = "out".into();
+                p.conn = "out".into();
                 p.value = r.value(off).map(val).unwrap_or(0);
                 continue;
             }
             let Ok(info) = c.line_info(off) else { continue };
             p.used = info.used;
             p.consumer = info.consumer;
+            p.bias = bias_name(info.bias).into();
+            p.conn = if info.used { "bus".into() } else if info.direction == Direction::Output { "out".into() } else { self.conn.lock().unwrap().get(&p.gpio).copied().unwrap_or_default().into() };
             p.dir = if info.direction == Direction::Output { "out" } else { "in" }.into();
             if !info.used {
                 // Boştaki hat yönü değiştirilmeden kısa süre istenip okunur.
@@ -194,6 +249,24 @@ impl Provider for Real {
     fn release(&self, gpio: i32) -> ApiResult<()> {
         // İstek düşürülünce hat serbest kalır.
         self.held.lock().unwrap().remove(&gpio);
+        self.conn.lock().unwrap().remove(&gpio);
+        Ok(())
+    }
+
+    fn probe(&self, gpio: Option<i32>) -> ApiResult<()> {
+        if let Some(g) = gpio {
+            valid(g)?;
+        }
+        let held: Vec<i32> = self.held.lock().unwrap().keys().copied().collect();
+        let targets: Vec<i32> = HEADER.iter().map(|p| p.2).filter(|&g| g > 1 && gpio.is_none_or(|x| x == g) && !held.contains(&g)).collect();
+        for g in targets {
+            let r = self.probe_line(g as u32);
+            let mut c = self.conn.lock().unwrap();
+            match r {
+                Some(v) => { c.insert(g, v); }
+                None => { c.remove(&g); }
+            }
+        }
         Ok(())
     }
 }
@@ -205,33 +278,50 @@ impl Provider for Real {
 pub struct Sim {
     pub model: String,
     out: Mutex<HashMap<i32, i32>>,
+    conn: Mutex<HashMap<i32, &'static str>>,
     start: Instant,
+}
+
+/// Benzetimdeki "bağlı" cihazlar: GPIO4 değişen sensör, GPIO27 dışarıdan 1'e çekili düğme, GPIO22 toprağa bağlı.
+fn sim_conn(gpio: i32) -> &'static str {
+    match gpio {
+        4 => "signal",
+        27 => "high",
+        22 => "low",
+        _ => "none",
+    }
 }
 
 impl Sim {
     pub fn new(model: &str) -> Self {
-        Self { model: model.into(), out: Mutex::new(HashMap::new()), start: Instant::now() }
+        Self { model: model.into(), out: Mutex::new(HashMap::new()), conn: Mutex::new(HashMap::new()), start: Instant::now() }
     }
 }
 
 impl Provider for Sim {
     fn board(&self) -> ApiResult<Board> {
         let out = self.out.lock().unwrap();
+        let conn = self.conn.lock().unwrap();
         let tick = self.start.elapsed().as_secs() as i32;
         let mut pins = header();
         for p in pins.iter_mut().filter(|p| p.gpio >= 0) {
             p.dir = "in".into();
             p.value = 0;
+            p.bias = if p.gpio <= 8 { "up" } else { "down" }.into();
+            p.conn = conn.get(&p.gpio).copied().unwrap_or_default().into();
             match p.gpio {
                 2 | 3 => {
                     p.used = true;
                     p.consumer = "i2c1".into();
                     p.value = 1;
+                    p.conn = "bus".into();
                 }
                 4 => p.value = tick % 2,
+                27 => p.value = 1,
                 14 | 15 => {
                     p.used = true;
                     p.consumer = "serial0".into();
+                    p.conn = "bus".into();
                 }
                 _ => {}
             }
@@ -239,6 +329,7 @@ impl Provider for Sim {
                 p.dir = "out".into();
                 p.value = v;
                 p.held = true;
+                p.conn = "out".into();
             }
         }
         Ok(Board { model: self.model.clone(), chip: "sim".into(), label: "benzetim (donanım yok)".into(), sim: true, pins })
@@ -252,6 +343,17 @@ impl Provider for Sim {
 
     fn release(&self, gpio: i32) -> ApiResult<()> {
         self.out.lock().unwrap().remove(&gpio);
+        Ok(())
+    }
+
+    fn probe(&self, gpio: Option<i32>) -> ApiResult<()> {
+        if let Some(g) = gpio {
+            valid(g)?;
+        }
+        let mut c = self.conn.lock().unwrap();
+        for g in HEADER.iter().map(|p| p.2).filter(|&g| g > 1 && !matches!(g, 2 | 3 | 14 | 15) && gpio.is_none_or(|x| x == g)) {
+            c.insert(g, sim_conn(g));
+        }
         Ok(())
     }
 }
@@ -286,5 +388,19 @@ mod tests {
         assert_eq!((i2c.used, i2c.consumer.as_str()), (true, "i2c1"));
         s.release(17).unwrap();
         assert!(!s.board().unwrap().pins.iter().find(|p| p.gpio == 17).unwrap().held);
+    }
+
+    #[test]
+    fn conn_logic_and_sim_probe() {
+        assert_eq!((conn_of(1, 0), conn_of(1, 1), conn_of(0, 0), conn_of(0, 1)), ("none", "high", "low", "signal"));
+        let s = Sim::new("Raspberry Pi 4");
+        let pin = |b: &Board, g: i32| b.pins.iter().find(|p| p.gpio == g).unwrap().conn.clone();
+        assert_eq!(pin(&s.board().unwrap(), 27), "", "taranmadan bilinmez");
+        s.probe(Some(27)).unwrap();
+        assert_eq!(pin(&s.board().unwrap(), 27), "high");
+        s.probe(None).unwrap();
+        let b = s.board().unwrap();
+        assert_eq!((pin(&b, 4), pin(&b, 22), pin(&b, 17), pin(&b, 2)), ("signal".into(), "low".into(), "none".into(), "bus".into()));
+        assert_eq!(s.probe(Some(1)).unwrap_err().code, "invalid");
     }
 }

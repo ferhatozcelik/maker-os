@@ -1,7 +1,7 @@
 {
   "id": "khs",
   "name": "Konya HackerSpace",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Konya HackerSpace teması, kapı durumu (açık/kapalı) ve konyahackerspace.org uygulaması.",
   "author": "MakerOS",
   "entrypoint": "main.py",

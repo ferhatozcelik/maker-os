@@ -21,11 +21,65 @@
 .pin.gp.used { opacity: .55; cursor: not-allowed; }
 .legend { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin: 14px 0 0; font-size: var(--fs-footnote); color: var(--text-2); }
 .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; vertical-align: -2px; margin-right: 4px; }
+.legend i.cdot { width: 8px; height: 8px; background: #22b8cf; box-shadow: 0 0 0 2px var(--bg-window); vertical-align: 0; }
+/* Seçim ve bağlantı işareti */
+.lbl { cursor: pointer; border-radius: 6px; padding: 2px 4px; }
+.lbl:hover { background: var(--bg-hover); }
+.lbl.sel { background: color-mix(in srgb, var(--accent) 16%, transparent); }
+.pin { cursor: pointer; transition: transform .12s; }
+.pin:hover { transform: scale(1.08); }
+.pin.sel { outline: 3px solid var(--accent); outline-offset: 2px; }
+.pin.conn::after { content: ""; position: absolute; top: -2px; right: -2px; width: 9px; height: 9px; border-radius: 50%; background: #22b8cf; box-shadow: 0 0 0 2px var(--bg-window); }
+.pin.gp.used { cursor: pointer; }
+/* Yerleşim: solda başlık, sağda ayrıntı */
+.gwrap { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 20px; align-items: start; padding: 0 16px 24px; width: 100%; box-sizing: border-box; min-width: 0; flex: 1; overflow: auto; }
+.gwrap > * { min-width: 0; } .detail { box-sizing: border-box; grid-template-columns: minmax(0, 1fr); } .code pre { max-width: 100%; box-sizing: border-box; }
+.detail { position: sticky; top: 12px; background: var(--bg-content); border: .5px solid var(--separator); border-radius: 14px; padding: 14px; display: grid; gap: 10px; max-height: calc(100vh - 90px); overflow: auto; }
+@media (max-width: 899px) { .gwrap { grid-template-columns: 1fr; } .detail { position: static; max-height: none; } }
+.d-empty { display: grid; justify-items: center; gap: 6px; padding: 30px 10px; color: var(--text-2); text-align: center; }
+.d-empty p { margin: 0; }
+.d-hd { display: flex; align-items: center; gap: 12px; }
+.d-hd > div { flex: 1; min-width: 0; }
+.pin.big { width: 44px; height: 44px; font-size: 14px; cursor: default; flex: none; }
+.pin.big:hover { transform: none; }
+.d-nm { font-size: 17px; font-weight: 700; }
+.d-sub { color: var(--text-2); font-size: var(--fs-footnote); }
+.kvs { display: grid; border-radius: 10px; background: var(--bg-window); border: .5px solid var(--separator); }
+.kv { display: flex; justify-content: space-between; gap: 10px; padding: 7px 10px; font-size: 13px; }
+.kv + .kv { border-top: .5px solid var(--separator); }
+.kv .k { color: var(--text-2); } .kv .v { font-weight: 600; text-align: right; }
+.val { font-family: var(--font-mono); } .val.hi { color: #2fbf71; }
+.pill { font-size: 11.5px; padding: 2px 8px; border-radius: 999px; background: color-mix(in srgb, #2fbf71 18%, transparent); color: #2fbf71; }
+.pill.u { background: color-mix(in srgb, #9b55e0 18%, transparent); color: #b07ce8; }
+.pill.o { background: color-mix(in srgb, var(--accent) 20%, transparent); color: var(--accent); }
+.d-sec { display: flex; justify-content: space-between; align-items: center; font-size: var(--fs-caption); font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--text-2); margin-top: 4px; }
+.d-mut { font-weight: 500; text-transform: none; letter-spacing: 0; }
+.conn { border-radius: 10px; padding: 9px 11px; background: var(--bg-window); border: .5px solid var(--separator); }
+.conn .c-t { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; }
+.conn .c-d { color: var(--text-2); font-size: var(--fs-footnote); margin-top: 3px; line-height: 1.4; }
+.conn .cd { width: 9px; height: 9px; border-radius: 50%; background: #8a8f99; flex: none; }
+.conn.high .cd, .conn.low .cd, .conn.signal .cd { background: #22b8cf; box-shadow: 0 0 8px #22b8cf; }
+.conn.high, .conn.low, .conn.signal { border-color: color-mix(in srgb, #22b8cf 45%, transparent); }
+.conn.bus .cd { background: #9b55e0; } .conn.out .cd { background: var(--accent); } .conn.none .cd { background: #2fbf71; }
+.spark { display: grid; grid-template-columns: repeat(60, 1fr); gap: 1px; height: 26px; align-items: end; }
+.spark i { display: block; height: 30%; border-radius: 1px; background: var(--bg-hover); }
+.spark i.hi { height: 100%; background: #2fbf71; } .spark i.na { opacity: .3; }
+.d-txt { margin: 0; color: var(--text-2); font-size: var(--fs-footnote); line-height: 1.45; }
+.d-warn { margin: 0; font-size: var(--fs-caption); color: #d99a12; line-height: 1.4; }
+.acts { display: flex; flex-wrap: wrap; gap: 6px; }
+.acts .btn { display: inline-flex; align-items: center; gap: 5px; }
+.code { position: relative; }
+.code pre { margin: 0; padding: 10px 12px; border-radius: 10px; background: #1b1b1f; color: #e6e6ea; font: 11.5px/1.5 var(--font-mono); overflow-x: auto; }
+.code .cp { position: absolute; top: 6px; right: 6px; background: rgba(255,255,255,.08); color: #e6e6ea; }
+.sum { display: flex; gap: 6px; flex-wrap: wrap; }
+.schip { display: inline-flex; gap: 5px; align-items: center; height: 24px; padding: 0 9px; border-radius: 12px; background: var(--bg-hover); font-size: var(--fs-footnote); color: var(--text-2); }
+.schip b { color: var(--text); } .schip.c b { color: #22b8cf; } .schip.u b { color: #b07ce8; } .schip.o b { color: var(--accent); }
+.b-scan { display: inline-flex; align-items: center; gap: 5px; }
 </style>
 </head>
 <body>
-<div class="bar2"><h1 class="h"></h1><span class="badge b-model"></span><span class="grow"></span></div>
-<div class="wrap"><div class="board"></div><div class="legend"></div><p class="note n-help" style="text-align:center"></p></div>
-<script type="module" src="/shell/apps/gpio/gpio.js"></script>
+<div class="bar2"><h1 class="h"></h1><span class="badge b-model"></span><div class="sum"></div><span class="grow"></span><button class="btn sm b-scan"></button></div>
+<div class="gwrap"><div><div class="board"></div><div class="legend"></div><p class="note n-help" style="text-align:center"></p></div><aside class="detail"></aside></div>
+<script type="module" src="/shell/apps/gpio/gpio.js?v=1.0.4"></script>
 </body>
 </html>

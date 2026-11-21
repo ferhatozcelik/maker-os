@@ -71,7 +71,7 @@ pub fn interactive(cmd: &str) -> Option<String> {
             "nano" | "vim" | "vi" | "emacs" | "micro" | "mc" => Some("düzenleyici açar"),
             "less" | "more" | "man" => Some("sayfalayıcı açar"),
             "htop" | "btop" | "atop" | "nmtui" | "raspi-config" | "alsamixer" | "ssh" | "telnet" | "ftp" | "passwd" | "su" | "screen" | "tmux" => Some("etkileşimli program"),
-            "python" | "python3" | "bash" | "sh" | "zsh" | "node" if args.is_empty() => Some("etkileşimli kabuk açar"),
+            "python" | "python3" | "bash" | "sh" | "zsh" | "node" if args.is_empty() => Some("etkileşimli terminal açar"),
             "top" if !args.iter().any(|w| w.starts_with("-b")) => Some("top etkileşimlidir (top -b -n 1 kullanın)"),
             "watch" => Some("sürekli yeniler"),
             "tail" | "journalctl" if args.iter().any(|w| matches!(*w, "-f" | "--follow" | "-F")) => Some("sürekli izleme (-f) bitmez"),

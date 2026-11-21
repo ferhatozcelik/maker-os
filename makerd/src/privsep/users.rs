@@ -15,7 +15,7 @@ const RESERVED: &[&str] = &[
 ];
 
 /// İlk kullanıcının ek grupları (sistemde olmayanlar atlanır).
-pub const DEFAULT_USER_GROUPS: &[&str] = &["wheel", "video", "gpio", "i2c", "spi", "dialout", "input", "render", "audio", "plugdev"];
+pub const DEFAULT_USER_GROUPS: &[&str] = &["wheel", "video", "gpio", "i2c", "spi", "dialout", "input", "render", "audio", "plugdev", "bluetooth"];
 
 /// Küçük harfle başlar, en fazla 32; ayrılmış adlar ve systemd-* değil.
 pub fn valid_username(s: &str) -> bool {

@@ -14,10 +14,10 @@ use tokio_util::sync::CancellationToken;
 
 const USAGE: &str = "Kullanım: makerd [bayraklar]
   --listen ADR          dinleme adresi(leri), virgülle (systemd soket devri varsa yok sayılır) (varsayılan :80)
-  --web DİZİN           web kabuk dizini (varsayılan /usr/share/makeros/shell)
+  --web DİZİN           web arayüzü dizini (varsayılan /usr/share/makeros/shell)
   --mock                sahte veri arka uçları (kök/NM/D-Bus gerekmez)
   --data-dir DİZİN      kalıcı veri dizini (varsayılan /var/lib/makerd; mock: geçici dizin)
-  --token-file YOL      yerel kabuk belirteci (varsayılan /run/makeros/token; mock: <data-dir>/token)
+  --token-file YOL      yerel arayüz belirteci (varsayılan /run/makeros/token; mock: <data-dir>/token)
   --priv-socket YOL     makerd-priv soketi (varsayılan /run/makeros/priv.sock)
   --user-socket-dir D   makerd-user@ soketleri (<uid>.sock) (varsayılan /run/makeros/user)
   --log-level SEVİYE    debug|info|warn|error (varsayılan info)
@@ -232,6 +232,8 @@ async fn run(o: Opts, fds: Vec<std::os::fd::OwnedFd>) -> Result<(), String> {
         Some(g) => Arc::new(g),
         None => Arc::new(gpio::Sim::new("Raspberry Pi 4 Model B (benzetim)")),
     };
+    // Bluetooth: BlueZ (ses yönlendirmesi /run/makeros-audio, makerd.service RuntimeDirectory); önizlemede benzetim.
+    let bt: Arc<dyn makerd::bluetooth::Provider> = if o.mock { Arc::new(makerd::bluetooth::Sim::new()) } else { Arc::new(makerd::bluetooth::Bluez::new("/run/makeros-audio")) };
     let update = (!o.update_repo.is_empty()).then_some(update);
     if let Some(u) = &update {
         tokio::spawn(watch_updates(u.clone(), notes.clone(), stop.clone()));
@@ -265,6 +267,7 @@ async fn run(o: Opts, fds: Vec<std::os::fd::OwnedFd>) -> Result<(), String> {
         agent: Some(agent.clone()),
         camera: Some(Arc::new(camera::Hub::new(cam_src))),
         gpio: Some(gpio_p),
+        bluetooth: Some(bt),
         update,
         catalog,
     };

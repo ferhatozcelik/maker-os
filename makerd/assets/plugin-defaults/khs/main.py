@@ -150,5 +150,16 @@ class H(BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
+    import errno
+    import sys
+
+    try:
+        srv = ThreadingHTTPServer(("127.0.0.1", PORT), H)
+    except OSError as e:
+        if e.errno != errno.EADDRINUSE:
+            raise
+        # Port dolu: büyük olasılıkla eklentinin bir kopyası zaten çalışıyor; ikinci kopya sessizce çıkar.
+        print(f"Konya HackerSpace eklentisi: port {PORT} kullanımda, zaten çalışan kopya kullanılıyor.", flush=True)
+        sys.exit(0)
     print("Konya HackerSpace eklentisi; port", PORT, flush=True)
-    ThreadingHTTPServer(("127.0.0.1", PORT), H).serve_forever()
+    srv.serve_forever()

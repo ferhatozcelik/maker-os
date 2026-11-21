@@ -143,6 +143,77 @@ pub fn cmd(id: &str, op: &str) -> ApiResult<(String, String)> {
     })
 }
 
+/// AI Asistan'ın kullanabileceği sohbet sağlayıcısı (kurulu CLI ajanı) ve model seçenekleri.
+#[derive(Serialize, Clone, Debug, Default, PartialEq)]
+pub struct ChatAgent {
+    pub id: String,
+    pub name: String,
+    pub vendor: String,
+    /// Önerilen modeller (ilk öğe "" = ajanın kendi varsayılanı). Ollama'da kurulu modeller.
+    pub models: Vec<String>,
+    /// Model zorunlu mu (Ollama: evet).
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub needs_model: bool,
+}
+
+/// Bilinen model takma adları (sağlayıcıların CLI'larında geçerli; "" = varsayılan). Serbest model adı da girilebilir.
+fn known_models(id: &str) -> Vec<String> {
+    let v: &[&str] = match id {
+        "claude" => &["", "sonnet", "opus", "haiku"],
+        "codex" => &["", "gpt-5-codex", "gpt-5"],
+        "gemini" => &["", "gemini-2.5-pro", "gemini-2.5-flash"],
+        _ => &[""],
+    };
+    v.iter().map(|s| s.to_string()).collect()
+}
+
+/// Kurulu ve sohbet için kullanılabilir ajanlar.
+pub async fn chat_agents(a: &dyn UserAgent, user: &str) -> ApiResult<Vec<ChatAgent>> {
+    let mut out = Vec::new();
+    for x in list(a, user).await?.into_iter().filter(|x| x.installed) {
+        let mut c = ChatAgent { id: x.id.clone(), name: x.name, vendor: x.vendor, models: known_models(&x.id), needs_model: false };
+        if x.id == "ollama" {
+            // Kurulu yerel modeller (ilk sütun: AD).
+            let (o, _) = uagent::output(a, user, "ollama list 2>/dev/null | tail -n +2 | awk '{print $1}'").await.unwrap_or_default();
+            c.models = String::from_utf8_lossy(&o).lines().map(str::trim).filter(|l| valid_model(l)).map(str::to_string).collect();
+            c.needs_model = true;
+        }
+        out.push(c);
+    }
+    Ok(out)
+}
+
+/// Model adı: harf, rakam ve . _ : / - (en fazla 100); boş = varsayılan.
+pub fn valid_model(m: &str) -> bool {
+    m.len() <= 100 && m.chars().all(|c| c.is_ascii_alphanumeric() || "._:/-".contains(c))
+}
+
+/// Ajanı tek seferlik (etkileşimsiz) çalıştıran kabuk komutu. İstem stdin'den okunur (kabuk kaçışı gerekmez);
+/// ajan ~/Projeler'de çalışır; hata çıktısı yalnız başarısızlıkta gösterilir; 5 dk sınır.
+pub fn chat_cmd(id: &str, model: &str) -> ApiResult<String> {
+    if !valid_model(model) {
+        return Err(ApiError::invalid("Geçersiz model adı."));
+    }
+    let m = |flag: &str| if model.is_empty() { String::new() } else { format!(" {flag} {model}") };
+    let run = match id {
+        "claude" => format!("claude -p \"$p\" --output-format text{}", m("--model")),
+        "codex" => format!("codex exec --skip-git-repo-check --color never{} \"$p\"", m("-m")),
+        "gemini" => format!("gemini{} -p \"$p\"", m("-m")),
+        "opencode" => format!("opencode run{} \"$p\"", m("-m")),
+        "ollama" => {
+            if model.is_empty() {
+                return Err(ApiError::invalid("Ollama için bir model seçin (ör. llama3.2:1b)."));
+            }
+            format!("ollama run {model} \"$p\"")
+        }
+        _ => return Err(ApiError::not_found("Ajan bulunamadı.")),
+    };
+    Ok(format!(
+        "p=$(cat); mkdir -p ~/Projeler && cd ~/Projeler || cd ~; e=$(mktemp); timeout 300 {run} 2>\"$e\" </dev/null; c=$?; \
+         if [ $c -ne 0 ]; then echo; echo \"⚠ Ajan hata verdi (çıkış $c):\"; tail -c 800 \"$e\"; fi; rm -f \"$e\"; exit $c"
+    ))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -157,6 +228,15 @@ mod tests {
         assert_eq!(cmd("claude", "run").unwrap(), ("mkdir -p ~/Projeler && cd ~/Projeler && claude".into(), "Claude Code".into()));
         assert_eq!(cmd("claude", "x").unwrap_err().code, "invalid");
         assert_eq!(cmd("yok", "run").unwrap_err().code, "not_found");
+        // Sohbet komutları: istem stdin'den, model yalnız güvenli karakterlerle.
+        let c = chat_cmd("claude", "sonnet").unwrap();
+        assert!(c.starts_with("p=$(cat);") && c.contains("claude -p \"$p\" --output-format text --model sonnet") && c.contains("timeout 300"), "{c}");
+        assert!(chat_cmd("codex", "").unwrap().contains("codex exec --skip-git-repo-check --color never \"$p\""));
+        assert!(chat_cmd("ollama", "llama3.2:1b").unwrap().contains("ollama run llama3.2:1b \"$p\""));
+        assert_eq!(chat_cmd("ollama", "").unwrap_err().code, "invalid");
+        assert_eq!(chat_cmd("claude", "x; rm -rf ~").unwrap_err().code, "invalid");
+        assert_eq!(chat_cmd("yok", "").unwrap_err().code, "not_found");
+        assert!(valid_model("openai/gpt-5") && !valid_model("a b") && !valid_model("$(x)"));
         // İç komutlar JSON'a sızmaz.
         let j = serde_json::to_value(&catalog()[0]).unwrap();
         assert!(j.get("install").is_none() && j.get("path").is_none());

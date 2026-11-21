@@ -4,6 +4,7 @@
 // logo, menü çubuğu işareti, sekme simgesi (favicon), uygulama simge paketi ve raf uygulamaları getirir.
 // Açık/koyu görünüm temadan bağımsızdır (pref "theme"); duvar kâğıdı temadan ayrı da seçilebilir.
 import { store } from "./lib.js";
+import { pref, setPref } from "./prefs.js";
 
 export const THEMES = [
   { id: "maker", accent: "orange" },       // grafit, kesim altlığı, teknik çizim (varsayılan)
@@ -66,10 +67,16 @@ export const themeName = (t, tr, lang) => t.plugin ? (typeof t.name === "object"
 export const themeDesc = (t, tr, lang) => t.plugin ? (typeof t.desc === "object" ? (t.desc[lang] || t.desc.tr) : (t.desc || "")) : tr("theme." + t.id + ".d");
 
 // Eklenti temalarını kaydet (GET /plugins sonucu). Varlıklar eklenti dizininden sunulur (süreç gerekmez).
+// Masaüstüne eklenebilen eklenti widget'ları (temadan bağımsız; plugin.json "widget"). Devre dışı eklentiler yok.
+export const PLUGIN_WIDGETS = [];
+export const pluginWidget = id => PLUGIN_WIDGETS.find(w => w.plugin === id);
 export function registerPluginThemes(plugins) {
+  PLUGIN_WIDGETS.splice(0, PLUGIN_WIDGETS.length, ...(plugins || []).filter(p => !p.disabled && p.widget && p.web_port).map(p => ({
+    plugin: p.id, name: p.name, url: `/plugin/${p.id}${p.widget.path || "/"}`, w: p.widget.w || 320, h: p.widget.h || 200, running: !!p.running })));
   const asset = (pid, rel) => rel && (/^https?:/.test(rel) ? rel : `/api/v1/plugins/${pid}/asset/${rel.replace(/^\.?\//, "")}`);
   for (let i = THEMES.length - 1; i >= 0; i--) if (THEMES[i].plugin) THEMES.splice(i, 1);
   for (const p of plugins || []) {
+    if (p.disabled) continue; // devre dışı eklentinin teması, kartı ve durum göstergesi kullanılmaz
     const th = p.theme;
     if (!th || !th.id || THEMES.some(t => t.id === th.id)) continue;
     const w = th.wallpaper || {};
@@ -114,4 +121,19 @@ export async function widgetReady(w, start) {
     await new Promise(r => setTimeout(r, 500));
   }
   return false;
+}
+
+// Eklenti temalarını kaydeder; seçili tema (ya da duvar kâğıdı) artık olmayan/devre dışı bir eklentiye aitse
+// varsayılan temaya döner (vurgu rengi de). Liste alınamadıysa (plugins == null) hiçbir şeye dokunmaz.
+export function syncPluginThemes(plugins) {
+  if (!Array.isArray(plugins)) return;
+  registerPluginThemes(plugins);
+  const look = pref("look");
+  if (look && !find(look)) {
+    const d = find(DEFAULT_THEME);
+    setPref("look", DEFAULT_THEME);
+    setPref("accent", d.accent);
+  }
+  const w = pref("wallpaper");
+  if (w && w !== "auto" && !String(w).startsWith("custom:") && !find(w)) setPref("wallpaper", "auto");
 }

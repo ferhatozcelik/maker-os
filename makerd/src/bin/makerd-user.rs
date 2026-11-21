@@ -14,7 +14,7 @@ use std::sync::Arc;
 const USAGE: &str = "Kullanım: makerd-user [bayraklar]
   --socket-dir YOL   soket dizini (<uid>.sock) (varsayılan /run/makeros/user)
   --allow-user AD    bağlanabilecek kullanıcılar (virgülle); root her zaman izinli (varsayılan maker)
-  --shell YOL        giriş kabuğu bulunamazsa kullanılacak kabuk (varsayılan /bin/sh)
+  --shell YOL        giriş terminali (shell) bulunamazsa kullanılacak terminal (varsayılan /bin/sh)
   --max N            aynı anda en fazla terminal (varsayılan 16)
   --version          sürümü yaz ve çık";
 

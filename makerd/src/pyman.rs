@@ -18,6 +18,8 @@ static TEMPLATES: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/assets/py-template
 pub const PROJECTS_DIR: &str = "Projeler";
 /// İmajdaki Python (libcamera, picamera2, gpiozero, lgpio burada).
 pub const SYSTEM_PYTHON: &str = "/usr/bin/python3";
+/// Sistem Python'u (kabuk ifadesi): imajda /usr/bin/python3; yoksa (ör. Docker önizlemesi: /usr/local/bin) PATH'teki python3.
+const SYSTEM_PYTHON_SH: &str = r#""$( [ -x /usr/bin/python3 ] && echo /usr/bin/python3 || command -v python3 || echo python3 )""#;
 
 /// İki dilli metin.
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
@@ -325,7 +327,7 @@ pub async fn create(a: &dyn Agent, user: &str, name: &str, tmpl_id: &str, python
     mb.push(b'\n');
     uagent::write_all(a, user, &format!("{dir}/.makeros.json"), mb).await?;
     let _ = uagent::write_all(a, user, &format!("{dir}/.gitignore"), ".venv/\n__pycache__/\n").await;
-    let py = if python == "system" { SYSTEM_PYTHON } else { python };
+    let py = if python == "system" { SYSTEM_PYTHON_SH } else { python };
     // --system-site-packages: imajdaki libcamera/picamera2/gpiozero/lgpio/numpy projede de görünür.
     Ok(format!(
         "cd ~/{dir} && echo '» {name}: ortam hazırlanıyor (uv)' && uv venv --quiet --system-site-packages --python {py} && uv sync && echo && echo '✔ Hazır. Çalıştırmak için: {}'",
@@ -375,7 +377,7 @@ mod tests {
             home: home.to_string_lossy().into_owned(),
         };
         let cmd = create(&a, "u", "ilk-proje", "nesne-tespiti", "system").await.unwrap();
-        assert!(cmd.contains("uv venv --quiet --system-site-packages --python /usr/bin/python3") && cmd.contains("uv sync"), "{cmd}");
+        assert!(cmd.contains("uv venv --quiet --system-site-packages --python \"$( [ -x /usr/bin/python3 ] && echo /usr/bin/python3") && cmd.contains("uv sync"), "{cmd}");
         let main = std::fs::read_to_string(home.join("Projeler/ilk-proje/main.py")).unwrap();
         assert!(main.contains("ilk-proje") && !main.contains("{{name}}"));
         let pp = std::fs::read_to_string(home.join("Projeler/ilk-proje/pyproject.toml")).unwrap();
@@ -536,7 +538,7 @@ pub async fn python_switch_cmd(a: &dyn Agent, user: &str, name: &str, python: &s
     let mut mb = serde_json::to_vec_pretty(&m)?;
     mb.push(b'\n');
     uagent::write_all(a, user, &format!("{dir}/.makeros.json"), mb).await?;
-    let py = if python == "system" { SYSTEM_PYTHON } else { python };
+    let py = if python == "system" { SYSTEM_PYTHON_SH } else { python };
     Ok(format!("cd ~/{dir} && echo '» Python ortamı yeniden kuruluyor: {python}' && uv venv --clear --quiet --system-site-packages --python {py} && uv sync && echo && echo '✔ Tamamlandı'"))
 }
 

@@ -141,6 +141,9 @@ BR2_PACKAGE_IW=y
 BR2_PACKAGE_OPENSSH=y
 BR2_PACKAGE_BLUEZ5_UTILS=y
 BR2_PACKAGE_BLUEZ5_UTILS_CLIENT=y
+# Bluetooth ses (kulaklik/hoparlor, A2DP): bluez-alsa + ALSA araclari (amixer, aplay)
+BR2_PACKAGE_BLUEZ_ALSA=y
+BR2_PACKAGE_ALSA_UTILS=y
 
 # --- Grafik: Mesa (v3d + vc4), Wayland, labwc + cog (WPE) ------------------------------
 BR2_PACKAGE_MESA3D=y

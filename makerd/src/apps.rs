@@ -129,7 +129,7 @@ impl Registry {
     pub async fn start_with(&self, id: &str, url: Option<&str>) -> ApiResult<()> {
         let a = self.list().into_iter().find(|a| a.id == id).ok_or_else(|| ApiError::not_found("Uygulama bulunamadı."))?;
         if a.kind == "web" {
-            return Err(ApiError::invalid("Web uygulamalarını kabuk kendisi açar."));
+            return Err(ApiError::invalid("Web uygulamalarını arayüz kendisi açar."));
         }
         let mut argv = if a.argv.is_empty() { split_exec(&a.exec) } else { a.argv.clone() };
         if argv.is_empty() {

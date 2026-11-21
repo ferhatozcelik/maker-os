@@ -4,8 +4,8 @@
 // ilk kullanımda dinamik import ile yüklenir (bkz. M).
 import { $, store, lazy } from "./lib.js";
 import { t } from "./i18n.js";
-import { prefs, pref, isDark, syncPrefs } from "./prefs.js";
-import { wallURL, themeById, brand, setFavicon, widgetReady } from "./themes.js";
+import { prefs, pref, setPref, isDark, syncPrefs } from "./prefs.js";
+import { wallURL, themeById, brand, setFavicon, widgetReady, pluginWidget } from "./themes.js";
 import { get, post, bus, Events } from "./api.js";
 import { APPS, appById, loadApps, isBrowser } from "./apps.js";
 import { keys, attach } from "./keys.js";
@@ -277,6 +277,18 @@ async function start() {
   S.events.on("open", () => { if (offline) { offline = false; toast(t("api.back"), "check"); } });
   S.events.subscribe("system", s => { S.sys = s; S.emit("system", s); });
   S.events.subscribe("net", n => { S.net = n; S.emit("net", n); });
+  // Eklenti başlatıldı/durduruldu/kuruldu/kaldırıldı: uygulama listesi, raf, menüler ve tema yenilenir;
+  // artık listede olmayan eklentinin açık penceresi kapanır (arayüzü çalışmıyor).
+  let appsTimer = 0;
+  const refreshApps = () => { clearTimeout(appsTimer); appsTimer = setTimeout(async () => {
+    const before = APPS.map(a => a.id);
+    await loadApps();
+    S.apps = APPS;
+    for (const id of before) if (id.startsWith("makeros.plugin.") && !appById(id)) S.wm.quitApp(id);
+    S.emit("apps", APPS);
+  }, 600); };
+  S.events.subscribe("plugins", refreshApps);
+  S.events.on("open", () => { if (started) refreshApps(); }); // bağlantı kopukken kaçan değişiklikler
   get("/net").then(n => { S.net = n; S.emit("net", n); }).catch(() => {});
 
   mountMenubar($("#menubar"));
@@ -332,16 +344,36 @@ async function renderWidgets() {
   // Tema widget'ı
   const w = pref("uiThemeWidget") !== false ? themeById(pref("look")).widget : null;
   const key = w ? w.url : "";
-  if (key === themeKey) return;
-  themeKey = key;
-  host.querySelector("iframe.w-theme")?.remove();
-  if (!w) return;
-  const f = widgetFrame("w-theme", w);
-  host.prepend(f);
-  await widgetReady(w, id => post(`/plugins/${id}/start`));
-  if (themeKey !== key) return;
-  f.addEventListener("load", () => f.classList.add("on")); // boş iframe'in ilk "load"ı sayılmaz
-  f.src = w.url;
+  if (key !== themeKey) {
+    themeKey = key;
+    host.querySelector("iframe.w-theme")?.remove();
+    if (w) {
+      const f = widgetFrame("w-theme", w);
+      host.prepend(f);
+      widgetReady(w, id => post(`/plugins/${id}/start`)).then(() => {
+        if (themeKey !== key) return;
+        f.addEventListener("load", () => f.classList.add("on")); // boş iframe'in ilk "load"ı sayılmaz
+        f.src = w.url;
+      });
+    }
+  }
+  // Kullanıcının eklediği eklenti widget'ları (Eklentiler → Masaüstüne ekle). Eklenti durdurulur/kaldırılırsa
+  // listeden düşer (loadApps → "look" değişimi → burası); yeniden başlatılınca geri gelir.
+  const mine = mq.matches ? [] : (pref("desktopWidgets") || []).map(pluginWidget).filter(x => x && x.url !== key);
+  const want = new Set(mine.map(x => x.url));
+  for (const f of host.querySelectorAll("iframe.w-plugin")) if (!want.has(f.dataset.url)) f.remove();
+  for (const x of mine) {
+    if (host.querySelector(`iframe.w-plugin[data-url="${CSS.escape(x.url)}"]`)) continue;
+    const f = widgetFrame("w-plugin", x);
+    f.dataset.url = x.url;
+    f.dataset.plugin = x.plugin;
+    host.insertBefore(f, host.querySelector("iframe.w-ai"));
+    widgetReady(x, id => post(`/plugins/${id}/start`)).then(ok => {
+      if (!f.isConnected) return;
+      f.addEventListener("load", () => f.classList.add("on"));
+      if (ok) f.src = x.url; else f.remove();
+    });
+  }
 }
 addEventListener("message", e => {
   if (e.origin !== location.origin || !e.data?.mk) return;
@@ -351,9 +383,10 @@ addEventListener("message", e => {
   else if (e.data.mk === "shortcut" && e.data.id) S.act(e.data.id);
   else if (e.data.mk === "power" && e.data.action) S.power(e.data.action);
   else if (e.data.mk === "notify") toast(e.data.title || e.data.body, "sparkles");
+  else if (e.data.mk === "widget-close" && f.dataset.plugin) setPref("desktopWidgets", (pref("desktopWidgets") || []).filter(x => x !== f.dataset.plugin));
   else if (e.data.mk === "widget-size" && e.data.h > 40 && e.data.h < 800) f.style.height = e.data.h + "px"; // içeriğe göre (boşluk yok)
 });
 prefs.on("change", k => {
-  if (k === "look" || k === "aiWidget" || k === "uiThemeWidget") renderWidgets();
+  if (k === "look" || k === "aiWidget" || k === "uiThemeWidget" || k === "desktopWidgets") renderWidgets();
   if (k === "uiMenubar" || k === "uiDock") wm.relayout();
 });

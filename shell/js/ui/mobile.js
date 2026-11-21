@@ -29,6 +29,7 @@ export function mountMobile() {
       running);
   };
   render();
+  S.on("apps", () => { if (!S.wm.focused) render(); }); // eklenti listesi değişti
   S.wm.on("change", () => { if (!S.wm.focused) render(); });
   S.wm.on("focus", w => {
     document.documentElement.classList.toggle("m-app-open", !!w);

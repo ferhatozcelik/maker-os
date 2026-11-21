@@ -90,8 +90,8 @@ pub fn local(command: Command) -> Spawner {
     Arc::new(move |_user, cols, rows, cmd| {
         let command = command.clone();
         Box::pin(async move {
-            let spec = command().map_err(|e| ApiError::internal(format!("Kabuk hazırlanamadı: {e}")))?.with_cmd(&cmd);
-            pty::spawn(&spec, cols, rows).map_err(|e| ApiError::internal(format!("Kabuk başlatılamadı: {e}")))
+            let spec = command().map_err(|e| ApiError::internal(format!("Terminal hazırlanamadı: {e}")))?.with_cmd(&cmd);
+            pty::spawn(&spec, cols, rows).map_err(|e| ApiError::internal(format!("Terminal başlatılamadı: {e}")))
         })
     })
 }
@@ -247,7 +247,7 @@ impl Manager {
         let s = Arc::new(Session {
             id: crate::util::random_token(12),
             user: user.into(),
-            title: if o.title.is_empty() { "kabuk".into() } else { o.title },
+            title: if o.title.is_empty() { "terminal".into() } else { o.title },
             cmd: o.cmd,
             created: jiff::Timestamp::now(),
             pid: proc.pid,

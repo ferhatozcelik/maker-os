@@ -83,3 +83,9 @@ a.btn { text-decoration: none; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme=light]) .card2 { box-shadow: none; } }
 :root[data-theme=dark] .card2 { box-shadow: none; }
 html[data-embed=page] .bar2 h1 { display: none; }
+
+/* Web arayüzü (data-embed=page): Ayarlar sayfa listesi ve Python bölüm sekmeleri kabuğun sol menüsündedir. */
+html[data-embed=page] .split > .sidebar { display: none; }
+html[data-embed=page] .split .content { position: static; transform: none; visibility: visible; }
+html[data-embed=page] .page-h .back { display: none; }
+html[data-embed=page] .bar2 .subnav { display: none; }

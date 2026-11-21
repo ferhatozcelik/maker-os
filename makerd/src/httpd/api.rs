@@ -808,3 +808,69 @@ pub async fn wallpaper_delete(State(s): State<S>, h: HeaderMap, Path(name): Path
     }
     Ok(StatusCode::NO_CONTENT.into_response())
 }
+
+// --- bluetooth -------------------------------------------------------------------
+
+fn bt_p(s: &Server) -> ApiResult<Arc<dyn crate::bluetooth::Provider>> {
+    s.d.bluetooth.clone().ok_or_else(|| ApiError::unavailable("Bluetooth hizmeti yok."))
+}
+
+pub async fn bt_status(State(s): State<S>, h: HeaderMap) -> R {
+    session_of(&s, &h)?;
+    match s.d.bluetooth.clone() {
+        Some(b) => Ok(json(&b.status().await?)),
+        None => Ok(json(&crate::bluetooth::Status::default())),
+    }
+}
+
+/// POST /bluetooth {"power": bool} | {"discover": bool} → güncel durum. Arama arka planda sürer.
+pub async fn bt_adapter(State(s): State<S>, h: HeaderMap, body: Bytes) -> R {
+    let sess = admin_of(&s, &h)?;
+    #[derive(Deserialize, Default)]
+    struct Req {
+        power: Option<bool>,
+        discover: Option<bool>,
+    }
+    let req: Req = decode(&body)?;
+    let b = bt_p(&s)?;
+    if let Some(on) = req.power {
+        b.set_power(on).await?;
+        tracing::info!(on, by = %sess.user, "Bluetooth radyosu");
+    } else if let Some(on) = req.discover {
+        if on {
+            let b2 = b.clone();
+            tokio::spawn(async move {
+                if let Err(e) = b2.discover(true).await {
+                    tracing::warn!(err = %e.message, "Bluetooth araması");
+                }
+            });
+            tokio::time::sleep(Duration::from_millis(200)).await;
+        } else {
+            b.discover(false).await?;
+        }
+    } else {
+        return Err(ApiError::invalid("power veya discover gerekli."));
+    }
+    Ok(json(&b.status().await?))
+}
+
+/// POST /bluetooth/{adres}/{pair|connect|disconnect|forget} → güncel durum.
+pub async fn bt_device(State(s): State<S>, h: HeaderMap, Path((addr, op)): Path<(String, String)>) -> R {
+    let sess = admin_of(&s, &h)?;
+    crate::bluetooth::valid_addr(&addr)?;
+    let b = bt_p(&s)?;
+    let fut = match op.as_str() {
+        "pair" => b.pair(&addr),
+        "connect" => b.connect(&addr),
+        "disconnect" => b.disconnect(&addr),
+        "forget" => b.forget(&addr),
+        _ => return Err(ApiError::not_found("Bilinmeyen Bluetooth işlemi.")),
+    };
+    // Eşleştirme kullanıcı onayı bekleyebilir (kulaklık düğmesi vb.): 60 sn sınırı.
+    match tokio::time::timeout(Duration::from_secs(60), fut).await {
+        Ok(r) => r?,
+        Err(_) => return Err(ApiError::unavailable("İşlem zaman aşımına uğradı. Cihazı eşleştirme moduna alıp tekrar deneyin.")),
+    }
+    tracing::info!(%addr, %op, by = %sess.user, "Bluetooth");
+    Ok(json(&b.status().await?))
+}

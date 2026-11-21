@@ -92,6 +92,7 @@ async fn env(fresh: bool) -> Env {
         agent: Some(Arc::new(uagent::Local { command: sh(), home: tmp("home").to_string_lossy().into_owned() })),
         camera: Some(Arc::new(camera::Hub::new(Arc::new(camera::Synthetic)))),
         gpio: Some(Arc::new(gpio::Sim::new("test"))),
+        bluetooth: Some(Arc::new(crate::bluetooth::Sim::with_step(std::time::Duration::from_millis(1)))),
         update: None,
         catalog: None,
     };
@@ -506,4 +507,21 @@ async fn wallpapers() {
     assert_eq!((r.status, r.headers.get("content-type").unwrap().to_str().unwrap(), r.body.len()), (200, "image/jpeg", jpg.len()));
     assert_eq!(e.req("DELETE", "/api/v1/wallpaper/lock", "", a).await.status, 204);
     assert_eq!(e.req("GET", "/api/v1/wallpaper/lock", "", &[]).await.status, 404);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn bluetooth_api() {
+    let e = env(false).await;
+    let c = e.login().await;
+    let a: &[(&str, &str)] = &[("Cookie", &c), ("X-Maker", "1")];
+    let st = e.req("GET", "/api/v1/bluetooth", "", a).await.json();
+    assert_eq!((st["adapter"]["available"].as_bool(), st["devices"].as_array().unwrap().len()), (Some(true), 2));
+    let st = e.req("POST", "/api/v1/bluetooth/38:18:4C:A1:22:7B/connect", "", a).await.json();
+    let d = st["devices"].as_array().unwrap().iter().find(|d| d["address"] == "38:18:4C:A1:22:7B").unwrap().clone();
+    assert_eq!((d["connected"].as_bool(), d["audio_out"].as_bool(), d["kind"].as_str()), (Some(true), Some(true), Some("audio")));
+    assert_eq!(e.req("POST", "/api/v1/bluetooth/zz/connect", "", a).await.status, 400);
+    assert_eq!(e.req("POST", "/api/v1/bluetooth/38:18:4C:A1:22:7B/sil", "", a).await.status, 404);
+    assert_eq!(e.req("POST", "/api/v1/bluetooth", "{}", a).await.status, 400);
+    assert_eq!(e.req("POST", "/api/v1/bluetooth", r#"{"power":false}"#, a).await.json()["adapter"]["powered"], false);
+    assert_eq!(e.req("GET", "/api/v1/bluetooth", "", &[]).await.status, 401);
 }

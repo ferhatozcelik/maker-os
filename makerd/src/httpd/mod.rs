@@ -31,7 +31,7 @@ use std::time::{Duration, Instant};
 use tokio_util::sync::CancellationToken;
 
 /// events WS konuları.
-pub const TOPICS: &[&str] = &["system", "net", "jobs", "notifications", "processes"];
+pub const TOPICS: &[&str] = &["system", "net", "jobs", "notifications", "processes", "plugins"];
 
 /// Kullanıcı hesabı oluşturucu (gerçek: makerd-priv user.create; mock: bellek).
 pub trait Accounts: Send + Sync {
@@ -72,6 +72,8 @@ pub struct Deps {
     pub agent: Option<Arc<dyn uagent::Agent>>,
     pub camera: Option<Arc<camera::Hub>>,
     pub gpio: Option<Arc<dyn gpio::Provider>>,
+    /// None ise /bluetooth "kullanılamıyor" döner.
+    pub bluetooth: Option<Arc<dyn crate::bluetooth::Provider>>,
     pub update: Option<Arc<ota::Updater>>,
     /// Eklenti kataloğu (mağaza); None ise /plugins/catalog 503.
     pub catalog: Option<Arc<crate::catalog::Catalog>>,
@@ -139,6 +141,8 @@ impl Server {
             .route("/api/v1/net/wifi/connect", post(api::wifi_connect))
             .route("/api/v1/net/wifi/forget", post(api::wifi_forget))
             .route("/api/v1/net/wifi", put(api::wifi_enable))
+            .route("/api/v1/bluetooth", get(api::bt_status).post(api::bt_adapter))
+            .route("/api/v1/bluetooth/{addr}/{op}", post(api::bt_device))
             .route("/api/v1/prefs", get(api::get_prefs).put(api::put_prefs))
             .route("/api/v1/setup", get(api::setup_state))
             .route("/api/v1/setup/wifi/scan", post(api::setup_wifi_scan))
@@ -198,6 +202,8 @@ impl Server {
             .route("/api/v1/plugins/{id}/{op}", post(user::plugin_op))
             .route("/api/v1/plugins/{id}", delete(user::plugin_delete))
             .route("/api/v1/asistan/calistir", post(user::ai_run))
+            .route("/api/v1/asistan/ajanlar", get(user::ai_agents))
+            .route("/api/v1/asistan/ajan", post(user::ai_agent_chat))
             .route("/api/v1/ai/{*rest}", any(proxy::ai_proxy))
             .route("/plugin/{id}/", any(proxy::plugin_proxy))
             .route("/plugin/{id}/{*rest}", any(proxy::plugin_proxy))

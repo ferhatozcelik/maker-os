@@ -9,8 +9,9 @@
 <style>
 html, body { margin: 0; background: transparent; }
 body { font: 13px/1.45 var(--font-sans, system-ui, sans-serif); color: var(--text); }
-.card { margin: 2px; border-radius: 18px; background: var(--bg-content, #fff);
-  border: .5px solid color-mix(in srgb, var(--text) 14%, transparent); box-shadow: 0 10px 30px rgba(0,0,0,.18); overflow: hidden; }
+.card { margin: 0; border-radius: 18px; background: var(--bg-content, #fff);
+  border: .5px solid color-mix(in srgb, var(--text) 14%, transparent); overflow: hidden; }
+/* Gölge ve köşe yuvarlatma masaüstündeki iframe'de (css/shell.css #widgets iframe.w-ai): iframe içinde gölge kare kenarda kesilip köşelerde koyu iz bırakıyordu. */
 .hd { display: flex; align-items: center; gap: 6px; padding: 10px 10px 6px 12px; }
 .logo { width: 24px; height: 24px; border-radius: 7px; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, #ff9a3d, #ff5a1a); flex: none; }
 .hd b { font-size: 13px; }
@@ -71,6 +72,31 @@ input:focus { border-color: var(--accent, #ff7a1a); box-shadow: 0 0 0 3px color-
 .res .rh { display: flex; align-items: center; gap: 8px; font-size: 10.5px; color: var(--text-2); margin-bottom: 3px; }
 .res .rh b.ok { color: #2fa84f; } .res .rh b.bad { color: #e0393f; }
 .res .rh button { margin-left: auto; border: 0; background: none; color: var(--accent, #ff7a1a); font: inherit; cursor: pointer; padding: 0; }
+/* Sağlayıcı / model seçimi */
+.ft .grow { flex: 1; }
+.ft #meta { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.ft select[hidden] { display: none; }
+/* Tam sayfa (Web arayüzü "AI Asistan", ?full=1): sohbet alanı ortada, yazma alanı altta */
+html.full, html.full body { height: 100%; background: var(--bg-window, #fff); }
+html.full .card { height: 100%; border: 0; border-radius: 0; display: flex; flex-direction: column; background: var(--bg-window, #fff); }
+html.full .card > * { width: 100%; max-width: 860px; margin-left: auto; margin-right: auto; box-sizing: border-box; }
+html.full .hd { order: 0; padding: 14px 16px 6px; }
+html.full .out { order: 1; flex: 1; min-height: 0; max-height: none; border-top: 0; padding: 4px 16px 12px; font-size: 14px; }
+html.full .out[hidden] { display: block; visibility: hidden; }
+html.full .chips { order: 2; padding: 0 16px 10px; justify-content: center; }
+html.full .chips button { font-size: 13px; padding: 7px 12px; }
+html.full .prog-wrap { order: 3; padding: 0 16px 6px; }
+html.full form { order: 4; padding: 6px 16px 4px; }
+html.full form input { height: 44px; font-size: 14px; border-radius: 14px; padding: 0 14px; }
+html.full form .go { width: 44px; height: 44px; border-radius: 14px; }
+html.full .ft { order: 5; padding: 6px 16px 14px; font-size: 12px; }
+html.full .ft select { font-size: 12px; padding: 4px 8px; }
+html.full #close { display: none; }
+html.full .q { margin-top: 18px; padding: 8px 12px; border-radius: 12px; background: var(--bg-hover); width: fit-content; max-width: 85%; margin-left: auto; font-weight: 500; }
+html.full .empty-hero { order: 1; flex: 1; display: grid; place-content: center; text-align: center; gap: 6px; color: var(--text-2); }
+html.full .empty-hero b { font-size: 22px; color: var(--text); }
+.empty-hero { display: none; }
+html.full .empty-hero[hidden] { display: none; }
 </style>
 </head>
 <body>
@@ -82,9 +108,10 @@ input:focus { border-color: var(--accent, #ff7a1a); box-shadow: 0 0 0 3px color-
   </div>
   <form id="f"><input id="in" autocomplete="off" spellcheck="false" placeholder="Ne yapmak istersiniz? (Sohbet, MakerOS, komut…)"><button class="go" id="go" title="Gönder"></button></form>
   <div class="prog-wrap" id="prog" hidden><div class="prog-bar"><i></i></div><button type="button" class="prog-stop" id="stop">Durdur</button></div>
+  <div class="empty-hero" id="hero"><b>Ne yapmak istersiniz?</b><span id="hero-sub">Sohbet edin, MakerOS'u yönetin ya da komut çalıştırın.</span></div>
   <div class="chips" id="chips"></div>
   <div class="out" id="out" hidden></div>
-  <div class="ft"><span id="meta">MakerOS AI</span><select id="mode" title="İzin modu: Full Bypass komutları ve eylemleri doğrudan çalıştırır; İzin iste çalıştırmadan önce onay alır."><option value="bypass">Full Bypass</option><option value="sor">İzin iste</option></select></div>
+  <div class="ft"><span id="meta">MakerOS AI</span><span class="grow"></span><select id="prov" title="Asistan: Maker AI (yerel, internetsiz) veya kurulu bir CLI ajanı"><option value="maker">Maker AI</option></select><select id="model" title="Model" hidden></select><select id="mode" title="İzin modu: Full Bypass komutları ve eylemleri doğrudan çalıştırır; İzin iste çalıştırmadan önce onay alır."><option value="bypass">Full Bypass</option><option value="sor">İzin iste</option></select></div>
 </div>
 <script type="module" src="/shell/apps/ai-widget/widget.js"></script>
 </body>
