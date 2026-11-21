@@ -25,6 +25,8 @@
   imajından yeniden paketlendiği için bluez-alsa içermez, yönlendirme bir sonraki tam derlemeyle gelir (makerd bu arada sesi bozmaz)
 - **GPIO:** pin bağlantı taraması (iç pull-up/down ile boşta / dışarıdan sürülüyor tahmini)
 - **AI Asistan:** kurulu CLI ajanı (Claude Code, Codex, Gemini CLI, OpenCode, Ollama) ve model seçimi; tam sayfa görünüm
+- **Yazılım güncelleme:** RAUC önyükleyici betiği (`rpi-tryboot-backend`) ilk kablosuz güncellemede boştaki slotu "bad"
+  işaretlerken hata kodu döndürüp kurulumu durduruyordu; düzeltildi
 - **MakerOS Bench** (`benchmark/`): tek dosyalık karşılaştırma testi, Markdown/JSON rapor ve Raspberry Pi OS · MakerOS sonuç listesi
   ([grafikler](https://ferhatozcelik.github.io/maker-os/benchmark/))
 

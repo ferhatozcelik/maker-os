@@ -107,7 +107,11 @@ set-state)
 		;;
 	bad)
 		: > "${STATE_DIR}/bad.${slot}"
-		[ "$(cat "${PENDING}" 2>/dev/null)" = "${slot}" ] && rm -f "${PENDING}"
+		# if/fi: "[ ... ] && rm" bekleyen deneme yokken 1 doner ve betik 1 ile cikar; RAUC bunu
+		# "slot isaretlenemedi" sayip kurulumu durdururdu (1.0.0'daki ilk guncelleme hatasi).
+		if [ "$(cat "${PENDING}" 2>/dev/null)" = "${slot}" ]; then
+			rm -f "${PENDING}"
+		fi
 		;;
 	*) echo "gecersiz durum: ${state}" >&2; exit 1 ;;
 	esac
