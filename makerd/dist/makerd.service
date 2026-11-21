@@ -1,4 +1,4 @@
-# Örnek birim (os/ ajanı uyarlayabilir). makerd yetkisiz "maker" kullanıcısıyla çalışır.
+# Örnek birim (os/ ajanı uyarlayabilir). makerd yetkisiz "makerd" hizmet hesabıyla çalışır.
 [Unit]
 Description=MakerOS arka uç hizmeti (makerd)
 Documentation=file:///usr/share/doc/makerd/README.md
@@ -7,8 +7,8 @@ Wants=makerd-priv.socket
 
 [Service]
 Type=notify
-User=maker
-Group=maker
+User=makerd
+Group=makerd
 SupplementaryGroups=video gpio i2c spi dialout netdev audio bluetooth
 ExecStart=/usr/bin/makerd --listen :80 --web /usr/share/makeros/shell --data-dir /var/lib/makerd --log-format text
 Restart=on-failure

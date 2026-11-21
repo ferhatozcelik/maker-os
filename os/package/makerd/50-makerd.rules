@@ -1,6 +1,6 @@
-// makerd (yetkisiz, "maker" kullanicisi) sistem hizmetlerini D-Bus uzerinden yonetebilsin.
+// makerd (yetkisiz, "makerd" hizmet hesabi) sistem hizmetlerini D-Bus uzerinden yonetebilsin.
 polkit.addRule(function(action, subject) {
-	if (subject.user !== "maker")
+	if (subject.user !== "makerd")
 		return polkit.Result.NOT_HANDLED;
 	var id = action.id;
 	if (id.indexOf("org.freedesktop.hostname1.") === 0 ||

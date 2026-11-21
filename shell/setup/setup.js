@@ -12,7 +12,7 @@ import tr from "../i18n/tr.js";
 import { api } from "../js/api.js";
 
 // Varsayılan yönetici hesabı ('maker' makerd hizmet hesabıdır, kullanılamaz).
-export const DEFAULT_USER = { user: "makeros", password: "makeros", fullname: "MakerOS" };
+export const DEFAULT_USER = { user: "maker", password: "maker", fullname: "Maker" };
 
 const dicts = { tr };
 let ui = "tr";

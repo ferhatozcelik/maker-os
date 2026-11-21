@@ -31,7 +31,7 @@ define MAKERD_INSTALL_TARGET_CMDS
 	done
 endef
 
-# Birimler makerd agacindan (makerd/dist) gelir; makerd 'maker' kullanicisiyla
+# Birimler makerd agacindan (makerd/dist) gelir; makerd 'makerd' hizmet hesabiyla
 # calisir, /run/makeros (belirtec + priv.sock) tmpfiles ile olusur.
 define MAKERD_INSTALL_INIT_SYSTEMD
 	$(INSTALL) -D -m 0644 $(@D)/dist/makerd.service \

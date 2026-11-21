@@ -423,7 +423,7 @@ pub fn is_default(id: &str) -> bool {
     DEFAULTS.get_file(format!("{id}/plugin.json")).is_some()
 }
 
-/// MakerOS ile gelen eklentileri (ör. Konya HackerSpace) kullanıcıda yoksa kurar;
+/// MakerOS ile gelen eklentileri (assets/plugin-defaults; şu an yok — KHS mağazadan kurulur) kullanıcıda yoksa kurar;
 /// kuruluysa ve gömülü sürüm daha yeniyse dosyaları yeniler (.venv ve günlük korunur).
 /// Kullanıcı kaldırdıysa (işaret dosyası) dokunmaz.
 pub async fn seed(a: &dyn Agent, user: &str) {
@@ -525,7 +525,7 @@ mod tests {
         assert!(asset_path("khs", "../../.ssh/id").is_err(), "eklenti dışına ve gizli dosyaya çıkılamaz");
         assert_eq!(asset_path("khs", "../icons/a.svg").unwrap(), ".local/share/makeros/plugins/khs/icons/a.svg");
         assert!(asset_path("khs", ".pid").is_err() && asset_path("khs", "a/.venv/x").is_err() && asset_path("khs", "").is_err());
-        assert!(is_default("khs") && !is_default("yok"));
+        assert!(!is_default("khs") && !is_default("yok"), "hiçbir eklenti kendiliğinden kurulmaz (KHS mağazada)");
         let z = template_zip().unwrap();
         let (m, _) = unpack(&z).unwrap();
         assert!(valid_id(&m.id));
@@ -548,7 +548,7 @@ mod tests {
             home: home.to_string_lossy().into_owned(),
         };
         let l = list(&a, "u").await.unwrap();
-        assert!(l.iter().any(|p| p.manifest.id == "khs"), "varsayılan eklenti kurulmalı");
+        assert!(l.is_empty(), "ilk açılışta hiçbir eklenti kendiliğinden kurulmaz");
         let m = import(&a, "u", &zip_of(&[("plugin.json", MANI), ("main.py", b"print(1)"), ("pyproject.toml", b"[project]\n"), ("lib/x.py", b"")])).await.unwrap();
         assert_eq!(m.id, "deneme");
         std::fs::write(home.join(".local/share/makeros/plugins/deneme/.log"), "gunluk").unwrap();
@@ -557,10 +557,10 @@ mod tests {
         let (_, f) = unpack(&z).unwrap();
         assert_eq!(f.keys().collect::<Vec<_>>(), vec!["lib/x.py", "main.py", "plugin.json", "pyproject.toml"]);
         assert!(!get(&a, "u", "deneme").await.unwrap().running);
-        remove(&a, "u", "khs").await.unwrap();
-        // Kaldırılan varsayılan eklenti yeniden kurulmaz.
         let l = list(&a, "u").await.unwrap();
         assert_eq!(l.iter().map(|p| p.manifest.id.as_str()).collect::<Vec<_>>(), vec!["deneme"]);
+        remove(&a, "u", "deneme").await.unwrap();
+        assert!(list(&a, "u").await.unwrap().is_empty());
         assert_eq!(get(&a, "u", "yok").await.unwrap_err().code, "not_found");
         let _ = std::fs::remove_dir_all(home);
     }

@@ -210,6 +210,24 @@ async fn login_rate_limit_and_local() {
 }
 
 #[tokio::test(flavor = "multi_thread")]
+async fn cast_ticket_once() {
+    let e = env(false).await;
+    // Oturumsuz bilet alınamaz; bilet tek kullanımlık ve yönetici yetkisi taşımaz.
+    assert_eq!(e.req("POST", "/api/v1/auth/cast-ticket", "", &[("X-Maker", "1")]).await.status, 401);
+    let ck = e.login().await;
+    let r = e.req("POST", "/api/v1/auth/cast-ticket", "", &[("X-Maker", "1"), ("Cookie", &ck)]).await;
+    assert_eq!(r.status, 200);
+    let t = serde_json::from_slice::<serde_json::Value>(&r.body).unwrap()["ticket"].as_str().unwrap().to_string();
+    let r = e.req("GET", &format!("/api/v1/auth/cast?t={t}"), "", &[]).await;
+    assert_eq!((r.status, r.headers.get(header::LOCATION).unwrap().to_str().unwrap()), (302, "/?ui=desktop"));
+    let s = e.req("GET", "/api/v1/session", "", &[("Cookie", &r.cookie())]).await;
+    assert_eq!(s.status, 200);
+    assert_eq!(serde_json::from_slice::<serde_json::Value>(&s.body).unwrap()["admin"], false);
+    assert_eq!(e.req("GET", &format!("/api/v1/auth/cast?t={t}"), "", &[]).await.status, 403, "ikinci kullanım");
+    assert_eq!(e.req("GET", "/api/v1/auth/cast?t=uydurma", "", &[]).await.status, 403);
+}
+
+#[tokio::test(flavor = "multi_thread")]
 async fn static_caching() {
     let e = env(false).await;
     let w = |rel: &str, body: &str| {

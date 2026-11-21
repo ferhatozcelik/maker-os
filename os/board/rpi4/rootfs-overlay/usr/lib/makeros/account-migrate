@@ -1,0 +1,22 @@
+#!/bin/sh
+# MakerOS 1.0.1 ve oncesi: makerd hizmet hesabinin adi "maker" idi (UID/GID 999). Yeni surumlerde "makerd";
+# "maker" adi insan kullaniciya (varsayilan hesap maker/maker) kalir. /etc yazilabilir ust katmanda oldugu icin
+# guncellenen cihazlarda eski ad kalir: acilista, makerd ve tmpfiles'tan once bir kez cevrilir. UID degismez.
+set -eu
+name="$(awk -F: '$3==999 {print $1; exit}' /etc/passwd)"
+[ "$name" = maker ] || exit 0
+grep -q '^makerd:' /etc/passwd && exit 0
+fix() {  # 1. alan (ad) ve uye listesindeki (alan $2) "maker" -> "makerd"
+	f="$1"; col="$2"; [ -f "$f" ] || return 0
+	tmp="$(mktemp "$f.XXXXXX")"
+	awk -F: -v OFS=: -v c="$col" '{
+		if ($1 == "maker") $1 = "makerd"
+		if (c > 0 && NF >= c) { n = split($c, a, ","); s = ""; for (i = 1; i <= n; i++) { if (a[i] == "maker") a[i] = "makerd"; s = s (i > 1 ? "," : "") a[i] } $c = s }
+		print }' "$f" > "$tmp"
+	cat "$tmp" > "$f"; rm -f "$tmp"   # yerinde yaz: izin ve sahiplik korunur
+}
+fix /etc/passwd 0
+fix /etc/shadow 0
+fix /etc/group 4
+fix /etc/gshadow 4
+echo "makerd hizmet hesabi: maker -> makerd (UID 999)"

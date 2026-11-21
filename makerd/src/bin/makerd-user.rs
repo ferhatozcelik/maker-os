@@ -13,7 +13,7 @@ use std::sync::Arc;
 
 const USAGE: &str = "Kullanım: makerd-user [bayraklar]
   --socket-dir YOL   soket dizini (<uid>.sock) (varsayılan /run/makeros/user)
-  --allow-user AD    bağlanabilecek kullanıcılar (virgülle); root her zaman izinli (varsayılan maker)
+  --allow-user AD    bağlanabilecek kullanıcılar (virgülle); root her zaman izinli (varsayılan makerd)
   --shell YOL        giriş terminali (shell) bulunamazsa kullanılacak terminal (varsayılan /bin/sh)
   --max N            aynı anda en fazla terminal (varsayılan 16)
   --version          sürümü yaz ve çık";
@@ -48,7 +48,7 @@ fn main() {
             std::process::exit(2);
         }
     };
-    let cfg = Config { dir: f.str("socket-dir", "/run/makeros/user"), allow: f.str("allow-user", "maker"), shell: f.str("shell", "/bin/sh"), max };
+    let cfg = Config { dir: f.str("socket-dir", "/run/makeros/user"), allow: f.str("allow-user", "makerd"), shell: f.str("shell", "/bin/sh"), max };
     logging::init("info", "text");
 
     let uid = util::getuid();

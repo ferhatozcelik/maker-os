@@ -29,16 +29,16 @@ echo "taban: $BASE (release=$RELEASE)"
 KEY_MOUNT=()
 [ -f "$RAUC_KEY" ] && KEY_MOUNT=(-v "$RAUC_KEY":/rauc-key.pem:ro)
 docker run --rm -i \
-	-v "$ROOT":/src:ro -v "$OUT":/out -v mk-remaster:/r -v mk-target:/target:ro -v mk-llama:/llama:ro \
+	-v "$ROOT":/src:ro -v "$OUT":/out -v "$(cd "$(dirname "$BASE")" && pwd)":/base:ro -v mk-remaster:/r -v mk-target:/target:ro -v mk-llama:/llama:ro \
 	${KEY_MOUNT[@]+"${KEY_MOUNT[@]}"} \
-	-e VERSION="$VERSION" -e RELEASE="$RELEASE" -e BASE="/out/$(basename "$BASE")" -e PUBKEY="$([ -r "$PUBKEY" ] && cat "$PUBKEY" || true)" \
+	-e VERSION="$VERSION" -e RELEASE="$RELEASE" -e BASE="/base/$(basename "$BASE")" -e PUBKEY="$([ -r "$PUBKEY" ] && cat "$PUBKEY" || true)" \
 	debian:trixie-slim bash -s <<'EOS'
 set -euo pipefail
 apt-get update -qq >/dev/null
 apt-get install -y -qq xz-utils erofs-utils mtools fdisk gzip rauc openssl squashfs-tools >/dev/null 2>&1
 cd /r
 if [ ! -f base.img ]; then
-	echo "taban açılıyor…"; xz -T0 -dc "$BASE" > base.img
+	echo "taban açılıyor…"; xz -T0 -dc "$BASE" > base.img.part && mv base.img.part base.img
 fi
 part() { sfdisk -d base.img | awk -v p="base.img$1 " 'index($0,p)==1 { gsub(/[=,]/," "); for (i=1;i<=NF;i++) { if ($i=="start") s=$(i+1); if ($i=="size") z=$(i+1) } print s, z }'; }
 read -r R_START R_SIZE < <(part 5)
@@ -120,9 +120,10 @@ if [ "$RELEASE" = 0 ]; then
 	echo "MakerOS $VERSION debug $(date -u +%Y%m%d%H%M)" > $R/usr/lib/makeros/debug-image
 fi
 
-# EROFS (özgün imajla aynı biçim)
+# EROFS (Buildroot imajıyla aynı biçim: lz4hc + ztailpacking + dedupe; "fragments" yok — onunla üretilen
+# imajı fsck.erofs açamıyor, yani yeniden paketlenmiş imaj tekrar taban olamıyordu)
 rm -f new.erofs
-mkfs.erofs -zlz4hc,12 -Eztailpacking,fragments,dedupe -T"$(date +%s)" --quiet new.erofs $R
+mkfs.erofs -zlz4hc,12 -Eztailpacking,dedupe -T"$(date +%s)" --quiet new.erofs $R
 SZ=$(stat -c %s new.erofs); MAX=$((R_SIZE * 512))
 [ "$SZ" -le "$MAX" ] || { echo "rootfs çok büyük: $SZ > $MAX" >&2; exit 1; }
 echo "rootfs: $((SZ / 1048576)) MiB / $((MAX / 1048576)) MiB"

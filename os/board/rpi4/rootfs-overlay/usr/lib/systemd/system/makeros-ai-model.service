@@ -1,0 +1,23 @@
+[Unit]
+Description=MakerOS AI asistanı modelini indir (ilk açılış, bir kez)
+Documentation=https://github.com/ferhatozcelik/maker-os/blob/main/docs/architecture/ai-assistant.md
+# Model yoksa: ağ gelince Hugging Face'ten indirir (~400 MB), SHA-256 doğrular, sonra asistanı başlatır.
+# Model /var/lib/makeros-ai altında (DATA bölümü; güncellemelerde korunur). USB'den kurmak için:
+#   sudo makeros-ai model-kur --dosya /media/.../qwen2.5-0.5b-instruct-q4_k_m.gguf
+ConditionPathExists=!/var/lib/makeros-ai/models/qwen2.5-0.5b-instruct-q4_k_m.gguf
+Wants=network-online.target
+After=network-online.target time-sync.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/makeros-ai model-kur
+ExecStartPost=/usr/bin/systemctl --no-block start makeros-ai.service
+# İnternet yoksa ya da indirme yarıda kalırsa 2 dakikada bir yeniden dene.
+Restart=on-failure
+RestartSec=120
+Nice=10
+IOSchedulingClass=idle
+TimeoutStartSec=infinity
+
+[Install]
+WantedBy=multi-user.target

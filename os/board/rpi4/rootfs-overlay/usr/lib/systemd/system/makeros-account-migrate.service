@@ -1,0 +1,14 @@
+[Unit]
+Description=MakerOS: makerd hizmet hesabi adini guncelle (maker -> makerd, bir kez)
+DefaultDependencies=no
+After=local-fs.target
+Before=sysinit.target systemd-tmpfiles-setup.service systemd-logind.service makerd.service makerd-priv.socket makeros-kiosk.service
+ConditionPathExists=/etc/passwd
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/makeros/account-migrate
+RemainAfterExit=yes
+
+[Install]
+WantedBy=sysinit.target

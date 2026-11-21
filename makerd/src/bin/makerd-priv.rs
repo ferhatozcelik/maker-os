@@ -12,8 +12,8 @@ use std::time::Duration;
 
 const USAGE: &str = "Kullanım: makerd-priv [bayraklar]
   --socket YOL        soket yolu (soket devri yoksa) (varsayılan /run/makeros/priv.sock)
-  --allow-user AD     izinli çağıran kullanıcılar (virgülle); root her zaman izinli (varsayılan maker)
-  --socket-group AD   kendi açtığı soketin grubu (varsayılan maker)
+  --allow-user AD     izinli çağıran kullanıcılar (virgülle); root her zaman izinli (varsayılan makerd)
+  --socket-group AD   kendi açtığı soketin grubu (varsayılan makerd)
   --shadow YOL        shadow dosyası (varsayılan /etc/shadow)
   --setup-flag YOL    bu dosya varsa user.create reddedilir (varsayılan /var/lib/makerd/setup-done)
   --idle SÜRE         soket devrinde boşta çıkış süresi (0: çıkma) (varsayılan 30s)
@@ -45,7 +45,7 @@ fn main() {
     logging::init("info", "text");
 
     let mut allowed: HashSet<u32> = [0].into();
-    for name in f.str("allow-user", "maker").split(',').map(str::trim).filter(|n| !n.is_empty()) {
+    for name in f.str("allow-user", "makerd").split(',').map(str::trim).filter(|n| !n.is_empty()) {
         match util::uid_of(name) {
             Some(id) => {
                 allowed.insert(id);
@@ -66,7 +66,7 @@ fn main() {
             }
             None => {
                 let sock = f.str("socket", DEFAULT_SOCKET);
-                (listen(&sock, &f.str("socket-group", "maker"))?, Duration::ZERO, sock)
+                (listen(&sock, &f.str("socket-group", "makerd"))?, Duration::ZERO, sock)
             }
         };
         let mut cmds = Commands::default();

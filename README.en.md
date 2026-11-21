@@ -11,7 +11,7 @@
 <p align="center"><strong>Your workshop, in your pocket.</strong></p>
 
 <p align="center">
-  <a href="https://github.com/ferhatozcelik/maker-os/releases/tag/v1.0.1"><img src="https://img.shields.io/badge/release-v1.0.1-f07a1c" alt="Release v1.0.1"></a>
+  <a href="https://github.com/ferhatozcelik/maker-os/releases/tag/v1.0.0"><img src="https://img.shields.io/badge/release-v1.0.0-f07a1c" alt="Release v1.0.0"></a>
   <img src="https://img.shields.io/badge/platform-ARM64%20%C2%B7%20Pi%204%20compatible-f07a1c" alt="Platform: ARM64, Pi 4 compatible">
   <img src="https://img.shields.io/badge/base-Buildroot%20%2B%20Linux%206.18-f07a1c" alt="Base: Buildroot and Linux 6.18">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-f07a1c" alt="MIT license"></a>
@@ -201,7 +201,7 @@ irm https://raw.githubusercontent.com/ferhatozcelik/maker-os/main/flash.ps1 | ie
 
 1. **Boot:** Insert the card into the board and power it on. The first boot takes a minute or two.
 2. **Connect:** Open `http://maker-os.local/` on the same network or `http://10.42.0.1/` over USB-C; without a network, join the `MakerOS` Wi-Fi and open `http://10.42.0.1/kurulum`.
-3. **Sign in:** The default account is **`makeros` / `makeros`**. Change the password in **Settings › User**.
+3. **Sign in:** The default account is **`maker` / `maker`**. Change the password in **Settings › User**.
 
 <a id="documentation"></a>
 

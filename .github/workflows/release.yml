@@ -66,8 +66,10 @@ jobs:
             echo "::notice::v$VERSION zaten yayinda; atlandi. Yeni surum icin os/VERSION'i artirin."
             exit 0
           fi
-          # Taban: en son yayimlanmis (taslak/on surum olmayan) surum
-          BASE="$(gh release list --exclude-drafts --exclude-pre-releases -L 1 --json tagName --jq '.[0].tagName')"
+          # Taban: Buildroot'un urettigi temiz imaj (on surum "taban-rpi4"; tam derleme gunceller). Yoksa son surum.
+          if gh release view taban-rpi4 >/dev/null 2>&1; then BASE=taban-rpi4; else
+            BASE="$(gh release list --exclude-drafts --exclude-pre-releases -L 1 --json tagName --jq '.[0].tagName')"
+          fi
           [ -n "$BASE" ] || { echo "::error::Taban surum yok (ilk surum icin full derleme gerekir)"; exit 1; }
           echo "release=1" >> "$GITHUB_OUTPUT"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
@@ -90,16 +92,17 @@ jobs:
       - name: Taban imaj
         if: steps.v.outputs.release == '1'
         run: |
-          B="${{ steps.v.outputs.base }}"; BV="${B#v}"
-          mkdir -p os/out
-          gh release download "$B" -p "makeros-$BV-rpi4.img.xz" -p "makeros-$BV-rpi4.img.xz.sha256" -D os/out
-          (cd os/out && sha256sum -c "makeros-$BV-rpi4.img.xz.sha256")
+          mkdir -p os/base
+          gh release download "${{ steps.v.outputs.base }}" -p "makeros-*-rpi4.img.xz" -p "makeros-*-rpi4.img.xz.sha256" -D os/base
+          (cd os/base && sha256sum -c ./*.img.xz.sha256)
+          ls -la os/base
 
       - name: Yeniden paketle (makerd + kabuk + overlay) ve imzala
         if: steps.v.outputs.release == '1'
         run: |
-          B="${{ steps.v.outputs.base }}"; V="${{ steps.v.outputs.version }}"
-          ./os/debug/remaster.sh --release "os/out/makeros-${B#v}-rpi4.img.xz"
+          V="${{ steps.v.outputs.version }}"
+          mkdir -p os/out
+          ./os/debug/remaster.sh --release "$(ls os/base/makeros-*-rpi4.img.xz | head -n1)"
           ls -la os/out
           test -f "os/out/makeros-$V-rpi4.img.xz" && test -f "os/out/makeros-$V-rpi4.raucb"
 
@@ -255,3 +258,12 @@ jobs:
             "os/out/makeros-$V-rpi4.img.xz" "os/out/makeros-$V-rpi4.img.xz.sha256" \
             "os/out/makeros-$V-rpi4.raucb" "os/out/makeros-$V-rpi4.raucb.sha256" \
             --title "MakerOS $V" --notes-file notes.md --target "$GITHUB_SHA"
+
+      - name: Temiz taban imaji (remaster icin)
+        if: steps.v.outputs.release == '1'
+        run: |
+          V="${{ steps.v.outputs.version }}"
+          gh release view taban-rpi4 >/dev/null 2>&1 || gh release create taban-rpi4 --prerelease --title "MakerOS taban imaji (Buildroot)" \
+            --notes "Yeniden paketleme (remaster) icin Buildroot'un urettigi temiz imaj. Kurulum icin kullanmayin; surumler: Releases."
+          for a in $(gh release view taban-rpi4 --json assets --jq '.assets[].name'); do gh release delete-asset taban-rpi4 "$a" -y; done
+          gh release upload taban-rpi4 "os/out/makeros-$V-rpi4.img.xz" "os/out/makeros-$V-rpi4.img.xz.sha256"

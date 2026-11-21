@@ -95,7 +95,7 @@ compositor'dan gelen pencereler `wm.adopt(app, view)` ile yönetime alınır.
 
 Tek adım: **Wi-Fi** (her zaman gösterilir; ağ seç + parola, gizli ağ, yeniden tara; varsayılan seçim "Şimdilik atla",
 düğme "Atla" / "Bağlan ve devam et") → `POST /setup/complete` → **Bitti** → masaüstü. Hesap, dil, klavye, saat dilimi ve cihaz adı
-sorulmaz: varsayılan yönetici `makeros` / `makeros` (`DEFAULT_USER`; `maker` makerd hizmet hesabıdır), dil/klavye `defaults`,
+sorulmaz: varsayılan yönetici `maker` / `maker` (`DEFAULT_USER`; `makerd` makerd hizmet hesabıdır), dil/klavye `defaults`,
 saat dilimi tarayıcınınki (listede varsa) ya da `defaults`, cihaz adı `GET /setup` önerisi (`makeros-xxxx`). Hepsi sonradan
 Ayarlar'dan değiştirilir; Bitti ekranı ağ adresini, kullanıcı adını ve parolayı gösterip parolanın değiştirilmesini önerir.
 Pi'nin kendi ekranı `/auth/local` ile otomatik oturum açar. Telefonda (MakerOS erişim noktası → captive portal `/`) kart tam

@@ -128,6 +128,8 @@ impl Server {
             .route("/api/v1/auth/login", post(api::login))
             .route("/api/v1/auth/logout", post(api::logout))
             .route("/api/v1/auth/local", get(api::local))
+            .route("/api/v1/auth/cast", get(api::cast))
+            .route("/api/v1/auth/cast-ticket", post(api::cast_ticket))
             .route("/api/v1/session", get(api::session))
             .route("/api/v1/system", get(api::system_info))
             .route("/api/v1/system/hostname", put(api::set_hostname))

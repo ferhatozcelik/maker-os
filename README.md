@@ -11,7 +11,7 @@
 <p align="center"><strong>Atölyen cebinde.</strong> · <em>Your workshop, in your pocket.</em></p>
 
 <p align="center">
-  <a href="https://github.com/ferhatozcelik/maker-os/releases/tag/v1.0.1"><img src="https://img.shields.io/badge/release-v1.0.1-f07a1c" alt="Release v1.0.1"></a>
+  <a href="https://github.com/ferhatozcelik/maker-os/releases/tag/v1.0.0"><img src="https://img.shields.io/badge/release-v1.0.0-f07a1c" alt="Release v1.0.0"></a>
   <img src="https://img.shields.io/badge/platform-ARM64%20%C2%B7%20Pi%204%20uyumlu-f07a1c" alt="Platform: ARM64, Pi 4 uyumlu">
   <img src="https://img.shields.io/badge/taban-Buildroot%20%2B%20Linux%206.18-f07a1c" alt="Taban: Buildroot ve Linux 6.18">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-f07a1c" alt="MIT lisansı"></a>
@@ -201,7 +201,7 @@ irm https://raw.githubusercontent.com/ferhatozcelik/maker-os/main/flash.ps1 | ie
 
 1. **Başlatın:** Kartı cihaza takıp gücü verin. İlk açılış bir iki dakika sürer.
 2. **Bağlanın:** Aynı ağda `http://maker-os.local/`, USB-C ile `http://10.42.0.1/`; ağ yoksa `MakerOS` Wi-Fi'ına bağlanıp `http://10.42.0.1/kurulum` adresini açın.
-3. **Oturum açın:** Varsayılan hesap **`makeros` / `makeros`**. Parolayı **Ayarlar › Kullanıcı** bölümünden değiştirin.
+3. **Oturum açın:** Varsayılan hesap **`maker` / `maker`**. Parolayı **Ayarlar › Kullanıcı** bölümünden değiştirin.
 
 <a id="documentation"></a>
 

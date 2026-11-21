@@ -107,6 +107,44 @@ pub async fn local(State(s): State<S>, ci: Ci, Query(q): Query<HashMap<String, S
     Ok(with_cookie(redirect(StatusCode::FOUND, "/?ui=desktop&local=1"), &s.d.sessions.set_cookie(&cookie)))
 }
 
+/// Ekran paylaşımı (Chromecast vb.): oturum sahibine 60 sn'lik, tek kullanımlık giriş bileti. Bilet ile açılan
+/// oturum yönetici yetkisi taşımaz (televizyon yalnız gösterir).
+static CAST_TICKETS: std::sync::LazyLock<std::sync::Mutex<HashMap<String, (String, std::time::Instant)>>> =
+    std::sync::LazyLock::new(|| std::sync::Mutex::new(HashMap::new()));
+const CAST_TTL: std::time::Duration = std::time::Duration::from_secs(60);
+
+pub async fn cast_ticket(State(s): State<S>, h: HeaderMap) -> R {
+    let sess = session_of(&s, &h)?;
+    let t = crate::util::random_token(24);
+    let mut m = CAST_TICKETS.lock().unwrap();
+    m.retain(|_, v| v.1.elapsed() < CAST_TTL);
+    if m.len() > 64 {
+        return Err(ApiError::unavailable("Çok fazla bekleyen paylaşım bileti."));
+    }
+    m.insert(t.clone(), (sess.user, std::time::Instant::now()));
+    Ok(json(&HashMap::from([("ticket", t)])))
+}
+
+/// GET /api/v1/auth/cast?t=<bilet> → oturum çerezi + masaüstü arayüzü.
+pub async fn cast(State(s): State<S>, ci: Ci, Query(q): Query<HashMap<String, String>>) -> R {
+    let ip = client_ip(&ci);
+    if let Some(r) = rate_limited(&s, &ip) {
+        return Ok(r);
+    }
+    let t = q.get("t").map(String::as_str).unwrap_or("");
+    let hit = CAST_TICKETS.lock().unwrap().remove(t);
+    match hit {
+        Some((user, at)) if at.elapsed() < CAST_TTL && !t.is_empty() => {
+            let (_, cookie) = s.d.sessions.create(&user, false);
+            Ok(with_cookie(redirect(StatusCode::FOUND, "/?ui=desktop"), &s.d.sessions.set_cookie(&cookie)))
+        }
+        _ => {
+            s.d.limiter.fail(&ip);
+            Err(ApiError::forbidden("Paylaşım bileti geçersiz ya da süresi doldu."))
+        }
+    }
+}
+
 pub async fn session(State(s): State<S>, h: HeaderMap) -> R {
     let sess = session_of(&s, &h)?;
     Ok(json(&UserResp { user: sess.user, admin: sess.admin, setup_done: Some(s.setup_done()) }))

@@ -12,7 +12,7 @@ Type=notify
 User=%i
 # Kullanıcının birincil grubu ve /etc/group'taki ek grupları (wheel, video, gpio...) kullanılır.
 WorkingDirectory=~
-ExecStart=/usr/bin/makerd-user --socket-dir /run/makeros/user --allow-user maker
+ExecStart=/usr/bin/makerd-user --socket-dir /run/makeros/user --allow-user makerd
 Restart=always
 RestartSec=2
 Slice=user.slice

@@ -1,5 +1,5 @@
 # Yerel ekran: labwc (wlroots) + cog (WPE WebKit) -> web kabuk.
-# 'maker' hizmet hesabi olarak (makerd ile ayni), logind oturumu (PAM ->
+# 'makerd' hizmet hesabi olarak (makerd ile ayni), logind oturumu (PAM ->
 # pam_systemd) ile seat0'da. Kurulum tamamlanmadan da calisir: makerd '/'
 # adresinde kurulum sihirbazini sunar.
 [Unit]
@@ -12,7 +12,7 @@ ConditionPathExists=/dev/tty1
 
 [Service]
 Type=simple
-User=maker
+User=makerd
 PAMName=makeros-kiosk
 WorkingDirectory=~
 TTYPath=/dev/tty1

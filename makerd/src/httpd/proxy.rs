@@ -138,6 +138,18 @@ pub async fn port_proxy(State(s): State<S>, mut req: Request) -> R {
 
 /// /api/v1/ai/<yol> → yerel Türkçe Linux asistanı (makeros-ai, 127.0.0.1:8091). Yalnız oturum sahibi; yalnız
 /// bilinen uçlar. makeros-ai komut çalıştırmaz: yanıtlar yalnız öneri ve risk değerlendirmesidir.
+/// Asistan yanıt vermiyorsa nedenini söyler: model ilk açılışta indiriliyor olabilir (makeros-ai-model.service).
+fn ai_down_message() -> String {
+    const MODEL: &str = "/var/lib/makeros-ai/models/qwen2.5-0.5b-instruct-q4_k_m.gguf";
+    if std::path::Path::new(MODEL).exists() {
+        return "Yerel AI asistanı başlatılıyor; birkaç saniye sonra yeniden deneyin.".into();
+    }
+    match std::fs::metadata(format!("{MODEL}.part")) {
+        Ok(m) => format!("AI modeli indiriliyor ({} / ~470 MB). İndirme bitince asistan kendiliğinden açılır.", m.len() >> 20),
+        Err(_) => "AI modeli henüz kurulu değil: internet bağlantısı gelince kendiliğinden indirilir (~470 MB).".into(),
+    }
+}
+
 pub async fn ai_proxy(State(s): State<S>, mut req: Request) -> R {
     let _sess = session_of(&s, req.headers())?;
     let rest = req.uri().path().trim_start_matches("/api/v1/ai/").to_string();
@@ -152,7 +164,7 @@ pub async fn ai_proxy(State(s): State<S>, mut req: Request) -> R {
         h.remove(*k);
     }
     h.insert(header::HOST, HeaderValue::from_static("127.0.0.1:8091"));
-    let res = client().request(req).await.map_err(|_| ApiError::unavailable("Yerel AI asistanı çalışmıyor (sudo systemctl start makeros-ai)."))?;
+    let res = client().request(req).await.map_err(|_| ApiError::unavailable(ai_down_message()))?;
     let (mut parts, body) = res.into_parts();
     for k in HOP {
         parts.headers.remove(*k);
