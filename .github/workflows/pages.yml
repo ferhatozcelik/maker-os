@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: read
+  actions: read  # deploy-pages yüklenen paketin bilgisini okur
   pages: write
   id-token: write
 
