@@ -1,5 +1,32 @@
 # Değişiklik Günlüğü
 
+## 1.0.1
+
+### Eklentiler
+
+- **Canlı eşitleme:** eklenti başlatılınca, durdurulunca, kurulunca ya da kaldırılınca makerd `plugins` olayı yayınlar;
+  raf, uygulamalar, menüler, tema, açık pencereler ve Web arayüzü kendiliğinden yenilenir (durdurulan eklentinin penceresi kapanır)
+- **Masaüstü widget katmanı:** `plugin.json`'da `widget` tanımlayan her eklenti temadan bağımsız olarak masaüstüne ve Web ana sayfasına
+  eklenebilir (Eklentiler › *Masaüstüne ekle*, widget'taki ×)
+- **Eklenti kiti** (`/shell/js/plugin-kit.js` + `tokens.css`): eklenti arayüzleri MakerOS'un dilini (tr/en) ve temasını
+  (vurgu, koyu/açık, yazı tipi) kullanır ve değişince yenilenmeden güncellenir; sunucu mesajları `X-MakerOS-Lang` ile aynı dilde.
+  Eklenti şablonu kiti kullanır
+- Mağazada yeni eklentiler: **Home Assistant** (kendi arayüzü MakerOS temasıyla, MakerOS kullanıcısıyla otomatik giriş, ilk kurulumu
+  MakerOS yapabilir, varlık widget'ı), **Pi-hole**, **Chromecast**
+
+### Python
+
+- Yeni proje şablonu **AI · Görüntü tanıma (LiteRT)**: Google LiteRT ile cihaz üzerinde EfficientNet-B1 sınıflandırma
+  (web arayüzü, `--image`, `--camera`)
+
+### Sistem ve arayüz
+
+- **Bluetooth:** radyo, arama, eşleştirme, bağlanma; kulaklık/hoparlör bağlanınca sistem sesi ona yönlendirilir (bluez-alsa)
+- **GPIO:** pin bağlantı taraması (iç pull-up/down ile boşta / dışarıdan sürülüyor tahmini)
+- **AI Asistan:** kurulu CLI ajanı (Claude Code, Codex, Gemini CLI, OpenCode, Ollama) ve model seçimi; tam sayfa görünüm
+- **MakerOS Bench** (`benchmark/`): tek dosyalık karşılaştırma testi, Markdown/JSON rapor ve Raspberry Pi OS · MakerOS sonuç listesi
+  ([grafikler](https://ferhatozcelik.github.io/maker-os/benchmark/))
+
 ## 1.0.0
 
 MakerOS'un ilk kararlı sürümü: Buildroot ile Linux çekirdeği üzerine sıfırdan kurulan bağımsız işletim sistemi.

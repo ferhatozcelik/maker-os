@@ -11,7 +11,7 @@
 <p align="center"><strong>Atölyen cebinde.</strong> · <em>Your workshop, in your pocket.</em></p>
 
 <p align="center">
-  <a href="https://github.com/ferhatozcelik/maker-os/releases/tag/v1.0.0"><img src="https://img.shields.io/badge/release-v1.0.0-f07a1c" alt="Release v1.0.0"></a>
+  <a href="https://github.com/ferhatozcelik/maker-os/releases/tag/v1.0.1"><img src="https://img.shields.io/badge/release-v1.0.1-f07a1c" alt="Release v1.0.1"></a>
   <img src="https://img.shields.io/badge/platform-ARM64%20%C2%B7%20Pi%204%20uyumlu-f07a1c" alt="Platform: ARM64, Pi 4 uyumlu">
   <img src="https://img.shields.io/badge/taban-Buildroot%20%2B%20Linux%206.18-f07a1c" alt="Taban: Buildroot ve Linux 6.18">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-f07a1c" alt="MIT lisansı"></a>
