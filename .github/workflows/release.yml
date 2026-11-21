@@ -10,9 +10,13 @@
 #                     os/board/rpi4/rootfs-overlay/etc/rauc/keyring.pem. Sir yoksa surum YAYINLANMAZ
 #                     (imzasiz paketi cihazlar kurmaz).
 #
-# Sure: ilk derleme (arac zinciri, WPE WebKit, Mesa, cekirdek) GitHub'in 6 saatlik is sinirina
-# yaklasabilir. dl/ ve ccache basarisiz iste de onbellege yazilir; zaman asiminda "Re-run" ile
-# ikinci deneme onceden derlenenleri onbellekten alir ve cok daha kisa surer.
+# Iki yol:
+#   remaster (varsayilan, dakikalar): bir onceki surumun imaji indirilir; cekirdek ve Buildroot paketleri aynen
+#     kalir, kok dosya sistemine guncel makerd + kabuk + rootfs-overlay konur (os/debug/remaster.sh --release),
+#     imzali RAUC paketi uretilir. makerd, kabuk, eklenti ve yapilandirma degisiklikleri icin yeterlidir.
+#   full (yalniz elle: Actions > MakerOS surum > Run workflow > full): Buildroot'u bastan derler (saatler).
+#     Cekirdek, defconfig ya da os/package degisince gerekir. Ilk derleme 6 saatlik is sinirina yaklasabilir;
+#     dl/ ve ccache basarisiz iste de onbellege yazilir, "Re-run" ikinci denemede cok daha kisa surer.
 name: MakerOS surum
 
 on:
@@ -20,6 +24,11 @@ on:
     branches: [main]
     paths-ignore: ["**.md", "docs/**", "site/**", ".github/workflows/pages.yml", "flash.sh", "flash.ps1", "flash.cmd"]
   workflow_dispatch:
+    inputs:
+      full:
+        description: "Buildroot'u bastan derle (saatler). Bos: onceki surumden yeniden paketle (dakikalar)."
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -37,8 +46,93 @@ jobs:
       - name: makerd testleri (Docker)
         run: make -C makerd test
 
+  remaster:
+    needs: test
+    if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.full) }}
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 60
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Surum ve taban
+        id: v
+        run: |
+          VERSION="$(tr -d ' \r\n' < os/VERSION)"
+          echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' || { echo "::error::os/VERSION gecersiz: $VERSION"; exit 1; }
+          if gh release view "v$VERSION" >/dev/null 2>&1; then
+            echo "release=0" >> "$GITHUB_OUTPUT"
+            echo "::notice::v$VERSION zaten yayinda; atlandi. Yeni surum icin os/VERSION'i artirin."
+            exit 0
+          fi
+          # Taban: en son yayimlanmis (taslak/on surum olmayan) surum
+          BASE="$(gh release list --exclude-drafts --exclude-pre-releases -L 1 --json tagName --jq '.[0].tagName')"
+          [ -n "$BASE" ] || { echo "::error::Taban surum yok (ilk surum icin full derleme gerekir)"; exit 1; }
+          echo "release=1" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "base=$BASE" >> "$GITHUB_OUTPUT"
+          echo "::notice::v$VERSION, $BASE imajindan yeniden paketlenecek"
+
+      - name: Imza anahtari
+        if: steps.v.outputs.release == '1'
+        env:
+          KEY: ${{ secrets.MAKEROS_RAUC_KEY }}
+        run: |
+          [ -n "$KEY" ] || { echo "::error::MAKEROS_RAUC_KEY sirri yok: imzali paket uretilemez."; exit 1; }
+          install -d -m 700 "$HOME/.config/makeros-release"
+          printf '%s\n' "$KEY" > "$HOME/.config/makeros-release/rauc-key.pem"
+          chmod 644 "$HOME/.config/makeros-release/rauc-key.pem"  # kap okuyabilsin; is makinesi tek kullanimlik
+          a=$(openssl pkey -in "$HOME/.config/makeros-release/rauc-key.pem" -pubout | sha256sum)
+          b=$(openssl x509 -in os/board/rpi4/rootfs-overlay/etc/rauc/keyring.pem -pubkey -noout | sha256sum)
+          [ "$a" = "$b" ] || { echo "::error::MAKEROS_RAUC_KEY, keyring.pem ile eslesmiyor"; exit 1; }
+
+      - name: Taban imaj
+        if: steps.v.outputs.release == '1'
+        run: |
+          B="${{ steps.v.outputs.base }}"; BV="${B#v}"
+          mkdir -p os/out
+          gh release download "$B" -p "makeros-$BV-rpi4.img.xz" -p "makeros-$BV-rpi4.img.xz.sha256" -D os/out
+          (cd os/out && sha256sum -c "makeros-$BV-rpi4.img.xz.sha256")
+
+      - name: Yeniden paketle (makerd + kabuk + overlay) ve imzala
+        if: steps.v.outputs.release == '1'
+        run: |
+          B="${{ steps.v.outputs.base }}"; V="${{ steps.v.outputs.version }}"
+          ./os/debug/remaster.sh --release "os/out/makeros-${B#v}-rpi4.img.xz"
+          ls -la os/out
+          test -f "os/out/makeros-$V-rpi4.img.xz" && test -f "os/out/makeros-$V-rpi4.raucb"
+
+      - name: Anahtari sil
+        if: always()
+        run: rm -rf "$HOME/.config/makeros-release"
+
+      - name: Surum notlari
+        if: steps.v.outputs.release == '1'
+        run: |
+          V="${{ steps.v.outputs.version }}"
+          awk -v v="## $V" '$0==v{f=1;next} /^## /{f=0} f' CHANGELOG.md > notes.md
+          [ -s notes.md ] || echo "MakerOS $V" > notes.md
+          cat >> notes.md <<EOF
+
+          ---
+          **Kurulum:** \`makeros-$V-rpi4.img.xz\` dosyasini Raspberry Pi Imager ile SD karta yazin (Raspberry Pi 4/400).
+          **Guncelleme:** MakerOS cihazlari Ayarlar › Genel › Yazilim guncelleme ile kurar (\`.raucb\`, imzali).
+          _Bu surum ${{ steps.v.outputs.base }} imajindan yeniden paketlendi (cekirdek ve sistem paketleri ayni)._
+          EOF
+
+      - name: Release
+        if: steps.v.outputs.release == '1'
+        run: |
+          V="${{ steps.v.outputs.version }}"
+          gh release create "v$V" \
+            "os/out/makeros-$V-rpi4.img.xz" "os/out/makeros-$V-rpi4.img.xz.sha256" \
+            "os/out/makeros-$V-rpi4.raucb" "os/out/makeros-$V-rpi4.raucb.sha256" \
+            --title "MakerOS $V" --notes-file notes.md --target "$GITHUB_SHA"
+
   image:
     needs: test
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.full }}
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 355
     env:

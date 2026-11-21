@@ -30,7 +30,7 @@ KEY_MOUNT=()
 [ -f "$RAUC_KEY" ] && KEY_MOUNT=(-v "$RAUC_KEY":/rauc-key.pem:ro)
 docker run --rm -i \
 	-v "$ROOT":/src:ro -v "$OUT":/out -v mk-remaster:/r -v mk-target:/target:ro -v mk-llama:/llama:ro \
-	"${KEY_MOUNT[@]}" \
+	${KEY_MOUNT[@]+"${KEY_MOUNT[@]}"} \
 	-e VERSION="$VERSION" -e RELEASE="$RELEASE" -e BASE="/out/$(basename "$BASE")" -e PUBKEY="$([ -r "$PUBKEY" ] && cat "$PUBKEY" || true)" \
 	debian:trixie-slim bash -s <<'EOS'
 set -euo pipefail

@@ -157,6 +157,12 @@ fn bt_err(op: &str, e: &zbus::Error) -> ApiError {
     ApiError::unavailable(msg)
 }
 
+/// bluez-alsa kurulu mu (ALSA eklentisi ve hizmet ikilisi).
+fn bluealsa_available() -> bool {
+    let plugin = ["/usr/lib/alsa-lib/libasound_module_pcm_bluealsa.so", "/usr/lib/aarch64-linux-gnu/alsa-lib/libasound_module_pcm_bluealsa.so"];
+    plugin.iter().any(|p| std::path::Path::new(p).exists()) && ["/usr/bin/bluealsa", "/usr/bin/bluealsad"].iter().any(|p| std::path::Path::new(p).exists())
+}
+
 /// Gerçek donanım: BlueZ.
 pub struct Bluez {
     audio_dir: PathBuf,
@@ -174,6 +180,14 @@ impl Bluez {
     fn route_audio(&self, addr: Option<&str>) {
         let f = self.audio_dir.join("asound.conf");
         match addr {
+            // bluez-alsa yoksa (ör. yeniden paketlenmiş imaj) yönlendirme yazılmaz: yoksa ALSA "bluealsa"
+            // aygıtını bulamaz ve kulaklık bağlıyken sistem sesi tamamen kesilir.
+            Some(a) if !bluealsa_available() => {
+                tracing::warn!(addr = a, "bluez-alsa kurulu değil; ses Bluetooth'a yönlendirilmedi");
+                let _ = std::fs::remove_file(&f);
+                *self.audio.lock().unwrap() = None; // durumda "ses bu cihazda" görünmesin
+                return;
+            }
             Some(a) => {
                 let _ = std::fs::create_dir_all(&self.audio_dir);
                 if let Err(e) = std::fs::write(&f, asound_conf(a)) {

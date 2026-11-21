@@ -21,7 +21,8 @@
 
 ### Sistem ve arayüz
 
-- **Bluetooth:** radyo, arama, eşleştirme, bağlanma; kulaklık/hoparlör bağlanınca sistem sesi ona yönlendirilir (bluez-alsa)
+- **Bluetooth:** radyo, arama, eşleştirme, bağlanma. Kulaklık/hoparlöre ses yönlendirmesi bluez-alsa ister; bu sürüm 1.0.0
+  imajından yeniden paketlendiği için bluez-alsa içermez, yönlendirme bir sonraki tam derlemeyle gelir (makerd bu arada sesi bozmaz)
 - **GPIO:** pin bağlantı taraması (iç pull-up/down ile boşta / dışarıdan sürülüyor tahmini)
 - **AI Asistan:** kurulu CLI ajanı (Claude Code, Codex, Gemini CLI, OpenCode, Ollama) ve model seçimi; tam sayfa görünüm
 - **MakerOS Bench** (`benchmark/`): tek dosyalık karşılaştırma testi, Markdown/JSON rapor ve Raspberry Pi OS · MakerOS sonuç listesi
