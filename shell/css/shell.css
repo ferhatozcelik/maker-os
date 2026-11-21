@@ -184,7 +184,17 @@ mk-window.ext .tb { background: var(--bg-window); border-bottom: .5px solid var(
 .mb-door.closed .dd { background: #ff6b6b; }
 /* Masaüstü widget'ları (eklenti): duvar kâğıdının üstünde, pencerelerin altında */
 #widgets { position: fixed; top: calc(var(--mk-menubar-height, 28px) + 18px); right: 22px; z-index: 1; display: grid; gap: 14px; pointer-events: none; }
-#widgets iframe { border: 0; background: transparent; pointer-events: auto; opacity: 0; transition: opacity var(--dur-med); color-scheme: normal; }
+#widgets iframe {
+  border: 0;
+  background: transparent;
+  pointer-events: auto;
+  opacity: 0;
+  transition: opacity var(--dur-med);
+  color-scheme: normal;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0,0,0,.18);
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
+  clip-path: inset(0 round 18px);
+}
 #widgets iframe.on { opacity: 1; }
-/* AI Asistan: köşeler iframe'in kendisinde kırpılır (renk şeması farkında tarayıcının boyadığı opak zemin köşelerde görünmesin); gölge de burada. */
-#widgets iframe.w-ai { border-radius: 18px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,.18); }

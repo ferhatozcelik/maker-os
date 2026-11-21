@@ -135,6 +135,71 @@ footer p { margin: 0; max-width: 620px; }
 footer nav { display: flex; gap: 18px; flex-wrap: wrap; }
 footer a { color: var(--muted); }
 
+/* İnteraktif Simülatör */
+.sim-box { margin-top: 36px; border: 1px solid var(--line); border-radius: 20px; overflow: hidden; background: #0c0d12; box-shadow: var(--shadow); }
+.sim-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 18px; background: #15171f; border-bottom: 1px solid #232632; flex-wrap: wrap; gap: 10px; }
+.sim-title { font-size: 13px; font-weight: 600; color: #d8dbe4; display: flex; align-items: center; gap: 8px; }
+.sim-title .badge { background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--accent); font-size: 11px; padding: 2px 7px; border-radius: 6px; font-weight: 700; }
+.sim-modes { display: inline-flex; gap: 4px; background: #0a0b0e; padding: 3px; border-radius: 999px; border: 1px solid #282a35; }
+.sim-btn { border: 0; background: none; color: #8a8f9d; font: 600 12px/1 Inter, sans-serif; padding: 7px 14px; border-radius: 999px; cursor: pointer; transition: all .15s; }
+.sim-btn.active { background: var(--accent); color: #fff; box-shadow: 0 2px 8px rgba(240,122,26,.3); }
+.sim-canvas { position: relative; min-height: 520px; background: radial-gradient(circle at 50% 25%, #1c1f2b 0%, #0b0c10 100%); overflow: hidden; display: flex; flex-direction: column; }
+/* Masaüstü */
+.sim-desk { position: absolute; inset: 0; display: flex; flex-direction: column; }
+.sim-topbar { height: 28px; background: rgba(18,20,26,.85); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,.08); display: flex; align-items: center; padding: 0 14px; font-size: 12px; color: #d0d4e0; user-select: none; z-index: 5; }
+.sim-brand { font-weight: 700; color: #fff; margin-right: 14px; display: flex; align-items: center; gap: 6px; }
+.sim-brand img { width: 14px; height: 14px; }
+.sim-topbar nav { display: flex; gap: 12px; color: #8e94a5; }
+.sim-topbar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: 11.5px; }
+.sim-body-area { flex: 1; position: relative; padding: 16px; overflow: hidden; }
+.sim-win { position: absolute; border-radius: 12px; background: #161821; border: 1px solid rgba(255,255,255,.12); box-shadow: 0 16px 40px rgba(0,0,0,.5); width: min(440px, 92%); z-index: 3; transition: transform .2s, opacity .2s; }
+.sim-win-h { height: 32px; background: #1f222d; border-bottom: 1px solid rgba(255,255,255,.08); display: flex; align-items: center; padding: 0 10px; gap: 8px; cursor: move; }
+.sim-dot-grp { display: flex; gap: 6px; }
+.sim-dot-grp span { width: 10px; height: 10px; border-radius: 50%; cursor: pointer; }
+.sim-dot-grp .dr { background: #ff5f56; } .sim-dot-grp .dy { background: #ffbd2e; } .sim-dot-grp .dg { background: #27c93f; }
+.sim-win-name { flex: 1; text-align: center; font-size: 11.5px; font-weight: 600; color: #d0d4e0; margin-right: 36px; }
+.sim-term-cnt { background: #0c0d12; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; line-height: 1.55; color: #a6e22e; padding: 12px; height: 210px; overflow-y: auto; border-radius: 0 0 12px 12px; }
+.sim-term-pills { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.sim-term-pills button { background: #1e212b; border: 1px solid #313543; color: #c4c8d4; font: 500 11px/1 'JetBrains Mono', monospace; padding: 5px 9px; border-radius: 6px; cursor: pointer; transition: border-color .15s; }
+.sim-term-pills button:hover { border-color: var(--accent); color: #fff; }
+.sim-ai-chat { padding: 12px; display: flex; flex-direction: column; gap: 8px; max-height: 220px; overflow-y: auto; font-size: 12.5px; }
+.sim-msg-user { align-self: flex-end; background: var(--accent); color: #fff; padding: 6px 12px; border-radius: 12px 12px 2px 12px; max-width: 80%; }
+.sim-msg-bot { align-self: flex-start; background: #222633; color: #e1e4ed; padding: 8px 12px; border-radius: 12px 12px 12px 2px; max-width: 85%; }
+.sim-ai-prompts { display: flex; gap: 6px; padding: 8px 12px; border-top: 1px solid #232733; flex-wrap: wrap; }
+.sim-ai-prompts button { background: #181b24; border: 1px solid #2d3140; color: #a8aebc; font-size: 11px; padding: 4px 8px; border-radius: 6px; cursor: pointer; }
+.sim-ai-prompts button:hover { color: #fff; border-color: var(--accent); }
+.sim-wid { position: absolute; top: 16px; right: 16px; width: 230px; background: rgba(22,25,34,.84); border: 1px solid rgba(255,255,255,.1); border-radius: 16px; backdrop-filter: blur(14px); padding: 12px; color: #fff; z-index: 2; box-shadow: 0 12px 28px rgba(0,0,0,.3); }
+.sim-wid-h { display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 700; margin-bottom: 8px; }
+.sim-wid-st { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: #27c93f; }
+.sim-wid-st.off { color: #ff5f56; }
+.sim-wid-st i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.sim-wid-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 11px; }
+.sim-wid-card { background: rgba(255,255,255,.05); padding: 6px; border-radius: 8px; border: 1px solid rgba(255,255,255,.05); }
+.sim-wid-card b { display: block; font-size: 13px; color: #fff; margin-top: 2px; }
+.sim-wid-tgl { width: 100%; margin-top: 8px; padding: 6px; border-radius: 8px; border: 0; background: var(--accent); color: #fff; font-size: 11px; font-weight: 600; cursor: pointer; }
+.sim-wid-tgl.off { background: #ff5f56; }
+/* Dock */
+.sim-dock-bar { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; background: rgba(24,28,38,.75); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,.14); padding: 6px 12px; border-radius: 18px; box-shadow: 0 10px 30px rgba(0,0,0,.45); z-index: 6; }
+.sim-dock-btn { width: 40px; height: 40px; border-radius: 10px; background: #232734; border: 1px solid rgba(255,255,255,.1); display: grid; place-items: center; color: #fff; cursor: pointer; transition: transform .15s, background .15s; position: relative; }
+.sim-dock-btn:hover { transform: translateY(-4px) scale(1.1); background: #2d3344; }
+.sim-dock-btn.dot::after { content: ''; position: absolute; bottom: -4px; width: 4px; height: 4px; border-radius: 50%; background: #fff; }
+/* Web View */
+.sim-web-view { position: absolute; inset: 0; display: none; flex-direction: column; background: #13141a; }
+.sim-web-urlbar { height: 38px; background: #1b1d25; border-bottom: 1px solid #282a36; display: flex; align-items: center; padding: 0 14px; gap: 10px; font-size: 12px; color: #a0a6b5; }
+.sim-web-chip { background: #0e0f14; border: 1px solid #2a2d39; padding: 4px 12px; border-radius: 999px; color: #38bdf8; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+.sim-web-content { flex: 1; display: grid; grid-template-columns: 200px 1fr; }
+.sim-web-side { background: #171821; border-right: 1px solid #252834; padding: 14px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #949aab; }
+.sim-web-side div { padding: 8px 10px; border-radius: 8px; cursor: pointer; }
+.sim-web-side div.on { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent); font-weight: 600; }
+.sim-web-main { padding: 20px; overflow-y: auto; color: #fff; }
+/* Phone View */
+.sim-phone-view { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; padding: 16px; }
+.sim-phone-body { width: 260px; height: 480px; border: 8px solid #232632; border-radius: 34px; background: #111218; box-shadow: 0 18px 45px rgba(0,0,0,.6); overflow: hidden; display: flex; flex-direction: column; position: relative; }
+.sim-phone-top { height: 24px; display: flex; justify-content: space-between; align-items: center; padding: 0 14px; font-size: 10.5px; color: #fff; font-weight: 600; }
+.sim-phone-grid { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 18px 12px; align-content: start; }
+.sim-phone-app { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; font-size: 11px; color: #cbd0dc; }
+.sim-phone-ico { width: 44px; height: 44px; border-radius: 12px; background: #222633; border: 1px solid rgba(255,255,255,.1); display: grid; place-items: center; color: #fff; }
+
 [data-en] { display: none; }
 html[lang="en"] [data-tr] { display: none; }
 html[lang="en"] [data-en] { display: revert; }
@@ -233,6 +298,194 @@ html[lang="en"] [data-en] { display: revert; }
       <div class="duo">
         <figure><img src="assets/screenshots/web.png" width="2560" height="1600" loading="lazy" alt="MakerOS web arayüzü"><figcaption><span data-tr>Ağ üzerinden web arayüzü</span><span data-en>Web interface over the network</span></figcaption></figure>
         <figure class="phone"><img src="assets/screenshots/mobile.png" width="780" height="1688" loading="lazy" alt="Telefonda MakerOS"><figcaption><span data-tr>Telefonda</span><span data-en>On your phone</span></figcaption></figure>
+      </div>
+
+      <!-- İnteraktif Simülatör -->
+      <div class="sim-box" id="prototype-simulator">
+        <div class="sim-head">
+          <div class="sim-title">
+            <span>MakerOS Canlı Deneyim Prototipi</span>
+            <span class="badge">v1.0.0</span>
+          </div>
+          <div class="sim-modes" role="tablist">
+            <button class="sim-btn active" data-sim="desk"><span data-tr>Masaüstü</span><span data-en>Desktop</span></button>
+            <button class="sim-btn" data-sim="web"><span data-tr>Web Portalı</span><span data-en>Web Portal</span></button>
+            <button class="sim-btn" data-sim="phone"><span data-tr>Mobil (Telefon)</span><span data-en>Mobile</span></button>
+          </div>
+        </div>
+        <div class="sim-canvas">
+          <!-- Masaüstü Kip -->
+          <div class="sim-desk" id="sim-desk">
+            <div class="sim-topbar">
+              <div class="sim-brand"><img src="assets/logo.svg" alt="">MakerOS</div>
+              <nav><span>Dosya</span><span>Terminal</span><span>Eklentiler</span><span>Görünüm</span><span>Yardım</span></nav>
+              <div class="sim-topbar-right">
+                <span id="sim-clock">12:00</span>
+                <span>📶 Wi-Fi</span>
+                <span>⚡ 100%</span>
+              </div>
+            </div>
+            <div class="sim-body-area">
+              <!-- Pi-hole Widget -->
+              <div class="sim-wid" id="sim-wid">
+                <div class="sim-wid-h">
+                  <span>Pi-hole</span>
+                  <span class="sim-wid-st" id="sim-wid-st"><i></i>Etkin</span>
+                </div>
+                <div class="sim-wid-grid">
+                  <div class="sim-wid-card"><span>Engellenen</span><b id="sim-wid-blk">2,410 (%18.4)</b></div>
+                  <div class="sim-wid-card"><span>Toplam</span><b>13,050</b></div>
+                  <div class="sim-wid-card"><span>Alan Adı</span><b>156,000</b></div>
+                  <div class="sim-wid-card"><span>DNS</span><b>127.0.0.1</b></div>
+                </div>
+                <button class="sim-wid-tgl" id="sim-wid-btn">Korumayı Duraklat</button>
+              </div>
+
+              <!-- Terminal Penceresi -->
+              <div class="sim-win" id="sim-win-term" style="top:24px;left:24px;">
+                <div class="sim-win-h">
+                  <div class="sim-dot-grp"><span class="dr" onclick="document.getElementById('sim-win-term').style.display='none'"></span><span class="dy"></span><span class="dg"></span></div>
+                  <div class="sim-win-name">Terminal · maker@makeros</div>
+                </div>
+                <div class="sim-term-cnt" id="sim-term-cnt">
+                  <div>MakerOS 1.0.0 (ARM64) - Linux 6.18-makeros</div>
+                  <div style="color:#8a8f9d">Komutları denemek için aşağıdaki kısayollara tıklayın:</div>
+                  <div id="sim-term-history"></div>
+                  <div class="sim-term-cmd"><span style="color:#f07a1a">maker@makeros:~$</span> <span id="sim-term-prompt">mos system info</span></div>
+                </div>
+                <div style="padding:8px 12px;background:#15171f;border-top:1px solid #232733;">
+                  <div class="sim-term-pills">
+                    <button data-cmd="mos system info">mos system info</button>
+                    <button data-cmd="mos plugin ls">mos plugin ls</button>
+                    <button data-cmd="mos ai 'Sistem durumu nedir?'">mos ai status</button>
+                    <button data-cmd="clear">clear</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- AI Asistan Penceresi -->
+              <div class="sim-win" id="sim-win-ai" style="top:50px;left:240px;display:none;">
+                <div class="sim-win-h">
+                  <div class="sim-dot-grp"><span class="dr" onclick="document.getElementById('sim-win-ai').style.display='none'"></span><span class="dy"></span><span class="dg"></span></div>
+                  <div class="sim-win-name">AI Asistan (Yerel Qwen2.5)</div>
+                </div>
+                <div class="sim-ai-chat" id="sim-ai-chat">
+                  <div class="sim-msg-bot">Merhaba! Ben MakerOS yerel yapay zekâ asistanıyım. Donanım, pinler, eklentiler ve sistem hakkında ne öğrenmek istersiniz?</div>
+                </div>
+                <div class="sim-ai-prompts">
+                  <button data-q="Pi sıcaklığı kaç derece?">Pi sıcaklığı?</button>
+                  <button data-q="GPIO pinlerini listele">GPIO pinleri?</button>
+                  <button data-q="Pi-hole koruması açık mı?">Pi-hole durumu?</button>
+                </div>
+              </div>
+
+              <!-- Dock -->
+              <div class="sim-dock-bar">
+                <div class="sim-dock-btn dot" data-app="term" title="Terminal">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+                </div>
+                <div class="sim-dock-btn" data-app="ai" title="AI Asistan">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>
+                </div>
+                <div class="sim-dock-btn" data-app="wid" title="Pi-hole Widget">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                </div>
+                <div class="sim-dock-btn" data-app="web" title="Tarayıcı">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Web Portal Görünümü -->
+          <div class="sim-web-view" id="sim-web">
+            <div class="sim-web-urlbar">
+              <span>🔒</span>
+              <span class="sim-web-chip">http://maker-os.local:8080/</span>
+              <span style="margin-left:auto;font-size:11px;">MakerOS Remote Web UI · v1.0.0</span>
+            </div>
+            <div class="sim-web-content">
+              <div class="sim-web-side">
+                <div class="on">📊 Genel Bakış</div>
+                <div>📁 Dosyalar</div>
+                <div>🐍 Python Projeleri</div>
+                <div>🔌 Eklenti Mağazası</div>
+                <div>⚙ Ayarlar</div>
+              </div>
+              <div class="sim-web-main">
+                <h3 style="margin-top:0;">Sistem Durumu · Raspberry Pi 4 (ARM64)</h3>
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px;">
+                  <div style="background:#1c1e28;padding:12px;border-radius:10px;border:1px solid #2a2d3c;">
+                    <div style="font-size:11px;color:#8a8f9d;">CPU Yükü</div>
+                    <div style="font-size:18px;font-weight:700;color:#27c93f;">%4.2 (4 çekirdek)</div>
+                  </div>
+                  <div style="background:#1c1e28;padding:12px;border-radius:10px;border:1px solid #2a2d3c;">
+                    <div style="font-size:11px;color:#8a8f9d;">RAM Kullanımı</div>
+                    <div style="font-size:18px;font-weight:700;color:#38bdf8;">2.1 GB / 8.0 GB</div>
+                  </div>
+                  <div style="background:#1c1e28;padding:12px;border-radius:10px;border:1px solid #2a2d3c;">
+                    <div style="font-size:11px;color:#8a8f9d;">Sıcaklık</div>
+                    <div style="font-size:18px;font-weight:700;color:#f07a1a;">41.5 °C</div>
+                  </div>
+                </div>
+                <div style="background:#1c1e28;padding:14px;border-radius:12px;border:1px solid #2a2d3c;">
+                  <h4 style="margin:0 0 8px;">Aktif Eklentiler & Otomatik Başlatma</h4>
+                  <div style="font-size:12px;color:#a4aab8;display:flex;flex-direction:column;gap:6px;">
+                    <div>🛡 <b>Pi-hole:</b> v2.0.0 · Çalışıyor (Port 8791) · Otomatik Başlatma: Açık</div>
+                    <div>🏠 <b>Home Assistant:</b> v1.1.0 · Çalışıyor (Port 8795) · Otomatik Başlatma: Açık</div>
+                    <div>📺 <b>Chromecast:</b> v1.2.0 · Boşta (Port 8793) · Otomatik Başlatma: Kapalı</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mobil (Telefon) Görünümü -->
+          <div class="sim-phone-view" id="sim-phone">
+            <div class="sim-phone-body">
+              <div class="sim-phone-top">
+                <span>02:15</span>
+                <span>5G · 100%</span>
+              </div>
+              <div style="padding:10px 14px 4px;">
+                <div style="font-size:15px;font-weight:700;color:#fff;">MakerOS Mobile</div>
+                <div style="font-size:11px;color:#8a8f9d;">maker-os.local</div>
+              </div>
+              <div class="sim-phone-grid">
+                <div class="sim-phone-app" onclick="alert('Terminal mobil arayüzde açılıyor.')">
+                  <div class="sim-phone-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></div>
+                  <span>Terminal</span>
+                </div>
+                <div class="sim-phone-app" onclick="alert('AI Asistan açılıyor.')">
+                  <div class="sim-phone-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg></div>
+                  <span>AI Asistan</span>
+                </div>
+                <div class="sim-phone-app" onclick="alert('Pi-hole paneli açılıyor.')">
+                  <div class="sim-phone-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+                  <span>Pi-hole</span>
+                </div>
+                <div class="sim-phone-app" onclick="alert('Home Assistant paneli açılıyor.')">
+                  <div class="sim-phone-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
+                  <span>Ev</span>
+                </div>
+                <div class="sim-phone-app" onclick="alert('Dosya yöneticisi açılıyor.')">
+                  <div class="sim-phone-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg></div>
+                  <span>Dosyalar</span>
+                </div>
+                <div class="sim-phone-app" onclick="alert('Ayarlar açılıyor.')">
+                  <div class="sim-phone-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+                  <span>Ayarlar</span>
+                </div>
+              </div>
+              <div style="margin:auto 12px 14px;background:#1b1d26;padding:10px 12px;border-radius:14px;border:1px solid #2c3040;font-size:11px;color:#a0a6b5;">
+                <div style="display:flex;justify-content:space-between;color:#fff;font-weight:600;margin-bottom:4px;">
+                  <span>Pi 4 Durumu</span><span>41.5°C</span>
+                </div>
+                <span>RAM %26 · Disk %7 · Wi-Fi Bağlı</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -347,6 +600,112 @@ html[lang="en"] [data-en] { display: revert; }
     }
     b.classList.add("done"); setTimeout(() => b.classList.remove("done"), 1500);
   });
+
+  // İnteraktif Prototip Simülatörü Mantığı
+  const simBtns = document.querySelectorAll(".sim-modes button");
+  const simDesk = document.getElementById("sim-desk");
+  const simWeb = document.getElementById("sim-web");
+  const simPhone = document.getElementById("sim-phone");
+
+  simBtns.forEach(b => b.onclick = () => {
+    simBtns.forEach(x => x.classList.remove("active"));
+    b.classList.add("active");
+    const m = b.dataset.sim;
+    simDesk.style.display = m === "desk" ? "flex" : "none";
+    simWeb.style.display = m === "web" ? "flex" : "none";
+    simPhone.style.display = m === "phone" ? "flex" : "none";
+  });
+
+  const clockEl = document.getElementById("sim-clock");
+  const updateClock = () => {
+    if (clockEl) {
+      const d = new Date();
+      clockEl.textContent = d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
+    }
+  };
+  updateClock(); setInterval(updateClock, 30000);
+
+  const winTerm = document.getElementById("sim-win-term");
+  const winAi = document.getElementById("sim-win-ai");
+  const widPi = document.getElementById("sim-wid");
+
+  document.querySelectorAll(".sim-dock-btn").forEach(btn => {
+    btn.onclick = () => {
+      const app = btn.dataset.app;
+      if (app === "term") {
+        winTerm.style.display = winTerm.style.display === "none" ? "block" : "none";
+        btn.classList.toggle("dot", winTerm.style.display !== "none");
+      } else if (app === "ai") {
+        winAi.style.display = winAi.style.display === "none" ? "block" : "none";
+        btn.classList.toggle("dot", winAi.style.display !== "none");
+      } else if (app === "wid") {
+        widPi.style.display = widPi.style.display === "none" ? "block" : "none";
+        btn.classList.toggle("dot", widPi.style.display !== "none");
+      } else if (app === "web") {
+        simBtns[1].click();
+      }
+    };
+  });
+
+  const termHist = document.getElementById("sim-term-history");
+  const termPrompt = document.getElementById("sim-term-prompt");
+  const termCnt = document.getElementById("sim-term-cnt");
+
+  document.querySelectorAll(".sim-term-pills button").forEach(b => {
+    b.onclick = () => {
+      const cmd = b.dataset.cmd;
+      if (cmd === "clear") {
+        termHist.innerHTML = "";
+        return;
+      }
+      termPrompt.textContent = cmd;
+      let out = "";
+      if (cmd === "mos system info") {
+        out = "MakerOS v1.0.0 (ARM64) · Linux 6.18-makeros\nDonanım: Raspberry Pi 4 Model B (4 GB)\nRAM: 1.8G / 3.9G · Sıcaklık: 41.2°C · Uptime: 3 gün 14 saat";
+      } else if (cmd === "mos plugin ls") {
+        out = "ID            DURUM      PORT   VERSİYON   OTOMATİK BAŞLATMA\npihole        çalışıyor  8791   2.0.0      açık\nhomeassistant çalışıyor  8795   1.1.0      açık\nchromecast    boşta      8793   1.2.0      kapalı";
+      } else if (cmd.includes("mos ai")) {
+        out = "[Qwen2.5-Local] Sistem durumu stabil. Tüm servisler (makerd, networking, eklentiler) sorunsuz yanıt veriyor.";
+      }
+      const entry = document.createElement("div");
+      entry.innerHTML = `<div style="color:#f8f8f2;margin-top:4px;"><span style="color:#f07a1a">maker@makeros:~$</span> ${cmd}</div><div style="color:#8a8f9d;white-space:pre-wrap;margin-bottom:6px;">${out}</div>`;
+      termHist.append(entry);
+      termCnt.scrollTop = termCnt.scrollHeight;
+    };
+  });
+
+  const aiChat = document.getElementById("sim-ai-chat");
+  document.querySelectorAll(".sim-ai-prompts button").forEach(b => {
+    b.onclick = () => {
+      const q = b.dataset.q;
+      let a = "";
+      if (q.includes("sıcaklığı")) a = "Şu anda Raspberry Pi işlemci sıcaklığı 41.2°C seviyesinde. Termal eşikler ve soğutma ideal durumda.";
+      else if (q.includes("GPIO")) a = "40 pinli GPIO hazır: Pin 17 (Çıkış: LOW), Pin 18 (PWM), Pin 2/3 (I²C SDA/SCL aktif).";
+      else if (q.includes("Pi-hole")) a = "Pi-hole arka planda çalışıyor. Son 24 saatte 2,410 sorgu (%18.4) engellendi.";
+
+      const uEl = document.createElement("div");
+      uEl.className = "sim-msg-user";
+      uEl.textContent = q;
+      const bEl = document.createElement("div");
+      bEl.className = "sim-msg-bot";
+      bEl.textContent = a;
+      aiChat.append(uEl, bEl);
+      aiChat.scrollTop = aiChat.scrollHeight;
+    };
+  });
+
+  const piSt = document.getElementById("sim-wid-st");
+  const piBtn = document.getElementById("sim-wid-btn");
+  let piActive = true;
+  if (piBtn) {
+    piBtn.onclick = () => {
+      piActive = !piActive;
+      piSt.className = "sim-wid-st " + (piActive ? "" : "off");
+      piSt.innerHTML = `<i></i>${piActive ? 'Etkin' : 'Duraklatıldı'}`;
+      piBtn.className = "sim-wid-tgl " + (piActive ? "" : "off");
+      piBtn.textContent = piActive ? 'Korumayı Duraklat' : 'Korumayı Başlat';
+    };
+  }
 })();
 </script>
 </body>

@@ -305,6 +305,23 @@ async function start() {
       if (w && !qs.get("open") && pref("startupFullscreen") && w.state !== "full") wm.fullscreen(w);
     });
   }
+  // Çoklu başlangıç uygulamaları
+  const extraApps = (pref("startupApps") || []).filter(a => a && a !== page);
+  for (const aId of extraApps) {
+    S.launch(aId).catch(() => {});
+  }
+  // Otomatik başlatılan eklentiler
+  const autoPlugs = pref("autostartPlugins") || [];
+  if (Array.isArray(autoPlugs) && autoPlugs.length) {
+    get("/plugins").then(list => {
+      const runningIds = new Set((list || []).filter(p => p.running).map(p => p.id));
+      for (const pid of autoPlugs) {
+        if (!runningIds.has(pid)) {
+          post(`/plugins/${pid}/start`).catch(() => {});
+        }
+      }
+    }).catch(() => {});
+  }
   if (!mq.matches) $("#menubar").animate?.([{ transform: "translateY(-100%)" }, { transform: "none" }], { duration: 300, easing: "cubic-bezier(.2,.8,.2,1)" });
   // Sık kullanılan katmanları boşta önceden yükle (⌘Tab/Bul ilk basışta gecikmesin)
   const idle = window.requestIdleCallback ? f => requestIdleCallback(f, { timeout: 4000 }) : f => setTimeout(f, 1500);

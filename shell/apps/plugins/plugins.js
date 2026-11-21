@@ -54,10 +54,22 @@ $(".b-imp input").onchange = async e => {
 };
 
 const openUI = p => app.open("makeros.plugin." + p.id);
+const isAuto = p => (pref("autostartPlugins") || []).includes(p.id);
+function toggleAuto(p, v) {
+  const cur = pref("autostartPlugins") || [];
+  const enable = v !== undefined ? !!v : !isAuto(p);
+  setPref("autostartPlugins", enable ? [...new Set([...cur, p.id])] : cur.filter(x => x !== p.id));
+  toast(enable ? t("pl.autostartOn", { name: p.name }) : t("pl.autostartOff", { name: p.name }));
+  load();
+}
 async function act(p, o) {
   try {
     const r = await post(`/plugins/${p.id}/${o}`);
-    if (o === "start" && p.web_port) setTimeout(() => openUI(p), 1500);
+    if (o === "start") {
+      const cur = pref("autostartPlugins") || [];
+      if (!cur.includes(p.id)) setPref("autostartPlugins", [...cur, p.id]);
+      if (p.web_port) setTimeout(() => openUI(p), 1500);
+    }
     load(); resyncThemes();
     return r;
   } catch (e) { fail(e); }
@@ -94,11 +106,17 @@ async function load() {
       h("div.ds", p.description),
       h("div.act",
         p.running ? [p.web_port ? btn(t("pl.open"), () => openUI(p), ".primary") : "", btn(t("pl.stop"), () => act(p, "stop"))] : btn(t("pl.start"), () => act(p, "start"), ".primary"),
+        btn(isAuto(p) ? t("pl.autostart") + " ✓" : t("pl.autostart"), () => toggleAuto(p), isAuto(p) ? ".primary" : ""),
         p.widget && p.web_port ? btn(onDesk(p) ? t("pl.widgetOff") : t("pl.widgetOn"), () => toggleDesk(p), onDesk(p) ? "" : ".primary") : "",
         btn(t("pl.logs"), () => logs(p)),
         btn(t("pl.edit"), () => editPlugin(p)),
         h("a.btn.sm", { href: `${BASE}/plugins/${p.id}/export.zip` }, t("pl.export")),
-        btn(t("delete"), async () => { if (await confirmDlg(p.name, t("pl.deleteQ", { name: p.name }))) { await api("DELETE", "/plugins/" + p.id).catch(fail); load(); resyncThemes(); } })))));
+        btn(t("delete"), async () => { if (await confirmDlg(p.name, t("pl.deleteQ", { name: p.name }))) {
+          await api("DELETE", "/plugins/" + p.id).catch(fail);
+          setPref("autostartPlugins", (pref("autostartPlugins") || []).filter(x => x !== p.id));
+          setPref("desktopWidgets", (pref("desktopWidgets") || []).filter(x => x !== p.id));
+          load(); resyncThemes();
+        } })))));
   } catch (e) { if (tab === "installed") $(".cards").replaceChildren(h("div.empty.err", e.message)); }
 }
 
@@ -110,6 +128,9 @@ async function install(p, b) {
   b.replaceChildren(h("span.spin", { html: icon("loader-circle", 14, 2) }), t(p.update ? "pl.updating" : "pl.installing"));
   try {
     const m = await post(`/plugins/catalog/${p.id}/install`);
+    const cur = pref("autostartPlugins") || [];
+    if (!cur.includes(p.id)) setPref("autostartPlugins", [...cur, p.id]);
+    await post(`/plugins/${p.id}/start`).catch(() => {});
     toast(t(p.update ? "pl.updated" : "pl.installed", { name: m.name, v: m.version }));
   } catch (e) { fail(e); }
   loadStore();

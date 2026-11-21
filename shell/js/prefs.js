@@ -24,7 +24,9 @@ const DEF = {
   uiStatusTemp: true,
   uiToasts: true,
   startupApp: "",
+  startupApps: [],
   startupFullscreen: false,
+  autostartPlugins: [],
 };
 const SYNC = Object.keys(DEF);
 export const pref = k => store.get(k, DEF[k]);

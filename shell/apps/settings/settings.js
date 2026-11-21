@@ -342,9 +342,31 @@ const PAGES = {
     openNowBtn.disabled = !pref("startupApp");
 
     const projBox = h("div.group", h("div.empty", t("loading")));
+    const pluginBox = h("div.group", h("div.empty", t("loading")));
     const tasksBox = h("div.group", h("div.empty", t("loading")));
     const statusMsg = h("p.hint");
     let projects = [], tasks = [];
+
+    const renderPlugins = async () => {
+      let plugins = [];
+      try { plugins = await get("/plugins"); } catch {}
+      if (!plugins.length) {
+        pluginBox.replaceChildren(h("div.row", h("div.grow", h("div.s", t("set.st.noPlugins"))),
+          btn(t("app.plugins"), () => tell({ mk: "open", app: "makeros.plugins" }), ".sm")));
+        return;
+      }
+      pluginBox.replaceChildren(...plugins.map(p => {
+        const auto = (pref("autostartPlugins") || []).includes(p.id);
+        const autoSw = sw(auto, v => {
+          const cur = pref("autostartPlugins") || [];
+          const next = v ? [...new Set([...cur, p.id])] : cur.filter(x => x !== p.id);
+          setPref("autostartPlugins", next);
+          toast(v ? t("pl.autostartOn", { name: p.name }) : t("pl.autostartOff", { name: p.name }));
+        });
+        const badge = h("span.badge" + (p.running ? ".ok" : ""), p.running ? t("py.running") : t("py.stopped"));
+        return row(p.name, `v${p.version} · ${p.description || ""}`, h("span", { style: { display: "flex", gap: "8px", alignItems: "center" } }, badge, autoSw), { ic: icon("puzzle", 16, 2) });
+      }));
+    };
 
     const renderProjects = () => {
       if (!projects.length) {
@@ -502,6 +524,7 @@ const PAGES = {
         }
         syncKindUI();
         renderProjects();
+        renderPlugins();
         renderTasks();
       } catch (e) {
         flash(statusMsg, e.message, false);
@@ -514,6 +537,9 @@ const PAGES = {
         row(t("set.st.app"), t("set.st.appHint"), h("span", { style: { display: "flex", gap: "8px", alignItems: "center" } }, appSel, openNowBtn), { ic: icon("app-window", 18, 2) }),
         row(t("set.st.appFull"), t("set.st.appFullHint"), sw(!!pref("startupFullscreen"), v => setPref("startupFullscreen", v))),
       ),
+      h("h2", t("set.st.pluginsTitle")),
+      note(t("set.st.pluginsHint")),
+      pluginBox,
       h("h2", t("set.st.projTitle")),
       note(t("set.st.projHint")),
       projBox,
