@@ -89,7 +89,7 @@ install -m 0644 /src/os/package/makerd/50-makerd.rules $R/usr/share/polkit-1/rul
 mkdir -p $R/etc/systemd/system/multi-user.target.wants
 ln -sf /usr/lib/systemd/system/makeros-ai.service $R/etc/systemd/system/multi-user.target.wants/makeros-ai.service
 
-# llama.cpp (os/package/llama-cpp ile aynı yerleşim)
+# llama.cpp (os/package/makeros-llama-cpp ile aynı yerleşim)
 if [ -d /llama/bin ]; then
 	install -m 0755 /llama/bin/llama-server /llama/bin/llama-cli $R/usr/bin/
 	install -D -m 0644 /llama/LICENSE $R/usr/share/licenses/llama.cpp/LICENSE
