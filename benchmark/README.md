@@ -37,6 +37,7 @@ Referans (Apple M1 Pro · macOS · Python 3.9) = 1000 puan. Yüksek = iyi. Etkil
 ## Grafikler
 
 ```mermaid
+%%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#f07a1a"}}}}%%
 xychart-beta
   title "Genel puan"
   x-axis ["MacBook Pro M1 Pro 16 GB · …"]
@@ -45,6 +46,7 @@ xychart-beta
 ```
 
 ```mermaid
+%%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#f07a1a"}}}}%%
 xychart-beta
   title "CPU tek çekirdek"
   x-axis ["MacBook Pro M1 Pro 16 GB · …"]
@@ -53,6 +55,7 @@ xychart-beta
 ```
 
 ```mermaid
+%%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#f07a1a"}}}}%%
 xychart-beta
   title "CPU çok çekirdek"
   x-axis ["MacBook Pro M1 Pro 16 GB · …"]
@@ -61,6 +64,7 @@ xychart-beta
 ```
 
 ```mermaid
+%%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#f07a1a"}}}}%%
 xychart-beta
   title "Bellek"
   x-axis ["MacBook Pro M1 Pro 16 GB · …"]
@@ -69,6 +73,7 @@ xychart-beta
 ```
 
 ```mermaid
+%%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#f07a1a"}}}}%%
 xychart-beta
   title "Disk"
   x-axis ["MacBook Pro M1 Pro 16 GB · …"]

@@ -57,7 +57,8 @@ def mermaid_bar(title, labels, values, ymax=None):
     ymax = ymax or max(values + [1])
     ymax = int(math.ceil(ymax * 1.15 / 100.0) * 100)
     lab = ", ".join(json.dumps(x, ensure_ascii=False) for x in labels)
-    return ["```mermaid", "xychart-beta", f'  title "{title}"', f"  x-axis [{lab}]", f'  y-axis "Puan" 0 --> {ymax}',
+    init = '%%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#f07a1a"}}}}%%'  # MakerOS turuncusu
+    return ["```mermaid", init, "xychart-beta", f'  title "{title}"', f"  x-axis [{lab}]", f'  y-axis "Puan" 0 --> {ymax}',
             f"  bar [{', '.join(str(v) for v in values)}]", "```"]
 
 
