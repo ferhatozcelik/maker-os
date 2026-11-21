@@ -1,0 +1,5 @@
+bench-results/
+__pycache__/
+# tools/render.py üretir (GitHub Pages iş akışı da yeniden üretir)
+docs/data.json
+docs/results/
