@@ -1,11 +1,11 @@
 # MakerOS tanıtım sayfası → GitHub Pages (https://ferhatozcelik.github.io/maker-os/).
-# Kaynak: site/index.html; logo, yazı tipleri ve ekran görüntüleri depodan kopyalanır (tek kaynak).
+# Kaynak: site/index.html (+ benchmark/docs → /benchmark/); logo, yazı tipleri ve ekran görüntüleri depodan kopyalanır (tek kaynak).
 name: Tanıtım sayfası
 
 on:
   push:
     branches: [main]
-    paths: ["site/**", "docs/screenshots/**", "docs/assets/diagrams/**", "flash.sh", "flash.ps1", "flash.cmd", "shell/icons/logo.svg", ".github/workflows/pages.yml"]
+    paths: ["site/**", "benchmark/**", "docs/screenshots/**", "docs/assets/diagrams/**", "flash.sh", "flash.ps1", "flash.cmd", "shell/icons/logo.svg", ".github/workflows/pages.yml"]
   workflow_dispatch:
 
 permissions:
@@ -35,6 +35,10 @@ jobs:
           cp shell/vendor/fonts/inter-latin-wght-normal.woff2 shell/vendor/fonts/inter-latin-ext-wght-normal.woff2 \
              shell/vendor/fonts/jetbrains-mono-latin-wght-normal.woff2 _site/assets/fonts/
           cp docs/screenshots/*.png _site/assets/screenshots/
+          # MakerOS Bench: sonuç listesi ve etkileşimli grafikler → /maker-os/benchmark/
+          python3 benchmark/tools/render.py
+          mkdir -p _site/benchmark
+          cp -R benchmark/docs/. _site/benchmark/
           touch _site/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
