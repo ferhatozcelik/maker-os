@@ -77,7 +77,15 @@ cache_dir() {
 fetch_release() {
 	step "En son sürüm aranıyor" "Looking up the release"
 	if [ "$VERSION" = latest ]; then api="https://api.github.com/repos/$REPO/releases/latest"; else api="https://api.github.com/repos/$REPO/releases/tags/$VERSION"; fi
-	json="$(curl -fsSL "$api")" || die "GitHub'a ulaşılamadı." "Could not reach GitHub."
+	code="$(curl -sSL -o /tmp/makeros-release.$$ -w '%{http_code}' "$api" 2>/dev/null || true)"
+	json="$(cat /tmp/makeros-release.$$ 2>/dev/null || true)"; rm -f /tmp/makeros-release.$$
+	case "$code" in
+	200) ;;
+	404) die "Sürüm bulunamadı ($VERSION). Yeni sürüm şu an hazırlanıyor olabilir; birkaç dakika sonra yeniden deneyin: https://github.com/$REPO/releases" \
+		"Release not found ($VERSION). A new release may be being prepared; try again in a few minutes: https://github.com/$REPO/releases" ;;
+	403|429) die "GitHub istek sınırı aşıldı; bir saat içinde yeniden deneyin." "GitHub rate limit reached; try again within an hour." ;;
+	*) die "GitHub'a ulaşılamadı (HTTP ${code:-?}). İnternet bağlantınızı denetleyin." "Could not reach GitHub (HTTP ${code:-?}). Check your internet connection." ;;
+	esac
 	ext="$(printf '%s' "$1" | sed 's/\./\\./g')"
 	url="$(printf '%s' "$json" | grep -o "\"browser_download_url\": *\"[^\"]*$ext\"" | head -n1 | sed 's/.*"\(http[^"]*\)"$/\1/')"
 	[ -n "$url" ] || die "Sürümde $1 dosyası yok." "No $1 asset in the release."
