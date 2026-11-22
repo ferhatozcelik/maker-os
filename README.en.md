@@ -33,12 +33,6 @@
   <a href="README.en.md">English</a>
 </p>
 
-<p align="center">
-  <strong>Support the project</strong><br>
-  <a href="https://buymeacoffee.com/ferhatozcelik">Buy Me a Coffee</a> ·
-  <a href="https://thanks.dev/donations">thanks.dev</a>
-</p>
-
 <br>
 
 <table align="center">

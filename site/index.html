@@ -405,35 +405,106 @@ html[lang="en"] [data-en] { display: revert; }
               <span style="margin-left:auto;font-size:11px;">MakerOS Remote Web UI · v1.0.0</span>
             </div>
             <div class="sim-web-content">
-              <div class="sim-web-side">
-                <div class="on">📊 Genel Bakış</div>
-                <div>📁 Dosyalar</div>
-                <div>🐍 Python Projeleri</div>
-                <div>🔌 Eklenti Mağazası</div>
-                <div>⚙ Ayarlar</div>
+              <div class="sim-web-side" id="sim-web-menu">
+                <div class="on" data-tab="overview">📊 <span data-tr>Genel Bakış</span><span data-en>Overview</span></div>
+                <div data-tab="files">📁 <span data-tr>Dosyalar</span><span data-en>Files</span></div>
+                <div data-tab="python">🐍 <span data-tr>Python Projeleri</span><span data-en>Python Projects</span></div>
+                <div data-tab="plugins">🔌 <span data-tr>Eklenti Mağazası</span><span data-en>Plugin Store</span></div>
+                <div data-tab="settings">⚙ <span data-tr>Ayarlar</span><span data-en>Settings</span></div>
               </div>
-              <div class="sim-web-main">
-                <h3 style="margin-top:0;">Sistem Durumu · Raspberry Pi 4 (ARM64)</h3>
-                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px;">
-                  <div style="background:#1c1e28;padding:12px;border-radius:10px;border:1px solid #2a2d3c;">
-                    <div style="font-size:11px;color:#8a8f9d;">CPU Yükü</div>
-                    <div style="font-size:18px;font-weight:700;color:#27c93f;">%4.2 (4 çekirdek)</div>
+              <div class="sim-web-main" id="sim-web-main">
+                <div class="sim-web-tab" id="tab-overview">
+                  <h3 style="margin-top:0;">Sistem Durumu · Raspberry Pi 4 (ARM64)</h3>
+                  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px;">
+                    <div style="background:#1c1e28;padding:12px;border-radius:10px;border:1px solid #2a2d3c;">
+                      <div style="font-size:11px;color:#8a8f9d;">CPU Yükü</div>
+                      <div style="font-size:18px;font-weight:700;color:#27c93f;">%4.2 (4 çekirdek)</div>
+                    </div>
+                    <div style="background:#1c1e28;padding:12px;border-radius:10px;border:1px solid #2a2d3c;">
+                      <div style="font-size:11px;color:#8a8f9d;">RAM Kullanımı</div>
+                      <div style="font-size:18px;font-weight:700;color:#38bdf8;">2.1 GB / 8.0 GB</div>
+                    </div>
+                    <div style="background:#1c1e28;padding:12px;border-radius:10px;border:1px solid #2a2d3c;">
+                      <div style="font-size:11px;color:#8a8f9d;">Sıcaklık</div>
+                      <div style="font-size:18px;font-weight:700;color:#f07a1a;">41.5 °C</div>
+                    </div>
                   </div>
-                  <div style="background:#1c1e28;padding:12px;border-radius:10px;border:1px solid #2a2d3c;">
-                    <div style="font-size:11px;color:#8a8f9d;">RAM Kullanımı</div>
-                    <div style="font-size:18px;font-weight:700;color:#38bdf8;">2.1 GB / 8.0 GB</div>
-                  </div>
-                  <div style="background:#1c1e28;padding:12px;border-radius:10px;border:1px solid #2a2d3c;">
-                    <div style="font-size:11px;color:#8a8f9d;">Sıcaklık</div>
-                    <div style="font-size:18px;font-weight:700;color:#f07a1a;">41.5 °C</div>
+                  <div style="background:#1c1e28;padding:14px;border-radius:12px;border:1px solid #2a2d3c;">
+                    <h4 style="margin:0 0 8px;">Aktif Eklentiler & Otomatik Başlatma</h4>
+                    <div style="font-size:12px;color:#a4aab8;display:flex;flex-direction:column;gap:6px;">
+                      <div>🛡 <b>Pi-hole:</b> v2.0.1 · Çalışıyor (Port 8791) · Otomatik Başlatma: Açık</div>
+                      <div>🏠 <b>Home Assistant:</b> v1.1.0 · Çalışıyor (Port 8795) · Otomatik Başlatma: Açık</div>
+                      <div>📺 <b>Chromecast:</b> v1.2.0 · Boşta (Port 8793) · Otomatik Başlatma: Kapalı</div>
+                    </div>
                   </div>
                 </div>
-                <div style="background:#1c1e28;padding:14px;border-radius:12px;border:1px solid #2a2d3c;">
-                  <h4 style="margin:0 0 8px;">Aktif Eklentiler & Otomatik Başlatma</h4>
-                  <div style="font-size:12px;color:#a4aab8;display:flex;flex-direction:column;gap:6px;">
-                    <div>🛡 <b>Pi-hole:</b> v2.0.0 · Çalışıyor (Port 8791) · Otomatik Başlatma: Açık</div>
-                    <div>🏠 <b>Home Assistant:</b> v1.1.0 · Çalışıyor (Port 8795) · Otomatik Başlatma: Açık</div>
-                    <div>📺 <b>Chromecast:</b> v1.2.0 · Boşta (Port 8793) · Otomatik Başlatma: Kapalı</div>
+
+                <div class="sim-web-tab" id="tab-files" style="display:none;">
+                  <h3 style="margin-top:0;">Dosya Yöneticisi (/home/maker)</h3>
+                  <div style="background:#1c1e28;border-radius:10px;border:1px solid #2a2d3c;padding:12px 14px;font-family:monospace;font-size:12.5px;display:flex;flex-direction:column;gap:8px;">
+                    <div>📁 <b>projects/</b> <span style="color:#8a8f9d;">(4 proje, 18 dosya)</span></div>
+                    <div>📁 <b>models/</b> <span style="color:#8a8f9d;">(qwen2.5-0.5b-instruct-q4_k_m.gguf)</span></div>
+                    <div>📁 <b>scripts/</b> <span style="color:#8a8f9d;">(sensor_poll.py, backup.sh)</span></div>
+                    <div>📄 <b>config.toml</b> <span style="color:#8a8f9d;">(2.4 KB)</span></div>
+                    <div style="margin-top:10px;padding-top:8px;border-top:1px solid #2c3040;color:#27c93f;">
+                      MicroSD: 14.8 GB boş / 64 GB (EROFS salt okunur kök dosya sistemi, A/B korumalı)
+                    </div>
+                  </div>
+                </div>
+
+                <div class="sim-web-tab" id="tab-python" style="display:none;">
+                  <h3 style="margin-top:0;">Python & Otomasyon (uv paket yöneticisi)</h3>
+                  <div style="display:flex;flex-direction:column;gap:10px;">
+                    <div style="background:#1c1e28;padding:12px;border-radius:10px;border:1px solid #2a2d3c;display:flex;justify-content:space-between;align-items:center;">
+                      <div>
+                        <b>telemetry-collector</b> <span style="font-size:11px;color:#8a8f9d;">· Python 3.12 (uv)</span>
+                        <div style="font-size:12px;color:#27c93f;">● Çalışıyor (PID 1420) · Otomatik Başlangıç Etkin</div>
+                      </div>
+                      <span style="font-size:11px;background:#2a2d3c;padding:4px 8px;border-radius:6px;">systemd</span>
+                    </div>
+                    <div style="background:#1c1e28;padding:12px;border-radius:10px;border:1px solid #2a2d3c;display:flex;justify-content:space-between;align-items:center;">
+                      <div>
+                        <b>camera-stream</b> <span style="font-size:11px;color:#8a8f9d;">· OpenCV + CSI kamera</span>
+                        <div style="font-size:12px;color:#f07a1a;">⏸ Hazır (Cihaz bağlı)</div>
+                      </div>
+                      <span style="font-size:11px;background:#2a2d3c;padding:4px 8px;border-radius:6px;">tetikleyici</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="sim-web-tab" id="tab-plugins" style="display:none;">
+                  <h3 style="margin-top:0;">Eklenti Mağazası (makeros-plugins)</h3>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div style="background:#1c1e28;padding:12px;border-radius:10px;border:1px solid #2a2d3c;">
+                      <div style="display:flex;justify-content:space-between;font-weight:700;"><span>🛡 Pi-hole</span><span style="color:#27c93f;">Yüklü</span></div>
+                      <p style="font-size:11px;color:#8a8f9d;margin:6px 0 10px;">Ağ genelinde DNS tabanlı reklam ve izleyici engelleme.</p>
+                      <span style="font-size:11px;background:#27c93f22;color:#27c93f;padding:2px 8px;border-radius:4px;">Aktif</span>
+                    </div>
+                    <div style="background:#1c1e28;padding:12px;border-radius:10px;border:1px solid #2a2d3c;">
+                      <div style="display:flex;justify-content:space-between;font-weight:700;"><span>🏠 Home Assistant</span><span style="color:#27c93f;">Yüklü</span></div>
+                      <p style="font-size:11px;color:#8a8f9d;margin:6px 0 10px;">Yerel akıllı ev ve otomasyon kontrol merkezi.</p>
+                      <span style="font-size:11px;background:#27c93f22;color:#27c93f;padding:2px 8px;border-radius:4px;">Aktif</span>
+                    </div>
+                    <div style="background:#1c1e28;padding:12px;border-radius:10px;border:1px solid #2a2d3c;">
+                      <div style="display:flex;justify-content:space-between;font-weight:700;"><span>📺 Chromecast</span><span style="color:#8a8f9d;">Kurulabilir</span></div>
+                      <p style="font-size:11px;color:#8a8f9d;margin:6px 0 10px;">Akıllı TV ve ekranlara ekran yansıtma.</p>
+                      <span style="font-size:11px;background:#f07a1a22;color:#f07a1a;padding:2px 8px;border-radius:4px;">Kullanılabilir</span>
+                    </div>
+                    <div style="background:#1c1e28;padding:12px;border-radius:10px;border:1px solid #2a2d3c;">
+                      <div style="display:flex;justify-content:space-between;font-weight:700;"><span>🚁 Betaflight</span><span style="color:#8a8f9d;">Kurulabilir</span></div>
+                      <p style="font-size:11px;color:#8a8f9d;margin:6px 0 10px;">Drone uçuş kontrolcüsü telemetri arayüzü.</p>
+                      <span style="font-size:11px;background:#f07a1a22;color:#f07a1a;padding:2px 8px;border-radius:4px;">Kullanılabilir</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="sim-web-tab" id="tab-settings" style="display:none;">
+                  <h3 style="margin-top:0;">Sistem Ayarları</h3>
+                  <div style="background:#1c1e28;padding:14px;border-radius:10px;border:1px solid #2a2d3c;display:flex;flex-direction:column;gap:10px;font-size:12px;">
+                    <div style="display:flex;justify-content:space-between;"><span>Ağ Adı (Hostname):</span><b>maker-os.local</b></div>
+                    <div style="display:flex;justify-content:space-between;"><span>A/B Güncelleme Yuvası:</span><b style="color:#27c93f;">Slot A (Aktif & Doğrulanmış)</b></div>
+                    <div style="display:flex;justify-content:space-between;"><span>Sürüm:</span><b>v1.0.0 (Release)</b></div>
+                    <div style="display:flex;justify-content:space-between;"><span>OTA Güncelleme Durumu:</span><span>Sisteminiz güncel</span></div>
                   </div>
                 </div>
               </div>
@@ -444,44 +515,53 @@ html[lang="en"] [data-en] { display: revert; }
           <div class="sim-phone-view" id="sim-phone">
             <div class="sim-phone-body">
               <div class="sim-phone-top">
-                <span>02:15</span>
+                <span id="sim-phone-clock">02:15</span>
                 <span>5G · 100%</span>
               </div>
-              <div style="padding:10px 14px 4px;">
-                <div style="font-size:15px;font-weight:700;color:#fff;">MakerOS Mobile</div>
-                <div style="font-size:11px;color:#8a8f9d;">maker-os.local</div>
+              <div id="sim-phone-home" style="display:flex;flex-direction:column;flex:1;">
+                <div style="padding:10px 14px 4px;">
+                  <div style="font-size:15px;font-weight:700;color:#fff;">MakerOS Mobile</div>
+                  <div style="font-size:11px;color:#8a8f9d;">maker-os.local</div>
+                </div>
+                <div class="sim-phone-grid">
+                  <div class="sim-phone-app" data-papp="term">
+                    <div class="sim-phone-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></div>
+                    <span>Terminal</span>
+                  </div>
+                  <div class="sim-phone-app" data-papp="ai">
+                    <div class="sim-phone-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg></div>
+                    <span>AI Asistan</span>
+                  </div>
+                  <div class="sim-phone-app" data-papp="pihole">
+                    <div class="sim-phone-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+                    <span>Pi-hole</span>
+                  </div>
+                  <div class="sim-phone-app" data-papp="home">
+                    <div class="sim-phone-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
+                    <span>Ev</span>
+                  </div>
+                  <div class="sim-phone-app" data-papp="files">
+                    <div class="sim-phone-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg></div>
+                    <span>Dosyalar</span>
+                  </div>
+                  <div class="sim-phone-app" data-papp="settings">
+                    <div class="sim-phone-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+                    <span>Ayarlar</span>
+                  </div>
+                </div>
+                <div style="margin:auto 12px 14px;background:#1b1d26;padding:10px 12px;border-radius:14px;border:1px solid #2c3040;font-size:11px;color:#a0a6b5;">
+                  <div style="display:flex;justify-content:space-between;color:#fff;font-weight:600;margin-bottom:4px;">
+                    <span>Pi 4 Durumu</span><span>41.5°C</span>
+                  </div>
+                  <span>RAM %26 · Disk %7 · Wi-Fi Bağlı</span>
+                </div>
               </div>
-              <div class="sim-phone-grid">
-                <div class="sim-phone-app" onclick="alert('Terminal mobil arayüzde açılıyor.')">
-                  <div class="sim-phone-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></div>
-                  <span>Terminal</span>
+              <div id="sim-phone-detail" style="display:none;padding:10px 12px 14px;flex:1;flex-direction:column;overflow-y:auto;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                  <button id="sim-phone-back" type="button" style="background:#2a2d3c;border:none;color:#fff;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;">← Geri</button>
+                  <span id="sim-phone-title" style="font-size:13px;font-weight:700;color:#fff;">Uygulama</span>
                 </div>
-                <div class="sim-phone-app" onclick="alert('AI Asistan açılıyor.')">
-                  <div class="sim-phone-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg></div>
-                  <span>AI Asistan</span>
-                </div>
-                <div class="sim-phone-app" onclick="alert('Pi-hole paneli açılıyor.')">
-                  <div class="sim-phone-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-                  <span>Pi-hole</span>
-                </div>
-                <div class="sim-phone-app" onclick="alert('Home Assistant paneli açılıyor.')">
-                  <div class="sim-phone-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
-                  <span>Ev</span>
-                </div>
-                <div class="sim-phone-app" onclick="alert('Dosya yöneticisi açılıyor.')">
-                  <div class="sim-phone-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg></div>
-                  <span>Dosyalar</span>
-                </div>
-                <div class="sim-phone-app" onclick="alert('Ayarlar açılıyor.')">
-                  <div class="sim-phone-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
-                  <span>Ayarlar</span>
-                </div>
-              </div>
-              <div style="margin:auto 12px 14px;background:#1b1d26;padding:10px 12px;border-radius:14px;border:1px solid #2c3040;font-size:11px;color:#a0a6b5;">
-                <div style="display:flex;justify-content:space-between;color:#fff;font-weight:600;margin-bottom:4px;">
-                  <span>Pi 4 Durumu</span><span>41.5°C</span>
-                </div>
-                <span>RAM %26 · Disk %7 · Wi-Fi Bağlı</span>
+                <div id="sim-phone-detail-cnt" style="background:#1b1d26;border-radius:12px;padding:12px;font-size:11px;border:1px solid #2c3040;flex:1;overflow-y:auto;color:#cbd5e1;"></div>
               </div>
             </div>
           </div>
@@ -553,7 +633,6 @@ html[lang="en"] [data-en] { display: revert; }
         <a class="btn primary" href="https://github.com/ferhatozcelik/maker-os/releases/latest"><svg aria-hidden="true"><use href="#i-dl"/></svg><span data-tr>İmajı indir</span><span data-en>Download image</span></a>
         <a class="btn" href="https://github.com/ferhatozcelik/makeros-plugins"><svg aria-hidden="true"><use href="#i-puzzle"/></svg><span data-tr>Eklenti mağazası</span><span data-en>Plugin store</span></a>
         <a class="btn" href="benchmark/"><svg aria-hidden="true"><use href="#i-chart"/></svg><span data-tr>Benchmark</span><span data-en>Benchmark</span></a>
-        <a class="btn" href="https://buymeacoffee.com/ferhatozcelik"><span data-tr>Projeyi destekle</span><span data-en>Support the project</span></a>
       </div>
     </div>
   </section>
@@ -561,7 +640,7 @@ html[lang="en"] [data-en] { display: revert; }
 
 <footer>
   <div class="wrap">
-    <p><span data-tr>© 2026 Ferhat Özçelik · <a href="https://github.com/ferhatozcelik/maker-os/blob/main/LICENSE">MIT lisansı</a>. MakerOS bağımsız bir açık kaynak projesidir; herhangi bir donanım ya da yazılım üreticisiyle bağı yoktur. Anılan ürün adları sahiplerinin markalarıdır.</span><span data-en>© 2026 Ferhat Özçelik · <a href="https://github.com/ferhatozcelik/maker-os/blob/main/LICENSE">MIT License</a>. MakerOS is an independent open-source project, not affiliated with any hardware or software vendor. Product names are trademarks of their respective owners.</span></p>
+    <p><span data-tr>© 2026 MakerOS Project · <a href="https://github.com/ferhatozcelik/maker-os/blob/main/LICENSE">MIT lisansı</a>. MakerOS bağımsız bir açık kaynak projesidir; herhangi bir donanım ya da yazılım üreticisiyle bağı yoktur. Anılan ürün adları sahiplerinin markalarıdır.</span><span data-en>© 2026 MakerOS Project · <a href="https://github.com/ferhatozcelik/maker-os/blob/main/LICENSE">MIT License</a>. MakerOS is an independent open-source project, not affiliated with any hardware or software vendor. Product names are trademarks of their respective owners.</span></p>
     <nav>
       <a href="https://github.com/ferhatozcelik/maker-os">GitHub</a>
       <a href="https://github.com/ferhatozcelik/maker-os/tree/main/docs"><span data-tr>Dokümantasyon</span><span data-en>Docs</span></a>
@@ -706,6 +785,77 @@ html[lang="en"] [data-en] { display: revert; }
       piBtn.textContent = piActive ? 'Korumayı Duraklat' : 'Korumayı Başlat';
     };
   }
+
+  // Web Portal Yan Menü Sekmeleri
+  const webMenuItems = document.querySelectorAll("#sim-web-menu div[data-tab]");
+  const webTabs = document.querySelectorAll("#sim-web-main .sim-web-tab");
+  webMenuItems.forEach(item => {
+    item.onclick = () => {
+      webMenuItems.forEach(x => x.classList.remove("on"));
+      item.classList.add("on");
+      const tabId = "tab-" + item.dataset.tab;
+      webTabs.forEach(t => t.style.display = (t.id === tabId ? "block" : "none"));
+    };
+  });
+
+  // Mobil Telefon Etkileşimli Arayüz
+  const phoneClock = document.getElementById("sim-phone-clock");
+  if (phoneClock && clockEl) {
+    phoneClock.textContent = clockEl.textContent;
+    setInterval(() => { phoneClock.textContent = clockEl.textContent; }, 30000);
+  }
+  const phoneHome = document.getElementById("sim-phone-home");
+  const phoneDetail = document.getElementById("sim-phone-detail");
+  const phoneTitle = document.getElementById("sim-phone-title");
+  const phoneCnt = document.getElementById("sim-phone-detail-cnt");
+  const phoneBack = document.getElementById("sim-phone-back");
+
+  if (phoneBack) {
+    phoneBack.onclick = () => {
+      phoneDetail.style.display = "none";
+      phoneHome.style.display = "flex";
+    };
+  }
+
+  const phoneAppViews = {
+    term: {
+      title: "Mobil Terminal",
+      html: "<div style='color:#f07a1a;margin-bottom:6px;'>maker@makeros:~$ mos system info</div><div style='color:#a0a6b5;font-size:10px;line-height:1.5;'>MakerOS v1.0.0 (ARM64)<br>Raspberry Pi 4 (4GB)<br>Uptime: 3 gün 14 saat<br>RAM: 1.8G / 3.9G (%46)<br>Sıcaklık: 41.5°C</div>"
+    },
+    ai: {
+      title: "Yerel AI Asistan",
+      html: "<div style='background:#222633;padding:8px;border-radius:8px;margin-bottom:8px;color:#38bdf8;'>[Qwen2.5-Local] Merhaba! Cihaz içi yapay zeka hazır. Tüm sensörler ve eklentiler stabil çalışıyor.</div><div style='font-size:10px;color:#8a8f9d;'>Sorunuzu sesli veya yazılı olarak yöneltebilirsiniz.</div>"
+    },
+    pihole: {
+      title: "Pi-hole DNS Koruması",
+      html: "<div style='display:flex;justify-content:space-between;margin-bottom:8px;'><span>Durum:</span><b style='color:#27c93f;'>Aktif</b></div><div style='display:flex;justify-content:space-between;margin-bottom:8px;'><span>Engellenen:</span><b>2,410 (%18.4)</b></div><div style='display:flex;justify-content:space-between;margin-bottom:8px;'><span>Sorgu:</span><b>13,094</b></div><div style='margin-top:10px;padding:6px;background:#27c93f22;color:#27c93f;border-radius:6px;text-align:center;'>DNS Koruması Açık</div>"
+    },
+    home: {
+      title: "Home Assistant",
+      html: "<div style='font-weight:600;margin-bottom:8px;color:#fff;'>Akıllı Ev Cihazları</div><div style='display:flex;flex-direction:column;gap:6px;'><div style='display:flex;justify-content:space-between;align-items:center;background:#222633;padding:6px 10px;border-radius:6px;'><span>Salon Işık</span><span style='color:#27c93f;'>Açık</span></div><div style='display:flex;justify-content:space-between;align-items:center;background:#222633;padding:6px 10px;border-radius:6px;'><span>Atölye Priz</span><span style='color:#27c93f;'>Açık (42W)</span></div><div style='display:flex;justify-content:space-between;align-items:center;background:#222633;padding:6px 10px;border-radius:6px;'><span>Oda Sıcaklığı</span><span style='color:#38bdf8;'>22.4°C</span></div></div>"
+    },
+    files: {
+      title: "Dosya Yöneticisi",
+      html: "<div style='font-size:10px;color:#8a8f9d;margin-bottom:6px;'>Konum: /home/maker</div><div style='display:flex;flex-direction:column;gap:4px;'><div style='padding:4px 0;border-bottom:1px solid #2a2d3c;'>📁 projects/</div><div style='padding:4px 0;border-bottom:1px solid #2a2d3c;'>📁 plugins/</div><div style='padding:4px 0;border-bottom:1px solid #2a2d3c;'>📄 autostart.json</div><div style='padding:4px 0;'>📄 config.toml</div></div>"
+    },
+    settings: {
+      title: "Sistem Ayarları",
+      html: "<div style='display:flex;flex-direction:column;gap:6px;'><div style='display:flex;justify-content:space-between;'><span>Sürüm:</span><b>v1.0.0 (Release)</b></div><div style='display:flex;justify-content:space-between;'><span>Hostname:</span><b>maker-os.local</b></div><div style='display:flex;justify-content:space-between;'><span>OTA Slot:</span><b style='color:#27c93f;'>Slot A (Aktif)</b></div><div style='display:flex;justify-content:space-between;'><span>Eklentiler:</span><b>3 Yüklü</b></div></div>"
+    }
+  };
+
+  document.querySelectorAll(".sim-phone-app").forEach(appEl => {
+    appEl.onclick = () => {
+      const papp = appEl.dataset.papp;
+      const view = phoneAppViews[papp];
+      if (view) {
+        phoneTitle.textContent = view.title;
+        phoneCnt.innerHTML = view.html;
+        phoneHome.style.display = "none";
+        phoneDetail.style.display = "flex";
+      }
+    };
+  });
 })();
 </script>
 </body>
