@@ -164,7 +164,12 @@ Details: [Package manager](docs/architecture/packages.en.md)
 
 <p align="center"><img src="docs/assets/diagrams/flash.en.svg" alt="Flashing the microSD: Run the command, Download, Pick the card, Write & insert" width="100%"></p>
 
-A one-line command downloads the latest image, verifies it, lists only external disks and writes to the card you pick. It can also add your Wi-Fi details so the board joins your network on first boot.
+A one-line command downloads the latest release, verifies it and installs it. It first asks how the card is connected:
+
+| Choice | When? | What happens |
+| --- | --- | --- |
+| **1) SD — card reader** | Fresh install; card in your computer | The card is written from scratch. It can also add your Wi-Fi details so the board joins your network on first boot. |
+| **2) USB — Pi over USB-C** | MakerOS already installed; card inside the Pi | Connect the Pi to your computer with a USB-C cable; no need to remove the card. The signed update bundle is sent over USB-C and installed to the spare slot. Your files and settings are kept; if the new version fails to boot, the Pi falls back to the previous one. |
 
 **macOS / Linux** — open Terminal and paste:
 
@@ -174,13 +179,19 @@ sh -c "$(curl -fsSL https://raw.githubusercontent.com/ferhatozcelik/maker-os/mai
 
 <p align="center"><img src="docs/assets/diagrams/flash-mac.en.svg" alt="flash.sh output in macOS Terminal" width="100%"></p>
 
+> USB mode signs in with your MakerOS admin account (default `maker` / `maker`). If your computer's USB port cannot power the Pi, use a powered USB hub. To skip the question, append `-- -m sd` or `-- -m usb`: `sh -c "$(curl -fsSL …/flash.sh)" -- -m usb`.
+
 **Windows** — right-click *PowerShell* in the Start menu, choose **Run as administrator** and paste (or download [`flash.cmd`](flash.cmd) and double-click it):
 
 ```powershell
 irm https://raw.githubusercontent.com/ferhatozcelik/maker-os/main/flash.ps1 | iex
 ```
 
+Windows supports SD (card reader) mode only; USB mode is for macOS and Linux.
+
 <p align="center"><img src="docs/assets/diagrams/flash-windows.en.svg" alt="flash.ps1 output in Windows PowerShell" width="100%"></p>
+
+SD mode steps:
 
 | Step | What happens |
 | --- | --- |

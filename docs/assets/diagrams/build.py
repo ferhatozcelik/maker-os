@@ -198,7 +198,11 @@ def terminal(lines, title, kind="mac", w=760):
 
 FLASH_TR = [
     ("cmd", 'sh -c "$(curl -fsSL https://raw.githubusercontent.com/ferhatozcelik/maker-os/main/flash.sh)"'),
-    ("acc", "  MakerOS — microSD yazıcı"),
+    ("acc", "  MakerOS — yazıcı"),
+    ("out", "==> Bağlantı türünü seçin"),
+    ("out", "  1) microSD kart bilgisayarda (kart okuyucu) — kart baştan yazılır, yeni kurulum"),
+    ("out", "  2) Kart Pi'de, Pi USB-C ile bağlı — MakerOS güncellenir, veriler korunur"),
+    ("in", "Seçim [1-2]: 1"),
     ("out", "==> İmaj indiriliyor ve doğrulanıyor (SHA-256) … Doğrulandı."),
     ("out", "==> Harici diskler aranıyor"),
     ("out", "  1) /dev/disk4       31.9 GB  SD Card Reader"),
@@ -210,7 +214,11 @@ FLASH_TR = [
 ]
 FLASH_EN = [
     ("cmd", 'sh -c "$(curl -fsSL https://raw.githubusercontent.com/ferhatozcelik/maker-os/main/flash.sh)"'),
-    ("acc", "  MakerOS — microSD flasher"),
+    ("acc", "  MakerOS — flasher"),
+    ("out", "==> Choose how the card is connected"),
+    ("out", "  1) microSD card in this computer (card reader) — card is erased, fresh install"),
+    ("out", "  2) Card in the Pi, Pi connected over USB-C — MakerOS is updated, data is kept"),
+    ("in", "Choice [1-2]: 1"),
     ("out", "==> Downloading and verifying image (SHA-256) … Verified."),
     ("out", "==> Looking for external disks"),
     ("out", "  1) /dev/disk4       31.9 GB  SD Card Reader"),

@@ -164,7 +164,12 @@ Ayrıntılar: [Paket yöneticisi](docs/architecture/packages.md)
 
 <p align="center"><img src="docs/assets/diagrams/flash.svg" alt="microSD karta yazma: Komutu çalıştır, İndir, Kartı seç, Yaz ve tak" width="100%"></p>
 
-Tek satırlık komut en son imajı indirir, doğrular, yalnız harici diskleri listeler ve seçtiğiniz karta yazar. İsterseniz Wi-Fi bilgilerinizi de karta ekler; kart ilk açılışta ağınıza kendiliğinden bağlanır.
+Tek satırlık komut en son sürümü indirir, doğrular ve kurar. Komut başta kartın nasıl bağlı olduğunu sorar:
+
+| Seçim | Ne zaman? | Ne olur? |
+| --- | --- | --- |
+| **1) SD — kart okuyucu** | Yeni kurulum; kart bilgisayara takılı | Kart baştan yazılır. İsterseniz Wi-Fi bilgileriniz de eklenir; kart ilk açılışta ağınıza kendiliğinden bağlanır. |
+| **2) USB — Pi USB-C ile bağlı** | MakerOS zaten kurulu; kart Pi'nin içinde | Pi'yi USB-C kablosuyla bilgisayara bağlayın; kartı çıkarmanız gerekmez. İmzalı güncelleme paketi USB-C üzerinden gönderilir ve yedek bölüme kurulur. Dosyalarınız ve ayarlarınız korunur; yeni sürüm açılmazsa Pi eski sürüme kendiliğinden döner. |
 
 **macOS / Linux** — Terminal'i açıp yapıştırın:
 
@@ -174,13 +179,19 @@ sh -c "$(curl -fsSL https://raw.githubusercontent.com/ferhatozcelik/maker-os/mai
 
 <p align="center"><img src="docs/assets/diagrams/flash-mac.svg" alt="macOS Terminal'de flash.sh çıktısı" width="100%"></p>
 
+> USB modunda MakerOS yönetici hesabınızla giriş yapılır (varsayılan `maker` / `maker`). Bilgisayarın USB portu Pi'yi beslemeye yetmezse beslemeli bir USB hub kullanın. Seçimi sormadan başlatmak için komutun sonuna `-- -m sd` ya da `-- -m usb` ekleyebilirsiniz: `sh -c "$(curl -fsSL …/flash.sh)" -- -m usb`.
+
 **Windows** — Başlat menüsünde *PowerShell*'e sağ tıklayıp **Yönetici olarak çalıştır**'ı seçin ve yapıştırın (ya da [`flash.cmd`](flash.cmd) dosyasını indirip çift tıklayın):
 
 ```powershell
 irm https://raw.githubusercontent.com/ferhatozcelik/maker-os/main/flash.ps1 | iex
 ```
 
+Windows'ta yalnız SD (kart okuyucu) modu vardır; USB modu macOS ve Linux içindir.
+
 <p align="center"><img src="docs/assets/diagrams/flash-windows.svg" alt="Windows PowerShell'de flash.ps1 çıktısı" width="100%"></p>
+
+SD modunda adımlar:
 
 | Adım | Ne olur? |
 | --- | --- |

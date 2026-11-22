@@ -603,9 +603,10 @@ html[lang="en"] [data-en] { display: revert; }
       <div class="pane" data-pane="mac" role="tabpanel" aria-labelledby="t-mac">
         <p class="hint"><span data-tr><b>Terminal</b>'i açın (macOS: Spotlight'ta "Terminal" yazın) ve şu satırı yapıştırıp Enter'a basın:</span><span data-en>Open <b>Terminal</b> (macOS: type "Terminal" in Spotlight), paste this line and press Enter:</span></p>
         <div class="cmd"><code>sh -c "$(curl -fsSL https://raw.githubusercontent.com/ferhatozcelik/maker-os/main/flash.sh)"</code><button class="copy" type="button"><span data-tr>Kopyala</span><span data-en>Copy</span></button></div>
-        <img class="term" src="assets/diagrams/flash-mac.svg" data-tr width="900" height="292" alt="macOS Terminal'de flash.sh çıktısı" loading="lazy">
-        <img class="term" src="assets/diagrams/flash-mac.en.svg" data-en width="900" height="292" alt="flash.sh output in macOS Terminal" loading="lazy">
-        <p class="note"><span data-tr>Yönetici parolanız istenebilir. Betiği indirip incelemek isterseniz: <a href="flash.sh" download>flash.sh</a></span><span data-en>You may be asked for your password. To download and inspect the script: <a href="flash.sh" download>flash.sh</a></span></p>
+        <p class="hint"><span data-tr>Komut önce bağlantı türünü sorar: <b>1) SD</b> — kart bilgisayardaki kart okuyucuda, baştan yazılır (yeni kurulum). <b>2) USB</b> — kart Pi'nin içinde, Pi USB-C ile bağlı; MakerOS güncellenir, dosyalarınız korunur (yönetici hesabıyla giriş, varsayılan <code>maker</code> / <code>maker</code>).</span><span data-en>The command first asks how the card is connected: <b>1) SD</b> — card in your computer's card reader, written from scratch (fresh install). <b>2) USB</b> — card inside the Pi, Pi connected over USB-C; MakerOS is updated and your files are kept (sign in with an admin account, default <code>maker</code> / <code>maker</code>).</span></p>
+        <img class="term" src="assets/diagrams/flash-mac.svg" data-tr width="900" height="378" alt="macOS Terminal'de flash.sh çıktısı" loading="lazy">
+        <img class="term" src="assets/diagrams/flash-mac.en.svg" data-en width="900" height="378" alt="flash.sh output in macOS Terminal" loading="lazy">
+        <p class="note"><span data-tr>Yönetici parolanız istenebilir. USB-C portu Pi'yi beslemeye yetmezse beslemeli bir USB hub kullanın. Betiği indirip incelemek isterseniz: <a href="flash.sh" download>flash.sh</a></span><span data-en>You may be asked for your password. If the USB-C port cannot power the Pi, use a powered USB hub. To download and inspect the script: <a href="flash.sh" download>flash.sh</a></span></p>
       </div>
 
       <div class="pane" data-pane="win" role="tabpanel" aria-labelledby="t-win" hidden>
@@ -613,7 +614,7 @@ html[lang="en"] [data-en] { display: revert; }
         <div class="cmd"><code>irm https://raw.githubusercontent.com/ferhatozcelik/maker-os/main/flash.ps1 | iex</code><button class="copy" type="button"><span data-tr>Kopyala</span><span data-en>Copy</span></button></div>
         <img class="term" src="assets/diagrams/flash-windows.svg" data-tr width="900" height="292" alt="Windows PowerShell'de flash.ps1 çıktısı" loading="lazy">
         <img class="term" src="assets/diagrams/flash-windows.en.svg" data-en width="900" height="292" alt="flash.ps1 output in Windows PowerShell" loading="lazy">
-        <p class="note"><span data-tr>Yazma bittikten sonra Windows kartı biçimlendirmeyi önerirse <b>İptal</b>'e basın. Betik: <a href="flash.ps1" download>flash.ps1</a></span><span data-en>If Windows offers to format the card after writing, click <b>Cancel</b>. Script: <a href="flash.ps1" download>flash.ps1</a></span></p>
+        <p class="note"><span data-tr>Yazma bittikten sonra Windows kartı biçimlendirmeyi önerirse <b>İptal</b>'e basın. Windows'ta yalnız SD (kart okuyucu) modu vardır; USB modu macOS ve Linux içindir. Betik: <a href="flash.ps1" download>flash.ps1</a></span><span data-en>If Windows offers to format the card after writing, click <b>Cancel</b>. Windows supports SD (card reader) mode only; USB mode is for macOS and Linux. Script: <a href="flash.ps1" download>flash.ps1</a></span></p>
       </div>
 
       <ol class="steps after">
