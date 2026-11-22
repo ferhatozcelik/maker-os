@@ -12,6 +12,10 @@ MakerOS'un ilk kararlı sürümü: Buildroot ile Linux çekirdeği üzerine sıf
   paketi (`makeros-<sürüm>-rpi4.raucb`) indirilir, SHA-256 ve imza doğrulanır, boştaki bölüme kurulur;
   Pi deneme açılışıyla (tryboot) yeni sürümden başlar, açılamazsa önceki sürüme döner.
   Yeni sürüm 12 saatte bir denetlenir ve bildirilir
+- **Tek komutla kurulum ve güncelleme (`flash.sh`):** başta bağlantı türü sorulur. *SD*: kart okuyucudaki
+  kart baştan yazılır. *USB*: kart Pi'de kalır, Pi USB-C ile bağlanır; imzalı paket USB-C ağı (`10.42.0.1`)
+  üzerinden gönderilip A/B olarak kurulur, veriler korunur
+- **USB-C ağ kartı:** Pi bilgisayara USB-C ile takılınca `10.42.0.1` adresinden doğrudan erişilir
 - **Ekransız kurulum:** `wifi.txt` ya da şifresiz `MakerOS` kurulum ağı; tek adımlı ilk açılış sihirbazı
   (varsayılan `maker` / `maker` hesabı)
 - **makerd** (Rust): tek HTTP portundan API, WebSocket olaylar, terminal, dosyalar, kamera, GPIO,

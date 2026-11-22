@@ -25,6 +25,8 @@ dtparam=audio=on
 # enable_uart=1 Pi 4'te VPU saatini kilitler; hata ayiklama imajinda acilir.
 enable_uart=0
 dtparam=act_led_trigger=mmc0
+# USB-C cihaz modu: bilgisayara USB ag karti olarak gorunur (makeros-usb-gadget, 10.42.0.1)
+dtoverlay=dwc2,dr_mode=peripheral
 # dtoverlay=disable-bt
 # dtoverlay=gpio-fan,gpiopin=14,temp=65000
 

@@ -1,8 +1,8 @@
 #!/bin/sh
-# MakerOS debug: Pi 4 USB-C portu -> USB ag karti (CDC-ECM, configfs). Mac/PC'ye takilinca
+# MakerOS: Pi 4 USB-C portu -> USB ag karti (CDC-ECM, configfs). Mac/PC'ye takilinca
 # Pi 10.42.0.1 olur, bilgisayar DHCP ile (makeros-usb-dhcp) 10.42.0.x alir; yonlendirici/DNS verilmez.
 # NetworkManager usb0'a dokunmaz (conf.d/60-makeros-usb.conf).
-# Yalniz debug imajinda vardir (os/board/rpi4/debug-overlay). config.txt: dtoverlay=dwc2,dr_mode=peripheral
+# flash.sh USB-C modu ve os/debug/push.sh bunu kullanir. config.txt: dtoverlay=dwc2,dr_mode=peripheral
 set -e
 G=/sys/kernel/config/usb_gadget/makeros
 modprobe libcomposite
@@ -15,7 +15,7 @@ echo 0x1d6b > "$G/idVendor"   # Linux Foundation
 echo 0x0104 > "$G/idProduct"  # Multifunction Composite Gadget
 mkdir -p "$G/strings/0x409"
 echo MakerOS > "$G/strings/0x409/manufacturer"
-echo "MakerOS debug USB" > "$G/strings/0x409/product"
+echo "MakerOS USB" > "$G/strings/0x409/product"
 cat /proc/device-tree/serial-number 2>/dev/null | tr -d '\0' > "$G/strings/0x409/serialnumber" || true
 mkdir -p "$G/configs/c.1/strings/0x409"
 echo "ECM" > "$G/configs/c.1/strings/0x409/configuration"

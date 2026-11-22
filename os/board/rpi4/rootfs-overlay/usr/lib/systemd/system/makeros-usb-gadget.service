@@ -1,6 +1,6 @@
-# MakerOS debug: USB-C uzerinden ag (usb-gadget). usb0 10.42.0.1 alir.
+# MakerOS: USB-C uzerinden ag (usb-gadget). usb0 10.42.0.1 alir.
 [Unit]
-Description=MakerOS debug USB ag karti
+Description=MakerOS USB ag karti
 DefaultDependencies=no
 After=sys-kernel-config.mount systemd-modules-load.service systemd-udevd.service systemd-udev-trigger.service
 Before=NetworkManager.service network-pre.target

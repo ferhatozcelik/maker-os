@@ -166,6 +166,7 @@ impl Server {
             .route("/api/v1/system/update", get(api::update_status))
             .route("/api/v1/system/update/check", post(api::update_check))
             .route("/api/v1/system/update/apply", post(api::update_apply))
+            .route("/api/v1/system/update/upload", put(api::update_upload))
             .route("/api/v1/files", get(user::files_list))
             .route("/api/v1/files/raw", get(user::files_raw).put(user::files_upload))
             .route("/api/v1/files/op", post(user::files_op))

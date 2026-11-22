@@ -47,7 +47,7 @@ pub struct Status {
     /// Son denetim hatası.
     #[serde(skip_serializing_if = "String::is_empty")]
     pub error: String,
-    /// idle | downloading | verifying | installing | rebooting | error
+    /// idle | uploading | downloading | verifying | installing | rebooting | error
     pub phase: String,
     pub progress: i32,
     #[serde(skip_serializing_if = "String::is_empty")]
@@ -292,14 +292,58 @@ impl Updater {
         res.map_err(|e| self.fail(e))
     }
 
-    async fn apply_inner(&self, rel: &Release, inst: &dyn Installer, step: &(dyn Fn(i32, &str) + Send + Sync)) -> Result<(), String> {
+    /// OTA dizinini hazırlar; önceki denemelerden kalan paketleri siler (/data alanı boşa gitmesin).
+    fn clean_dir(&self) -> Result<(), String> {
         std::fs::create_dir_all(&self.dir).map_err(|e| e.to_string())?;
-        // Eski paketler (önceki denemeler) silinir: /data alanı boşa gitmesin.
         if let Ok(rd) = std::fs::read_dir(&self.dir) {
             for e in rd.flatten().filter(|e| e.file_name().to_string_lossy().contains(".raucb")) {
                 let _ = std::fs::remove_file(e.path());
             }
         }
+        Ok(())
+    }
+
+    /// Bilgisayardan (USB-C / ağ) gönderilen paket için kilit alır ve OTA dizinini hazırlar.
+    /// Dönen yol makerd-priv'in kabul ettiği düz bir .raucb adıdır. Hata dışında
+    /// [`Updater::apply_local`] ya da [`Updater::abort_local`] ile bırakılmalıdır.
+    pub fn begin_local(&self) -> Result<PathBuf, String> {
+        let mut g = self.s.lock().unwrap();
+        if g.running {
+            return Err("Bir güncelleme zaten sürüyor.".into());
+        }
+        if self.installer.is_none() {
+            return Err("Bu sistem güncelleme kuramıyor.".into());
+        }
+        self.clean_dir()?;
+        g.running = true;
+        g.st.job.clear();
+        g.st.phase = "uploading".into();
+        g.st.progress = 0;
+        g.st.message = "Paket bilgisayardan alınıyor…".into();
+        Ok(self.dir.join(format!("makeros-local-{BOARD}.raucb")))
+    }
+
+    /// Yükleme yarıda kaldı: kilidi bırakır, dosyayı siler.
+    pub fn abort_local(&self, path: &std::path::Path, err: &str) {
+        let _ = std::fs::remove_file(path);
+        self.s.lock().unwrap().running = false;
+        self.fail(err.into());
+    }
+
+    /// Yüklenmiş yerel paketi kurar ve cihazı yeniden başlatır (uzun iş). İmzayı RAUC denetler.
+    pub async fn apply_local(&self, job: &str, path: &std::path::Path, step: &(dyn Fn(i32, &str) + Send + Sync)) -> Result<(), String> {
+        self.s.lock().unwrap().st.job = job.into();
+        let Some(inst) = self.installer.clone() else {
+            self.s.lock().unwrap().running = false;
+            return Err(self.fail("Bu sistem güncelleme kuramıyor.".into()));
+        };
+        let res = self.install_bundle(path, "bilgisayardan gelen paket", inst.as_ref(), step).await;
+        self.s.lock().unwrap().running = false;
+        res.map_err(|e| self.fail(e))
+    }
+
+    async fn apply_inner(&self, rel: &Release, inst: &dyn Installer, step: &(dyn Fn(i32, &str) + Send + Sync)) -> Result<(), String> {
+        self.clean_dir()?;
         let path = self.dir.join(format!("makeros-{}-{BOARD}.raucb", rel.version));
         self.set("downloading", 1, &format!("MakerOS {} indiriliyor…", rel.version), step);
         let want = self.fetch_sum(&rel.sum_url).await.map_err(|e| format!("özet dosyası alınamadı: {e}"))?;
@@ -315,6 +359,11 @@ impl Updater {
             let _ = std::fs::remove_file(&path);
             return Err("paket özeti eşleşmiyor (bozuk ya da yarım indirme)".into());
         }
+        self.install_bundle(&path, &rel.version, inst, step).await
+    }
+
+    /// Paketi RAUC ile boştaki slota kurar, dosyayı siler ve deneme açılışını başlatır. İlerleme 62–100.
+    async fn install_bundle(&self, path: &std::path::Path, label: &str, inst: &dyn Installer, step: &(dyn Fn(i32, &str) + Send + Sync)) -> Result<(), String> {
         self.set("installing", 62, "Yedek bölüme kuruluyor…", step);
         let ps = path.to_string_lossy().into_owned();
         inst.install(&ps).await.map_err(|e| format!("kurulum başlatılamadı: {e}"))?;
@@ -340,9 +389,9 @@ impl Updater {
             }
             break;
         }
-        let _ = std::fs::remove_file(&path);
+        let _ = std::fs::remove_file(path);
         self.set("rebooting", 100, "Kuruldu. Yeni sürümle yeniden başlatılıyor…", step);
-        tracing::info!(version = %rel.version, "güncelleme kuruldu, deneme açılışı");
+        tracing::info!(bundle = %label, "güncelleme kuruldu, deneme açılışı");
         tokio::time::sleep(self.reboot_delay).await;
         inst.reboot().await.map_err(|e| format!("yeniden başlatılamadı: {e}"))
     }

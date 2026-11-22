@@ -1,6 +1,6 @@
-# MakerOS debug: USB'ye takilan bilgisayara 10.42.0.10-50 adresi (yalniz DHCP; DNS kapali, yonlendirici verilmez).
+# MakerOS: USB'ye takilan bilgisayara 10.42.0.10-50 adresi (yalniz DHCP; DNS kapali, yonlendirici verilmez).
 [Unit]
-Description=MakerOS debug USB DHCP
+Description=MakerOS USB DHCP
 After=makeros-usb-gadget.service
 Requires=makeros-usb-gadget.service
 

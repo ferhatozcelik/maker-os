@@ -6,7 +6,7 @@
 #   os/debug/remaster.sh [taban.img.xz]            → os/out/makeros-<sürüm>-rpi4-debug.img.xz
 #   os/debug/remaster.sh --release [taban.img.xz]  → os/out/makeros-<sürüm>-rpi4.img.xz + .raucb
 #
-# Debug imajında: USB-C ağ kartı (Pi 10.42.0.1), anahtarla root SSH (~/.ssh/id_ed25519_makeros.pub),
+# Her iki imajda: USB-C ağ kartı (Pi 10.42.0.1). Debug imajında ayrıca: anahtarla root SSH (~/.ssh/id_ed25519_makeros.pub),
 # /usr üzerinde yazılabilir katman (os/debug/push.sh). Kullanıcı imajına (--release) GİRMEZ.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -106,6 +106,11 @@ rm -rf $S; mkdir -p $S
 find $S -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.css' -o -name '*.html' -o -name '*.svg' -o -name '*.json' \) -size +1k -exec gzip -9 -n -k -f {} \;
 find $S -type d -exec chmod 0755 {} +; find $S -type f -exec chmod 0644 {} +
 
+# USB-C ağ kartı (flash.sh USB-C modu; taban imaj eski olsa da açık olsun)
+mkdir -p $R/etc/systemd/system/multi-user.target.wants $R/etc/systemd/system/sysinit.target.wants
+ln -sf /usr/lib/systemd/system/makeros-usb-gadget.service $R/etc/systemd/system/sysinit.target.wants/makeros-usb-gadget.service
+ln -sf /usr/lib/systemd/system/makeros-usb-dhcp.service $R/etc/systemd/system/multi-user.target.wants/makeros-usb-dhcp.service
+
 if [ "$RELEASE" = 0 ]; then
 	# SSH: debug'da hep açık, yalnız anahtarla root
 	grep -q '^Include /etc/ssh/sshd_config.d' $R/etc/ssh/sshd_config || sed -i '1i Include /etc/ssh/sshd_config.d/*.conf' $R/etc/ssh/sshd_config
@@ -113,8 +118,6 @@ if [ "$RELEASE" = 0 ]; then
 	printf '%s\n' "$PUBKEY" > $R/etc/ssh/authorized_keys/root; chmod 0644 $R/etc/ssh/authorized_keys/root
 	mkdir -p $R/etc/systemd/system/multi-user.target.wants $R/etc/systemd/system/sysinit.target.wants
 	ln -sf /usr/lib/systemd/system/sshd.service $R/etc/systemd/system/multi-user.target.wants/sshd.service
-	ln -sf /usr/lib/systemd/system/makeros-usb-gadget.service $R/etc/systemd/system/sysinit.target.wants/makeros-usb-gadget.service
-	ln -sf /usr/lib/systemd/system/makeros-usb-dhcp.service $R/etc/systemd/system/multi-user.target.wants/makeros-usb-dhcp.service
 	mkdir -p $R/etc/systemd/system/timers.target.wants
 	ln -sf /usr/lib/systemd/system/makeros-debug-log.timer $R/etc/systemd/system/timers.target.wants/makeros-debug-log.timer
 	echo "MakerOS $VERSION debug $(date -u +%Y%m%d%H%M)" > $R/usr/lib/makeros/debug-image
@@ -133,20 +136,20 @@ if [ "$RELEASE" = 1 ]; then
 else
 	IMG=makeros-$VERSION-rpi4-debug.img
 fi
-cp --sparse=always base.img $IMG
-dd if=new.erofs of=$IMG bs=512 seek="$R_START" conv=notrunc,sparse status=none
-
-if [ "$RELEASE" = 0 ]; then
-	# BOOT_A/B config.txt: USB-C cihaz modu (dwc2 peripheral)
+# BOOT_A/B config.txt: USB-C cihaz modu (dwc2 peripheral); taban imajda yoksa eklenir (imaj ve RAUC paketi buradan alınır).
+{
 	for off in "$A_START" "$B_START"; do
-		I="$IMG@@$((off * 512))"
+		I="base.img@@$((off * 512))"
 		mtype -i "$I" ::config.txt > cfg.txt
 		if ! grep -q 'dr_mode=peripheral' cfg.txt; then
-			printf '\n[all]\n# MakerOS debug: USB-C -> USB ag karti (os/debug)\ndtoverlay=dwc2,dr_mode=peripheral\n' >> cfg.txt
+			printf '\n[all]\n# MakerOS: USB-C -> USB ag karti\ndtoverlay=dwc2,dr_mode=peripheral\n' >> cfg.txt
 			mcopy -o -i "$I" cfg.txt ::config.txt
 		fi
 	done
-fi
+}
+
+cp --sparse=always base.img $IMG
+dd if=new.erofs of=$IMG bs=512 seek="$R_START" conv=notrunc,sparse status=none
 
 echo "sıkıştırılıyor ($IMG.xz)…"
 xz -T0 -1 -f -c $IMG > /out/$IMG.xz

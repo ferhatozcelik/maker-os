@@ -708,6 +708,71 @@ pub async fn update_apply(State(s): State<S>, h: HeaderMap) -> R {
     Ok(json_status(StatusCode::ACCEPTED, &HashMap::from([("job", id)])))
 }
 
+/// Bilgisayardan gönderilen paketin üst sınırı (MakerOS paketleri birkaç yüz MB'dır).
+pub const MAX_BUNDLE: u64 = 4 << 30;
+
+/// PUT /api/v1/system/update/upload — flash.sh'in USB-C modu: bilgisayar imzalı RAUC
+/// paketini (.raucb) gövdede gönderir; makerd yazar, isteğe bağlı X-Sha256 özetini
+/// denetler ve kurulum işini başlatır. İmzayı RAUC doğrular (imzasız paket kurulmaz).
+pub async fn update_upload(State(s): State<S>, h: HeaderMap, body: Body) -> R {
+    use futures_util::StreamExt;
+    use sha2::{Digest, Sha256};
+    use tokio::io::AsyncWriteExt;
+    let sess = admin_of(&s, &h)?;
+    let u = updater(&s)?;
+    let want = match h.get("x-sha256") {
+        None => None,
+        Some(v) => Some(
+            v.to_str()
+                .ok()
+                .map(|x| x.trim().to_ascii_lowercase())
+                .filter(|x| x.len() == 64 && x.bytes().all(|b| b.is_ascii_hexdigit()))
+                .ok_or_else(|| ApiError::invalid("Geçersiz X-Sha256 başlığı."))?,
+        ),
+    };
+    let too_big = || ApiError::invalid("Paket en fazla 4 GB olabilir.");
+    if h.get(header::CONTENT_LENGTH).and_then(|v| v.to_str().ok()).and_then(|v| v.parse::<u64>().ok()).is_some_and(|n| n > MAX_BUNDLE) {
+        return Err(too_big());
+    }
+    let path = u.begin_local().map_err(ApiError::conflict)?;
+    let write = async {
+        let mut f = tokio::fs::OpenOptions::new().create(true).truncate(true).write(true).mode(0o640).open(&path).await.map_err(|e| ApiError::internal(format!("Paket yazılamadı: {e}")))?;
+        let mut st = body.into_data_stream();
+        let (mut hs, mut total) = (Sha256::new(), 0u64);
+        while let Some(c) = st.next().await {
+            let c = c.map_err(|_| ApiError::invalid("Paket aktarımı yarıda kesildi."))?;
+            total += c.len() as u64;
+            if total > MAX_BUNDLE {
+                return Err(too_big());
+            }
+            hs.update(&c);
+            f.write_all(&c).await.map_err(|e| ApiError::internal(format!("Paket yazılamadı (yer kalmamış olabilir): {e}")))?;
+        }
+        f.sync_all().await.map_err(|e| ApiError::internal(format!("Paket yazılamadı: {e}")))?;
+        if total == 0 {
+            return Err(ApiError::invalid("Paket boş."));
+        }
+        if want.as_deref().is_some_and(|w| w != hex::encode(hs.finalize())) {
+            return Err(ApiError::invalid("Paket özeti eşleşmiyor (bozuk ya da yarım aktarım)."));
+        }
+        Ok(total)
+    };
+    let total = match write.await {
+        Ok(n) => n,
+        Err(e) => {
+            u.abort_local(&path, &e.message);
+            return Err(e);
+        }
+    };
+    let id = s.d.jobs.start_for("update", &sess.user, Duration::from_secs(45 * 60), move |h| async move {
+        let id = h.id().to_string();
+        let step = move |p: i32, l: &str| h.step(p, l);
+        u.apply_local(&id, &path, &step).await
+    });
+    tracing::info!(bytes = total, user = %sess.user, "bilgisayardan gelen güncelleme paketi kuruluyor");
+    Ok(json_status(StatusCode::ACCEPTED, &HashMap::from([("job", id)])))
+}
+
 // --- Tarayıcı penceresi: sayfa aktarımı (crate::browse) ------------------------
 
 /// Oturum sahibine aktarım bileti (iframe içindeki sayfa çerez göndermez; bkz. browse.rs).

@@ -4,6 +4,9 @@ enable makeros-growdata.service
 enable makeros-cpu-tune.service
 enable makeros-firstboot.service
 enable makeros-network-fallback.service
+# USB-C ag karti (10.42.0.1): flash.sh USB-C modu, dogrudan erisim
+enable makeros-usb-gadget.service
+enable makeros-usb-dhcp.service
 enable makeros-kiosk.service
 enable makeros-healthcheck.service
 enable makeros-mark-good.service

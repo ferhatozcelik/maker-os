@@ -93,7 +93,11 @@ async fn env(fresh: bool) -> Env {
         camera: Some(Arc::new(camera::Hub::new(Arc::new(camera::Synthetic)))),
         gpio: Some(Arc::new(gpio::Sim::new("test"))),
         bluetooth: Some(Arc::new(crate::bluetooth::Sim::with_step(std::time::Duration::from_millis(1)))),
-        update: None,
+        update: Some(Arc::new({
+            let mut u = ota::Updater::new("o/r", "1.0.0", tmp("ota"), Some(Arc::new(ota::SimInstaller::default())));
+            u.reboot_delay = Duration::ZERO;
+            u
+        })),
         catalog: None,
     };
     let srv = Server::new(d, CancellationToken::new());
@@ -542,4 +546,37 @@ async fn bluetooth_api() {
     assert_eq!(e.req("POST", "/api/v1/bluetooth", "{}", a).await.status, 400);
     assert_eq!(e.req("POST", "/api/v1/bluetooth", r#"{"power":false}"#, a).await.json()["adapter"]["powered"], false);
     assert_eq!(e.req("GET", "/api/v1/bluetooth", "", &[]).await.status, 401);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn update_upload() {
+    use sha2::{Digest, Sha256};
+    let e = env(false).await;
+    let cookie = e.login().await;
+    let a = &[("Cookie", cookie.as_str()), ("X-Maker", "1")];
+    let bundle = b"sahte-raucb-paketi".to_vec();
+    let sum = hex::encode(Sha256::digest(&bundle));
+    assert_eq!(e.req_bytes("PUT", "/api/v1/system/update/upload", bundle.clone(), &[("X-Maker", "1")]).await.status, 401);
+    assert_eq!(e.req_bytes("PUT", "/api/v1/system/update/upload", bundle.clone(), &[("Cookie", &cookie)]).await.status, 403, "X-Maker yoksa reddedilir");
+    assert_eq!(e.req_bytes("PUT", "/api/v1/system/update/upload", vec![], a).await.status, 400, "boş paket");
+    let zero = "00".repeat(32);
+    let bad = [("Cookie", cookie.as_str()), ("X-Maker", "1"), ("X-Sha256", zero.as_str())];
+    assert_eq!(e.req_bytes("PUT", "/api/v1/system/update/upload", bundle.clone(), &bad).await.status, 400, "özet uyuşmaz");
+    let ok = [("Cookie", cookie.as_str()), ("X-Maker", "1"), ("X-Sha256", sum.as_str())];
+    let r = e.req_bytes("PUT", "/api/v1/system/update/upload", bundle.clone(), &ok).await;
+    assert_eq!(r.status, 202, "{}", String::from_utf8_lossy(&r.body));
+    let job = r.json()["job"].as_str().unwrap().to_string();
+    // Kurulum sürerken ikinci paket kabul edilmez.
+    assert_eq!(e.req_bytes("PUT", "/api/v1/system/update/upload", bundle.clone(), &ok).await.status, 409);
+    let mut state = String::new();
+    for _ in 0..200 {
+        state = e.req("GET", &format!("/api/v1/jobs/{job}"), "", a).await.json()["state"].as_str().unwrap_or("").to_string();
+        if state != "running" {
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(100)).await;
+    }
+    assert_eq!(state, "done");
+    let st = e.req("GET", "/api/v1/system/update", "", a).await.json();
+    assert_eq!(st["phase"], "rebooting");
 }
