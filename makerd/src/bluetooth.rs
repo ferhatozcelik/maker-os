@@ -87,6 +87,28 @@ pub fn kind_of(icon: &str, uuids: &[String]) -> &'static str {
     }
 }
 
+/// MAC adresine benziyor mu (BlueZ, adı gelmemiş cihazın Alias'ına adresi "AA-BB-…" biçiminde yazar).
+pub fn mac_like(s: &str) -> bool {
+    let b = s.as_bytes();
+    b.len() == 17 && b.iter().enumerate().all(|(i, c)| if i % 3 == 2 { *c == b':' || *c == b'-' } else { c.is_ascii_hexdigit() })
+}
+
+/// Görünen ad: kullanıcının verdiği takma ad (Alias, MAC değilse), yoksa cihazın kendi adı (Name). Yoksa boş.
+pub fn display_name(name: &str, alias: &str) -> String {
+    [alias, name].into_iter().map(str::trim).find(|s| !s.is_empty() && !mac_like(s)).unwrap_or("").to_string()
+}
+
+/// Adı bilinmeyen eşleşmiş cihaz için türüne göre ad.
+pub fn kind_label(kind: &str) -> &'static str {
+    match kind {
+        "audio" => "Ses cihazı",
+        "input" => "Giriş cihazı",
+        "phone" => "Telefon",
+        "computer" => "Bilgisayar",
+        _ => "Bluetooth cihazı",
+    }
+}
+
 /// bluez-alsa ile varsayılan ALSA çıkışını cihaza yönlendiren yapılandırma.
 pub fn asound_conf(addr: &str) -> String {
     format!(
@@ -268,7 +290,7 @@ impl Bluez {
                     return None;
                 }
                 let address = v_str(d, "Address");
-                let name = [v_str(d, "Alias"), v_str(d, "Name")].into_iter().find(|s| !s.is_empty()).unwrap_or_else(|| address.clone());
+                let name = display_name(&v_str(d, "Name"), &v_str(d, "Alias"));
                 let rssi = match d.get("RSSI").map(|v| &**v) {
                     Some(Value::I16(r)) => Some(*r),
                     _ => None,
@@ -278,10 +300,18 @@ impl Bluez {
                     _ => None,
                 };
                 let connected = v_bool(d, "Connected");
+                let kind = kind_of(&v_str(d, "Icon"), &v_strs(d, "UUIDs"));
+                let paired = v_bool(d, "Paired");
+                // Adı henüz gelmemiş, eşleşmemiş ve bağlı olmayan cihazlar (çoğu BLE işaretçisi) gösterilmez;
+                // adı gelince (BlueZ ad sorgusu) bir sonraki taramada listeye girer.
+                if name.is_empty() && !paired && !connected {
+                    return None;
+                }
+                let name = if name.is_empty() { format!("{} ({})", kind_label(kind), &address[address.len().saturating_sub(8)..]) } else { name };
                 Some(Device {
                     audio_out: connected && out.as_deref().is_some_and(|o| o.eq_ignore_ascii_case(&address)),
-                    kind: kind_of(&v_str(d, "Icon"), &v_strs(d, "UUIDs")).into(),
-                    paired: v_bool(d, "Paired"),
+                    kind: kind.into(),
+                    paired,
                     trusted: v_bool(d, "Trusted"),
                     connected,
                     rssi,
@@ -579,6 +609,11 @@ mod tests {
         assert_eq!(kind_of("", &["00001812-0000-1000-8000-00805f9b34fb".into()]), "input");
         assert_eq!(kind_of("phone", &[]), "phone");
         assert_eq!(kind_of("", &[]), "other");
+        assert!(mac_like("38-18-4C-A1-22-7B") && mac_like("38:18:4c:a1:22:7b") && !mac_like("JBL Flip 5"));
+        assert_eq!(display_name("", "38-18-4C-A1-22-7B"), "");
+        assert_eq!(display_name("JBL Flip 5", "38-18-4C-A1-22-7B"), "JBL Flip 5");
+        assert_eq!(display_name("", "Salon hoparlörü"), "Salon hoparlörü");
+        assert_eq!(display_name("Galaxy Buds", "Benim kulaklığım"), "Benim kulaklığım");
         let c = asound_conf("38:18:4C:A1:22:7B");
         assert!(c.contains("type bluealsa") && c.contains("device \"38:18:4C:A1:22:7B\"") && c.contains("pcm.!default"));
         // Kaydedilmiş yönlendirme dosyasından adres geri okunur (makerd yeniden başlarsa).
