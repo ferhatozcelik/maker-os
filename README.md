@@ -18,10 +18,13 @@
 </p>
 
 <p align="center">
+  <a href="https://ferhatozcelik.github.io/maker-os/">Web sitesi</a> ·
   <a href="https://github.com/ferhatozcelik/maker-os/releases/latest">İndir</a> ·
   <a href="#features">Özellikler</a> ·
   <a href="#architecture">Nasıl çalışır?</a> ·
   <a href="#packages">Paketler</a> ·
+  <a href="#plugins">Eklentiler</a> ·
+  <a href="#performance">Başarım</a> ·
   <a href="#setup-guide">Kurulum</a> ·
   <a href="#documentation">Dokümantasyon</a> ·
   <a href="docs/api.md">API</a> ·
@@ -70,7 +73,7 @@ MakerOS, Pi 4 / 400 uyumlu ARM64 kartlar için hazırlanmış bağımsız ve aç
 
 ## İndir
 
-[Sürüm 1.0.0](https://github.com/ferhatozcelik/maker-os/releases/latest): `makeros-1.0.0-rpi4.img.xz` (Pi 4 / 400 uyumlu kartlar, ARM64). En kolay yol: [Kurulum](#setup-guide) bölümündeki tek satırlık komut imajı indirip doğrular ve karta yazar.
+[Sürüm 1.0.0](https://github.com/ferhatozcelik/maker-os/releases/latest): `makeros-1.0.0-rpi4.img.xz` (Pi 4 / 400 uyumlu kartlar, ARM64) ve imzalı güncelleme paketi `makeros-1.0.0-rpi4.raucb`. En kolay yol: [Kurulum](#setup-guide) bölümündeki tek satırlık komut; kartı baştan yazar ya da kart Pi'deyken USB-C üzerinden günceller.
 
 <a id="features"></a>
 
@@ -79,12 +82,13 @@ MakerOS, Pi 4 / 400 uyumlu ARM64 kartlar için hazırlanmış bağımsız ve aç
 | Özellik | Açıklama |
 | --- | --- |
 | **Her yerden aynı masaüstü** | Kartın ekranında, ağdaki bir bilgisayarın tarayıcısında ve telefonda aynı arayüz. |
+| **Tek komutla kurulum** | Aynı komut kartı kart okuyucuda baştan yazar ya da kart Pi'deyken USB-C üzerinden günceller. |
 | **Güvenli güncelleme** | Yeni sürüm sistemin yedek kopyasına kurulur; bir sorun olursa kart kendiliğinden eski sürüme döner. |
 | **Yerel AI asistanı** | İnternet gerektirmeyen Türkçe asistan; soruları yanıtlar, izin verirseniz komut çalıştırır. |
 | **Paket kurma** | Debian'daki gibi `apt install`; paketler microSD'deki kişisel alanınıza kurulur. |
 | **Python ve otomasyon** | Hazır şablonlarla Python projeleri; açılışta ya da belirli saatlerde otomatik çalıştırma. |
 | **Donanım ve kamera** | GPIO pinlerini canlı kontrol, I²C / SPI / UART, CSI ve USB kameradan canlı görüntü. |
-| **Eklentiler ve temalar** | Eklenti mağazası, hazır temalar ve düşük güç tüketen sade görünüm. |
+| **Eklentiler ve temalar** | [Eklenti mağazası](#plugins) (Home Assistant, Pi-hole, Chromecast…), hazır temalar ve düşük güç tüketen sade görünüm. |
 
 <a id="architecture"></a>
 
@@ -126,7 +130,7 @@ Ayrıntılar: [Masaüstü](docs/architecture/desktop.md) · [Servisler](docs/arc
 
 <p align="center"><img src="docs/assets/diagrams/update.svg" alt="Güncelleme: Denetle, İndir, Yaz, Dene, Onayla" width="100%"></p>
 
-1. **Denetle:** Ayarlar › Genel › Yazılım güncelleme yeni sürüm olup olmadığına bakar.
+1. **Denetle:** Ayarlar › Genel › Yazılım güncelleme yeni sürüm olup olmadığına bakar. İnternet yoksa aynı paketi bilgisayardan USB-C ile de gönderebilirsiniz ([Kurulum](#setup-guide), seçim 2).
 2. **İndir:** Güncelleme paketi indirilir; imzası doğrulanır, değiştirilmiş paket kurulmaz.
 3. **Yaz:** Paket, o an kullanılmayan sistem kopyasına yazılır. Çalışan sistem etkilenmez.
 4. **Dene:** Kart yeni sürümle **bir kez** açılır.
@@ -156,11 +160,45 @@ mos box               # tam Debian kabuğuna gir
 
 Ayrıntılar: [Paket yöneticisi](docs/architecture/packages.md)
 
+<a id="plugins"></a>
+
+## Eklentiler
+
+Eklentiler [makeros-plugins](https://github.com/ferhatozcelik/makeros-plugins) deposundan gelir ve MakerOS'ta **Eklentiler › Mağaza**'dan tek tıkla kurulur. Her dosya depodakiyle karşılaştırılır; yeni sürüm çıkınca "Güncelle" düğmesi belirir. Güncel liste: [eklenti mağazası](https://ferhatozcelik.github.io/maker-os/#plugins)
+
+| Eklenti | Ne yapar? |
+| --- | --- |
+| [Home Assistant](https://github.com/ferhatozcelik/makeros-plugins/tree/main/plugins/homeassistant) | Home Assistant kartın üzerinde çalışır; kendi arayüzü MakerOS temasıyla açılır, seçili varlıklar masaüstü widget'ında. |
+| [Pi-hole](https://github.com/ferhatozcelik/makeros-plugins/tree/main/plugins/pihole) | Ağ genelinde reklam ve izleyici engelleme; istatistikler ve engellemeyi aç/kapat. |
+| [Chromecast](https://github.com/ferhatozcelik/makeros-plugins/tree/main/plugins/chromecast) | Ağdaki Google Cast cihazlarını bulur; MakerOS ekranını televizyonda paylaşır. |
+| [Konya HackerSpace](https://github.com/ferhatozcelik/makeros-plugins/tree/main/plugins/khs) | KHS teması, kapı durumu ve konyahackerspace.org uygulaması. |
+
+**Kendi eklentinizi yazın:** bir eklenti `plugin.json`, `pyproject.toml` ve `main.py`'den oluşan bir Python klasörüdür. MakerOS terminalinde `mos plugin new <ad>` ile şablonu oluşturun; klasör depoya girdiği an mağazada görünür. Ayrıntılar: [eklenti yazma rehberi](https://github.com/ferhatozcelik/makeros-plugins#eklenti-eklemek)
+
+<a id="performance"></a>
+
+## Başarım
+
+Raspberry Pi 4 Model B (4 GB), MakerOS 1.0.0, hız aşırtma yok, microSD kart. Üç MakerOS Bench ölçümünün ortancası (22 Kasım 2026):
+
+| Test | Sonuç |
+| --- | ---: |
+| CPU tamsayı · tek çekirdek | 0.83 M işlem/sn |
+| CPU tamsayı · 4 çekirdek | 3.28 M işlem/sn (4.0×) |
+| SHA-256 | 143 MB/s |
+| zlib sıkıştırma | 12.3 MB/s |
+| Bellek kopyalama | 2.70 GB/s |
+| Sıralı okuma / yazma (fsync) | 46.3 / 20.5 MB/s |
+| Rastgele 4K okuma / yazma (fsync) | 2,062 / 133 IOPS |
+| Yük altında en yüksek sıcaklık | 52.6 °C |
+
+Tüm testler ve aralıklar: [tanıtım sayfası](https://ferhatozcelik.github.io/maker-os/#performance). Testler Python iş yükleridir; disk sonuçları kullanılan microSD karta bağlıdır.
+
 <a id="setup-guide"></a>
 
 ## Kurulum
 
-### 1. microSD karta yazın
+### 1. Kurun ya da güncelleyin
 
 <p align="center"><img src="docs/assets/diagrams/flash.svg" alt="microSD karta yazma: Komutu çalıştır, İndir, Kartı seç, Yaz ve tak" width="100%"></p>
 

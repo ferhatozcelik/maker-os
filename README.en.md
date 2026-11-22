@@ -18,10 +18,13 @@
 </p>
 
 <p align="center">
+  <a href="https://ferhatozcelik.github.io/maker-os/">Website</a> ·
   <a href="https://github.com/ferhatozcelik/maker-os/releases/latest">Download</a> ·
   <a href="#features">Features</a> ·
   <a href="#architecture">How it works</a> ·
   <a href="#packages">Packages</a> ·
+  <a href="#plugins">Plugins</a> ·
+  <a href="#performance">Performance</a> ·
   <a href="#setup-guide">Setup</a> ·
   <a href="#documentation">Documentation</a> ·
   <a href="docs/api.en.md">API</a> ·
@@ -70,7 +73,7 @@ MakerOS is an independent, open-source Linux operating system for Pi 4 / 400 com
 
 ## Download
 
-[Release 1.0.0](https://github.com/ferhatozcelik/maker-os/releases/latest): `makeros-1.0.0-rpi4.img.xz` (Pi 4 / 400 compatible boards, ARM64). Easiest: the one-line command in [Setup](#setup-guide) downloads, verifies and flashes the image for you.
+[Release 1.0.0](https://github.com/ferhatozcelik/maker-os/releases/latest): `makeros-1.0.0-rpi4.img.xz` (Pi 4 / 400 compatible boards, ARM64) and the signed update bundle `makeros-1.0.0-rpi4.raucb`. Easiest: the one-line command in [Setup](#setup-guide) writes a fresh card, or updates the card inside the Pi over USB-C.
 
 <a id="features"></a>
 
@@ -79,12 +82,13 @@ MakerOS is an independent, open-source Linux operating system for Pi 4 / 400 com
 | Feature | Description |
 | --- | --- |
 | **One desktop, everywhere** | The same interface on the board's display, in a browser on your network, and on your phone. |
+| **One-command install** | The same command writes a fresh card in a reader, or updates the card inside the Pi over USB-C. |
 | **Safe updates** | New versions install to a spare copy of the system; if anything goes wrong, the board rolls back on its own. |
 | **Local AI assistant** | An assistant that works without internet; it answers questions and runs commands only with your permission. |
 | **Package installs** | Debian-style `apt install`; packages go into your personal space on the microSD. |
 | **Python & automation** | Python projects from ready-made templates; run them at boot or on a schedule. |
 | **Hardware & camera** | Live GPIO control, I²C / SPI / UART, live video from CSI and USB cameras. |
-| **Plugins & themes** | A plugin store, ready-made themes and a light, low-power look. |
+| **Plugins & themes** | A [plugin store](#plugins) (Home Assistant, Pi-hole, Chromecast…), ready-made themes and a light, low-power look. |
 
 <a id="architecture"></a>
 
@@ -126,7 +130,7 @@ Details: [Desktop](docs/architecture/desktop.en.md) · [Services](docs/architect
 
 <p align="center"><img src="docs/assets/diagrams/update.en.svg" alt="Update: Check, Download, Write, Try, Confirm" width="100%"></p>
 
-1. **Check:** Settings › General › Software update looks for a new version.
+1. **Check:** Settings › General › Software update looks for a new version. Without internet, you can also send the same bundle from a computer over USB-C ([Setup](#setup-guide), choice 2).
 2. **Download:** The update bundle is downloaded and its signature verified; tampered bundles are rejected.
 3. **Write:** The bundle is written to the system copy that is not in use. The running system is untouched.
 4. **Try:** The board boots the new version **once**.
@@ -156,11 +160,45 @@ mos box               # enter a full Debian shell
 
 Details: [Package manager](docs/architecture/packages.en.md)
 
+<a id="plugins"></a>
+
+## Plugins
+
+Plugins come from the [makeros-plugins](https://github.com/ferhatozcelik/makeros-plugins) repository and install with one click from **Plugins › Store** in MakerOS. Every file is checked against the repository; when a new version lands, an "Update" button appears. Current list: [plugin store](https://ferhatozcelik.github.io/maker-os/#plugins)
+
+| Plugin | What it does |
+| --- | --- |
+| [Home Assistant](https://github.com/ferhatozcelik/makeros-plugins/tree/main/plugins/homeassistant) | Home Assistant runs on the board; its own UI opens in MakerOS's theme, selected entities on a desktop widget. |
+| [Pi-hole](https://github.com/ferhatozcelik/makeros-plugins/tree/main/plugins/pihole) | Network-wide ad and tracker blocking; stats and blocking on/off. |
+| [Chromecast](https://github.com/ferhatozcelik/makeros-plugins/tree/main/plugins/chromecast) | Finds Google Cast devices on your network; shares the MakerOS screen on your TV. |
+| [Konya HackerSpace](https://github.com/ferhatozcelik/makeros-plugins/tree/main/plugins/khs) | KHS theme, door status and the konyahackerspace.org app. |
+
+**Write your own:** a plugin is a Python folder with `plugin.json`, `pyproject.toml` and `main.py`. Create the template with `mos plugin new <name>` in the MakerOS terminal; once the folder lands in the repository, it shows up in the store. Details: [plugin guide](https://github.com/ferhatozcelik/makeros-plugins#eklenti-eklemek)
+
+<a id="performance"></a>
+
+## Performance
+
+Raspberry Pi 4 Model B (4 GB), MakerOS 1.0.0, no overclock, microSD card. Median of three MakerOS Bench runs (22 November 2026):
+
+| Test | Result |
+| --- | ---: |
+| CPU integer · single core | 0.83 M ops/s |
+| CPU integer · 4 cores | 3.28 M ops/s (4.0×) |
+| SHA-256 | 143 MB/s |
+| zlib compression | 12.3 MB/s |
+| Memory copy | 2.70 GB/s |
+| Sequential read / write (fsync) | 46.3 / 20.5 MB/s |
+| Random 4K read / write (fsync) | 2,062 / 133 IOPS |
+| Peak temperature under load | 52.6 °C |
+
+All tests with ranges: [website](https://ferhatozcelik.github.io/maker-os/#performance). The tests are Python workloads; disk results depend on the microSD card used.
+
 <a id="setup-guide"></a>
 
 ## Setup
 
-### 1. Flash the microSD card
+### 1. Install or update
 
 <p align="center"><img src="docs/assets/diagrams/flash.en.svg" alt="Flashing the microSD: Run the command, Download, Pick the card, Write & insert" width="100%"></p>
 
