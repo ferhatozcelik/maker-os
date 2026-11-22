@@ -7,9 +7,9 @@ ConditionPathExists=/var/lib/makeros-ai/models/qwen2.5-0.5b-instruct-q4_k_m.gguf
 
 [Service]
 Type=simple
-# API yalnız 127.0.0.1:8091. Model (llama-server, 127.0.0.1:8092) ilk istekte yüklenir, 5 dk boşta kalınca
-# bellekten atılır: hizmet boştayken ~5 MB RAM kullanır.
-ExecStart=/usr/bin/makeros-ai serve --listen 127.0.0.1:8091 --idle 5m
+# API yalnız 127.0.0.1:8091. Model (llama-server, 127.0.0.1:8092) ilk istekte yüklenir, boşta kalınca
+# bellekten atılır (20 dk; Pi 4 soğuk başlangıç ~1 dk): hizmet boştayken ~5 MB RAM kullanır.
+ExecStart=/usr/bin/makeros-ai serve --listen 127.0.0.1:8091 --idle 20m
 Slice=ai.slice
 DynamicUser=yes
 Restart=on-failure
