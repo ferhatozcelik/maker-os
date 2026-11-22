@@ -1,7 +1,7 @@
 // English. Missing keys fall back to Turkish (tr.js).
 export default {
   "door.open": "Open", "door.closed": "Closed", "door.unknown": "Unknown", "door.since": "since {when}",
-  "web.home": "Home", "web.apps": "Apps", "web.widgets": "Widgets", "web.system": "System", "web.hello": "Hello {user}", "web.cpu": "CPU", "web.temp": "Temperature",
+  "web.sidebar": "Hide / show sidebar", "web.home": "Home", "web.apps": "Apps", "web.widgets": "Widgets", "web.system": "System", "web.hello": "Hello {user}", "web.cpu": "CPU", "web.temp": "Temperature",
   "web.mem": "Memory", "web.disk": "Storage", "web.ip": "IP address", "web.offline": "offline", "web.uptime": "Uptime", "web.modeWeb": "Web", "web.modeScreen": "Screen",
   "web.modeScreenHint": "MakerOS desktop: windows, dock and Chromium", "web.logout": "Log out",
   delete: "Delete", "app.agents": "AI Agents", "app.plugins": "Plugins", "dock.web": "Web interface", "cc.web": "Switch to the web interface",
@@ -22,7 +22,7 @@ export default {
   "pl.top": "Plugins are small Python apps shared as zip files. Download the template, edit it, zip it and import it; use “Export” to share with others.",
   "pl.template": "Template", "pl.import": "Import (.zip)", "pl.imported": "Imported {name}", "pl.logs": "Log", "pl.noLog": "(no output yet)",
   "pl.empty": "No plugins installed. Start with “Template” or import a .zip.", "pl.running": "running", "pl.stopped": "stopped", "pl.open": "Open", "pl.stop": "Stop", "pl.widgetOn": "Add to desktop", "pl.widgetOff": "Remove from desktop", "pl.widgetAdded": "{name} added to the desktop.", "pl.widgetRemoved": "{name} removed from the desktop.", "pl.start": "Start", "pl.autostart": "Start on boot", "pl.autostartOn": "{name} will start automatically on boot.", "pl.autostartOff": "{name} removed from autostart.",
-  "pl.tabInstalled": "Installed", "pl.tabStore": "Store", "pl.refresh": "Refresh", "pl.toStore": "Browse the store", "pl.retry": "Try again",
+  "pl.official": "Official", "pl.officialHint": "Developed and maintained by the MakerOS team", "pl.tabInstalled": "Installed", "pl.tabStore": "Store", "pl.refresh": "Refresh", "pl.toStore": "Browse the store", "pl.retry": "Try again",
   "pl.storeTop": "MakerOS community plugins: the plugins/ folders of github.com/ferhatozcelik/makeros-plugins. Installing downloads the plugin, checks every file against the repository and runs it under your account. Add your own plugin to that repository as a folder (via a PR).",
   "pl.storeEmpty": "No plugins in the catalog yet.", "pl.install": "Install", "pl.installing": "Installing…", "pl.installed": "Installed {name} {v}",
   "pl.update": "Update", "pl.updating": "Updating…", "pl.updated": "Updated {name} to {v}", "pl.updateTo": "Update available: {from} → {to}",

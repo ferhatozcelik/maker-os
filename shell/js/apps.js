@@ -48,7 +48,9 @@ const builtinList = () => Object.keys(BUILTIN).map(s => normalize({ id: "makeros
 // Temaya özel uygulamalar (ör. Konya HackerSpace sitesi): yalnız o tema etkinken listede ve rafta.
 const themeApps = () => (themeById(pref("look")).apps || []).map(a => ({ ...normalize({ ...a, categories: ["Theme"] }), theme: true }));
 // Simgeler etkin temanın simge paketinden (ör. KHS) gelir; yoksa yerleşik.
-const iconize = a => ({ ...a, icon: themeIcon(pref("look"), a.short === "makeros" ? a.id : a.short, a.baseIcon || a.icon) });
+// Eklenti uygulamaları (makeros.plugin.<id>): tema paketinde <id>.svg aranır (resmî eklentiler).
+const iconName = a => a.short === "makeros" ? a.id : a.short.startsWith("plugin.") ? a.short.slice(7) : a.short;
+const iconize = a => ({ ...a, icon: themeIcon(pref("look"), iconName(a), a.baseIcon || a.icon) });
 const withTheme = list => [...list.filter(a => !a.theme), ...themeApps()].map(iconize);
 export let APPS = withTheme(builtinList());
 prefs.on("change", k => { if (k === "look") APPS = withTheme(APPS); });

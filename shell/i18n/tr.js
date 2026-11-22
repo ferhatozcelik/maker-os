@@ -1,7 +1,7 @@
 // Türkçe (varsayılan). Anahtar → metin. {ad} yer tutucuları t() ile doldurulur.
 export default {
   "door.open": "Açık", "door.closed": "Kapalı", "door.unknown": "Bilinmiyor", "door.since": "{when} tarihinden beri",
-  "web.home": "Ana sayfa", "web.apps": "Uygulamalar", "web.widgets": "Widget'lar", "web.system": "Sistem", "web.hello": "Merhaba {user}", "web.cpu": "İşlemci", "web.temp": "Sıcaklık",
+  "web.sidebar": "Kenar çubuğunu gizle / göster", "web.home": "Ana sayfa", "web.apps": "Uygulamalar", "web.widgets": "Widget'lar", "web.system": "Sistem", "web.hello": "Merhaba {user}", "web.cpu": "İşlemci", "web.temp": "Sıcaklık",
   "web.mem": "Bellek", "web.disk": "Depolama", "web.ip": "IP adresi", "web.offline": "ağ yok", "web.uptime": "Çalışma süresi", "web.modeWeb": "Web", "web.modeScreen": "Ekran",
   "web.modeScreenHint": "MakerOS masaüstü: pencereler, raf ve Chromium", "web.logout": "Oturumu kapat",
   delete: "Sil", "app.agents": "AI Ajanları", "app.plugins": "Eklentiler", "dock.web": "Web arayüzü", "cc.web": "Web arayüzüne geç",
@@ -22,7 +22,7 @@ export default {
   "pl.top": "Eklentiler, zip olarak paylaşılan küçük Python uygulamalarıdır. Şablonu indirin, düzenleyin, zip’leyip içe aktarın; “Dışa aktar” ile başkalarıyla paylaşın.",
   "pl.template": "Şablon", "pl.import": "İçe aktar (.zip)", "pl.imported": "{name} içe aktarıldı", "pl.logs": "Günlük", "pl.noLog": "(henüz çıktı yok)",
   "pl.empty": "Kurulu eklenti yok. “Şablon” ile başlayın veya bir .zip içe aktarın.", "pl.running": "çalışıyor", "pl.stopped": "durdu", "pl.open": "Aç", "pl.stop": "Durdur", "pl.widgetOn": "Masaüstüne ekle", "pl.widgetOff": "Masaüstünden kaldır", "pl.widgetAdded": "{name} masaüstüne eklendi.", "pl.widgetRemoved": "{name} masaüstünden kaldırıldı.", "pl.start": "Başlat", "pl.autostart": "Açılışta başlat", "pl.autostartOn": "{name} açılışta otomatik başlatılacak.", "pl.autostartOff": "{name} otomatik başlangıçtan kaldırıldı.",
-  "pl.tabInstalled": "Kurulu", "pl.tabStore": "Mağaza", "pl.refresh": "Yenile", "pl.toStore": "Mağazaya göz at", "pl.retry": "Tekrar dene",
+  "pl.official": "Resmî", "pl.officialHint": "MakerOS ekibinin geliştirdiği ve sürdürdüğü eklenti", "pl.tabInstalled": "Kurulu", "pl.tabStore": "Mağaza", "pl.refresh": "Yenile", "pl.toStore": "Mağazaya göz at", "pl.retry": "Tekrar dene",
   "pl.storeTop": "MakerOS topluluk eklentileri: github.com/ferhatozcelik/makeros-plugins deposundaki plugins/ klasörleri. Kurulan eklenti indirilir, her dosyası depodakiyle karşılaştırılır ve sizin hesabınızla çalışır. Kendi eklentinizi bu depoya klasör olarak (PR ile) ekleyebilirsiniz.",
   "pl.storeEmpty": "Katalogda henüz eklenti yok.", "pl.install": "Kur", "pl.installing": "Kuruluyor…", "pl.installed": "{name} {v} kuruldu",
   "pl.update": "Güncelle", "pl.updating": "Güncelleniyor…", "pl.updated": "{name} {v} sürümüne güncellendi", "pl.updateTo": "Güncelleme var: {from} → {to}",

@@ -8,7 +8,7 @@ import { h, $ } from "/shell/js/lib.js";
 import { icon } from "/shell/js/icons.js";
 import { get, post, api, BASE } from "/shell/js/api.js";
 import { fail, toast, dialog, confirmDlg } from "/shell/js/appui.js";
-import { syncPluginThemes } from "/shell/js/themes.js";
+import { syncPluginThemes, OFFICIAL_PLUGINS } from "/shell/js/themes.js";
 import { pref, setPref, prefs } from "/shell/js/prefs.js";
 import { createEditor, EDITOR_CSS } from "/shell/apps/python/editor.js";
 // Durdurma/silme/başlatma sonrası: eklenti teması kalktıysa varsayılan temaya dön (tercih tüm pencerelere yayılır).
@@ -94,6 +94,8 @@ function toggleDesk(p) {
   load();
 }
 prefs.on("change", k => { if (k === "desktopWidgets" && tab === "installed") load(); });
+// Resmî eklenti (MakerOS ekibi, makeros-plugins deposu): adın yanında rozet.
+const official = p => OFFICIAL_PLUGINS.has(p.id) && p.author === "MakerOS" ? h("span.badge.acc.official", { title: t("pl.officialHint") }, t("pl.official")) : "";
 async function load() {
   try {
     const list = await get("/plugins");
@@ -102,7 +104,7 @@ async function load() {
     if (!list.length) return empty("puzzle", t("pl.empty"), btn(t("pl.toStore"), () => show("store"), ".primary"));
     $(".cards").replaceChildren(...list.map(p => h("div.card2.pl" + (p.running ? ".run" : ""),
       h("div.hd", h("span.ico", p.icon ? h("img", { src: `${BASE}/plugins/${p.id}/asset/${p.icon}`, alt: "" }) : { html: icon("puzzle", 18, 2) }),
-        h("div", h("div.ti", p.name), h("div.ds", `v${p.version}${p.author ? " · " + p.author : ""} · ${p.running ? t("pl.running") : t("pl.stopped")}`))),
+        h("div", h("div.ti", p.name, official(p)), h("div.ds", `v${p.version}${p.author ? " · " + p.author : ""} · ${p.running ? t("pl.running") : t("pl.stopped")}`))),
       h("div.ds", p.description),
       h("div.act",
         p.running ? [p.web_port ? btn(t("pl.open"), () => openUI(p), ".primary") : "", btn(t("pl.stop"), () => act(p, "stop"))] : btn(t("pl.start"), () => act(p, "start"), ".primary"),
@@ -148,7 +150,7 @@ async function loadStore(refresh) {
         : h("button.btn.sm.primary", { onclick: () => install(p, b) }, t(p.update ? "pl.update" : "pl.install"));
       return h("div.card2.pl.st" + (p.installed ? ".inst" : ""),
         h("div.hd", h("span.ico", p.icon ? h("img", { src: p.icon, alt: "" }) : { html: icon("puzzle", 18, 2) }),
-          h("div", h("div.ti", p.name), h("div.ds", [`v${p.version}`, p.author, p.size ? size(p.size) : ""].filter(Boolean).join(" · ")))),
+          h("div", h("div.ti", p.name, official(p)), h("div.ds", [`v${p.version}`, p.author, p.size ? size(p.size) : ""].filter(Boolean).join(" · ")))),
         h("div.ds", p.description),
         p.tags?.length ? h("div.tags", ...p.tags.map(g => h("span.tag", { html: (TAGS[g] ? icon(TAGS[g], 12, 2) : "") }, t("pl.tag." + g) === "pl.tag." + g ? g : t("pl.tag." + g)))) : "",
         state ? h("div.ds.state", state) : "",

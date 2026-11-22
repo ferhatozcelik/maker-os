@@ -40,9 +40,11 @@ export const wallURL = (id, dark, blur = false) => {
 const BUILTIN_ICONS = new Set(["settings", "terminal", "activity", "files", "python", "agents", "camera", "gpio", "plugins", "browser", "chromium", "launchpad", "web", "app"]);
 // Aynı simgenin diğer adı: tema paketi yalnız birini getirebilir (KHS: chromium.svg var, browser.svg yok).
 const ICON_ALIAS = { browser: "chromium", chromium: "browser" };
+// Resmî eklentiler: tema simge paketinde kendi adlarıyla simgeleri olabilir (KHS: pihole.svg …).
+export const OFFICIAL_PLUGINS = new Set(["chromecast", "homeassistant", "pihole", "khs"]);
 export function themeIcon(id, name, fallback) {
   const t = find(id);
-  return t?.icons && BUILTIN_ICONS.has(name) ? t.icons + name + ".svg" : fallback;
+  return t?.icons && (BUILTIN_ICONS.has(name) || OFFICIAL_PLUGINS.has(name)) ? t.icons + name + ".svg" : fallback;
 }
 // Tema paketinde eksik simge: önce diğer adı, o da yoksa yerleşik simge (/shell/icons/<ad>.svg). Kabuk, web
 // arayüzü ve uygulamalar aynı modülü yükler; <img> hataları belge düzeyinde yakalanır (yakalama evresi).
@@ -51,7 +53,13 @@ if (typeof document !== "undefined") {
     const img = e.target;
     if (!(img instanceof HTMLImageElement)) return;
     const m = /\/api\/v1\/plugins\/[^/]+\/asset\/(?:.*\/)?([a-z-]+)\.svg$/.exec(img.src);
-    if (!m || !BUILTIN_ICONS.has(m[1])) return;
+    if (!m) return;
+    // Pakette olmayan resmî eklenti simgesi: eklentinin kendi simgesi.
+    if (OFFICIAL_PLUGINS.has(m[1]) && !BUILTIN_ICONS.has(m[1])) {
+      if (!img.dataset.iconTried) { img.dataset.iconTried = m[1]; img.src = `/api/v1/plugins/${m[1]}/asset/icon.svg`; }
+      return;
+    }
+    if (!BUILTIN_ICONS.has(m[1])) return;
     const tried = (img.dataset.iconTried || "").split(",");
     const alias = ICON_ALIAS[m[1]];
     if (alias && !tried.includes(alias)) {

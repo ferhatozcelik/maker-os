@@ -48,6 +48,11 @@ Arayüz, `makerd` servisleri, yerleşik tarayıcı ve yerel AI asistanı hem oto
   panelleri, MakerOS temasıyla ve otomatik girişle. Pi-hole için 53. port kullanıcı süreçlerine açıldı
 - **Chromecast ekran paylaşımı:** MakerOS masaüstü televizyonda (tek kullanımlık, 60 sn'lik bilet; yönetici yetkisi yok), *Bağlantıyı kes*
 - Konya HackerSpace eklentisi artık kendiliğinden kurulmaz (Eklentiler › Mağaza)
+- Resmî eklentiler (Pi-hole, Home Assistant, Chromecast, Konya HackerSpace) *Resmî* rozetiyle; tema simge paketi
+  eklenti uygulamalarına da uygulanır (Konya HackerSpace teması)
+- Bluetooth listesi MAC adresi yerine cihaz adlarını gösterir; adı henüz gelmemiş eşleşmemiş cihazlar listelenmez
+- Web arayüzünde kenar çubuğu gizlenebilir (menü düğmesi)
+- AI asistanı modeli 20 dk boşta kalınca bellekten atılır (Pi 4'te sık soğuk başlangıç olmasın)
 - Yazılım güncelleme: RAUC önyükleyici betiği ilk kablosuz güncellemede kurulumu durduruyordu; düzeltildi
 
 ### Eklentiler

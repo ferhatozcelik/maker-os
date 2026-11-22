@@ -47,6 +47,7 @@ html[data-embed=window] .bar2 { padding-top: 6px; min-height: var(--tb); padding
 .card2 { background: var(--bg-content); border: .5px solid var(--separator); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .card2 .hd { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .card2 .hd .ti { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.card2 .hd .ti .official { margin-left: 6px; vertical-align: 1px; font-size: 10px; }
 .card2 .ds { color: var(--text-2); font-size: var(--fs-footnote); line-height: 1.4; }
 .card2 .act { display: flex; gap: 6px; flex-wrap: wrap; margin-top: auto; padding-top: 6px; }
 .card2 .ico { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; color: var(--on-accent); background: var(--accent); flex: none; }

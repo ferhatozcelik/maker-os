@@ -236,7 +236,14 @@ mode.querySelector('[data-m="screen"]').title = t("web.modeScreenHint");
 mode.querySelector('[data-m="screen"]').onclick = () => location.assign("/");
 
 $(".b-menu").innerHTML = icon("layout-grid", 16, 2);
-$(".b-menu").onclick = () => document.body.classList.toggle("drawer");
+// Menü düğmesi: telefonda çekmeceyi açar, geniş ekranda kenar çubuğunu gizler/gösterir (tercih olarak saklanır).
+const narrow = matchMedia("(max-width: 820px)");
+const applySide = () => document.body.classList.toggle("side-hidden", !narrow.matches && pref("webSidebar") === false);
+$(".b-menu").title = t("web.sidebar");
+$(".b-menu").onclick = () => narrow.matches ? document.body.classList.toggle("drawer") : setPref("webSidebar", pref("webSidebar") === false);
+narrow.addEventListener("change", applySide);
+prefs.on("change", k => { if (k === "webSidebar") applySide(); });
+applySide();
 $(".scrim").onclick = () => document.body.classList.remove("drawer");
 $(".b-out").innerHTML = icon("log-out", 15, 2); $(".b-out").title = t("web.logout");
 $(".b-out").onclick = async () => { try { await post("/auth/logout"); } catch { /* yok */ } location.replace("/"); };
