@@ -200,10 +200,60 @@ footer a { color: var(--muted); }
 .sim-phone-app { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; font-size: 11px; color: #cbd0dc; }
 .sim-phone-ico { width: 44px; height: 44px; border-radius: 12px; background: #222633; border: 1px solid rgba(255,255,255,.1); display: grid; place-items: center; color: #fff; }
 
+/* Kahraman: arka plan ızgarası ve hızlı bilgiler */
+.hero::after { content: ""; position: absolute; inset: 0; z-index: -2; pointer-events: none; background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px); background-size: 44px 44px; mask-image: radial-gradient(ellipse 70% 55% at 50% 0%, #000 20%, transparent 75%); -webkit-mask-image: radial-gradient(ellipse 70% 55% at 50% 0%, #000 20%, transparent 75%); opacity: .55; }
+.facts { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 28px; margin: 26px 0 0; padding: 0; list-style: none; font-size: 14px; color: var(--muted); }
+.facts li { display: flex; align-items: center; gap: 8px; }
+.facts li::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.card { transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease; }
+.grid .card:hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); transform: translateY(-2px); box-shadow: var(--shadow); }
+
+/* Eklenti mağazası */
+.store-bar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 22px; }
+.store-search { flex: 1 1 260px; display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 0 16px; height: 46px; }
+.store-search svg { width: 18px; height: 18px; color: var(--faint); flex: none; }
+.store-search input { flex: 1; border: 0; background: none; color: var(--text); font: 15px Inter, system-ui, sans-serif; outline: none; min-width: 0; }
+.chips { display: inline-flex; gap: 4px; padding: 4px; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; }
+.chips button { border: 0; background: none; color: var(--muted); font: 600 13px/1 Inter, system-ui, sans-serif; padding: 10px 15px; border-radius: 999px; cursor: pointer; }
+.chips button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+.plug { display: flex; flex-direction: column; gap: 12px; }
+.plug-h { display: flex; align-items: center; gap: 14px; }
+.plug-ic { width: 52px; height: 52px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--line); display: grid; place-items: center; overflow: hidden; flex: none; }
+.plug-ic img { width: 34px; height: 34px; object-fit: contain; }
+.plug h3 { margin: 0; font-size: 17px; }
+.plug .ver { font: 600 12px/1 "JetBrains Mono", ui-monospace, monospace; color: var(--faint); margin-top: 5px; display: block; }
+.plug p { flex: 1; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: var(--surface-2); color: var(--muted); border: 1px solid var(--line); }
+.tag.hl { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent-ink); border-color: transparent; }
+.plug-f { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 14px; }
+.plug-f span { color: var(--faint); }
+.plug.new { border-style: dashed; background: transparent; justify-content: center; color: var(--text); }
+.plug.new:hover { text-decoration: none; }
+.store-empty { color: var(--muted); padding: 24px 0; }
+.howto { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 28px; padding: 0; list-style: none; counter-reset: h; }
+@media (max-width: 760px) { .howto { grid-template-columns: 1fr; } }
+.howto li { counter-increment: h; display: flex; gap: 14px; align-items: flex-start; color: var(--muted); font-size: 15px; }
+.howto li::before { content: counter(h); flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--on-accent); font-weight: 700; font-size: 14px; }
+.howto b { color: var(--text); }
+
+/* Geliştiriciler */
+.dev { display: grid; grid-template-columns: 1.15fr 1fr; gap: 20px; align-items: start; }
+@media (max-width: 900px) { .dev { grid-template-columns: 1fr; } }
+.code { background: #17181b; color: #e6e6e9; border-radius: 16px; padding: 20px 22px; font: 13.5px/1.7 "JetBrains Mono", ui-monospace, monospace; overflow-x: auto; margin: 0; box-shadow: var(--shadow); }
+.code .c { color: #7d828c; } .code .k { color: #ff9a4a; } .code .s { color: #a5d6a7; }
+.links { display: grid; gap: 12px; }
+.links a { display: flex; gap: 14px; align-items: flex-start; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; color: var(--text); transition: border-color .15s ease, transform .15s ease; }
+.links a:hover { text-decoration: none; border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); transform: translateY(-2px); }
+.links .ic { width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center; background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent-ink); flex: none; }
+.links .ic svg { width: 20px; height: 20px; }
+.links b { display: block; font-size: 16px; margin-bottom: 2px; }
+.links span.d { color: var(--muted); font-size: 14px; }
+
 [data-en] { display: none; }
 html[lang="en"] [data-tr] { display: none; }
 html[lang="en"] [data-en] { display: revert; }
-@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .btn { transition: none; } }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .btn, .card, .links a { transition: none; } }
 </style>
 </head>
 <body>
@@ -219,6 +269,10 @@ html[lang="en"] [data-en] { display: revert; }
   <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
   <symbol id="i-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M7 16v-3M12 16V8M17 16v-6"/></symbol>
   <symbol id="i-puzzle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.4 14.6a2 2 0 1 0 0-3.2V7a1 1 0 0 0-1-1h-4.4a2 2 0 1 0-3.2 0H6.4a1 1 0 0 0-1 1v4a2 2 0 1 1 0 3.2V18a1 1 0 0 0 1 1h4a2 2 0 1 1 3.2 0H18.4a1 1 0 0 0 1-1v-3.4Z"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5v14Z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></symbol>
+  <symbol id="i-usb" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v14"/><path d="m8 6 4-4 4 4"/><path d="M7 12v2a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-3"/><circle cx="12" cy="19" r="3"/><rect x="15" y="8" width="4" height="3"/><circle cx="7" cy="10" r="2"/></symbol>
+  <symbol id="i-plug" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-5"/><path d="M9 8V2M15 8V2"/><path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z"/></symbol>
 </svg>
 
 <header class="nav">
@@ -227,9 +281,9 @@ html[lang="en"] [data-en] { display: revert; }
     <nav aria-label="Sayfa">
       <a href="#features"><span data-tr>Özellikler</span><span data-en>Features</span></a>
       <a href="#screens"><span data-tr>Ekranlar</span><span data-en>Screens</span></a>
+      <a href="#plugins"><span data-tr>Eklentiler</span><span data-en>Plugins</span></a>
       <a href="#setup"><span data-tr>Kurulum</span><span data-en>Setup</span></a>
-      <a href="benchmark/"><span data-tr>Benchmark</span><span data-en>Benchmark</span></a>
-      <a href="https://github.com/ferhatozcelik/maker-os/tree/main/docs"><span data-tr>Dokümantasyon</span><span data-en>Docs</span></a>
+      <a href="#developers"><span data-tr>Geliştiriciler</span><span data-en>Developers</span></a>
       <a href="https://github.com/ferhatozcelik/maker-os">GitHub</a>
     </nav>
     <button class="lang" type="button" id="lang" aria-label="Dil / Language">EN</button>
@@ -248,10 +302,16 @@ html[lang="en"] [data-en] { display: revert; }
       </p>
       <div class="cta">
         <a class="btn primary" href="https://github.com/ferhatozcelik/maker-os/releases/latest"><svg aria-hidden="true"><use href="#i-dl"/></svg><span data-tr>İmajı indir</span><span data-en>Download image</span></a>
-        <a class="btn" href="#setup"><span data-tr>Karta yazma rehberi</span><span data-en>How to flash</span></a>
-        <a class="btn" href="https://github.com/ferhatozcelik/maker-os"><svg aria-hidden="true"><use href="#i-gh"/></svg><span data-tr>Kaynak kodu</span><span data-en>Source code</span></a>
+        <a class="btn" href="#setup"><span data-tr>Kurulum rehberi</span><span data-en>Setup guide</span></a>
+        <a class="btn" href="#plugins"><svg aria-hidden="true"><use href="#i-puzzle"/></svg><span data-tr>Eklenti mağazası</span><span data-en>Plugin store</span></a>
       </div>
-      <p class="meta"><span data-tr>ARM64 · Pi 4 / 400 uyumlu · MIT lisansı</span><span data-en>ARM64 · Pi 4 / 400 compatible · MIT licensed</span></p>
+      <ul class="facts">
+        <li><span data-tr>Pi 4 / 400 · ARM64</span><span data-en>Pi 4 / 400 · ARM64</span></li>
+        <li><span data-tr>Tek komutla kurulum: SD ya da USB-C</span><span data-en>One-command install: SD or USB-C</span></li>
+        <li><span data-tr>İmzalı A/B güncelleme</span><span data-en>Signed A/B updates</span></li>
+        <li><span data-tr>İnternetsiz yerel AI</span><span data-en>Offline on-device AI</span></li>
+        <li><span data-tr>MIT lisansı</span><span data-en>MIT licensed</span></li>
+      </ul>
       <img class="shot" src="assets/screenshots/desktop.png" width="2880" height="1800" alt="MakerOS masaüstü: tarayıcı ve yerel AI asistanı" fetchpriority="high">
     </div>
   </div>
@@ -286,9 +346,9 @@ html[lang="en"] [data-en] { display: revert; }
         <div class="card"><div class="ic"><svg aria-hidden="true"><use href="#i-home"/></svg></div>
           <h3><span data-tr>Akıllı ev ve ağ, cihazın içinde</span><span data-en>Smart home &amp; network, on the board</span></h3>
           <p><span data-tr>Home Assistant ve Pi-hole kartın üzerinde çalışır, kendi panelleriyle MakerOS'ta açılır; Chromecast ile ekranı televizyona taşıyın.</span><span data-en>Home Assistant and Pi-hole run on the board and open in MakerOS with their own dashboards; cast the screen to your TV with Chromecast.</span></p></div>
-        <div class="card"><div class="ic"><svg aria-hidden="true"><use href="#i-chart"/></svg></div>
-          <h3><span data-tr>Ölçülebilir başarım</span><span data-en>Measurable performance</span></h3>
-          <p><span data-tr>MakerOS Bench tek dosyalık testle CPU, bellek ve diski ölçer; sonuçlar <a href="benchmark/">canlı grafiklerle</a> karşılaştırılır.</span><span data-en>MakerOS Bench measures CPU, memory and disk with a single-file test; results are compared in <a href="benchmark/">live charts</a>.</span></p></div>
+        <div class="card"><div class="ic"><svg aria-hidden="true"><use href="#i-usb"/></svg></div>
+          <h3><span data-tr>Tek komutla kurulum</span><span data-en>One-command install</span></h3>
+          <p><span data-tr>Aynı komut kartı kart okuyucuda baştan yazar ya da kart Pi'deyken USB-C üzerinden günceller; veriler korunur. <a href="#setup">Kurulum</a></span><span data-en>The same command writes a fresh card in a reader, or updates the card inside the Pi over USB-C, keeping your data. <a href="#setup">Setup</a></span></p></div>
       </div>
     </div>
   </section>
@@ -491,8 +551,8 @@ html[lang="en"] [data-en] { display: revert; }
                       <span style="font-size:11px;background:#f07a1a22;color:#f07a1a;padding:2px 8px;border-radius:4px;">Kullanılabilir</span>
                     </div>
                     <div style="background:#1c1e28;padding:12px;border-radius:10px;border:1px solid #2a2d3c;">
-                      <div style="display:flex;justify-content:space-between;font-weight:700;"><span>🚁 Betaflight</span><span style="color:#8a8f9d;">Kurulabilir</span></div>
-                      <p style="font-size:11px;color:#8a8f9d;margin:6px 0 10px;">Drone uçuş kontrolcüsü telemetri arayüzü.</p>
+                      <div style="display:flex;justify-content:space-between;font-weight:700;"><span>🟢 Konya HackerSpace</span><span style="color:#8a8f9d;">Kurulabilir</span></div>
+                      <p style="font-size:11px;color:#8a8f9d;margin:6px 0 10px;">KHS teması, kapı durumu ve konyahackerspace.org uygulaması.</p>
                       <span style="font-size:11px;background:#f07a1a22;color:#f07a1a;padding:2px 8px;border-radius:4px;">Kullanılabilir</span>
                     </div>
                   </div>
@@ -570,7 +630,34 @@ html[lang="en"] [data-en] { display: revert; }
     </div>
   </section>
 
-  <section class="alt">
+  <section id="plugins" class="alt">
+    <div class="wrap">
+      <p class="kicker"><span data-tr>Eklenti mağazası</span><span data-en>Plugin store</span></p>
+      <h2><span data-tr>Kartına yetenek ekle.</span><span data-en>Give your board new skills.</span></h2>
+      <p class="sub"><span data-tr>Eklentiler doğrudan <a href="https://github.com/ferhatozcelik/makeros-plugins">makeros-plugins</a> deposundan gelir ve MakerOS'ta <b>Eklentiler › Mağaza</b>'dan tek tıkla kurulur. Her dosya depodakiyle karşılaştırılır; yeni sürüm çıkınca "Güncelle" düğmesi belirir.</span><span data-en>Plugins come straight from the <a href="https://github.com/ferhatozcelik/makeros-plugins">makeros-plugins</a> repository and install with one click from <b>Plugins › Store</b> in MakerOS. Every file is checked against the repository; when a new version lands, an "Update" button appears.</span></p>
+
+      <div class="store-bar">
+        <label class="store-search"><svg aria-hidden="true"><use href="#i-search"/></svg><input id="store-q" type="search" placeholder="Eklenti ara…" data-ph-tr="Eklenti ara…" data-ph-en="Search plugins…" aria-label="Eklenti ara"></label>
+        <div class="chips" role="group" aria-label="Tür">
+          <button type="button" data-f="" aria-pressed="true"><span data-tr>Tümü</span><span data-en>All</span></button>
+          <button type="button" data-f="app" aria-pressed="false"><span data-tr>Uygulama</span><span data-en>App</span></button>
+          <button type="button" data-f="widget" aria-pressed="false">Widget</button>
+          <button type="button" data-f="theme" aria-pressed="false"><span data-tr>Tema</span><span data-en>Theme</span></button>
+        </div>
+      </div>
+      <div class="grid" id="store" aria-live="polite">
+        <p class="store-empty"><span data-tr>Eklentiler yükleniyor…</span><span data-en>Loading plugins…</span></p>
+      </div>
+
+      <ol class="howto">
+        <li><span><b><span data-tr>Aç</span><span data-en>Open</span></b> — <span data-tr>MakerOS'ta Eklentiler › Mağaza.</span><span data-en>Plugins › Store in MakerOS.</span></span></li>
+        <li><span><b><span data-tr>Kur</span><span data-en>Install</span></b> — <span data-tr>tek tık; bağımlılıklar <code>uv</code> ile kendiliğinden kurulur.</span><span data-en>one click; dependencies install automatically with <code>uv</code>.</span></span></li>
+        <li><span><b><span data-tr>Kullan</span><span data-en>Use</span></b> — <span data-tr>pencerede açın ya da masaüstüne widget olarak ekleyin.</span><span data-en>open it in a window or add it to the desktop as a widget.</span></span></li>
+      </ol>
+    </div>
+  </section>
+
+  <section>
     <div class="wrap manifesto">
       <blockquote>
         <span data-tr>Teknoloji kullanıcıya ne yapacağını söylememeli; <span class="hl">kullanıcının ne yapabileceğini genişletmeli.</span></span>
@@ -589,8 +676,8 @@ html[lang="en"] [data-en] { display: revert; }
   <section id="setup">
     <div class="wrap">
       <p class="kicker"><span data-tr>Kurulum</span><span data-en>Setup</span></p>
-      <h2><span data-tr>Tek komutla karta yazın.</span><span data-en>Flash the card with one command.</span></h2>
-      <p class="sub"><span data-tr>Betik en son imajı indirir, doğrular, yalnız harici diskleri listeler ve seçtiğiniz microSD karta yazar. İsterseniz Wi-Fi bilgilerinizi de ekler.</span><span data-en>The script downloads the latest image, verifies it, lists only external disks and writes to the microSD card you pick. It can add your Wi-Fi details too.</span></p>
+      <h2><span data-tr>Tek komut: kur ya da güncelle.</span><span data-en>One command: install or update.</span></h2>
+      <p class="sub"><span data-tr>Betik en son sürümü indirir, doğrular ve kartın nasıl bağlı olduğunu sorar: kart okuyucudaysa baştan yazar, Pi'nin içindeyse USB-C üzerinden günceller.</span><span data-en>The script downloads the latest release, verifies it and asks how the card is connected: in a card reader it writes it from scratch, inside the Pi it updates over USB-C.</span></p>
 
       <img class="flow" src="assets/diagrams/flash.svg" data-tr width="1100" height="140" alt="Komutu çalıştır, İndir, Kartı seç, Yaz ve tak" loading="lazy">
       <img class="flow" src="assets/diagrams/flash.en.svg" data-en width="1100" height="140" alt="Run the command, Download, Pick the card, Write and insert" loading="lazy">
@@ -626,14 +713,47 @@ html[lang="en"] [data-en] { display: revert; }
     </div>
   </section>
 
-  <section class="alt final">
+  <section id="developers" class="alt">
+    <div class="wrap">
+      <p class="kicker"><span data-tr>Geliştiriciler</span><span data-en>Developers</span></p>
+      <h2><span data-tr>Bir klasör, bir eklenti.</span><span data-en>One folder, one plugin.</span></h2>
+      <p class="sub"><span data-tr>Eklenti; <code>plugin.json</code>, <code>pyproject.toml</code> ve <code>main.py</code>'den oluşan bir Python klasörüdür. MakerOS onu kendi kullanıcı hesabınızla <code>uv run</code> ile çalıştırır ve arayüzünü pencerede, widget'ta ya da telefonda gösterir. Derleme ya da yayın adımı yok: klasör depoya girdiği an mağazadadır.</span><span data-en>A plugin is a Python folder with <code>plugin.json</code>, <code>pyproject.toml</code> and <code>main.py</code>. MakerOS runs it as your user with <code>uv run</code> and shows its UI in a window, a widget or on your phone. No build or release step: once the folder lands in the repository, it is in the store.</span></p>
+      <div class="dev">
+<pre class="code"><span class="c"># 1. Şablonu oluştur (MakerOS terminali)</span>
+<span class="k">$</span> mos plugin new sensor-panel
+
+<span class="c"># 2. plugins/sensor-panel/plugin.json</span>
+{
+  <span class="s">"id"</span>: <span class="s">"sensor-panel"</span>,
+  <span class="s">"name"</span>: <span class="s">"Sensör Paneli"</span>,
+  <span class="s">"version"</span>: <span class="s">"1.0.0"</span>,
+  <span class="s">"entrypoint"</span>: <span class="s">"main.py"</span>,
+  <span class="s">"web_port"</span>: 8799,
+  <span class="s">"icon"</span>: <span class="s">"icon.svg"</span>,
+  <span class="s">"widget"</span>: { <span class="s">"path"</span>: <span class="s">"/widget"</span>, <span class="s">"w"</span>: 320, <span class="s">"h"</span>: 200 }
+}
+
+<span class="c"># 3. Denetle ve dene, sonra PR aç</span>
+<span class="k">$</span> python3 tools/build.py
+<span class="k">$</span> python3 tools/smoke.py sensor-panel</pre>
+        <div class="links">
+          <a href="https://github.com/ferhatozcelik/makeros-plugins#eklenti-eklemek"><span class="ic"><svg aria-hidden="true"><use href="#i-puzzle"/></svg></span><span><b><span data-tr>Eklenti yazma rehberi</span><span data-en>Plugin guide</span></b><span class="d"><span data-tr>Şablon, kurallar, duman testi ve PR adımları.</span><span data-en>Template, rules, smoke tests and the PR flow.</span></span></span></a>
+          <a href="https://github.com/ferhatozcelik/maker-os/blob/main/docs/api.md"><span class="ic"><svg aria-hidden="true"><use href="#i-code"/></svg></span><span><b><span data-tr>makerd REST API</span><span data-en>makerd REST API</span></b><span class="d"><span data-tr><code>/api/v1</code> uçları ve WebSocket olayları: sistem, dosyalar, GPIO, kamera, işler.</span><span data-en><code>/api/v1</code> endpoints and WebSocket events: system, files, GPIO, camera, jobs.</span></span></span></a>
+          <a href="https://github.com/ferhatozcelik/maker-os/blob/main/docs/development/build-and-test.md"><span class="ic"><svg aria-hidden="true"><use href="#i-cog"/></svg></span><span><b><span data-tr>Kaynaktan derle</span><span data-en>Build from source</span></b><span class="d"><span data-tr>Buildroot imajı, makerd testleri ve USB-C üzerinden anında güncelleme.</span><span data-en>Buildroot image, makerd tests and live updates over USB-C.</span></span></span></a>
+          <a href="https://github.com/ferhatozcelik/maker-os/blob/main/docs/architecture/overview.md"><span class="ic"><svg aria-hidden="true"><use href="#i-book"/></svg></span><span><b><span data-tr>Mimari</span><span data-en>Architecture</span></b><span class="d"><span data-tr>Önyükleme, A/B depolama, masaüstü, ağ güvenliği ve AI asistanı.</span><span data-en>Boot, A/B storage, desktop, network security and the AI assistant.</span></span></span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="final">
     <div class="wrap">
       <h2><span data-tr>Bilgisayarınızı yeniden kendiniz için tasarlayın.</span><span data-en>Design your computer for yourself again.</span></h2>
       <p class="lead"><span data-tr>Açık kaynak, MIT lisanslı. Katkılara, eklentilere ve fikirlere açık.</span><span data-en>Open source and MIT licensed. Open to contributions, plugins and ideas.</span></p>
       <div class="cta">
         <a class="btn primary" href="https://github.com/ferhatozcelik/maker-os/releases/latest"><svg aria-hidden="true"><use href="#i-dl"/></svg><span data-tr>İmajı indir</span><span data-en>Download image</span></a>
-        <a class="btn" href="https://github.com/ferhatozcelik/makeros-plugins"><svg aria-hidden="true"><use href="#i-puzzle"/></svg><span data-tr>Eklenti mağazası</span><span data-en>Plugin store</span></a>
-        <a class="btn" href="benchmark/"><svg aria-hidden="true"><use href="#i-chart"/></svg><span data-tr>Benchmark</span><span data-en>Benchmark</span></a>
+        <a class="btn" href="#plugins"><svg aria-hidden="true"><use href="#i-puzzle"/></svg><span data-tr>Eklenti mağazası</span><span data-en>Plugin store</span></a>
+        <a class="btn" href="https://github.com/ferhatozcelik/maker-os"><svg aria-hidden="true"><use href="#i-gh"/></svg><span data-tr>Kaynak kodu</span><span data-en>Source code</span></a>
       </div>
     </div>
   </section>
@@ -680,6 +800,48 @@ html[lang="en"] [data-en] { display: revert; }
     }
     b.classList.add("done"); setTimeout(() => b.classList.remove("done"), 1500);
   });
+
+  // Eklenti mağazası: plugins/plugins.json (yayında makeros-plugins deposundan üretilir; site/plugins.py).
+  const store = document.getElementById("store"), sq = document.getElementById("store-q");
+  const chips = [...document.querySelectorAll(".chips button")];
+  const REPO = "https://github.com/ferhatozcelik/makeros-plugins";
+  let plugins = null, filter = "";
+  const esc = v => String(v).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const T = (tr, en) => root.lang === "tr" ? tr : en;
+  const TAG = { app: ["Uygulama", "App"], widget: ["Widget", "Widget"], theme: ["Tema", "Theme"] };
+  const renderStore = () => {
+    sq.placeholder = T(sq.dataset.phTr, sq.dataset.phEn);
+    sq.setAttribute("aria-label", sq.placeholder);
+    if (!plugins) return;
+    const q = sq.value.trim().toLocaleLowerCase(root.lang);
+    const list = plugins.filter(p => (!filter || p.tags.includes(filter)) &&
+      (!q || [p.name, p.id, p.description.tr, p.description.en].join(" ").toLocaleLowerCase(root.lang).includes(q)));
+    const cards = list.map(p => `<article class="card plug">
+      <div class="plug-h"><div class="plug-ic">${p.icon ? `<img src="plugins/${esc(p.icon)}" alt="" width="34" height="34" loading="lazy">` : ""}</div>
+        <div><h3>${esc(p.name)}</h3><span class="ver">v${esc(p.version)}</span></div></div>
+      <p>${esc(p.description[root.lang] || p.description.tr)}</p>
+      <div class="tags">${p.tags.map(t => `<span class="tag${t === "app" ? "" : " hl"}">${esc(T(...TAG[t]))}</span>`).join("")}</div>
+      <div class="plug-f"><span>${esc(p.author || "")}</span><a href="${esc(p.url)}">${T("Kaynağı gör", "View source")} →</a></div>
+    </article>`);
+    cards.push(`<a class="card plug new" href="#developers"><div class="plug-h"><div class="plug-ic"><svg width="22" height="22" aria-hidden="true"><use href="#i-plug"/></svg></div>
+      <div><h3>${T("Kendi eklentini yaz", "Write your own")}</h3><span class="ver">plugin.json + main.py</span></div></div>
+      <p>${T("Bir klasör yeterli; depoya girdiği an mağazada.", "A single folder; in the store as soon as it lands.")}</p></a>`);
+    store.innerHTML = list.length ? cards.join("") : `<p class="store-empty">${T("Aramanızla eşleşen eklenti yok.", "No plugins match your search.")}</p>` + cards.at(-1);
+  };
+  chips.forEach(c => c.onclick = () => {
+    filter = c.dataset.f;
+    chips.forEach(x => x.setAttribute("aria-pressed", x === c));
+    renderStore();
+  });
+  sq.oninput = renderStore;
+  btn.addEventListener("click", renderStore);
+  renderStore();
+  fetch("plugins/plugins.json", { cache: "no-cache" })
+    .then(r => r.ok ? r.json() : Promise.reject(r.status))
+    .then(d => { plugins = d.plugins || []; renderStore(); })
+    .catch(() => {
+      store.innerHTML = `<p class="store-empty">${T("Eklenti listesi şu anda yüklenemedi.", "The plugin list could not be loaded right now.")} <a href="${REPO}">${T("Depoda görüntüleyin", "Browse the repository")} →</a></p>`;
+    });
 
   // İnteraktif Prototip Simülatörü Mantığı
   const simBtns = document.querySelectorAll(".sim-modes button");

@@ -82,5 +82,3 @@ Arayüz, `makerd` servisleri, yerleşik tarayıcı ve yerel AI asistanı hem oto
   bluez-alsa içermez, yönlendirme bir sonraki tam derlemeyle gelir (makerd bu arada sesi bozmaz)
 - **GPIO:** pin bağlantı taraması (iç pull-up/down ile boşta / dışarıdan sürülüyor tahmini)
 - **AI Asistan:** kurulu CLI ajanı (Claude Code, Codex, Gemini CLI, OpenCode, Ollama) ve model seçimi; tam sayfa görünüm
-- **MakerOS Bench** (`benchmark/`): tek dosyalık karşılaştırma testi, Markdown/JSON rapor ve Raspberry Pi OS · MakerOS sonuç listesi
-  ([grafikler](https://ferhatozcelik.github.io/maker-os/benchmark/))
