@@ -13,9 +13,26 @@ const SEARCH = q => "https://www.google.com/search?igu=1&hl=tr&q=" + encodeURICo
 const EMBED = new URLSearchParams(location.search).get("embed") === "1";
 const KIOSK = /^(localhost|127(\.\d{1,3}){3}|\[::1\])$/i.test(location.hostname);
 
+// Bu cihazın /port/<p>/ yolu yeni sekmede http://<cihaz>:<p>/ olarak açılır; uygulama yalnız 127.0.0.1'i
+// dinliyorsa (ağdan erişilemiyorsa) vekil yoluna dönülür.
+async function direct(u) {
+  const d = shown(u);
+  if (d === u) return u;
+  try {
+    const c = new AbortController(), tm = setTimeout(() => c.abort(), 1500);
+    await fetch(d, { mode: "no-cors", cache: "no-store", signal: c.signal }); // erişilemezse hata
+    clearTimeout(tm);
+    return d;
+  } catch { return u; }
+}
 async function openExt(u) {
   if (!u) return;
-  if (!KIOSK) { window.open(u, "_blank", "noopener"); return; }
+  if (!KIOSK) {
+    const w = window.open("", "_blank"); // açılır pencere engelini aşmak için hemen aç, adresi sonra ver
+    const to = await direct(u);
+    if (w) { w.opener = null; w.location.href = to; } else window.open(to, "_blank", "noopener");
+    return;
+  }
   try { await post("/apps/chromium/launch", { url: u }); showHint(t("br.inChromium")); }
   catch (e) { showHint(t("br.failed") + ": " + e.message); }
 }

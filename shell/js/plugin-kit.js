@@ -83,6 +83,21 @@
   });
   darkMQ.addEventListener?.("change", () => refresh());
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => MK.translate());
+  // Masaüstü widget'ı olarak gömülüyse 1 sn basılı tutma kabukta widget düzenleme modunu açar (sürükle-bırak).
+  (function () {
+    let host = null;
+    try { host = window.frameElement && window.frameElement.closest && window.frameElement.closest("#widgets"); } catch (_) { /* farklı köken */ }
+    if (!host) return;
+    let timer = 0, x0 = 0, y0 = 0;
+    const stop = () => { clearTimeout(timer); timer = 0; };
+    addEventListener("pointerdown", e => {
+      if (e.button !== 0 || e.target.closest("input, textarea, select, [contenteditable]")) return;
+      x0 = e.clientX; y0 = e.clientY; stop();
+      timer = setTimeout(() => { timer = 0; parent.postMessage({ mk: "widget-edit" }, location.origin); }, 1000);
+    });
+    addEventListener("pointermove", e => { if (timer && Math.hypot(e.clientX - x0, e.clientY - y0) > 10) stop(); });
+    for (const ev of ["pointerup", "pointercancel", "pointerleave"]) addEventListener(ev, stop);
+  })();
   // Masaüstü widget'ı olarak gömülüyse sağ tık kabuğun widget menüsünü açar (düzenle / taşı / kaldır).
   // Metin kutuları ve seçili metinde tarayıcının kendi menüsü kalır; pencerede açılan eklentiye dokunulmaz.
   addEventListener("contextmenu", e => {

@@ -46,6 +46,18 @@ let history = [], busy = false, ctrl = null, activeTasks = 0;
 const size = () => FULL ? null : parent.postMessage({ mk: "widget-size", h: Math.ceil(document.querySelector(".card").getBoundingClientRect().height) }, location.origin);
 new ResizeObserver(size).observe(document.querySelector(".card"));
 const tell = m => parent.postMessage(m, location.origin);
+// Masaüstünde 1 sn basılı tutma → kabukta widget düzenleme modu (sürükle-bırak).
+if (!FULL) {
+  let timer = 0, x0 = 0, y0 = 0;
+  const stop = () => { clearTimeout(timer); timer = 0; };
+  addEventListener("pointerdown", e => {
+    if (e.button !== 0 || e.target.closest("input, textarea, select, [contenteditable]")) return;
+    x0 = e.clientX; y0 = e.clientY; stop();
+    timer = setTimeout(() => { timer = 0; tell({ mk: "widget-edit" }); }, 1000);
+  });
+  addEventListener("pointermove", e => { if (timer && Math.hypot(e.clientX - x0, e.clientY - y0) > 10) stop(); });
+  for (const ev of ["pointerup", "pointercancel", "pointerleave"]) addEventListener(ev, stop);
+}
 // Masaüstünde sağ tık → kabuğun widget menüsü (düzenle / taşı / kaldır); metin kutusunda yerel menü kalır.
 if (!FULL) addEventListener("contextmenu", e => {
   if (e.target.closest("input, textarea, [contenteditable]") || String(getSelection())) return;

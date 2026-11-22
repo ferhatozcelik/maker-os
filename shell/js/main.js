@@ -384,9 +384,13 @@ function dragWidget(e, box) {
   grip.addEventListener("pointerup", up, { once: true });
   grip.addEventListener("pointercancel", up, { once: true });
 }
-// Düzenleme modu: masaüstüne (ya da bir widget'a) sağ tık → "Widget'ları düzenle"; Bitti / Esc ile çıkılır.
-let editBar = null;
+// Düzenleme modu: masaüstüne ya da bir widget'a basılı tutma (LONG_PRESS) ya da sağ tık → "Widget'ları düzenle";
+// Bitti / Esc ile çıkılır. Widget içindeki basılı tutma plugin-kit / AI widget'ından "widget-edit" iletisiyle gelir.
+export const LONG_PRESS = 1000;
+let editBar = null, editAt = 0;
 function widgetEdit(on) {
+  if (on && mq.matches) return;
+  if (on) editAt = Date.now();
   document.documentElement.classList.toggle("wedit", on);
   if (on && !editBar) {
     editBar = h("div#wedit.mat-pop", h("span", t("wid.editing")),
@@ -398,7 +402,8 @@ function widgetEdit(on) {
 }
 addEventListener("keydown", e => { if (e.key === "Escape" && editBar) widgetEdit(false); });
 function widgetMenu(x, y) {
-  if (mq.matches) return;
+  if (mq.matches || Date.now() - editAt < 1500) return; // dokunmatikte basılı tutma hem düzenlemeyi hem menüyü tetikler
+
   const on = document.documentElement.classList.contains("wedit");
   menu([
     { label: on ? t("wid.done") : t("wid.edit"), icon: "layout-grid", action: () => widgetEdit(!on) },
@@ -407,6 +412,19 @@ function widgetMenu(x, y) {
   ], { x, y, w: 0, h: 0 });
 }
 $("#desktop").addEventListener("contextmenu", e => { e.preventDefault(); widgetMenu(e.clientX, e.clientY); });
+// Masaüstünde basılı tutma (fare ya da dokunma): parmak/fare 10 px'ten fazla kayarsa iptal.
+{
+  let timer = 0, x0 = 0, y0 = 0;
+  const stop = () => { clearTimeout(timer); timer = 0; };
+  const d = $("#desktop");
+  d.addEventListener("pointerdown", e => {
+    if (e.button !== 0) return;
+    x0 = e.clientX; y0 = e.clientY; stop();
+    timer = setTimeout(() => { timer = 0; widgetEdit(true); }, LONG_PRESS);
+  });
+  d.addEventListener("pointermove", e => { if (timer && Math.hypot(e.clientX - x0, e.clientY - y0) > 10) stop(); });
+  for (const ev of ["pointerup", "pointercancel", "pointerleave"]) d.addEventListener(ev, stop);
+}
 async function renderWidgets() {
   const host = $("#widgets");
   // AI Asistan (telefonda ve Pi'nin kendi ekranında da çalışır; masaüstü dar ise gizli).
@@ -465,6 +483,7 @@ addEventListener("message", e => {
   else if (e.data.mk === "notify") toast(e.data.title || e.data.body, "sparkles");
   else if (e.data.mk === "widget-close" && f.dataset.plugin) setPref("desktopWidgets", (pref("desktopWidgets") || []).filter(x => x !== f.dataset.plugin));
   else if (e.data.mk === "widget-size" && e.data.h > 40 && e.data.h < 800) f.style.height = e.data.h + "px"; // içeriğe göre (boşluk yok)
+  else if (e.data.mk === "widget-edit") widgetEdit(true);
   else if (e.data.mk === "widget-menu") { const r = f.getBoundingClientRect(); widgetMenu(r.left + (+e.data.x || 0), r.top + (+e.data.y || 0)); }
 });
 prefs.on("change", k => {
