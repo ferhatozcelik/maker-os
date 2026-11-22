@@ -72,7 +72,7 @@ const setupInfo = () => ({ setup_done: false, hostname: "makeros-0204", defaults
   languages: [["tr_TR.UTF-8", "Türkçe"], ["en_US.UTF-8", "English (US)"], ["de_DE.UTF-8", "Deutsch"]].map(([id, name]) => ({ id, name })),
   keymaps: [["trq", "Türkçe Q"], ["trf", "Türkçe F"], ["us", "İngilizce (ABD)"], ["gb", "İngilizce (BK)"], ["de", "Almanca"], ["fr", "Fransızca"]].map(([id, name]) => ({ id, name })),
   timezones: ["Europe/Istanbul", "Europe/Berlin", "Europe/London", "Europe/Paris", "Europe/Amsterdam", "Europe/Kyiv", "Asia/Baku", "Asia/Tokyo", "America/New_York", "America/Los_Angeles", "UTC"],
-  online: !!activeSsid, wifi_needed: !activeSsid, hotspot: !setupDone, min_password: 6 });
+  online: !!activeSsid, wifi_needed: !activeSsid, hotspot: !setupDone, min_password: 5 });
 const procList = () => [...procs].sort((a, b) => b.cpu_pct - a.cpu_pct);
 const wifiScan = () => [["Atölye", 82, "wpa2"], ["eduroam", 64, "enterprise"], ["Kafe_Misafir", 48, "open"], ["Ev-5G", 71, "wpa3"], ["TP-LINK_42", 30, "wpa2"], ["Kütüphane", 22, "wpa2"]]
   .map(([ssid, signal, security]) => ({ ssid, signal: Math.round(wobble(signal, 8, 5, 100)), security, known: knownWifi.has(ssid), active: ssid === activeSsid }));
@@ -115,7 +115,7 @@ async function api(req, res, path) {
     if (setupDone) return err(res, 409, "conflict", "Kurulum zaten tamamlandı");
     const b = await body(req);
     if (!b || !/^[a-z_][a-z0-9_-]{0,31}$/.test(b.user || "")) return err(res, 400, "invalid", "Geçersiz kullanıcı adı");
-    if ((b.password || "").length < 6) return err(res, 400, "invalid", "Parola en az 6 karakter olmalı");
+    if ((b.password || "").length < 5) return err(res, 400, "invalid", "Parola en az 5 karakter olmalı");
     if (!/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/.test(b.hostname || "")) return err(res, 400, "invalid", "Geçersiz cihaz adı");
     if (!setupInfo().timezones.includes(b.timezone)) return err(res, 400, "invalid", "Geçersiz saat dilimi");
     await delay(900);

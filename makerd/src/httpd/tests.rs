@@ -295,7 +295,7 @@ async fn setup_flow() {
     let r = e.req("GET", "/api/v1/setup", "", &[]).await;
     let st = r.json();
     assert_eq!(r.status, 200);
-    assert_eq!((st["setup_done"].as_bool(), st["hostname"].as_str(), st["defaults"]["lang"].as_str(), st["min_password"].as_u64()), (Some(false), Some("maker-os"), Some("tr_TR.UTF-8"), Some(6)));
+    assert_eq!((st["setup_done"].as_bool(), st["hostname"].as_str(), st["defaults"]["lang"].as_str(), st["min_password"].as_u64()), (Some(false), Some("maker-os"), Some("tr_TR.UTF-8"), Some(5)));
     assert!(st["languages"].as_array().is_some_and(|l| !l.is_empty()) && st["timezones"].as_array().is_some_and(|l| !l.is_empty()));
     assert_eq!(e.req("POST", "/api/v1/setup/wifi/scan", "", x).await.status, 200);
     let r = e.req("GET", "/api/v1/auth/local?token=yerel-belirtec", "", &[]).await;
@@ -579,4 +579,16 @@ async fn update_upload() {
     assert_eq!(state, "done");
     let st = e.req("GET", "/api/v1/system/update", "", a).await.json();
     assert_eq!(st["phase"], "rebooting");
+}
+
+/// Sihirbazın gerçekte gönderdiği gövde (shell/setup/setup.js DEFAULT_USER = maker / maker) kurulumu tamamlamalı;
+/// 1.0.0'da parola sınırı 6 olduğu için "Parola en az 6 karakter" ile hep reddediliyordu.
+#[tokio::test(flavor = "multi_thread")]
+async fn setup_default_account() {
+    let e = env(true).await;
+    let x: &[(&str, &str)] = &[("X-Maker", "1")];
+    let body = r#"{"user":"maker","password":"maker","fullname":"Maker","hostname":"maker-os","timezone":"Europe/Istanbul","lang":"tr_TR.UTF-8","keymap":"trq"}"#;
+    let r = e.req("POST", "/api/v1/setup/complete", body, x).await;
+    assert_eq!(r.status, 200, "{}", String::from_utf8_lossy(&r.body));
+    assert_eq!(e.req("POST", "/api/v1/auth/login", r#"{"user":"maker","password":"maker"}"#, x).await.status, 200);
 }

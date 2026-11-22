@@ -109,7 +109,7 @@ impl Commands {
             return Err(PrivError::new("forbidden", "Bu hesabın parolası değiştirilemez."));
         }
         if !valid_new_password(&a.new) {
-            return Err(PrivError::new("invalid", "Yeni parola en az 6 karakter olmalıdır."));
+            return Err(PrivError::new("invalid", "Yeni parola en az 5 karakter olmalıdır."));
         }
         let me = self.clone();
         let res = tokio::task::spawn_blocking(move || -> Result<bool, PrivError> {

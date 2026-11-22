@@ -26,7 +26,8 @@ pub const CMD_OTA_STATUS: &str = "ota.status";
 /// makerd'nin güncelleme paketlerini indirdiği dizin.
 pub const OTA_DIR: &str = "/var/lib/makerd/ota";
 pub const DEFAULT_SOCKET: &str = "/run/makeros/priv.sock";
-pub const MIN_PASSWORD_LEN: usize = 6;
+/// Varsayılan hesap `maker` / `maker` (5) ilk açılış sihirbazında bu sınırı geçmeli (shell/setup/setup.js DEFAULT_USER).
+pub const MIN_PASSWORD_LEN: usize = 5;
 
 #[derive(Serialize, Deserialize)]
 pub struct Request {

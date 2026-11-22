@@ -493,7 +493,7 @@ impl Provider for Real {
     fn set_password<'a>(&'a self, user: &'a str, old: &'a str, new: &'a str) -> BoxFuture<'a, ApiResult<()>> {
         Box::pin(async move {
             if new.len() < privsep::MIN_PASSWORD_LEN {
-                return Err(ApiError::invalid("Yeni parola en az 6 karakter olmalıdır."));
+                return Err(ApiError::invalid("Yeni parola en az 5 karakter olmalıdır."));
             }
             self.priv_call(privsep::CMD_SYSTEM_PASSWORD, &privsep::PasswordArgs { user: user.into(), old: old.into(), new: new.into() }).await
         })

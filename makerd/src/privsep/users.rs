@@ -30,7 +30,7 @@ pub fn valid_fullname(s: &str) -> bool {
     s.chars().count() <= 64 && !s.contains([':', '\n', '\r', '\0', ',', '='])
 }
 
-/// En az 6 karakter (bayt), en fazla 512; NUL/satır sonu yok.
+/// En az 5 karakter (bayt), en fazla 512; NUL/satır sonu yok.
 pub fn valid_new_password(s: &str) -> bool {
     s.len() >= MIN_PASSWORD_LEN && s.len() <= 512 && !s.contains(['\0', '\n', '\r'])
 }
@@ -136,7 +136,7 @@ pub fn user_create(shadow: &str, min_uid: u32, uf: &UserFiles, a: &UserCreateArg
         return Err(PrivError::new("invalid", "Kullanıcı adı küçük harfle başlamalı; yalnızca a-z, 0-9, '-' ve '_' içerebilir (en fazla 32)."));
     }
     if !valid_new_password(&a.password) {
-        return Err(PrivError::new("invalid", "Parola en az 6 karakter olmalıdır."));
+        return Err(PrivError::new("invalid", "Parola en az 5 karakter olmalıdır."));
     }
     if !valid_fullname(&a.fullname) {
         return Err(PrivError::new("invalid", "Ad soyad geçersiz karakter içeriyor."));
@@ -364,7 +364,9 @@ mod tests {
         assert!(!valid_username("1ali"));
         assert!(valid_fullname("Ayşe Yılmaz"));
         assert!(!valid_fullname("a:b"));
-        assert!(valid_new_password("123456"));
-        assert!(!valid_new_password("12345"));
+        assert!(valid_new_password("12345"));
+        assert!(!valid_new_password("1234"));
+        // İlk açılış sihirbazı hesabı bu parolayla kurar (shell/setup/setup.js DEFAULT_USER).
+        assert!(valid_new_password("maker"), "varsayılan parola sihirbazı tamamlayabilmeli");
     }
 }

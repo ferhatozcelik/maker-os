@@ -554,7 +554,7 @@ impl SetupRequest {
             return bad("Kullanıcı adı küçük harfle başlamalı; yalnızca a-z, 0-9, '-' ve '_' içerebilir (en fazla 32).");
         }
         if !privsep::users::valid_new_password(&self.password) {
-            return bad("Parola en az 6 karakter olmalıdır.");
+            return bad("Parola en az 5 karakter olmalıdır.");
         }
         if !privsep::users::valid_fullname(&self.fullname) {
             return bad("Ad soyad geçersiz karakter içeriyor.");

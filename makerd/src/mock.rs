@@ -40,7 +40,7 @@ impl State {
             return Err(ApiError::invalid("Geçersiz kullanıcı adı."));
         }
         if !privsep::users::valid_new_password(&a.password) {
-            return Err(ApiError::invalid("Parola en az 6 karakter olmalıdır."));
+            return Err(ApiError::invalid("Parola en az 5 karakter olmalıdır."));
         }
         if !privsep::users::valid_fullname(&a.fullname) {
             return Err(ApiError::invalid("Ad soyad geçersiz karakter içeriyor."));
@@ -208,7 +208,7 @@ impl system::Provider for System {
     fn set_password<'a>(&'a self, user: &'a str, old: &'a str, new: &'a str) -> BoxFuture<'a, ApiResult<()>> {
         Box::pin(async move {
             if new.len() < privsep::MIN_PASSWORD_LEN {
-                return Err(ApiError::invalid("Yeni parola en az 6 karakter olmalıdır."));
+                return Err(ApiError::invalid("Yeni parola en az 5 karakter olmalıdır."));
             }
             let mut u = self.state.users.lock().unwrap();
             match u.get(user) {
