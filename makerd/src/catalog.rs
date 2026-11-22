@@ -111,8 +111,13 @@ pub struct Catalog {
     api: String,
     raw: String,
     ua: String,
+    /// Tek ajan: bağlantılar (TLS) dosyalar arasında yeniden kullanılır.
+    agent: ureq::Agent,
     cache: Mutex<Option<(Instant, Vec<Entry>)>>,
 }
+
+/// Aynı anda indirilen dosya sayısı (Pi'de her dosya için ayrı TLS el sıkışması kurulumu 15 sn'yi aşıyordu).
+const PARALLEL: usize = 6;
 
 /// Git blob özeti: sha1("blob <boyut>\0" + içerik).
 fn blob_sha(b: &[u8]) -> String {
@@ -151,6 +156,7 @@ impl Catalog {
             api: "https://api.github.com".into(),
             raw: "https://raw.githubusercontent.com".into(),
             ua: format!("makerd/{version}"),
+            agent: ureq::Agent::config_builder().timeout_global(Some(Duration::from_secs(60))).build().into(),
             cache: Mutex::new(None),
         })
     }
@@ -170,13 +176,12 @@ impl Catalog {
     }
 
     async fn fetch(&self, url: String, limit: u64) -> Result<Vec<u8>, String> {
-        let ua = self.ua.clone();
+        let (ua, ag) = (self.ua.clone(), self.agent.clone());
         tokio::task::spawn_blocking(move || -> Result<Vec<u8>, String> {
             let local = url.starts_with("http://127.0.0.1:");
             if !url.starts_with("https://") && !local {
                 return Err("yalnız https adresleri desteklenir".into());
             }
-            let ag: ureq::Agent = ureq::Agent::config_builder().timeout_global(Some(Duration::from_secs(60))).build().into();
             let mut r = ag.get(&url).header("User-Agent", &ua).header("Accept", "application/vnd.github+json").call().map_err(|e| match e {
                 ureq::Error::StatusCode(403 | 429) => "GitHub istek sınırı aşıldı; biraz sonra yeniden deneyin".to_string(),
                 ureq::Error::StatusCode(404) => "depo veya dal bulunamadı".to_string(),
@@ -316,9 +321,13 @@ impl Catalog {
         }
         let mut zw = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
         let opts = zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
-        for f in &e.files {
-            // Sınır bir fazla: boyutu tutmayan (değiştirilmiş) dosya ağ hatası değil, uyuşmazlık olarak raporlanır.
-            let b = self.fetch(self.raw_url(&e.commit, id, &f.rel), f.size + 2).await.map_err(Self::unavailable)?;
+        // Paralel indirme (sıra korunur); sınır bir fazla: boyutu tutmayan (değiştirilmiş) dosya ağ hatası değil,
+        // uyuşmazlık olarak raporlanır.
+        use futures_util::StreamExt;
+        let jobs: Vec<_> = e.files.iter().map(|f| self.fetch(self.raw_url(&e.commit, id, &f.rel), f.size + 2)).collect();
+        let bodies: Vec<Result<Vec<u8>, String>> = futures_util::stream::iter(jobs).buffered(PARALLEL).collect().await;
+        for (f, b) in e.files.iter().zip(bodies) {
+            let b = b.map_err(Self::unavailable)?;
             if b.len() as u64 != f.size || blob_sha(&b) != f.sha {
                 return Err(ApiError::invalid(format!("İndirilen dosya depodakiyle uyuşmuyor: {}; kurulmadı.", f.rel)));
             }

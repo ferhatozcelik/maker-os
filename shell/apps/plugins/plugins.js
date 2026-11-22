@@ -129,10 +129,11 @@ async function install(p, b) {
   b.disabled = true;
   b.replaceChildren(h("span.spin", { html: icon("loader-circle", 14, 2) }), t(p.update ? "pl.updating" : "pl.installing"));
   try {
-    const m = await post(`/plugins/catalog/${p.id}/install`);
+    // makerd kurulumu 180 sn'ye kadar sürdürebilir (Pi'de Wi-Fi ile indirme + yazma); varsayılan 15 sn yetmez.
+    const m = await api("POST", `/plugins/catalog/${p.id}/install`, {}, { timeout: 200000 });
     const cur = pref("autostartPlugins") || [];
     if (!cur.includes(p.id)) setPref("autostartPlugins", [...cur, p.id]);
-    await post(`/plugins/${p.id}/start`).catch(() => {});
+    await api("POST", `/plugins/${p.id}/start`, {}, { timeout: 40000 }).catch(() => {});
     toast(t(p.update ? "pl.updated" : "pl.installed", { name: m.name, v: m.version }));
   } catch (e) { fail(e); }
   loadStore();
