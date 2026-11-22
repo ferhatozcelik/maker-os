@@ -7,7 +7,9 @@ set -e
 G=/sys/kernel/config/usb_gadget/makeros
 modprobe libcomposite
 mountpoint -q /sys/kernel/config || mount -t configfs none /sys/kernel/config
-UDC=$(ls /sys/class/udc | head -n1)
+# dwc2 modulu acilista gec yuklenebilir: denetleyiciyi en fazla 10 sn bekle.
+i=0; UDC=""
+while [ $i -lt 100 ]; do UDC=$(ls /sys/class/udc 2>/dev/null | head -n1); [ -n "$UDC" ] && break; sleep 0.1; i=$((i + 1)); done
 [ -n "$UDC" ] || { echo "usb-gadget: UDC yok (dtoverlay=dwc2 eksik mi?)" >&2; exit 1; }
 if [ ! -e "$G/UDC" ] || [ -z "$(cat "$G/UDC")" ]; then
 mkdir -p "$G"

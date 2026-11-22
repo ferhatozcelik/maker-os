@@ -149,7 +149,12 @@ fi
 }
 
 cp --sparse=always base.img $IMG
-dd if=new.erofs of=$IMG bs=512 seek="$R_START" conv=notrunc,sparse status=none
+# conv=sparse KULLANILMAZ: sıfır blokları atlar, imajda taban kök dosya sisteminin eski baytları kalır ve
+# EROFS bozulur (NetworkManager, kitaplıklar okunamaz). Yazılanı new.erofs ile bayt bayt karşılaştır.
+dd if=new.erofs of=$IMG bs=4M seek="$((R_START * 512))" oflag=seek_bytes conv=notrunc status=none
+cmp -n "$SZ" new.erofs <(dd if=$IMG bs=4M skip="$((R_START * 512))" iflag=skip_bytes,count_bytes count="$SZ" status=none) ||
+	{ echo "HATA: imajdaki kök bölümü new.erofs ile aynı değil" >&2; exit 1; }
+echo "kök bölümü doğrulandı"
 
 echo "sıkıştırılıyor ($IMG.xz)…"
 xz -T0 -1 -f -c $IMG > /out/$IMG.xz

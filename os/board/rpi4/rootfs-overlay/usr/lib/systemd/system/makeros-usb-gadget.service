@@ -9,6 +9,8 @@ Wants=network-pre.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
+# oneshot'ta varsayilan zaman siniri yok; acilisi asla kilitlemesin.
+TimeoutStartSec=30
 ExecStart=/usr/lib/makeros/usb-gadget
 
 [Install]
