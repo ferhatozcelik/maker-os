@@ -83,5 +83,14 @@
   });
   darkMQ.addEventListener?.("change", () => refresh());
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => MK.translate());
+  // Masaüstü widget'ı olarak gömülüyse sağ tık kabuğun widget menüsünü açar (düzenle / taşı / kaldır).
+  // Metin kutuları ve seçili metinde tarayıcının kendi menüsü kalır; pencerede açılan eklentiye dokunulmaz.
+  addEventListener("contextmenu", e => {
+    let host = null;
+    try { host = window.frameElement && window.frameElement.closest && window.frameElement.closest("#widgets"); } catch (_) { /* farklı köken */ }
+    if (!host || e.target.closest("input, textarea, [contenteditable]") || String(getSelection())) return;
+    e.preventDefault();
+    parent.postMessage({ mk: "widget-menu", x: e.clientX, y: e.clientY }, location.origin);
+  });
   window.MK = MK;
 })();

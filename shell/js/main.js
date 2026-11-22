@@ -2,7 +2,7 @@
 // Yalnız masaüstünün ilk karesi için gerekenler doğrudan içe aktarılır; Bul, Uygulamalar ızgarası,
 // değiştirici, Genel Bakış, Kontrol Merkezi, kilit/giriş, mobil düzen, kurulum sihirbazı ve perf HUD
 // ilk kullanımda dinamik import ile yüklenir (bkz. M).
-import { $, store, lazy } from "./lib.js";
+import { $, h, store, lazy } from "./lib.js";
 import { t } from "./i18n.js";
 import { prefs, pref, setPref, isDark, syncPrefs } from "./prefs.js";
 import { wallURL, themeById, brand, setFavicon, widgetReady, pluginWidget } from "./themes.js";
@@ -16,7 +16,7 @@ import { mountMenubar } from "./ui/menubar.js";
 import { mountDock } from "./ui/dock.js";
 import { initNotifications, toast, toggleNC } from "./ui/control.js";
 import { closeOverlay, overlayOpen } from "./ui/layer.js";
-import { closePopup } from "./ui/popup.js";
+import { closePopup, menu } from "./ui/popup.js";
 import { registerSW } from "./pwa.js";
 
 registerSW();
@@ -337,25 +337,88 @@ window.__mk = S;
 // (yerel Türkçe Linux asistanı; Ayarlar › Görünüm'den ya da widget'ın × düğmesiyle gizlenir).
 const AI_WIDGET = { url: "/shell/apps/ai-widget/", w: 340, h: 170 };
 let themeKey = "", aiOn = null;
-function widgetFrame(cls, w) {
+// Her widget bir kutuda: iframe + düzenleme katmanı (iframe fare olaylarını yuttuğu için sürükleme katmandan yapılır).
+// Kutu anahtarı: "ai", "theme" ya da eklenti kimliği; konum tercihi widgetPos[anahtar] = [sol, üst] (px).
+function widgetFrame(cls, w, key) {
   const f = document.createElement("iframe");
   Object.assign(f, { title: "widget", allowTransparency: true });
   f.className = cls;
   f.style.cssText = `width:${w.w}px;height:${w.h}px`;
+  const box = h("div.wbox", { "data-key": key }, f,
+    h("div.wgrip", { title: t("wid.drag") }, h("button.wx", { type: "button", "aria-label": t("wid.remove"), title: t("wid.remove"), onclick: e => { e.stopPropagation(); removeWidget(key); } }, "×")));
+  box.querySelector(".wgrip").addEventListener("pointerdown", e => dragWidget(e, box));
+  placeWidget(box);
+  f.box = box;
   return f;
 }
+const boxOf = sel => $("#widgets").querySelector(sel)?.closest(".wbox");
+function placeWidget(box) {
+  const p = (pref("widgetPos") || {})[box.dataset.key];
+  if (!p) { box.style.position = ""; box.style.left = box.style.top = ""; return; }
+  box.style.position = "fixed";
+  box.style.left = Math.max(0, Math.min(p[0], innerWidth - 80)) + "px";
+  box.style.top = Math.max(0, Math.min(p[1], innerHeight - 60)) + "px";
+}
+function removeWidget(key) {
+  if (key === "ai") setPref("aiWidget", false);
+  else if (key === "theme") setPref("uiThemeWidget", false);
+  else setPref("desktopWidgets", (pref("desktopWidgets") || []).filter(x => x !== key));
+}
+function dragWidget(e, box) {
+  if (!document.documentElement.classList.contains("wedit") || e.button !== 0 || e.target.closest(".wx")) return;
+  e.preventDefault();
+  const r = box.getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top, grip = e.currentTarget;
+  Object.assign(box.style, { position: "fixed", left: r.left + "px", top: r.top + "px" });
+  box.classList.add("dragging");
+  grip.setPointerCapture(e.pointerId);
+  const move = ev => {
+    box.style.left = Math.max(0, Math.min(ev.clientX - dx, innerWidth - r.width)) + "px";
+    box.style.top = Math.max(0, Math.min(ev.clientY - dy, innerHeight - 40)) + "px";
+  };
+  const up = () => {
+    grip.removeEventListener("pointermove", move);
+    box.classList.remove("dragging");
+    setPref("widgetPos", { ...(pref("widgetPos") || {}), [box.dataset.key]: [parseInt(box.style.left), parseInt(box.style.top)] });
+  };
+  grip.addEventListener("pointermove", move);
+  grip.addEventListener("pointerup", up, { once: true });
+  grip.addEventListener("pointercancel", up, { once: true });
+}
+// Düzenleme modu: masaüstüne (ya da bir widget'a) sağ tık → "Widget'ları düzenle"; Bitti / Esc ile çıkılır.
+let editBar = null;
+function widgetEdit(on) {
+  document.documentElement.classList.toggle("wedit", on);
+  if (on && !editBar) {
+    editBar = h("div#wedit.mat-pop", h("span", t("wid.editing")),
+      h("button.btn.sm", { type: "button", onclick: () => { setPref("widgetPos", {}); } }, t("wid.reset")),
+      h("button.btn.sm", { type: "button", onclick: () => S.launch("makeros.plugins") }, t("wid.add")),
+      h("button.btn.sm.primary", { type: "button", onclick: () => widgetEdit(false) }, t("wid.done")));
+    document.body.append(editBar);
+  } else if (!on && editBar) { editBar.remove(); editBar = null; }
+}
+addEventListener("keydown", e => { if (e.key === "Escape" && editBar) widgetEdit(false); });
+function widgetMenu(x, y) {
+  if (mq.matches) return;
+  const on = document.documentElement.classList.contains("wedit");
+  menu([
+    { label: on ? t("wid.done") : t("wid.edit"), icon: "layout-grid", action: () => widgetEdit(!on) },
+    { label: t("wid.add"), icon: "plus", action: () => S.launch("makeros.plugins") },
+    { label: t("wid.reset"), icon: "rotate-ccw", action: () => setPref("widgetPos", {}) },
+  ], { x, y, w: 0, h: 0 });
+}
+$("#desktop").addEventListener("contextmenu", e => { e.preventDefault(); widgetMenu(e.clientX, e.clientY); });
 async function renderWidgets() {
   const host = $("#widgets");
   // AI Asistan (telefonda ve Pi'nin kendi ekranında da çalışır; masaüstü dar ise gizli).
   const ai = pref("aiWidget") !== false && !mq.matches;
   if (ai !== aiOn) {
     aiOn = ai;
-    host.querySelector("iframe.w-ai")?.remove();
+    boxOf("iframe.w-ai")?.remove();
     if (ai) {
-      const f = widgetFrame("w-ai", AI_WIDGET);
+      const f = widgetFrame("w-ai", AI_WIDGET, "ai");
       f.addEventListener("load", () => f.classList.add("on"));
       f.src = AI_WIDGET.url;
-      host.append(f);
+      host.append(f.box);
     }
   }
   // Tema widget'ı
@@ -363,10 +426,10 @@ async function renderWidgets() {
   const key = w ? w.url : "";
   if (key !== themeKey) {
     themeKey = key;
-    host.querySelector("iframe.w-theme")?.remove();
+    boxOf("iframe.w-theme")?.remove();
     if (w) {
-      const f = widgetFrame("w-theme", w);
-      host.prepend(f);
+      const f = widgetFrame("w-theme", w, "theme");
+      host.prepend(f.box);
       widgetReady(w, id => post(`/plugins/${id}/start`)).then(() => {
         if (themeKey !== key) return;
         f.addEventListener("load", () => f.classList.add("on")); // boş iframe'in ilk "load"ı sayılmaz
@@ -378,17 +441,17 @@ async function renderWidgets() {
   // listeden düşer (loadApps → "look" değişimi → burası); yeniden başlatılınca geri gelir.
   const mine = mq.matches ? [] : (pref("desktopWidgets") || []).map(pluginWidget).filter(x => x && x.url !== key);
   const want = new Set(mine.map(x => x.url));
-  for (const f of host.querySelectorAll("iframe.w-plugin")) if (!want.has(f.dataset.url)) f.remove();
+  for (const f of host.querySelectorAll("iframe.w-plugin")) if (!want.has(f.dataset.url)) f.closest(".wbox").remove();
   for (const x of mine) {
     if (host.querySelector(`iframe.w-plugin[data-url="${CSS.escape(x.url)}"]`)) continue;
-    const f = widgetFrame("w-plugin", x);
+    const f = widgetFrame("w-plugin", x, x.plugin);
     f.dataset.url = x.url;
     f.dataset.plugin = x.plugin;
-    host.insertBefore(f, host.querySelector("iframe.w-ai"));
+    host.insertBefore(f.box, boxOf("iframe.w-ai") || null);
     widgetReady(x, id => post(`/plugins/${id}/start`)).then(ok => {
       if (!f.isConnected) return;
       f.addEventListener("load", () => f.classList.add("on"));
-      if (ok) f.src = x.url; else f.remove();
+      if (ok) f.src = x.url; else f.box.remove();
     });
   }
 }
@@ -402,8 +465,10 @@ addEventListener("message", e => {
   else if (e.data.mk === "notify") toast(e.data.title || e.data.body, "sparkles");
   else if (e.data.mk === "widget-close" && f.dataset.plugin) setPref("desktopWidgets", (pref("desktopWidgets") || []).filter(x => x !== f.dataset.plugin));
   else if (e.data.mk === "widget-size" && e.data.h > 40 && e.data.h < 800) f.style.height = e.data.h + "px"; // içeriğe göre (boşluk yok)
+  else if (e.data.mk === "widget-menu") { const r = f.getBoundingClientRect(); widgetMenu(r.left + (+e.data.x || 0), r.top + (+e.data.y || 0)); }
 });
 prefs.on("change", k => {
   if (k === "look" || k === "aiWidget" || k === "uiThemeWidget" || k === "desktopWidgets") renderWidgets();
+  if (k === "widgetPos") document.querySelectorAll("#widgets .wbox").forEach(placeWidget);
   if (k === "uiMenubar" || k === "uiDock") wm.relayout();
 });

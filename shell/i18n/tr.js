@@ -58,6 +58,7 @@ export default {
   "nc.title": "Bildirimler", "nc.empty": "Yeni bildirim yok", "nc.clear": "Bildirimleri temizle", "nc.today": "Bugün",
   // raf (dock) ve uygulamalar
   "dock.apps": "Uygulamalar", "dock.keep": "Rafta Tut", "dock.remove": "Raftan Kaldır", "dock.open": "Aç", "dock.newWindow": "Yeni Pencere",
+  "wid.edit": "Widget'ları düzenle", "wid.done": "Bitti", "wid.reset": "Yerleşimi sıfırla", "wid.add": "Widget ekle", "wid.remove": "Kaldır", "wid.drag": "Sürükleyerek taşıyın", "wid.editing": "Widget'ları sürükleyin",
   "dock.quit": "Çık", "dock.showAll": "Tüm Pencereleri Göster", "dock.hide": "Gizle",
   "launch.search": "Ara", "launch.native": "{app} başlatılıyor…", "launch.fail": "{app} açılamadı", "launch.onScreen": "{app} Pi'nin ekranında açılıyor…", "launch.popupBlocked": "Tarayıcı yeni sekmeyi engelledi; adres çubuğundaki açılır pencere simgesinden izin verin.", "launch.onPi": "{app} Pi'nin ekranında açıldı.",
   // bul (spotlight)

@@ -12,4 +12,11 @@ if command -v wlr-randr >/dev/null 2>&1 && [ ! -e /etc/makeros/display-native ];
 	done
 fi
 systemctl --user import-environment WAYLAND_DISPLAY XDG_RUNTIME_DIR 2>/dev/null
+# Kullanici programlari (Python tkinter/Qt/pygame, terminalden acilan uygulamalar) bu ekrana acilabilsin:
+# compositor soketi 'video' grubuna acilir (yalniz baglanma). makerd-user WAYLAND_DISPLAY'i bu yola ayarlar.
+if [ -n "${XDG_RUNTIME_DIR:-}" ] && [ -S "$XDG_RUNTIME_DIR/${WAYLAND_DISPLAY:-wayland-0}" ]; then
+	sock="$XDG_RUNTIME_DIR/${WAYLAND_DISPLAY:-wayland-0}"
+	chgrp video "$XDG_RUNTIME_DIR" "$sock" 2>/dev/null && chmod g+x "$XDG_RUNTIME_DIR" && chmod g+rw "$sock" ||
+		echo "autostart: wayland soketi paylasilamadi" >&2
+fi
 exec /usr/lib/makeros/kiosk-browser

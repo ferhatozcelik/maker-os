@@ -198,3 +198,17 @@ mk-window.ext .tb { background: var(--bg-window); border-bottom: .5px solid var(
   clip-path: inset(0 round 18px);
 }
 #widgets iframe.on { opacity: 1; }
+/* Widget kutusu ve düzenleme modu (masaüstüne sağ tık → Widget'ları düzenle) */
+#widgets .wbox { position: relative; pointer-events: auto; justify-self: end; }
+#widgets .wgrip { display: none; position: absolute; inset: 0; border-radius: 18px; cursor: grab; touch-action: none;
+  outline: 2px dashed color-mix(in srgb, var(--accent) 80%, transparent); outline-offset: 3px; background: color-mix(in srgb, var(--accent) 8%, transparent); }
+html.wedit #widgets .wgrip { display: block; }
+html.wedit #widgets .wbox { animation: wjiggle .28s ease-in-out infinite alternate; z-index: 2; }
+html.wedit #widgets .wbox.dragging { animation: none; z-index: 3; }
+html.wedit #widgets .wbox.dragging .wgrip { cursor: grabbing; }
+#widgets .wx { position: absolute; top: -9px; left: -9px; width: 24px; height: 24px; border-radius: 50%; border: 0; cursor: pointer;
+  background: var(--bg-window, #2b2b30); color: var(--text, #fff); box-shadow: 0 2px 8px rgba(0,0,0,.35); font: 600 15px/24px Inter, system-ui, sans-serif; padding: 0; }
+@keyframes wjiggle { from { transform: rotate(-.5deg); } to { transform: rotate(.5deg); } }
+#wedit { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); z-index: 50; display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 16px; border-radius: 999px; }
+#wedit span { font-weight: 600; margin-right: 6px; }
+@media (prefers-reduced-motion: reduce) { html.wedit #widgets .wbox { animation: none; } }

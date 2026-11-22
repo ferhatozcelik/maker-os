@@ -46,6 +46,12 @@ let history = [], busy = false, ctrl = null, activeTasks = 0;
 const size = () => FULL ? null : parent.postMessage({ mk: "widget-size", h: Math.ceil(document.querySelector(".card").getBoundingClientRect().height) }, location.origin);
 new ResizeObserver(size).observe(document.querySelector(".card"));
 const tell = m => parent.postMessage(m, location.origin);
+// Masaüstünde sağ tık → kabuğun widget menüsü (düzenle / taşı / kaldır); metin kutusunda yerel menü kalır.
+if (!FULL) addEventListener("contextmenu", e => {
+  if (e.target.closest("input, textarea, [contenteditable]") || String(getSelection())) return;
+  e.preventDefault();
+  tell({ mk: "widget-menu", x: e.clientX, y: e.clientY });
+});
 
 function status(cls, text) { st.className = "st " + cls; st.lastElementChild.textContent = text; }
 

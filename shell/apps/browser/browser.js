@@ -221,6 +221,16 @@ function piLocal(u) {
     return x;
   } catch { return null; }
 }
+// Adres çubuğunda /port/<p>/… yerine http://<cihaz>:<p>/… gösterilir (yükleme yine vekilden; yazılan
+// http://<cihaz>:<p>/ adresi piLocal ile vekile çevrilir). Yalnız bu cihazın /port/ yolları için.
+function shown(u) {
+  try {
+    const x = new URL(u, location.origin);
+    const m = x.origin === location.origin && x.pathname.match(/^\/port\/(\d+)(\/.*)?$/);
+    if (m) return `${location.protocol}//${location.hostname}:${m[1]}${m[2] || "/"}${x.search}${x.hash}`;
+  } catch {}
+  return u;
+}
 const proxied = (v, u) => `/api/v1/browse?t=${encodeURIComponent(v)}&url=${encodeURIComponent(u)}`;
 const showHint = msg => { hint.querySelector("span").textContent = msg || t("br.failed"); hint.hidden = false; };
 
@@ -292,7 +302,7 @@ addEventListener("message", e => {
   retried = false;
   if (url !== cur) {
     if (url !== hist[pos]) { hist = hist.slice(0, pos + 1); hist.push(url); pos = hist.length - 1; }
-    cur = url; addr.value = url; updateNav(); updateAddrIcon(url); app.path(url);
+    cur = url; addr.value = shown(url); updateNav(); updateAddrIcon(url); app.path(url);
   }
   if (typeof title === "string" && title.trim()) {
     app.title(title.trim().slice(0, 80));
@@ -308,7 +318,7 @@ function go(u, push) {
   const local = u && piLocal(u);
   if (local) u = local.href;
   if (push && u !== hist[pos]) { hist = hist.slice(0, pos + 1); hist.push(u); pos = hist.length - 1; }
-  cur = u; addr.value = u;
+  cur = u; addr.value = shown(u);
   updateNav();
   updateAddrIcon(u);
   home.hidden = !!u;
@@ -324,7 +334,7 @@ function go(u, push) {
     const x = new URL(u);
     if (x.pathname.startsWith("/port/")) {
       const p = x.pathname.split("/")[2] || "";
-      app.title("localhost:" + p);
+      app.title(location.hostname + ":" + p);
     } else {
       app.title(x.hostname.replace(/^www\./, "") + (piLocal(u) && x.port ? ":" + x.port : ""));
     }

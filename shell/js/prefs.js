@@ -21,6 +21,7 @@ const DEF = {
   uiDock: true,
   uiThemeWidget: true,
   desktopWidgets: [],
+  widgetPos: {},
   webSidebar: true,
   uiStatusTemp: true,
   uiToasts: true,

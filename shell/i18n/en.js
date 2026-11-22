@@ -52,6 +52,7 @@ export default {
   "cc.netSettings": "Network Settings…", "cc.display": "Display",
   "nc.title": "Notifications", "nc.empty": "No new notifications", "nc.clear": "Clear notifications", "nc.today": "Today",
   "dock.apps": "Apps", "dock.keep": "Keep in Shelf", "dock.remove": "Remove from Shelf", "dock.open": "Open", "dock.newWindow": "New Window",
+  "wid.edit": "Edit widgets", "wid.done": "Done", "wid.reset": "Reset layout", "wid.add": "Add widget", "wid.remove": "Remove", "wid.drag": "Drag to move", "wid.editing": "Drag widgets to move them",
   "dock.quit": "Quit", "dock.showAll": "Show All Windows", "dock.hide": "Hide",
   "launch.search": "Search", "launch.native": "Starting {app}…", "launch.fail": "Could not open {app}", "launch.onScreen": "Opening {app} on the Pi's screen…", "launch.popupBlocked": "The browser blocked the new tab; allow pop-ups from the address bar.", "launch.onPi": "{app} opened on the Pi's screen.",
   "find.placeholder": "Find — apps, settings or maths", "find.apps": "Apps", "find.settings": "Settings", "find.calc": "Calculator",

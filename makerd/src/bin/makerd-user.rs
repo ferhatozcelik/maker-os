@@ -64,6 +64,22 @@ fn main() {
         }
     }
 
+    // Ekran (labwc) 'makerd' hizmet hesabıyla çalışır; soketi /run/user/<makerd>/wayland-0 'video' grubuna
+    // açıktır (labwc/autostart). Kullanıcının programları (Python Qt/pygame, terminalden açılan uygulamalar)
+    // bu ekrana açılabilsin diye tam yol verilir; varsa mevcut değerlere dokunulmaz.
+    if std::env::var_os("WAYLAND_DISPLAY").is_none_or(|v| v.is_empty()) {
+        let disp = match util::uid_of("makerd") {
+            Some(m) if m != uid => format!("/run/user/{m}/wayland-0"),
+            _ => "wayland-0".into(),
+        };
+        for (k, v) in [("WAYLAND_DISPLAY", disp.as_str()), ("XDG_SESSION_TYPE", "wayland"), ("QT_QPA_PLATFORM", "wayland;xcb"), ("SDL_VIDEODRIVER", "wayland,x11"), ("GDK_BACKEND", "wayland,x11")] {
+            if std::env::var_os(k).is_none_or(|v| v.is_empty()) {
+                // SAFETY: henüz tek iş parçacığı var.
+                unsafe { std::env::set_var(k, v) };
+            }
+        }
+    }
+
     let rt = tokio::runtime::Builder::new_multi_thread().worker_threads(2).enable_all().build().unwrap_or_else(|e| fail(&e.to_string()));
     if let Err(e) = rt.block_on(run(uid, cfg)) {
         fail(&e.to_string());
