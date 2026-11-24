@@ -10,13 +10,10 @@
 #                     os/board/rpi4/rootfs-overlay/etc/rauc/keyring.pem. Sir yoksa surum YAYINLANMAZ
 #                     (imzasiz paketi cihazlar kurmaz).
 #
-# Iki yol:
-#   remaster (varsayilan, dakikalar): bir onceki surumun imaji indirilir; cekirdek ve Buildroot paketleri aynen
-#     kalir, kok dosya sistemine guncel makerd + kabuk + rootfs-overlay konur (os/debug/remaster.sh --release),
-#     imzali RAUC paketi uretilir. makerd, kabuk, eklenti ve yapilandirma degisiklikleri icin yeterlidir.
-#   full (yalniz elle: Actions > MakerOS surum > Run workflow > full): Buildroot'u bastan derler (saatler).
-#     Cekirdek, defconfig ya da os/package degisince gerekir. Ilk derleme 6 saatlik is sinirina yaklasabilir;
-#     dl/ ve ccache basarisiz iste de onbellege yazilir, "Re-run" ikinci denemede cok daha kisa surer.
+# Buildroot GitHub Actions'ta DERLENMEZ. Taban imaj yerelde derlenir ve "taban-rpi4" on surumune yuklenir:
+#   ./os/debug/build-base.sh   (cekirdek, defconfig ya da os/package degisince)
+# Bu is akisi o tabani indirir, kok dosya sistemine guncel makerd + kabuk + rootfs-overlay koyar
+# (os/debug/remaster.sh --release), RAUC paketini imzalar ve v<surum> olarak yayinlar (dakikalar).
 name: MakerOS surum
 
 on:
@@ -24,11 +21,6 @@ on:
     branches: [main]
     paths-ignore: ["**.md", "docs/**", "site/**", ".github/workflows/pages.yml", "flash.sh", "flash.ps1", "flash.cmd"]
   workflow_dispatch:
-    inputs:
-      full:
-        description: "Buildroot'u bastan derle (saatler). Bos: onceki surumden yeniden paketle (dakikalar)."
-        type: boolean
-        default: false
 
 permissions:
   contents: write
@@ -48,7 +40,6 @@ jobs:
 
   remaster:
     needs: test
-    if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.full) }}
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 60
     env:
@@ -66,11 +57,11 @@ jobs:
             echo "::notice::v$VERSION zaten yayinda; atlandi. Yeni surum icin os/VERSION'i artirin."
             exit 0
           fi
-          # Taban: Buildroot'un urettigi temiz imaj (on surum "taban-rpi4"; tam derleme gunceller). Yoksa son surum.
+          # Taban: yerelde Buildroot ile derlenen temiz imaj (on surum "taban-rpi4", os/debug/build-base.sh). Yoksa son surum.
           if gh release view taban-rpi4 >/dev/null 2>&1; then BASE=taban-rpi4; else
             BASE="$(gh release list --exclude-drafts --exclude-pre-releases -L 1 --json tagName --jq '.[0].tagName')"
           fi
-          [ -n "$BASE" ] || { echo "::error::Taban surum yok (ilk surum icin full derleme gerekir)"; exit 1; }
+          [ -n "$BASE" ] || { echo "::error::Taban surum yok (once yerelde os/debug/build-base.sh calistirin)"; exit 1; }
           echo "release=1" >> "$GITHUB_OUTPUT"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "base=$BASE" >> "$GITHUB_OUTPUT"
@@ -132,138 +123,3 @@ jobs:
             "os/out/makeros-$V-rpi4.img.xz" "os/out/makeros-$V-rpi4.img.xz.sha256" \
             "os/out/makeros-$V-rpi4.raucb" "os/out/makeros-$V-rpi4.raucb.sha256" \
             --title "MakerOS $V" --notes-file notes.md --target "$GITHUB_SHA"
-
-  image:
-    needs: test
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.full }}
-    runs-on: ubuntu-24.04-arm
-    timeout-minutes: 355
-    env:
-      GH_TOKEN: ${{ github.token }}
-      # actions/cache '..' iceren yollari reddeder; mutlak yol olmali.
-      BR_DIR: /home/runner/br
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Surum
-        id: v
-        run: |
-          VERSION="$(tr -d ' \r\n' < os/VERSION)"
-          echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' || { echo "::error::os/VERSION gecersiz: $VERSION"; exit 1; }
-          if gh release view "v$VERSION" >/dev/null 2>&1; then
-            echo "release=0" >> "$GITHUB_OUTPUT"
-            echo "::notice::v$VERSION zaten yayinda; derleme atlandi. Yeni surum icin os/VERSION'i artirin."
-          else
-            echo "release=1" >> "$GITHUB_OUTPUT"
-          fi
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-
-      - name: Imza anahtari
-        if: steps.v.outputs.release == '1'
-        env:
-          KEY: ${{ secrets.MAKEROS_RAUC_KEY }}
-        run: |
-          if [ -z "$KEY" ]; then
-            echo "::error::MAKEROS_RAUC_KEY sirri yok: imzali guncelleme paketi uretilemez, surum yayinlanmadi."
-            exit 1
-          fi
-          mkdir -p os/keys
-          printf '%s\n' "$KEY" > os/keys/rauc-key.pem
-          # Derleyici kap 'builder' (uid 1000) olarak okur; is makinesi tek kullanimliktir.
-          chmod 644 os/keys/rauc-key.pem
-          openssl pkey -in os/keys/rauc-key.pem -noout
-          # Anahtar depodaki acik sertifikayla eslesmeli (yoksa cihazlar paketi reddeder).
-          a=$(openssl pkey -in os/keys/rauc-key.pem -pubout | sha256sum)
-          b=$(openssl x509 -in os/board/rpi4/rootfs-overlay/etc/rauc/keyring.pem -pubkey -noout | sha256sum)
-          [ "$a" = "$b" ] || { echo "::error::MAKEROS_RAUC_KEY, keyring.pem ile eslesmiyor"; exit 1; }
-
-      - name: Disk alani
-        if: steps.v.outputs.release == '1'
-        run: |
-          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache /usr/local/share/boost /usr/share/swift || true
-          docker system prune -af >/dev/null || true
-          df -h /
-
-      - name: Onbellek (indirmeler + ccache) geri yukle
-        if: steps.v.outputs.release == '1'
-        id: cache
-        uses: actions/cache/restore@v6
-        with:
-          path: |
-            ${{ env.BR_DIR }}/dl
-            ${{ env.BR_DIR }}/ccache
-          key: br-${{ hashFiles('os/configs/*', 'os/build.sh') }}-${{ github.run_id }}
-          restore-keys: |
-            br-${{ hashFiles('os/configs/*', 'os/build.sh') }}-
-            br-
-
-      - name: Chromium paketi (Debian trixie arm64)
-        if: steps.v.outputs.release == '1'
-        run: |
-          mkdir -p os/out && chmod 777 os/out
-          docker run --rm -v "$PWD/os/chromium":/s:ro -v "$PWD/os/out":/out debian:trixie sh /s/build-bundle.sh
-          sudo chmod -R a+rwX os/out || true
-          ls -la os/out
-
-      - name: Imaj ve guncelleme paketi (Buildroot)
-        if: steps.v.outputs.release == '1'
-        # Is zaman asimindan (355) once dur ki onbellek kaydedilebilsin.
-        timeout-minutes: 320
-        env:
-          MAKEROS_VOLUME: ${{ env.BR_DIR }}
-          MAKEROS_HEAVY_JOBS: "4"
-        run: |
-          mkdir -p "$BR_DIR" && chmod 777 "$BR_DIR"
-          sudo chmod -R a+rwX "$BR_DIR" || true
-          ./os/build.sh build
-          ls -la os/out
-          test -f "os/out/makeros-${{ steps.v.outputs.version }}-rpi4.img.xz"
-          test -f "os/out/makeros-${{ steps.v.outputs.version }}-rpi4.raucb"
-
-      - name: Onbellek izinlerini duzelt
-        if: always() && steps.v.outputs.release == '1'
-        run: sudo chmod -R a+rwX "$BR_DIR" || true
-
-      - name: Onbellegi kaydet (basarisiz iste de)
-        if: always() && steps.v.outputs.release == '1'
-        uses: actions/cache/save@v6
-        with:
-          path: |
-            ${{ env.BR_DIR }}/dl
-            ${{ env.BR_DIR }}/ccache
-          key: br-${{ hashFiles('os/configs/*', 'os/build.sh') }}-${{ github.run_id }}
-
-      - name: Anahtari sil
-        if: always()
-        run: rm -f os/keys/rauc-key.pem
-
-      - name: Surum notlari
-        if: steps.v.outputs.release == '1'
-        run: |
-          V="${{ steps.v.outputs.version }}"
-          awk -v v="## $V" '$0==v{f=1;next} /^## /{f=0} f' CHANGELOG.md > notes.md
-          [ -s notes.md ] || echo "MakerOS $V" > notes.md
-          cat >> notes.md <<EOF
-
-          ---
-          **Kurulum:** \`makeros-$V-rpi4.img.xz\` dosyasini Raspberry Pi Imager ile SD karta yazin (Raspberry Pi 4/400).
-          **Guncelleme:** MakerOS cihazlari Ayarlar › Genel › Yazilim guncelleme ile kurar (\`.raucb\`, imzali).
-          EOF
-
-      - name: Release
-        if: steps.v.outputs.release == '1'
-        run: |
-          V="${{ steps.v.outputs.version }}"
-          gh release create "v$V" \
-            "os/out/makeros-$V-rpi4.img.xz" "os/out/makeros-$V-rpi4.img.xz.sha256" \
-            "os/out/makeros-$V-rpi4.raucb" "os/out/makeros-$V-rpi4.raucb.sha256" \
-            --title "MakerOS $V" --notes-file notes.md --target "$GITHUB_SHA"
-
-      - name: Temiz taban imaji (remaster icin)
-        if: steps.v.outputs.release == '1'
-        run: |
-          V="${{ steps.v.outputs.version }}"
-          gh release view taban-rpi4 >/dev/null 2>&1 || gh release create taban-rpi4 --prerelease --title "MakerOS taban imaji (Buildroot)" \
-            --notes "Yeniden paketleme (remaster) icin Buildroot'un urettigi temiz imaj. Kurulum icin kullanmayin; surumler: Releases."
-          for a in $(gh release view taban-rpi4 --json assets --jq '.assets[].name'); do gh release delete-asset taban-rpi4 "$a" -y; done
-          gh release upload taban-rpi4 "os/out/makeros-$V-rpi4.img.xz" "os/out/makeros-$V-rpi4.img.xz.sha256"

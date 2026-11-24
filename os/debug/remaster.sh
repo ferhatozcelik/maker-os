@@ -79,13 +79,6 @@ for f in $R/usr/lib/makeros/* $R/usr/bin/mos $R/usr/bin/docker $R/usr/lib/rauc/r
 	[ -f "$f" ] && [ "$(basename "$f")" != debug-image ] && chmod 0755 "$f"
 done
 
-# Taban imajda olmayan Buildroot paketleri (os/debug/br-extra.sh → os/out/extra-rootfs.tar): Buildroot'u
-# baştan derlemeden yeni paketleri (ör. Xvfb, Tcl/Tk, tkinter) eklemek için. Var olan dosyaların üzerine yazılmaz.
-if [ -f /out/extra-rootfs.tar ]; then
-	echo "ek paketler: extra-rootfs.tar"
-	tar -C $R -xf /out/extra-rootfs.tar --no-same-owner --skip-old-files
-fi
-
 # makerd + makeros-ai (os/package/makerd ile aynı yerleşim)
 for b in makerd makerd-priv makerd-user makeros-ai; do install -m 0755 /target/release/$b $R/usr/bin/$b; done
 for u in makerd.service makerd-priv.socket makerd-priv.service makerd-user@.service; do
