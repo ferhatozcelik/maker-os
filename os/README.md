@@ -74,7 +74,7 @@ nedeniyle); `.xz` hâli çok daha küçüktür.
 ## Açılış akışı
 
 1. **EEPROM** → `MOSCFG/autoboot.txt` okunur: normalde `[all] boot_partition=2`
-   (BOOT_A); `reboot "0 tryboot"` ile tek seferlik `[tryboot] boot_partition=3`.
+   (BOOT_A); `systemctl reboot --reboot-argument="0 tryboot"` ile tek seferlik `[tryboot] boot_partition=3`.
 2. **start4.elf** → `config.txt` (`vc4-kms-v3d,cma-256`, kamera/ekran otomatik
    algılama, i2c/spi açık, `arm_boost=1`, hız aşırtma yok) → `kernel8.img`.
 3. **Çekirdek** (initramfs yok) → `root=PARTUUID=4d4f5332-05 rootfstype=erofs ro`

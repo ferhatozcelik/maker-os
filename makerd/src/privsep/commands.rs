@@ -179,8 +179,9 @@ impl Commands {
         let a: PowerArgs = decode(&raw)?;
         if a.action == "tryboot" {
             // Pi firmware'e tek seferlik deneme açılışı bayrağı: reboot argümanı "0 tryboot".
+            // systemd 258 konumsal argümanı ("systemctl reboot ARG") kaldırdı; yalnız --reboot-argument.
             nix::unistd::sync();
-            let st = tokio::process::Command::new("/usr/bin/systemctl").args(["reboot", "0 tryboot"]).status().await?;
+            let st = tokio::process::Command::new("/usr/bin/systemctl").args(["reboot", "--reboot-argument=0 tryboot"]).status().await?;
             if !st.success() {
                 return Err(PrivError::new("internal", format!("systemctl reboot: {st}")));
             }

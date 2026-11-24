@@ -9,7 +9,7 @@
 #   set-state <A|B> good|bad good + su an tryboot ile o slottaysak: [all]'i ona cevir
 #   get-current              -> A|B   (cekirdek komut satiri makeros.slot=)
 #
-# Akis: rauc install -> set-primary B -> makerd "systemctl reboot '0 tryboot'"
+# Akis: rauc install -> set-primary B -> makerd "systemctl reboot --reboot-argument='0 tryboot'"
 #  -> firmware [tryboot] bolumunden (B) acar -> boot-complete -> mark-good
 #  -> set-state B good -> [all]=B. Deneme acilisi takilir/coker ise bekci kopek
 #  sifirlar; tryboot bayragi tek seferlik oldugu icin firmware [all]'a (A) doner.
