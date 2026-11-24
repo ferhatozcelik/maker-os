@@ -60,6 +60,9 @@ zip = { version = "9", default-features = false, features = ["deflate"] }
 jpeg-encoder = "0.7"
 gpiocdev = "0.8"
 include_dir = "0.7"
+# Pencereli kullanıcı programları (Xvfb köprüsü, src/xwin): saf Rust X istemcisi + kayıpsız sıkıştırma.
+x11rb = { version = "0.13", default-features = false, features = ["composite", "damage", "xfixes", "xtest"] }
+flate2 = { version = "1", default-features = false, features = ["zlib-rs"] }
 
 [lints.rust]
 unsafe_op_in_unsafe_fn = "deny"

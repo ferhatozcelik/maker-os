@@ -39,17 +39,19 @@ export function mountDock(root) {
     const ws = S.wm.byApp(app.id), pins = pinned(), isPin = pins.includes(app.id);
     menu([
       ...ws.map(w => ({ label: w.title, checked: w === S.wm.focused, icon: w.min ? "minus" : null, action: () => S.wm.focus(w) })), ws.length ? "-" : null,
-      !app.single || !ws.length ? { label: ws.length ? t("dock.newWindow") : t("dock.open"), action: () => S.launch(app, { force: !!ws.length }) } : null,
-      { label: isPin ? t("dock.remove") : t("dock.keep"), action: () => { setPref("dockApps", isPin ? pins.filter(i => i !== app.id) : [...pins, app.id]); render(); } },
+      app.x11 ? null : !app.single || !ws.length ? { label: ws.length ? t("dock.newWindow") : t("dock.open"), action: () => S.launch(app, { force: !!ws.length }) } : null,
+      app.x11 ? null : { label: isPin ? t("dock.remove") : t("dock.keep"), action: () => { setPref("dockApps", isPin ? pins.filter(i => i !== app.id) : [...pins, app.id]); render(); } },
       ...(ws.length ? ["-", { label: t("dock.hide"), action: () => S.wm.hideApp(app.id) }, { label: t("dock.quit"), action: () => S.wm.quitApp(app.id) }] : []),
     ].filter(Boolean), { ...rectOf(b), y: rectOf(b).y - 8 }, { owner: inner, cls: "up" });
   }
 
   function render() {
-    const pins = pinned(), running = [...new Set(S.wm.list().map(w => w.app.id))].filter(id => !pins.includes(id) && appById(id));
+    // Çalışan uygulamalar: kayıtlı olmayanlar da (yerel X11 programları) pencerelerinin uygulama nesnesiyle.
+    const appOf = id => appById(id) || S.wm.byApp(id)[0]?.app;
+    const pins = pinned(), running = [...new Set(S.wm.list().map(w => w.app.id))].filter(id => !pins.includes(id) && appOf(id));
     items.clear();
     const lp = item({ id: "launchpad", name: t("dock.apps"), icon: themeIcon(pref("look"), "launchpad", "/shell/icons/launchpad.svg") }, true);
-    const kids = [lp, ...pins.map(id => item(appById(id))), ...(running.length ? [h("div.dsep")] : []), ...running.map(id => item(appById(id)))];
+    const kids = [lp, ...pins.map(id => item(appById(id))), ...(running.length ? [h("div.dsep")] : []), ...running.map(id => item(appOf(id)))];
     // Web arayüzüne geçiş (bkz. S.webMode).
     kids.push(h("div.dsep"), h("button.di.mode", { "aria-label": t("dock.web"), title: t("dock.web"), onclick: () => S.webMode() },
       h("img", { src: themeIcon(pref("look"), "web", "/shell/icons/web.svg"), alt: "", draggable: "false" }), h("span.tip", t("dock.web"))));

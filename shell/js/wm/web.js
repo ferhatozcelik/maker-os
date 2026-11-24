@@ -27,6 +27,8 @@ class MkWindow extends HTMLElement {
     this.frame.addEventListener("load", () => this.#bind());
     // Dış site (ör. Konya HackerSpace): başlık çubuğu için ayrı şerit; içerik onun altında başlar.
     try { if (new URL(win.app.url, location.href).origin !== location.origin) this.classList.add("ext"); } catch { /* geçersiz adres */ }
+    // Yerel (X11) program penceresi: başlık şeridi ayrı, içerik altında başlar (programın kendi üst çubuğu yok).
+    if (win.app.x11) this.classList.add("ext", "xwin");
     this.append(tb, h("div.body", this.frame, h("div.spin", { html: icon("loader-circle", 22) })));
     for (const d of ["n", "s", "e", "w", "ne", "nw", "se", "sw"]) this.append(h("div.rz", { "data-d": d, onpointerdown: e => this.#resize(e, d) }));
     this.addEventListener("pointerdown", () => wm.focus(win), true);
@@ -116,7 +118,7 @@ class MkWindow extends HTMLElement {
     if (e.button !== 0 || this.wm.mobile) return;
     e.stopPropagation(); e.preventDefault();
     const wm = this.wm, win = this.win, a = wm.area(), s = { ...wm.rectOf(win) }, sx = e.clientX, sy = e.clientY;
-    const minW = 360, minH = 220, live = document.documentElement.dataset.fx === "full";
+    const minW = win.app.minW ?? 360, minH = win.app.minH ?? 220, live = document.documentElement.dataset.fx === "full";
     let r = s, raf = 0, ghost = null;
     if (!live) { ghost = h("div.rz-ghost"); this.parentNode.append(ghost); ghost.style.zIndex = win.z + 1; this.#ghost(ghost, s); }
     const tgt = e.target; tgt.setPointerCapture(e.pointerId);

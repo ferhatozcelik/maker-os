@@ -81,6 +81,104 @@ pub async fn term_ws(State(s): State<S>, h: HeaderMap, Path(id): Path<String>, Q
     }))
 }
 
+// --- pencereli programlar (X köprüsü) ----------------------------------------
+
+type Upgrade = Result<WebSocketUpgrade, axum::extract::ws::rejection::WebSocketUpgradeRejection>;
+
+/// Denetim akışı: pencere listesi ve olaylar (açıldı/kapandı/başlık/boyut).
+pub async fn xwin_ctl(State(s): State<S>, h: HeaderMap, up: Upgrade) -> R {
+    xwin_open(s, h, up, String::new()).await
+}
+
+/// Tek pencerenin görüntü akışı ve girdisi.
+pub async fn xwin_win(State(s): State<S>, h: HeaderMap, Path(id): Path<String>, up: Upgrade) -> R {
+    if id.is_empty() || id.len() > 12 || !id.bytes().all(|b| b.is_ascii_digit()) {
+        return Err(ApiError::invalid("Geçersiz pencere."));
+    }
+    xwin_open(s, h, up, id).await
+}
+
+async fn xwin_open(s: S, h: HeaderMap, up: Upgrade, path: String) -> R {
+    let sess = session_of(&s, &h)?;
+    if !origin_ok(&h) {
+        return Err(ApiError::forbidden("Geçersiz Origin."));
+    }
+    let up = upgrade_of(up.ok())?;
+    let agent = s.d.agent.clone().ok_or_else(|| ApiError::unavailable("Kullanıcı hizmeti yok."))?;
+    let (r, w) = agent.stream(&sess.user, crate::termproc::Open { mode: "xwin".into(), path, ..Default::default() }).await?;
+    Ok(up.max_message_size(1 << 20).on_upgrade(move |ws| xwin_pump(s, ws, r, w)))
+}
+
+/// WebSocket ↔ makerd-user çerçeveleri ('d': bir ileti; '{' ile başlayan metin).
+async fn xwin_pump(s: S, ws: WebSocket, mut r: Box<dyn tokio::io::AsyncRead + Send + Unpin>, mut w: Box<dyn tokio::io::AsyncWrite + Send + Unpin>) {
+    use crate::termproc::{read_frame, write_frame, FRAME_DATA, FRAME_HANGUP};
+    let (mut wtx, mut wrx) = ws.split();
+    let up = async {
+        while let Some(Ok(m)) = wrx.next().await {
+            let b: Bytes = match m {
+                Message::Text(t) => Bytes::copy_from_slice(t.as_bytes()),
+                Message::Binary(b) => b,
+                Message::Close(_) => break,
+                _ => continue,
+            };
+            if b.len() > 64 << 10 || write_frame(&mut w, FRAME_DATA, &b).await.is_err() {
+                break;
+            }
+        }
+        let _ = write_frame(&mut w, FRAME_HANGUP, b"").await;
+    };
+    // read_frame iptale dayanıklı değil: okuma ayrı görevde, çerçeveler kanaldan gelir.
+    let (ftx, mut frx) = tokio::sync::mpsc::channel(32);
+    let reader = tokio::spawn(async move {
+        loop {
+            let f = read_frame(&mut r).await;
+            let end = !matches!(f, Ok((FRAME_DATA, _)));
+            if ftx.send(f).await.is_err() || end {
+                break;
+            }
+        }
+    });
+    let down = async {
+        let mut ping = tokio::time::interval(Duration::from_secs(25));
+        ping.tick().await;
+        loop {
+            tokio::select! {
+                f = frx.recv() => {
+                    let Some(f) = f else { break };
+                    let m = match f {
+                        Ok((FRAME_DATA, p)) if p.first() == Some(&b'{') => match String::from_utf8(p) {
+                            Ok(t) => Message::Text(t.into()),
+                            Err(_) => continue,
+                        },
+                        Ok((FRAME_DATA, p)) => Message::Binary(p.into()),
+                        Ok((crate::termproc::FRAME_ERROR, p)) => {
+                            let msg = serde_json::json!({"t": "error", "message": String::from_utf8_lossy(&p)}).to_string();
+                            let _ = wtx.send(Message::Text(msg.into())).await;
+                            break;
+                        }
+                        Ok(_) | Err(_) => break,
+                    };
+                    if !matches!(tokio::time::timeout(Duration::from_secs(20), wtx.send(m)).await, Ok(Ok(()))) {
+                        break;
+                    }
+                }
+                _ = ping.tick() => {
+                    if !matches!(tokio::time::timeout(Duration::from_secs(10), wtx.send(Message::Ping(Bytes::new()))).await, Ok(Ok(()))) {
+                        break;
+                    }
+                }
+                _ = s.stop.cancelled() => break,
+            }
+        }
+        let _ = wtx.send(Message::Close(None)).await;
+    };
+    tokio::select! {
+        _ = up => {}
+        _ = down => {}
+    }
+    reader.abort();
+}
+
 // --- events ----------------------------------------------------------------
 
 pub async fn events_ws(State(s): State<S>, h: HeaderMap, up: Result<WebSocketUpgrade, axum::extract::ws::rejection::WebSocketUpgradeRejection>) -> R {

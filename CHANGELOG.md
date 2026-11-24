@@ -28,6 +28,16 @@ MakerOS'un ilk kararlı sürümü: Buildroot ile Linux çekirdeği üzerine sıf
 
 ### Arayüz
 
+- **Pencereli programlar masaüstünde kendi penceresinde:** tkinter, PySide6/Qt, pygame, OpenCV `imshow` ve GTK
+  programları (Terminal'den ya da Python Yöneticisi'nden başlatılan) web masaüstünde gerçek bir pencere olarak
+  açılır; menüler, açılır listeler, iletişim kutuları, klavye (Türkçe karakterler dahil), fare tekerleği,
+  yeniden boyutlandırma ve kapatma çalışır. Programlar kullanıcıya ait ekransız bir X sunucusunda (Xvfb)
+  çalışır; `makerd-user` her pencereyi ayrı yakalayıp yalnız değişen bölgeleri gönderir (kayıpsız; video
+  benzeri içerikte geçici JPEG). VNC değildir ve HDMI takılı olsun olmasın aynı çalışır. Sistem Python'una
+  `tkinter` eklendi
+- **Düzeltme:** `/run/user` 1777 izniyle oluşturulduğu için kullanıcı oturumu açılamıyor, Pi'nin kendi
+  ekranındaki kabuk (labwc + cog) hiç başlamıyordu
+
 - **Ekran** (pencereli masaüstü, raf, masaüstü widget kartları) ve **Web** (telefona uygun) görünümleri,
   üstte *Web | Ekran* geçişi; kurulabilir web uygulaması (PWA), telefonda alt sekme çubuğu
 - **Yerleşik Tarayıcı ve Ters Vekil (`/api/v1/browse`):** Google Arama entegrasyonu, yer imleri ve sekme yönetimi,

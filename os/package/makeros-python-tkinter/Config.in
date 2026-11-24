@@ -1,0 +1,9 @@
+config BR2_PACKAGE_MAKEROS_PYTHON_TKINTER
+	bool "makeros-python-tkinter"
+	depends on BR2_PACKAGE_PYTHON3
+	depends on BR2_PACKAGE_XORG7
+	select BR2_PACKAGE_TK
+	help
+	  Sistem Python'u icin tkinter: CPython kaynagindaki _tkinter
+	  modulu Tcl/Tk'ye karsi derlenir ve Lib/tkinter ile kurulur
+	  (Buildroot python3 paketi tkinter'i kurmaz).

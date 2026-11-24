@@ -294,6 +294,8 @@ async function start() {
   mountMenubar($("#menubar"));
   mountDock($("#dock"));
   initNotifications();
+  // Pi'de çalışan pencereli programlar (tkinter, PySide6, pygame, OpenCV) masaüstünde kendi pencerelerinde.
+  import("./xwin-host.js").then(m => { S.xwin = m.startXHost(wm, $("#windows")); }).catch(e => console.warn("xwin", e));
   S.on("launchpad", launchpad); S.on("find", find);
   started = true;
   if (mq.matches) layout(); // mobil başlatıcıyı yükle

@@ -177,6 +177,10 @@ html[data-layout=mobile] .desktop-only { display: none !important; }
 /* Dış site pencereleri: başlık çubuğu düz şerit, site altında */
 mk-window.ext .body { top: var(--mk-titlebar-height, 38px); border-top-left-radius: 0; border-top-right-radius: 0; background: #fff; }
 mk-window.ext .tb { background: var(--bg-window); border-bottom: .5px solid var(--separator); }
+/* Yerel (X11) program penceresi ve açılır menüleri (bkz. js/xwin-host.js) */
+mk-window.xwin .body { background: #ececec; }
+:root[data-theme="dark"] mk-window.xwin .body { background: #1f1f22; }
+.xpop { position: absolute; top: 0; left: 0; z-index: 1000000; pointer-events: auto; touch-action: none; outline: none; box-shadow: 0 6px 18px rgba(0,0,0,.28); border-radius: 2px; }
 /* Tema durum göstergesi (ör. KHS kapısı) */
 .mb-door { gap: 6px; font-weight: 600; }
 .mb-door .dd { width: 8px; height: 8px; border-radius: 50%; background: #8a8f99; }

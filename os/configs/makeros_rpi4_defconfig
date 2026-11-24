@@ -230,3 +230,24 @@ BR2_PACKAGE_MAKEROS_LLAMA_CPP=y
 BR2_PACKAGE_MAKEROS_NODE=y
 BR2_PACKAGE_FONT_INTER=y
 BR2_PACKAGE_CHROMIUM_BIN=y
+
+# --- Pencereli uygulamalar (tkinter, PySide6/Qt, pygame, OpenCV imshow) -----------------
+# Kullanici programlari ekransiz bir X sunucusunda (Xvfb) calisir; makerd-user her pencereyi
+# ayri ayri yakalayip web kabuga <mk-window> olarak aktarir (VNC degil: pencere basina, yalniz
+# degisen bolgeler). HDMI takili olsun olmasin ayni calisir.
+BR2_PACKAGE_XORG7=y
+BR2_PACKAGE_XSERVER_XORG_SERVER=y
+BR2_PACKAGE_XSERVER_XORG_SERVER_KDRIVE=y
+BR2_PACKAGE_XSERVER_XORG_SERVER_XVFB=y
+BR2_PACKAGE_XAPP_XKBCOMP=y
+BR2_PACKAGE_XLIB_LIBXCOMPOSITE=y
+BR2_PACKAGE_XLIB_LIBXTST=y
+BR2_PACKAGE_XLIB_LIBSM=y
+BR2_PACKAGE_XCB_UTIL_CURSOR=y
+BR2_PACKAGE_XCB_UTIL_IMAGE=y
+BR2_PACKAGE_XCB_UTIL_KEYSYMS=y
+BR2_PACKAGE_XCB_UTIL_RENDERUTIL=y
+BR2_PACKAGE_XCB_UTIL_WM=y
+BR2_PACKAGE_TCL=y
+BR2_PACKAGE_TK=y
+BR2_PACKAGE_MAKEROS_PYTHON_TKINTER=y

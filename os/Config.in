@@ -9,5 +9,6 @@ source "$BR2_EXTERNAL_MAKEROS_PATH/package/makeros-node/Config.in"
 source "$BR2_EXTERNAL_MAKEROS_PATH/package/font-inter/Config.in"
 source "$BR2_EXTERNAL_MAKEROS_PATH/package/labwc/Config.in"
 source "$BR2_EXTERNAL_MAKEROS_PATH/package/chromium-bin/Config.in"
+source "$BR2_EXTERNAL_MAKEROS_PATH/package/makeros-python-tkinter/Config.in"
 
 endmenu

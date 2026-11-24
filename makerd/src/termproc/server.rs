@@ -31,6 +31,8 @@ pub struct Server {
     /// Dosya işlemlerinde göreli yolların kökü (kullanıcının ev dizini).
     pub home: String,
     active: AtomicUsize,
+    /// Pencereli programlar için X köprüsü (Xvfb kurulu değilse None).
+    xwin: Option<Arc<crate::xwin::Bridge>>,
 }
 
 /// Etkin bağlantı sayacını düşürür.
@@ -47,7 +49,12 @@ type Writer = OwnedWriteHalf;
 
 impl Server {
     pub fn new(allowed: HashSet<u32>, command: Command, max: usize, home: String) -> Self {
-        Self { allowed, command, max, home, active: AtomicUsize::new(0) }
+        Self { allowed, command, max, home, active: AtomicUsize::new(0), xwin: None }
+    }
+
+    pub fn with_xwin(mut self, b: Option<Arc<crate::xwin::Bridge>>) -> Self {
+        self.xwin = b;
+        self
     }
 
     /// Bağlantıları `stop` true olana kadar kabul eder. Durunca açık terminaller
@@ -105,7 +112,14 @@ impl Server {
             Ok(Ok((FRAME_OPEN, p))) => serde_json::from_slice::<Open>(&p).unwrap_or_default(),
             _ => return,
         };
-        if op.mode.is_empty() {
+        if op.mode == "xwin" {
+            // Pencere akışları terminal sınırına sayılmaz (her pencere ve tarayıcı için bir akış).
+            drop(_slot);
+            match &self.xwin {
+                Some(b) => crate::xwin::stream::serve(b.clone(), r, w, &op.path).await,
+                None => fail(&mut w, "Pencereli uygulama desteği (Xvfb) bu sistemde kurulu değil.").await,
+            }
+        } else if op.mode.is_empty() {
             self.serve_pty(r, w, op, uid, stop).await;
         } else {
             self.serve_op(r, w, op, stop).await;

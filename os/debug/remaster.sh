@@ -31,7 +31,7 @@ KEY_MOUNT=()
 docker run --rm -i \
 	-v "$ROOT":/src:ro -v "$OUT":/out -v "$(cd "$(dirname "$BASE")" && pwd)":/base:ro -v mk-remaster:/r -v mk-target:/target:ro -v mk-llama:/llama:ro \
 	${KEY_MOUNT[@]+"${KEY_MOUNT[@]}"} \
-	-e VERSION="$VERSION" -e RELEASE="$RELEASE" -e BASE="/base/$(basename "$BASE")" -e PUBKEY="$([ -r "$PUBKEY" ] && cat "$PUBKEY" || true)" \
+	-e VERSION="$VERSION" -e RELEASE="$RELEASE" -e MKBUNDLE="${MAKEROS_BUNDLE:-0}" -e RAUC_CERT_FILE="${MAKEROS_RAUC_CERT_IN:-}" -e BASE="/base/$(basename "$BASE")" -e PUBKEY="$([ -r "$PUBKEY" ] && cat "$PUBKEY" || true)" \
 	debian:trixie-slim bash -s <<'EOS'
 set -euo pipefail
 apt-get update -qq >/dev/null
@@ -78,6 +78,13 @@ fi
 for f in $R/usr/lib/makeros/* $R/usr/bin/mos $R/usr/bin/docker $R/usr/lib/rauc/rpi-tryboot-backend; do
 	[ -f "$f" ] && [ "$(basename "$f")" != debug-image ] && chmod 0755 "$f"
 done
+
+# Taban imajda olmayan Buildroot paketleri (os/debug/br-extra.sh → os/out/extra-rootfs.tar): Buildroot'u
+# baştan derlemeden yeni paketleri (ör. Xvfb, Tcl/Tk, tkinter) eklemek için. Var olan dosyaların üzerine yazılmaz.
+if [ -f /out/extra-rootfs.tar ]; then
+	echo "ek paketler: extra-rootfs.tar"
+	tar -C $R -xf /out/extra-rootfs.tar --no-same-owner --skip-old-files
+fi
 
 # makerd + makeros-ai (os/package/makerd ile aynı yerleşim)
 for b in makerd makerd-priv makerd-user makeros-ai; do install -m 0755 /target/release/$b $R/usr/bin/$b; done
@@ -162,7 +169,7 @@ rm -f $IMG
 (cd /out && sha256sum $IMG.xz > $IMG.xz.sha256)
 echo "hazır: os/out/$IMG.xz"
 
-if [ "$RELEASE" = 1 ] && [ -f /rauc-key.pem ]; then
+if { [ "$RELEASE" = 1 ] || [ "${MKBUNDLE:-0}" = 1 ]; } && [ -f /rauc-key.pem ]; then
 	echo "RAUC paketi üretiliyor…"
 	BDIR="$(mktemp -d)"
 	cp new.erofs "$BDIR/rootfs.img"
@@ -186,8 +193,8 @@ filename=rootfs.img
 filename=boot.vfat
 hooks=post-install
 MANIFEST
-	RAUC_CERT="/src/os/board/rpi4/rootfs-overlay/etc/rauc/keyring.pem"
-	BUNDLE="makeros-${VERSION}-rpi4.raucb"
+	RAUC_CERT="${RAUC_CERT_FILE:-/src/os/board/rpi4/rootfs-overlay/etc/rauc/keyring.pem}"
+	BUNDLE="makeros-${VERSION}-rpi4$([ "$RELEASE" = 1 ] || echo -debug).raucb"
 	rm -f "/out/$BUNDLE" "/out/$BUNDLE.sha256"
 	rauc bundle --cert="$RAUC_CERT" --key=/rauc-key.pem "$BDIR" "/out/$BUNDLE"
 	rauc info --keyring="$RAUC_CERT" "/out/$BUNDLE" >/dev/null

@@ -38,6 +38,7 @@ pub mod term;
 pub mod termproc;
 pub mod uagent;
 pub mod util;
+pub mod xwin;
 
 /// Sürüm: derlemede `MAKEROS_VERSION` ortam değişkeni (os/VERSION), yoksa paket sürümü.
 pub const VERSION: &str = match option_env!("MAKEROS_VERSION") {

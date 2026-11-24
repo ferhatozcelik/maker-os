@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pencere</title>
+<style>
+html, body { margin: 0; height: 100%; overflow: hidden; background: #ececec; }
+@media (prefers-color-scheme: dark) { html, body { background: #1f1f22; } }
+canvas { display: block; outline: none; touch-action: none; user-select: none; -webkit-user-select: none; }
+.gone { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; font: 13px system-ui, sans-serif; color: #888; background: inherit; }
+body.closed .gone { display: flex; }
+</style>
+</head>
+<body>
+<canvas></canvas>
+<div class="gone"></div>
+<script type="module" src="xwin.js"></script>
+</body>
+</html>

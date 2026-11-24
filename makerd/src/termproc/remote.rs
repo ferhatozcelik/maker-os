@@ -165,6 +165,11 @@ impl RemoteOp {
         Ok(Self { r: OpReader { r }, w: OpWriter { w } })
     }
 
+    /// Ham çerçeveli akış (xwin: her 'd' çerçevesi bir WebSocket iletisi).
+    pub fn into_io(self) -> (BufReader<OwnedReadHalf>, OwnedWriteHalf) {
+        (self.r.r, self.w.w)
+    }
+
     /// Girdi gönderirken çıktıyı aynı anda okumak için ikiye böler.
     pub fn split(self) -> (OpReader, OpWriter) {
         (self.r, self.w)

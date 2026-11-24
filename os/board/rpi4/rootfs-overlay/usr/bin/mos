@@ -34,7 +34,7 @@ box_devices() {
 
 box_create() {
 	name="$1"
-	mkdir -m 1777 -p /run/user 2>/dev/null || true
+	mkdir -m 0755 -p /run/user 2>/dev/null || true
 	mkdir -m 0700 -p "/run/user/$(id -u)" 2>/dev/null || true
 	echo "mos: '${name}' kutusu olusturuluyor (${BOX_IMAGE})..." >&2
 	userns_opt=""

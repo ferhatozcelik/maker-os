@@ -5,7 +5,7 @@
 //! dışında çalıştığı için terminalde sudo çalışır.
 
 use makerd::termproc::{login, server::Server};
-use makerd::{flags::Flags, logging, sd, util};
+use makerd::{flags::Flags, logging, sd, util, xwin};
 use std::collections::HashSet;
 use std::os::unix::fs::{FileTypeExt, MetadataExt, PermissionsExt};
 use std::path::{Path, PathBuf};
@@ -64,10 +64,22 @@ fn main() {
         }
     }
 
-    // Ekran (labwc) 'makerd' hizmet hesabıyla çalışır; soketi /run/user/<makerd>/wayland-0 'video' grubuna
-    // açıktır (labwc/autostart). Kullanıcının programları (Python Qt/pygame, terminalden açılan uygulamalar)
-    // bu ekrana açılabilsin diye tam yol verilir; varsa mevcut değerlere dokunulmaz.
-    if std::env::var_os("WAYLAND_DISPLAY").is_none_or(|v| v.is_empty()) {
+    // Pencereli programlar (tkinter, PySide6/Qt, pygame, OpenCV): Xvfb kuruluysa kullanıcının kendi
+    // ekransız X ekranına açılır; makerd-user her pencereyi web kabuğuna <mk-window> olarak aktarır
+    // (src/xwin). Terminal ve Python Yöneticisi bu ortamı devralır. Kullanıcı DISPLAY'i kendisi
+    // vermişse dokunulmaz.
+    let rd = std::env::var("XDG_RUNTIME_DIR").ok().filter(|v| !v.is_empty()).unwrap_or_else(|| "/tmp".into());
+    let display = if std::env::var_os("DISPLAY").is_none_or(|v| v.is_empty()) { xwin::Display::for_uid(uid, Path::new(&rd)) } else { None };
+    if let Some(d) = &display {
+        for (k, v) in d.env() {
+            // SAFETY: henüz tek iş parçacığı var.
+            unsafe { std::env::set_var(k, v) };
+        }
+        // Wayland'e (Pi'nin labwc ekranına) değil, köprüye: araç takımları WAYLAND_DISPLAY'i X11'e tercih eder.
+        // SAFETY: henüz tek iş parçacığı var.
+        unsafe { std::env::remove_var("WAYLAND_DISPLAY") };
+    } else if std::env::var_os("WAYLAND_DISPLAY").is_none_or(|v| v.is_empty()) {
+        // Xvfb yok: programlar Pi'nin kendi ekranına (labwc, 'makerd' hesabı; soket 'video' grubuna açık).
         let disp = match util::uid_of("makerd") {
             Some(m) if m != uid => format!("/run/user/{m}/wayland-0"),
             _ => "wayland-0".into(),
@@ -81,7 +93,7 @@ fn main() {
     }
 
     let rt = tokio::runtime::Builder::new_multi_thread().worker_threads(2).enable_all().build().unwrap_or_else(|e| fail(&e.to_string()));
-    if let Err(e) = rt.block_on(run(uid, cfg)) {
+    if let Err(e) = rt.block_on(run(uid, cfg, display)) {
         fail(&e.to_string());
     }
 }
@@ -91,7 +103,7 @@ fn fail(msg: &str) -> ! {
     std::process::exit(1);
 }
 
-async fn run(uid: u32, cfg: Config) -> std::io::Result<()> {
+async fn run(uid: u32, cfg: Config, display: Option<xwin::Display>) -> std::io::Result<()> {
     let mut allowed: HashSet<u32> = [0, uid].into();
     for name in cfg.allow.split(',').map(str::trim).filter(|n| !n.is_empty()) {
         match util::uid_of(name) {
@@ -104,7 +116,8 @@ async fn run(uid: u32, cfg: Config) -> std::io::Result<()> {
 
     let path = PathBuf::from(&cfg.dir).join(format!("{uid}.sock"));
     let ln = listen(&path, uid)?;
-    let srv = Arc::new(Server::new(allowed, login::login("/etc/passwd", &cfg.shell), cfg.max, login::home_of("/etc/passwd")));
+    let bridge = display.map(xwin::start);
+    let srv = Arc::new(Server::new(allowed, login::login("/etc/passwd", &cfg.shell), cfg.max, login::home_of("/etc/passwd")).with_xwin(bridge));
 
     let (stop_tx, stop_rx) = tokio::sync::watch::channel(false);
     tokio::spawn(async move {

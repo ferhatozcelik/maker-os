@@ -31,6 +31,23 @@ pub trait Agent: Send + Sync {
     fn read<'a>(&'a self, user: &'a str, path: &'a str, out: mpsc::Sender<Bytes>) -> BoxFuture<'a, ApiResult<()>>;
     /// Akışı dosyaya (atomik) yazar.
     fn write<'a>(&'a self, user: &'a str, path: &'a str, input: Upload) -> BoxFuture<'a, ApiResult<()>>;
+    /// Çift yönlü çerçeveli akış (pencereli programlar, `Open { mode: "xwin" }`).
+    fn stream<'a>(&'a self, _user: &'a str, _o: Open) -> BoxFuture<'a, ApiResult<Stream>> {
+        Box::pin(async { Err(ApiError::unavailable("Pencereli uygulama desteği kullanılamıyor.")) })
+    }
+}
+
+/// Çerçeveli akışın iki yarısı.
+pub type Stream = (Box<dyn tokio::io::AsyncRead + Send + Unpin>, Box<dyn tokio::io::AsyncWrite + Send + Unpin>);
+
+/// Süreç içi X köprüsüne akış (mock önizleme; gerçek sistemde makerd-user'dadır).
+fn local_stream(path: String) -> ApiResult<Stream> {
+    let b = crate::xwin::local().ok_or_else(|| ApiError::unavailable("Pencereli uygulama desteği (Xvfb) kurulu değil."))?;
+    let (a, z) = tokio::io::duplex(1 << 21);
+    let (ar, aw) = tokio::io::split(a);
+    let (zr, zw) = tokio::io::split(z);
+    tokio::spawn(async move { crate::xwin::stream::serve(b, zr, zw, &path).await });
+    Ok((Box::new(ar), Box::new(aw)))
 }
 
 /// Exec'i çalıştırıp tüm çıktıyı ve çıkış kodunu döner.
@@ -133,6 +150,10 @@ impl Agent for Local {
             }
             w.commit().map_err(fs_api)
         })
+    }
+
+    fn stream<'a>(&'a self, _user: &'a str, o: Open) -> BoxFuture<'a, ApiResult<Stream>> {
+        Box::pin(async move { local_stream(o.path) })
     }
 }
 
@@ -248,6 +269,18 @@ impl Agent for Remote {
             }
             op.close_input().await?;
             op.drain().await.map(|_| ()).map_err(remote_err)
+        })
+    }
+
+    fn stream<'a>(&'a self, user: &'a str, o: Open) -> BoxFuture<'a, ApiResult<Stream>> {
+        Box::pin(async move {
+            match self.dial(user, o.clone()).await? {
+                Dialed::Fallback(fb) => fb.stream(user, o).await,
+                Dialed::Op(op) => {
+                    let (r, w) = op.into_io();
+                    Ok((Box::new(r) as Box<dyn tokio::io::AsyncRead + Send + Unpin>, Box::new(w) as Box<dyn tokio::io::AsyncWrite + Send + Unpin>))
+                }
+            }
         })
     }
 }

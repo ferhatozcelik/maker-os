@@ -31,8 +31,8 @@ export class WindowManager extends Emitter {
     }
     const b = this.backends[app.kind] || this.backends.web;
     const win = { id: "w" + ++seq, app, title: app.name, path: o.path || "", state: o.state || "normal", min: !!o.min, hidden: false, z: ++this.z, focused: false };
-    win.rect = this.#fit(o.rect || store.get("wm.rect." + app.id) || this.#defaultRect(app));
-    if (o.rect == null && this.byApp(app.id).length) win.rect = this.#fit({ ...win.rect, x: win.rect.x + 26 * this.byApp(app.id).length, y: win.rect.y + 26 * this.byApp(app.id).length });
+    win.rect = this.#fit(o.rect || store.get("wm.rect." + app.id) || this.#defaultRect(app), app);
+    if (o.rect == null && this.byApp(app.id).length) win.rect = this.#fit({ ...win.rect, x: win.rect.x + 26 * this.byApp(app.id).length, y: win.rect.y + 26 * this.byApp(app.id).length }, app);
     if (win.state !== "normal") win.saved = { ...win.rect };
     win.view = b.create(win, this);
     this.wins.push(win);
@@ -43,6 +43,8 @@ export class WindowManager extends Emitter {
   }
   async close(win) {
     if (!win || win.closing) return;
+    // Uygulama kapatmayı kendisi yönetebilir (yerel X pencereleri: program "kaydedilsin mi?" sorabilir).
+    if (win.app.onClose && win.app.onClose(win) === false) return;
     win.closing = true;
     win.view.send?.({ mk: "closing" });
     await win.view.play("close");
@@ -113,6 +115,7 @@ export class WindowManager extends Emitter {
     win.state = state;
     if (state === "normal") win.rect = rect;
     this.render(win); this.changed();
+    this.emit("moved", win);
   }
   // Duruma göre ekrandaki gerçek dikdörtgen
   rectOf(win) {
@@ -133,7 +136,7 @@ export class WindowManager extends Emitter {
     this.wins.push(win); this.render(win); this.focus(win); this.emit("open", win); this.changed();
     return win;
   }
-  relayout() { for (const w of this.wins) { if (w.state === "normal") w.rect = this.#fit(w.rect); this.render(w); } }
+  relayout() { for (const w of this.wins) { if (w.state === "normal") w.rect = this.#fit(w.rect, w.app); this.render(w); } }
 
   // Genel bakış (Mission Control benzeri): pencereleri ızgaraya ölçekler (yalnız transform)
   layoutOverview() {
@@ -159,8 +162,8 @@ export class WindowManager extends Emitter {
     const a = this.area(), w = Math.min(app.w, a.w - 40), h = Math.min(app.h, a.h - 20);
     return { x: Math.round(a.x + (a.w - w) / 2), y: Math.round(a.y + Math.max(10, (a.h - h) / 2.6)), w, h };
   }
-  #fit(r) {
-    const a = this.area(), w = clamp(r.w, 320, a.vw), h = clamp(r.h, 200, a.vh - a.y);
+  #fit(r, app) {
+    const a = this.area(), w = clamp(r.w, app?.minW ?? 320, a.vw), h = clamp(r.h, app?.minH ?? 200, a.vh - a.y);
     return { w, h, x: clamp(r.x, -w + 120, a.vw - 120), y: clamp(r.y, a.y, a.vh - 60) };
   }
 

@@ -78,6 +78,18 @@ fn main() {
         update_repo: f.str("update-repo", "ferhatozcelik/maker-os"),
         plugin_catalog: f.str("plugin-catalog", makerd::catalog::DEFAULT_SOURCE),
     };
+    // Mock önizleme (Docker): Xvfb varsa pencereli programlar süreç içi köprüyle kabukta görünür
+    // (gerçek sistemde bu makerd-user'dadır). Ortam çalışma zamanı kurulmadan ayarlanır.
+    let mock_display = if o.mock && std::env::var_os("DISPLAY").is_none() { makerd::xwin::Display::for_uid(util::getuid(), &o.data_dir) } else { None };
+    if let Some(d) = &mock_display {
+        for (k, v) in d.env() {
+            // SAFETY: henüz tek iş parçacığı var.
+            unsafe { std::env::set_var(k, v) };
+        }
+    }
+    if let Some(d) = mock_display {
+        makerd::xwin::set_local(makerd::xwin::start(d));
+    }
     // Soket devri ortam değişkenlerini temizler: çalışma zamanı kurulmadan yapılır.
     let fds = sd::listen_fds();
     let rt = tokio::runtime::Builder::new_multi_thread().worker_threads(2).enable_all().build().unwrap_or_else(|e| fail(&e.to_string()));
