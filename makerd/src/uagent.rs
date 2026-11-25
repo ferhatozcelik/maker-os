@@ -31,7 +31,7 @@ pub trait Agent: Send + Sync {
     fn read<'a>(&'a self, user: &'a str, path: &'a str, out: mpsc::Sender<Bytes>) -> BoxFuture<'a, ApiResult<()>>;
     /// Akışı dosyaya (atomik) yazar.
     fn write<'a>(&'a self, user: &'a str, path: &'a str, input: Upload) -> BoxFuture<'a, ApiResult<()>>;
-    /// Çift yönlü çerçeveli akış (pencereli programlar, `Open { mode: "xwin" }`).
+    /// Çift yönlü çerçeveli akış (pencereli programlar `Open { mode: "xwin" }`, ses `mode: "audio"`).
     fn stream<'a>(&'a self, _user: &'a str, _o: Open) -> BoxFuture<'a, ApiResult<Stream>> {
         Box::pin(async { Err(ApiError::unavailable("Pencereli uygulama desteği kullanılamıyor.")) })
     }
@@ -40,12 +40,18 @@ pub trait Agent: Send + Sync {
 /// Çerçeveli akışın iki yarısı.
 pub type Stream = (Box<dyn tokio::io::AsyncRead + Send + Unpin>, Box<dyn tokio::io::AsyncWrite + Send + Unpin>);
 
-/// Süreç içi X köprüsüne akış (mock önizleme; gerçek sistemde makerd-user'dadır).
-fn local_stream(path: String) -> ApiResult<Stream> {
-    let b = crate::xwin::local().ok_or_else(|| ApiError::unavailable("Pencereli uygulama desteği (Xvfb) kurulu değil."))?;
+/// Süreç içi X/ses köprüsüne akış (mock önizleme; gerçek sistemde makerd-user'dadır).
+fn local_stream(o: Open) -> ApiResult<Stream> {
     let (a, z) = tokio::io::duplex(1 << 21);
     let (ar, aw) = tokio::io::split(a);
     let (zr, zw) = tokio::io::split(z);
+    if o.mode == "audio" {
+        let s = crate::audio::local().ok_or_else(|| ApiError::unavailable("Tarayıcı sesi (PulseAudio) kurulu değil."))?;
+        tokio::spawn(async move { crate::audio::stream::serve(s, zr, zw).await });
+        return Ok((Box::new(ar), Box::new(aw)));
+    }
+    let b = crate::xwin::local().ok_or_else(|| ApiError::unavailable("Pencereli uygulama desteği (Xvfb) kurulu değil."))?;
+    let path = o.path;
     tokio::spawn(async move { crate::xwin::stream::serve(b, zr, zw, &path).await });
     Ok((Box::new(ar), Box::new(aw)))
 }
@@ -153,7 +159,7 @@ impl Agent for Local {
     }
 
     fn stream<'a>(&'a self, _user: &'a str, o: Open) -> BoxFuture<'a, ApiResult<Stream>> {
-        Box::pin(async move { local_stream(o.path) })
+        Box::pin(async move { local_stream(o) })
     }
 }
 

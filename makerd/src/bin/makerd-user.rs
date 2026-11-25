@@ -92,8 +92,18 @@ fn main() {
         }
     }
 
+    // Ses: programların sesi tarayıcının hoparlöründen, tarayıcının mikrofonu programlara (src/audio).
+    // Kullanıcı kendi PulseAudio sunucusunu vermişse dokunulmaz.
+    let audio = if std::env::var_os("PULSE_SERVER").is_none_or(|v| v.is_empty()) { makerd::audio::Setup::for_runtime(Path::new(&rd)) } else { None };
+    if let Some(a) = &audio {
+        for (k, v) in a.env() {
+            // SAFETY: henüz tek iş parçacığı var.
+            unsafe { std::env::set_var(k, v) };
+        }
+    }
+
     let rt = tokio::runtime::Builder::new_multi_thread().worker_threads(2).enable_all().build().unwrap_or_else(|e| fail(&e.to_string()));
-    if let Err(e) = rt.block_on(run(uid, cfg, display)) {
+    if let Err(e) = rt.block_on(run(uid, cfg, display, audio)) {
         fail(&e.to_string());
     }
 }
@@ -103,7 +113,7 @@ fn fail(msg: &str) -> ! {
     std::process::exit(1);
 }
 
-async fn run(uid: u32, cfg: Config, display: Option<xwin::Display>) -> std::io::Result<()> {
+async fn run(uid: u32, cfg: Config, display: Option<xwin::Display>, audio: Option<makerd::audio::Setup>) -> std::io::Result<()> {
     let mut allowed: HashSet<u32> = [0, uid].into();
     for name in cfg.allow.split(',').map(str::trim).filter(|n| !n.is_empty()) {
         match util::uid_of(name) {
@@ -117,7 +127,8 @@ async fn run(uid: u32, cfg: Config, display: Option<xwin::Display>) -> std::io::
     let path = PathBuf::from(&cfg.dir).join(format!("{uid}.sock"));
     let ln = listen(&path, uid)?;
     let bridge = display.map(xwin::start);
-    let srv = Arc::new(Server::new(allowed, login::login("/etc/passwd", &cfg.shell), cfg.max, login::home_of("/etc/passwd")).with_xwin(bridge));
+    let sound = audio.map(makerd::audio::start);
+    let srv = Arc::new(Server::new(allowed, login::login("/etc/passwd", &cfg.shell), cfg.max, login::home_of("/etc/passwd")).with_xwin(bridge).with_audio(sound));
 
     let (stop_tx, stop_rx) = tokio::sync::watch::channel(false);
     tokio::spawn(async move {

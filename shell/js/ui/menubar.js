@@ -110,13 +110,30 @@ export function mountMenubar(root) {
   });
   const cpuBar = h("i"), cpu = h("span.mb-cpu", cpuBar);
   const wifi = h("button.mb-st", { title: t("status.wifi"), onclick: () => S.openSettings("wifi") });
+  // Tarayıcı hoparlörü ve mikrofonu (js/audio.js): Pi'deki programların sesi bu sekmeden çalar.
+  const spk = h("button.mb-st.mb-snd", { hidden: true, onclick: () => S.audio?.setSpeaker(!S.audio.spk) });
+  const mic = h("button.mb-st.mb-snd", { hidden: true });
+  mic.onclick = () => S.audio?.setMic(!S.audio.mic).catch(x => {
+    if (x.code === "insecure") { S.toast(t("snd.micInsecure"), "mic-off"); open(`https://${location.hostname}${location.pathname}`, "_blank"); }
+    else if (x.name === "NotAllowedError") S.toast(t("snd.micDenied"), "mic-off");
+    else S.toast(t("snd.micFail", { msg: x.message }), "circle-alert");
+  });
+  S.audio?.on(s => {
+    spk.hidden = mic.hidden = s.unavailable;
+    spk.innerHTML = icon(s.spk ? "volume-2" : "volume-x", 15);
+    spk.classList.toggle("wait", s.waiting); spk.classList.toggle("off", !s.spk);
+    spk.title = !s.spk ? t("snd.spkOff") : s.waiting ? t("snd.spkWait") : t("snd.spkOn");
+    mic.innerHTML = icon(s.mic ? "mic" : "mic-off", 15);
+    mic.classList.toggle("live", s.mic); mic.classList.toggle("off", !s.mic);
+    mic.title = s.mic ? t("snd.micOn") : t("snd.micOff");
+  });
   const find = h("button.mb-st", { title: t("k.find"), html: icon("search", 15), onclick: () => S.emit("find") });
   const ccBtn = h("button.mb-st", { title: t("status.cc"), html: icon("sliders-horizontal", 15) });
   ccBtn.onclick = () => cc().then(m => m.toggleControl(ccBtn, root));
   const clock = h("button.mb-st.mb-clock", { title: t("status.nc"), onclick: () => toggleNC() });
   const badge = h("span.mb-badge"), ctext = h("span");
   clock.append(ctext, badge);
-  root.append(left, h("div.mb-right", door, temp, wifi, find, ccBtn, clock));
+  root.append(left, h("div.mb-right", door, temp, spk, mic, wifi, find, ccBtn, clock));
 
   const update = () => {
     const f = S.wm.focused;

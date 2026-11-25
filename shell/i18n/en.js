@@ -47,7 +47,7 @@ export default {
   "menu.tileLeft": "Tile Window Left", "menu.tileRight": "Tile Window Right", "menu.bringAll": "Bring All to Front",
   "menu.shortcuts": "Keyboard Shortcuts", "menu.helpAbout": "MakerOS Help", "menu.noWindows": "No open windows",
   "status.wifi": "Wi-Fi", "status.wifiOff": "Not connected", "status.ethernet": "Ethernet", "status.temp": "CPU temperature",
-  "status.cc": "Control Centre", "status.nc": "Notification Centre", "status.offline": "Offline",
+  "status.cc": "Control Centre", "snd.spkOn": "Speaker on: programs play through this browser (click to turn off)", "snd.spkOff": "Speaker off (click to turn on)", "snd.spkWait": "Click the page once to allow sound (browser rule)", "snd.micOn": "Microphone on: this computer's microphone goes to programs (click to turn off)", "snd.micOff": "Turn on microphone (the browser will ask)", "snd.micInsecure": "The microphone only works over a secure connection. Opening https in a new tab; on the warning choose “Advanced › Proceed”.", "snd.micDenied": "Microphone permission was denied. You can allow it from the lock icon in the address bar.", "snd.micFail": "Could not open the microphone: {msg}", "status.nc": "Notification Centre", "status.offline": "Offline",
   "cc.wifi": "Wi-Fi", "cc.dark": "Dark Mode", "cc.fx": "Effects", "cc.volume": "Sound", "cc.brightness": "Display",
   "cc.netSettings": "Network Settings…", "cc.display": "Display",
   "nc.title": "Notifications", "nc.empty": "No new notifications", "nc.clear": "Clear notifications", "nc.today": "Today",

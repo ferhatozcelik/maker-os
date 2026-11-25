@@ -35,6 +35,15 @@ MakerOS'un ilk kararlı sürümü: Buildroot ile Linux çekirdeği üzerine sıf
   çalışır; `makerd-user` her pencereyi ayrı yakalayıp yalnız değişen bölgeleri gönderir (kayıpsız; video
   benzeri içerikte geçici JPEG). VNC değildir ve HDMI takılı olsun olmasın aynı çalışır. Sistem Python'una
   `tkinter` eklendi
+- **Tarayıcı hoparlörü ve mikrofonu:** Pi'de çalışan programların (pygame, PySide6, Python `sounddevice`,
+  `aplay`, `espeak`, Chromium) sesi masaüstünü açan tarayıcıdan çalar; menü çubuğundaki mikrofon düğmesiyle
+  bilgisayarın mikrofonu programlara gider. Kullanıcı başına PulseAudio sunucusu (ALSA programları da ona
+  yönlenir); sessizlik gönderilmez. Tarayıcının otomatik oynatma kuralı gereği ses ilk tıklamada başlar
+- **HTTPS:** makerd `:443`'te de dinler; sertifikayı cihaz kendisi üretir (ana makine adı, `.local` ve IP
+  adresleri). Tarayıcılar mikrofonu yalnız güvenli sayfada açtığı için `https://<adres>` ile girilir;
+  ilk girişte tarayıcının "güvenli değil" uyarısı bir kez geçilir. HTTP de çalışmaya devam eder
+- **Düzeltme:** Güncelleme kurulduktan sonra yeniden başlatma systemd 258'de "systemctl reboot: exit status: 1"
+  hatası veriyordu (konumsal yeniden başlatma argümanı kaldırılmış); artık `--reboot-argument` kullanılır
 - **Düzeltme:** `/run/user` 1777 izniyle oluşturulduğu için kullanıcı oturumu açılamıyor, Pi'nin kendi
   ekranındaki kabuk (labwc + cog) hiç başlamıyordu
 

@@ -98,14 +98,23 @@ pub async fn xwin_win(State(s): State<S>, h: HeaderMap, Path(id): Path<String>, 
     xwin_open(s, h, up, id).await
 }
 
+/// Tarayıcı hoparlörü ve mikrofonu: kullanıcı programlarının sesi (bkz. crate::audio::stream).
+pub async fn audio(State(s): State<S>, h: HeaderMap, up: Upgrade) -> R {
+    stream_open(s, h, up, "audio", String::new()).await
+}
+
 async fn xwin_open(s: S, h: HeaderMap, up: Upgrade, path: String) -> R {
+    stream_open(s, h, up, "xwin", path).await
+}
+
+async fn stream_open(s: S, h: HeaderMap, up: Upgrade, mode: &str, path: String) -> R {
     let sess = session_of(&s, &h)?;
     if !origin_ok(&h) {
         return Err(ApiError::forbidden("Geçersiz Origin."));
     }
     let up = upgrade_of(up.ok())?;
     let agent = s.d.agent.clone().ok_or_else(|| ApiError::unavailable("Kullanıcı hizmeti yok."))?;
-    let (r, w) = agent.stream(&sess.user, crate::termproc::Open { mode: "xwin".into(), path, ..Default::default() }).await?;
+    let (r, w) = agent.stream(&sess.user, crate::termproc::Open { mode: mode.into(), path, ..Default::default() }).await?;
     Ok(up.max_message_size(1 << 20).on_upgrade(move |ws| xwin_pump(s, ws, r, w)))
 }
 

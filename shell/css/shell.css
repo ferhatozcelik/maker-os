@@ -19,6 +19,11 @@ input, textarea { user-select: text; -webkit-user-select: text; }
 .mb-left, .mb-right { display: flex; align-items: center; height: 100%; gap: 1px; min-width: 0; }
 .mb-left { overflow: hidden; }
 .mb-item, .mb-st { height: 22px; display: inline-flex; align-items: center; gap: 4px; padding: 0 9px; border: 0; background: none; border-radius: 5px; white-space: nowrap; }
+/* Hoparlör/mikrofon: kapalıyken soluk, izin beklerken yanıp söner, mikrofon açıkken kırmızı. */
+.mb-snd.off { opacity: .55; }
+.mb-snd.wait { animation: mb-snd-wait 1.6s ease-in-out infinite; }
+.mb-snd.live { color: #ff453a; }
+@keyframes mb-snd-wait { 50% { opacity: .35; } }
 .mb-item.open, .mb-item:active, .mb-st.open, .mb-st:active { background: var(--bg-active); }
 .mb-logo { padding: 0 11px; }
 .mb-app { font-weight: 700; }
