@@ -93,6 +93,12 @@ done
 rm -rf "${TARGET_DIR}/usr/share/man" "${TARGET_DIR}/usr/share/info" \
        "${TARGET_DIR}/usr/share/doc" "${TARGET_DIR}/usr/share/gtk-doc"
 
+# --- PulseAudio: yalniz makerd-user baslatir (kullanici basina, tarayici sesi; makerd/src/audio) ---------
+rm -f "${TARGET_DIR}"/usr/lib/systemd/user/pulseaudio.service "${TARGET_DIR}"/usr/lib/systemd/user/pulseaudio.socket \
+      "${TARGET_DIR}"/usr/lib/systemd/user/sockets.target.wants/pulseaudio.socket \
+      "${TARGET_DIR}"/usr/lib/systemd/user/default.target.wants/pulseaudio.service \
+      "${TARGET_DIR}"/etc/xdg/autostart/pulseaudio.desktop
+
 # --- SSH: ilk acilis sihirbazi tamamlanana kadar kapali (makerd-priv acar) ------------
 rm -f "${TARGET_DIR}/etc/systemd/system/multi-user.target.wants/sshd.service"
 

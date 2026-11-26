@@ -1,5 +1,23 @@
 # Değişiklik Günlüğü
 
+## 1.1.0
+
+Taban imaj (Buildroot, çekirdek ve sistem paketleri) 1.0.0 ile aynı; bu sürüm o imajdan yeniden paketlendi.
+
+### Yeni
+
+- **HTTPS:** makerd arayüzü şifreli bağlantıyla da açılır
+- **Tarayıcı hoparlörü ve mikrofonu** (kullanıcı başına PulseAudio köprüsü): kodu bu sürümde, ancak gereken
+  PulseAudio paketleri bir sonraki taban imajla gelecek; o zamana dek özellik kendiliğinden kapalı kalır
+- **MakerOS Bench 1.1** (`benchmark/makeros-bench.py`): `--compare` ile yayımlanmış Raspberry Pi 4 sonuçlarıyla
+  aynı testler (Geekbench 5.4.0, zstd -19) ve `--speedometer`; mevcut puanlama değişmedi
+- **Tanıtım sayfası:** kaydırdıkça birleşen 3D Pi 4 kamera kasası ve 3MF indirme, Raspberry Pi 4 karşılaştırma tablosu
+
+### Düzeltmeler
+
+- **Güncelleme (OTA):** deneme açılışına (tryboot) yeniden başlatma argümanı logind D-Bus ile verilir;
+  makerd-priv'de `/run` salt okunur olduğu için önceki yol çalışmıyordu
+
 ## 1.0.0
 
 MakerOS'un ilk kararlı sürümü: Buildroot ile Linux çekirdeği üzerine sıfırdan kurulan bağımsız işletim sistemi.
@@ -35,6 +53,15 @@ MakerOS'un ilk kararlı sürümü: Buildroot ile Linux çekirdeği üzerine sıf
   çalışır; `makerd-user` her pencereyi ayrı yakalayıp yalnız değişen bölgeleri gönderir (kayıpsız; video
   benzeri içerikte geçici JPEG). VNC değildir ve HDMI takılı olsun olmasın aynı çalışır. Sistem Python'una
   `tkinter` eklendi
+- **Tarayıcı hoparlörü ve mikrofonu:** Pi'de çalışan programların (pygame, PySide6, Python `sounddevice`,
+  `aplay`, `espeak`, Chromium) sesi masaüstünü açan tarayıcıdan çalar; menü çubuğundaki mikrofon düğmesiyle
+  bilgisayarın mikrofonu programlara gider. Kullanıcı başına PulseAudio sunucusu (ALSA programları da ona
+  yönlenir); sessizlik gönderilmez. Tarayıcının otomatik oynatma kuralı gereği ses ilk tıklamada başlar
+- **HTTPS:** makerd `:443`'te de dinler; sertifikayı cihaz kendisi üretir (ana makine adı, `.local` ve IP
+  adresleri). Tarayıcılar mikrofonu yalnız güvenli sayfada açtığı için `https://<adres>` ile girilir;
+  ilk girişte tarayıcının "güvenli değil" uyarısı bir kez geçilir. HTTP de çalışmaya devam eder
+- **Düzeltme:** Güncelleme kurulduktan sonra yeniden başlatma systemd 258'de "systemctl reboot: exit status: 1"
+  hatası veriyordu (konumsal yeniden başlatma argümanı kaldırılmış); artık `--reboot-argument` kullanılır
 - **Düzeltme:** `/run/user` 1777 izniyle oluşturulduğu için kullanıcı oturumu açılamıyor, Pi'nin kendi
   ekranındaki kabuk (labwc + cog) hiç başlamıyordu
 

@@ -162,6 +162,7 @@ impl Server {
             .route("/api/v1/events", get(ws::events_ws))
             .route("/api/v1/xwin", get(ws::xwin_ctl))
             .route("/api/v1/xwin/{id}", get(ws::xwin_win))
+            .route("/api/v1/audio", get(ws::audio))
             .route("/api/v1/browse", get(api::browse).post(api::browse).options(api::browse_options))
             .route("/api/v1/wallpaper/{name}", get(api::wallpaper_get).put(api::wallpaper_put).delete(api::wallpaper_delete))
             .route("/api/v1/browse/ticket", post(api::browse_ticket))
@@ -247,6 +248,39 @@ impl Server {
         let stop = self.stop.clone();
         let app = self.router().into_make_service_with_connect_info::<SocketAddr>();
         axum::serve(ln, app).with_graceful_shutdown(async move { stop.cancelled().await }).await
+    }
+
+    /// Aynı uygulama HTTPS üzerinden (bkz. crate::tls). WebSocket yükseltmeleri de çalışır.
+    pub async fn serve_tls(self: S, ln: tokio::net::TcpListener, cfg: Arc<tokio_rustls::rustls::ServerConfig>) -> std::io::Result<()> {
+        use tower_service::Service;
+        let acceptor = tokio_rustls::TlsAcceptor::from(cfg);
+        let mut make = self.router().into_make_service_with_connect_info::<SocketAddr>();
+        loop {
+            let (tcp, addr) = tokio::select! {
+                _ = self.stop.cancelled() => return Ok(()),
+                r = ln.accept() => match r {
+                    Ok(c) => c,
+                    Err(e) => {
+                        // EMFILE vb.: döngü dönmeye devam etsin ama işlemciyi yakmasın.
+                        tracing::warn!(err = %e, "HTTPS bağlantısı alınamadı");
+                        tokio::time::sleep(Duration::from_millis(200)).await;
+                        continue;
+                    }
+                },
+            };
+            let Ok(svc) = make.call(addr).await;
+            let (acceptor, stop) = (acceptor.clone(), self.stop.clone());
+            tokio::spawn(async move {
+                let Ok(Ok(tls)) = tokio::time::timeout(Duration::from_secs(10), acceptor.accept(tcp)).await else { return };
+                let conn = hyper::server::conn::http1::Builder::new()
+                    .serve_connection(hyper_util::rt::TokioIo::new(tls), hyper_util::service::TowerToHyperService::new(svc))
+                    .with_upgrades();
+                tokio::select! {
+                    _ = conn => {}
+                    _ = stop.cancelled() => {}
+                }
+            });
+        }
     }
 }
 

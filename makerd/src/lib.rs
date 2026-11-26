@@ -36,7 +36,9 @@ pub mod setup;
 pub mod system;
 pub mod term;
 pub mod termproc;
+pub mod tls;
 pub mod uagent;
+pub mod audio;
 pub mod util;
 pub mod xwin;
 

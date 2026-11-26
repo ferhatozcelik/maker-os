@@ -14,6 +14,7 @@ use tokio_util::sync::CancellationToken;
 
 const USAGE: &str = "Kullanım: makerd [bayraklar]
   --listen ADR          dinleme adresi(leri), virgülle (systemd soket devri varsa yok sayılır) (varsayılan :80)
+  --tls-listen ADR      HTTPS dinleme adresi(leri), virgülle; boş: kapalı (sertifika: <data-dir>/tls, cihaz üretir)
   --web DİZİN           web arayüzü dizini (varsayılan /usr/share/makeros/shell)
   --mock                sahte veri arka uçları (kök/NM/D-Bus gerekmez)
   --data-dir DİZİN      kalıcı veri dizini (varsayılan /var/lib/makerd; mock: geçici dizin)
@@ -28,6 +29,7 @@ const USAGE: &str = "Kullanım: makerd [bayraklar]
 
 struct Opts {
     listen: String,
+    tls_listen: String,
     web: String,
     mock: bool,
     data_dir: PathBuf,
@@ -39,7 +41,7 @@ struct Opts {
 }
 
 fn main() {
-    let known = ["listen", "web", "data-dir", "token-file", "priv-socket", "user-socket-dir", "log-level", "log-format", "update-repo", "plugin-catalog"];
+    let known = ["listen", "tls-listen", "web", "data-dir", "token-file", "priv-socket", "user-socket-dir", "log-level", "log-format", "update-repo", "plugin-catalog"];
     let f = match Flags::parse(std::env::args().skip(1), &known, &["mock", "version"]) {
         Ok(f) => f,
         Err(e) => {
@@ -69,6 +71,7 @@ fn main() {
     let _ = std::fs::create_dir_all(&data_dir);
     let o = Opts {
         listen: f.str("listen", ":80"),
+        tls_listen: f.str("tls-listen", ""),
         web: f.str("web", "/usr/share/makeros/shell"),
         mock: mock_mode,
         data_dir,
@@ -89,6 +92,14 @@ fn main() {
     }
     if let Some(d) = mock_display {
         makerd::xwin::set_local(makerd::xwin::start(d));
+    }
+    // Mock önizleme: PulseAudio varsa tarayıcı sesi süreç içi köprüyle (XDG_RUNTIME_DIR = data-dir).
+    if let Some(a) = o.mock.then(|| makerd::audio::Setup::for_runtime(&o.data_dir)).flatten() {
+        for (k, v) in a.env() {
+            // SAFETY: henüz tek iş parçacığı var.
+            unsafe { std::env::set_var(k, v) };
+        }
+        makerd::audio::set_local(makerd::audio::start(a));
     }
     // Soket devri ortam değişkenlerini temizler: çalışma zamanı kurulmadan yapılır.
     let fds = sd::listen_fds();
@@ -300,6 +311,24 @@ async fn run(o: Opts, fds: Vec<std::os::fd::OwnedFd>) -> Result<(), String> {
     for l in listeners {
         tracing::info!(addr = %l.local_addr().map(|a| a.to_string()).unwrap_or_default(), web = %o.web, mock = o.mock, version = makerd::VERSION, "dinleniyor");
         tasks.spawn(srv.clone().serve(l));
+    }
+    // HTTPS (mikrofon için güvenli sayfa): başlatılamazsa HTTP yine çalışır.
+    let tls_addrs: Vec<&str> = o.tls_listen.split(',').map(str::trim).filter(|a| !a.is_empty()).collect();
+    if !tls_addrs.is_empty() {
+        match makerd::tls::load_or_create(&o.data_dir.join("tls"), &makerd::tls::local_names()) {
+            Ok(cfg) => {
+                for a in tls_addrs {
+                    match tokio::net::TcpListener::bind(listen_addr(a)).await {
+                        Ok(l) => {
+                            tracing::info!(addr = %l.local_addr().map(|a| a.to_string()).unwrap_or_default(), "HTTPS dinleniyor");
+                            tasks.spawn(srv.clone().serve_tls(l, cfg.clone()));
+                        }
+                        Err(e) => tracing::warn!(addr = a, err = %e, "HTTPS dinlenemedi"),
+                    }
+                }
+            }
+            Err(e) => tracing::warn!(err = %e, "HTTPS sertifikası hazırlanamadı; yalnız HTTP"),
+        }
     }
     sd::notify("READY=1\nSTATUS=makerd hazır");
     // Python yöneticisi ve zamanlanmış görevler (Cron / @reboot): birincil kullanıcının görevlerini çalıştırır.

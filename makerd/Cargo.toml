@@ -34,8 +34,8 @@ path = "src/bin/makeros-ai.rs"
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "io-util", "time", "sync", "signal", "process", "fs"] }
 tokio-util = { version = "0.7", features = ["io"] }
 axum = { version = "0.8", default-features = false, features = ["http1", "tokio", "ws", "query", "json"] }
-hyper = { version = "1", features = ["client", "http1"] }
-hyper-util = { version = "0.1", features = ["client-legacy", "http1", "tokio"] }
+hyper = { version = "1", features = ["client", "server", "http1"] }
+hyper-util = { version = "0.1", features = ["client-legacy", "server", "service", "http1", "tokio"] }
 http-body-util = "0.1"
 bytes = "1"
 futures-util = { version = "0.3", default-features = false, features = ["std", "sink"] }
@@ -63,6 +63,10 @@ include_dir = "0.7"
 # Pencereli kullanıcı programları (Xvfb köprüsü, src/xwin): saf Rust X istemcisi + kayıpsız sıkıştırma.
 x11rb = { version = "0.13", default-features = false, features = ["composite", "damage", "xfixes", "xtest"] }
 flate2 = { version = "1", default-features = false, features = ["zlib-rs"] }
+# HTTPS (src/tls.rs): tarayıcılar mikrofonu yalnız güvenli sayfada açar. Cihaz kendi sertifikasını üretir.
+tokio-rustls = { version = "0.26", default-features = false, features = ["ring", "tls12", "logging"] }
+rcgen = { version = "0.13", default-features = false, features = ["crypto", "pem", "ring"] }
+tower-service = "0.3"
 
 [lints.rust]
 unsafe_op_in_unsafe_fn = "deny"

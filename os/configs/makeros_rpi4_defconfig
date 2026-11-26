@@ -251,3 +251,7 @@ BR2_PACKAGE_XCB_UTIL_WM=y
 BR2_PACKAGE_TCL=y
 BR2_PACKAGE_TK=y
 BR2_PACKAGE_MAKEROS_PYTHON_TKINTER=y
+# Tarayici hoparlor/mikrofon (makerd/src/audio): kullanici basina PulseAudio (makerd-user baslatir;
+# sistem hizmeti degil) + ALSA programlarini ona yonlendiren alsa-plugins pulse eklentisi.
+BR2_PACKAGE_PULSEAUDIO=y
+BR2_PACKAGE_ALSA_PLUGINS=y

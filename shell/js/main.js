@@ -13,6 +13,7 @@ import { WindowManager } from "./wm/index.js";
 import { WebBackend, bridge } from "./wm/web.js";
 import { S } from "./shell.js";
 import { mountMenubar } from "./ui/menubar.js";
+import { ShellAudio } from "./audio.js";
 import { mountDock } from "./ui/dock.js";
 import { initNotifications, toast, toggleNC } from "./ui/control.js";
 import { closeOverlay, overlayOpen } from "./ui/layer.js";
@@ -291,6 +292,8 @@ async function start() {
   S.events.on("open", () => { if (started) refreshApps(); }); // bağlantı kopukken kaçan değişiklikler
   get("/net").then(n => { S.net = n; S.emit("net", n); }).catch(() => {});
 
+  // Tarayıcı hoparlörü/mikrofonu (Pi'deki programların sesi); menü çubuğundaki düğmeler bunu kullanır.
+  S.audio = new ShellAudio();
   mountMenubar($("#menubar"));
   mountDock($("#dock"));
   initNotifications();

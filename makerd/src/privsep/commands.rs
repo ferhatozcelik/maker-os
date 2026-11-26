@@ -179,8 +179,16 @@ impl Commands {
         let a: PowerArgs = decode(&raw)?;
         if a.action == "tryboot" {
             // Pi firmware'e tek seferlik deneme açılışı bayrağı: reboot argümanı "0 tryboot".
-            // systemd 258 konumsal argümanı ("systemctl reboot ARG") kaldırdı; yalnız --reboot-argument.
+            // Argüman logind'e D-Bus ile verilir: bu hizmet ProtectSystem=strict ile çalışır, /run salt okunur
+            // olduğundan systemctl'in /run/systemd/reboot-param dosyasını kendisi yazması başarısız olur.
+            // (systemd 258 ayrıca konumsal "systemctl reboot ARG" biçimini kaldırdı.)
             nix::unistd::sync();
+            const L: &str = "org.freedesktop.login1";
+            const M: &str = "org.freedesktop.login1.Manager";
+            let p = dbus::path_of(L);
+            if dbus::call(L, &p, M, "SetRebootParameter", &("0 tryboot",)).await.is_ok() && dbus::call(L, &p, M, "Reboot", &(false,)).await.is_ok() {
+                return empty();
+            }
             let st = tokio::process::Command::new("/usr/bin/systemctl").args(["reboot", "--reboot-argument=0 tryboot"]).status().await?;
             if !st.success() {
                 return Err(PrivError::new("internal", format!("systemctl reboot: {st}")));

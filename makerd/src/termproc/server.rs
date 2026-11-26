@@ -33,6 +33,8 @@ pub struct Server {
     active: AtomicUsize,
     /// Pencereli programlar için X köprüsü (Xvfb kurulu değilse None).
     xwin: Option<Arc<crate::xwin::Bridge>>,
+    /// Tarayıcı hoparlörü/mikrofonu için ses köprüsü (PulseAudio kurulu değilse None).
+    audio: Option<Arc<crate::audio::Sound>>,
 }
 
 /// Etkin bağlantı sayacını düşürür.
@@ -49,11 +51,16 @@ type Writer = OwnedWriteHalf;
 
 impl Server {
     pub fn new(allowed: HashSet<u32>, command: Command, max: usize, home: String) -> Self {
-        Self { allowed, command, max, home, active: AtomicUsize::new(0), xwin: None }
+        Self { allowed, command, max, home, active: AtomicUsize::new(0), xwin: None, audio: None }
     }
 
     pub fn with_xwin(mut self, b: Option<Arc<crate::xwin::Bridge>>) -> Self {
         self.xwin = b;
+        self
+    }
+
+    pub fn with_audio(mut self, a: Option<Arc<crate::audio::Sound>>) -> Self {
+        self.audio = a;
         self
     }
 
@@ -118,6 +125,12 @@ impl Server {
             match &self.xwin {
                 Some(b) => crate::xwin::stream::serve(b.clone(), r, w, &op.path).await,
                 None => fail(&mut w, "Pencereli uygulama desteği (Xvfb) bu sistemde kurulu değil.").await,
+            }
+        } else if op.mode == "audio" {
+            drop(_slot);
+            match &self.audio {
+                Some(a) => crate::audio::stream::serve(a.clone(), r, w).await,
+                None => fail(&mut w, "Tarayıcı sesi (PulseAudio) bu sistemde kurulu değil.").await,
             }
         } else if op.mode.is_empty() {
             self.serve_pty(r, w, op, uid, stop).await;

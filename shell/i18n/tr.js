@@ -52,7 +52,7 @@ export default {
   "menu.noWindows": "Açık pencere yok",
   // durum öğeleri
   "status.wifi": "Wi-Fi", "status.wifiOff": "Bağlı değil", "status.ethernet": "Ethernet", "status.temp": "İşlemci sıcaklığı",
-  "status.cc": "Kontrol Merkezi", "status.nc": "Bildirim Merkezi", "status.offline": "Çevrimdışı",
+  "status.cc": "Kontrol Merkezi", "snd.spkOn": "Hoparlör açık: programların sesi bu tarayıcıdan çalar (kapatmak için tıklayın)", "snd.spkOff": "Hoparlör kapalı (açmak için tıklayın)", "snd.spkWait": "Ses için sayfaya bir kez tıklayın (tarayıcı izni)", "snd.micOn": "Mikrofon açık: bu bilgisayarın mikrofonu programlara gidiyor (kapatmak için tıklayın)", "snd.micOff": "Mikrofonu aç (tarayıcı izin ister)", "snd.micInsecure": "Mikrofon yalnız güvenli bağlantıda çalışır. Yeni sekmede https açılıyor; uyarıda “Gelişmiş › Devam et” deyin.", "snd.micDenied": "Mikrofon izni verilmedi. Adres çubuğundaki kilit simgesinden izin verebilirsiniz.", "snd.micFail": "Mikrofon açılamadı: {msg}", "status.nc": "Bildirim Merkezi", "status.offline": "Çevrimdışı",
   "cc.wifi": "Wi-Fi", "cc.dark": "Koyu Görünüm", "cc.fx": "Efektler", "cc.volume": "Ses", "cc.brightness": "Ekran",
   "cc.netSettings": "Ağ Ayarları…", "cc.display": "Ekran",
   "nc.title": "Bildirimler", "nc.empty": "Yeni bildirim yok", "nc.clear": "Bildirimleri temizle", "nc.today": "Bugün",
