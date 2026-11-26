@@ -276,6 +276,25 @@ footer a { color: var(--muted); }
 [data-en] { display: none; }
 html[lang="en"] [data-tr] { display: none; }
 html[lang="en"] [data-en] { display: revert; }
+/* Kasa: kaydırdıkça birleşen 3D görünüm */
+.case-top { padding-top: 48px; }
+.case-head { display: flex; gap: 24px; align-items: end; justify-content: space-between; flex-wrap: wrap; margin-bottom: 28px; }
+.case-head .sub { margin-bottom: 0; }
+.case-dl { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.case-dl .meta { margin: 0; }
+.case-scroll { height: 360vh; position: relative; }
+.case-scroll.still { height: auto; }
+.case-stage { position: sticky; top: 60px; height: min(calc(100vh - 60px), 820px); height: min(calc(100svh - 60px), 820px); border-radius: 20px; overflow: hidden; border: 1px solid var(--line); background: radial-gradient(60% 55% at 50% 42%, color-mix(in srgb, var(--accent) 16%, var(--surface)) 0%, var(--surface-2) 70%); touch-action: pan-y; }
+.case-scroll.still .case-stage { position: relative; top: 0; height: min(70vh, 640px); }
+.case-stage canvas { display: block; width: 100%; height: 100%; opacity: 0; transition: opacity .6s ease; cursor: grab; }
+.case-stage.ready canvas { opacity: 1; }
+.case-stage.grab canvas { cursor: grabbing; }
+.case-stage.no-gl canvas { display: none; }
+.case-rail { position: absolute; left: 50%; bottom: 26px; width: min(320px, 60%); height: 2px; transform: translateX(-50%); background: color-mix(in srgb, var(--text) 14%, transparent); border-radius: 2px; }
+.case-rail .fill { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--accent); border-radius: 2px; }
+.case-rail .dot { position: absolute; top: 50%; width: 12px; height: 12px; padding: 0; transform: translate(-50%, -50%); border-radius: 50%; border: 2px solid color-mix(in srgb, var(--text) 30%, transparent); background: var(--surface); cursor: pointer; transition: background .2s, border-color .2s; }
+.case-rail .dot.on { background: var(--accent); border-color: var(--accent); }
+.case-scroll.still .case-rail { display: none; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .btn, .card, .links a { transition: none; } }
 </style>
 </head>
@@ -302,6 +321,7 @@ html[lang="en"] [data-en] { display: revert; }
   <div class="wrap">
     <a class="brand" href="#"><img src="assets/logo.svg" alt="" width="28" height="28">MakerOS</a>
     <nav aria-label="Sayfa">
+      <a href="#case"><span data-tr>Kasa</span><span data-en>Case</span></a>
       <a href="#features"><span data-tr>Özellikler</span><span data-en>Features</span></a>
       <a href="#screens"><span data-tr>Ekranlar</span><span data-en>Screens</span></a>
       <a href="#plugins"><span data-tr>Eklentiler</span><span data-en>Plugins</span></a>
@@ -315,6 +335,28 @@ html[lang="en"] [data-en] { display: revert; }
 </header>
 
 <main>
+  <section id="case" class="case-top">
+    <div class="wrap">
+      <div class="case-head">
+        <div>
+          <p class="kicker"><span data-tr>Kasa</span><span data-en>Case</span></p>
+          <h2><span data-tr>Kartına bir kasa bas.</span><span data-en>Print a case for your board.</span></h2>
+          <p class="sub"><span data-tr>Raspberry Pi 4 ve kamera modülü için üç parçalı kutu: gövde, kamera tutucu ve logolu ön panel. 3MF dosyasını dilimleyicinde aç ve bas.</span><span data-en>A three-part box for the Raspberry Pi 4 and camera module: body, camera clamp and a front panel with the logo. Open the 3MF in your slicer and print.</span></p>
+        </div>
+        <div class="case-dl">
+          <a class="btn primary" href="case/RPi4_Kamera_Kutusu.3mf" download><svg aria-hidden="true"><use href="#i-dl"/></svg><span data-tr>3MF indir</span><span data-en>Download 3MF</span></a>
+          <p class="meta"><span data-tr>113 × 105 × 41 mm · 3 parça</span><span data-en>113 × 105 × 41 mm · 3 parts</span></p>
+        </div>
+      </div>
+      <div class="case-scroll" id="case-scroll">
+        <div class="case-stage" id="case-stage">
+          <div class="case-rail" id="case-rail"><div class="fill"></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <script type="module" src="case/viewer.js"></script>
+
   <div class="hero">
     <div class="wrap">
       <a class="pill" href="https://github.com/ferhatozcelik/maker-os/releases/latest"><b>v1.0.0</b><span data-tr>İlk kararlı sürüm yayında</span><span data-en>First stable release is out</span></a>
