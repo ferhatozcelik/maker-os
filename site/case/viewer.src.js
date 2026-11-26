@@ -61,6 +61,9 @@ function init() {
     (n) => n === "Front_Panel" || n.startsWith("Logo"),
   ];
   const groups = ORDER.map(() => new THREE.Group());
+  // Sitedeki kasa renkleri: haki yeşil gövde, krem logo, kahverengi logo yuvası (3MF dosyasındaki renkler değişmez).
+  const TINT = { Box_Back: "#565c3a", Front_Panel: "#565c3a", Logo_Orange: "#f1e7cf", Logo_Black: "#4a3221", Camera_Clamp: "#3b3a33" };
+  const copies = [...stage.querySelectorAll("[data-beat]")];
   const spin = [0, 0.5, -0.6, 0.7, -0.4]; // gelirken hafif dönüş (rad)
 
   // Kaydırma ilerlemesi: [A0, A1] aralığında parçalar sırayla yerine oturur, sonrası kamerayı kapağa çevirir.
@@ -96,6 +99,8 @@ function init() {
       m.position.set(0, 0, 0); m.rotation.set(0, 0, 0); m.scale.set(1, 1, 1);
       m.castShadow = true;
       m.userData.g = g;
+      const tint = TINT[m.name];
+      if (tint && m.material) { m.material = m.material.clone(); m.material.color.set(tint); m.material.roughness = 0.55; m.material.metalness = 0; }
       groups[g].add(m);
     }
     size = box.getSize(new THREE.Vector3());
@@ -167,10 +172,24 @@ function init() {
     const w = stage.clientWidth, h = stage.clientHeight;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
+    narrow = w < 800;
+    if (narrow) camera.setViewOffset(w, h, 0, h * 0.27, w, h);
+    else camera.setViewOffset(w, h, -w * 0.2, h * 0.07, w, h);
     camera.updateProjectionMatrix();
     wake();
   }
   new ResizeObserver(resize).observe(stage);
+
+  // Başlıklar: en son yerine oturan parçanın metni görünür.
+  let shown = -1, narrow = false;
+  function setBeat(v) {
+    let i = 0;
+    beats.forEach((b, k) => { if (v >= (k === 0 ? 0 : (beats[k - 1] + b) / 2)) i = k; });
+    if (i === shown || reduce) return;
+    shown = i;
+    copies.forEach((c) => c.classList.toggle("on", +c.dataset.beat === i));
+  }
+  if (!reduce) setBeat(target());
 
   let p = target(), running = false, visible = false, t0 = performance.now();
   const loop = (now) => {
@@ -201,6 +220,7 @@ function init() {
       top = Math.max(top, size.y + lift);
     }
     dots.forEach((d, i) => { d.classList.toggle("on", p >= beats[i] - 0.004); });
+    setBeat(p);
     if (fill) fill.style.width = `${p * 100}%`;
 
     // Kamera: yan profilden başlar, birleştikçe yaklaşır ve kapağa (logo) doğru yükselir.
@@ -209,8 +229,8 @@ function init() {
     const el = clamp(lerp(0.32, 0.82, end) + dragEl, 0.05, 1.35);
     const cy = top * 0.5;
     const rad = Math.hypot(size.x, size.z, top) * 0.5;
-    const fit = camera.aspect < 1 ? 1 / camera.aspect : 1;
-    const dist = (rad / Math.sin(THREE.MathUtils.degToRad(camera.fov / 2))) * 1.22 * Math.min(fit, 1.6);
+    const fit = narrow ? Math.max(1, 1.5 / camera.aspect) : Math.max(1, 1.9 / camera.aspect);
+    const dist = (rad / Math.sin(THREE.MathUtils.degToRad(camera.fov / 2))) * 1.38 * Math.min(fit, 2.4);
     camera.position.set(Math.sin(az) * Math.cos(el) * dist, cy + Math.sin(el) * dist, Math.cos(az) * Math.cos(el) * dist);
     camera.lookAt(0, cy, 0);
 

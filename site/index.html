@@ -267,6 +267,12 @@ footer a { color: var(--muted); }
 .tbl td.n { text-align: right; font: 600 14px/1.4 "JetBrains Mono", ui-monospace, monospace; }
 .tbl td.r { text-align: right; color: var(--faint); font: 13px/1.4 "JetBrains Mono", ui-monospace, monospace; }
 .tbl tr.g td { background: var(--surface-2); color: var(--accent-ink); font-weight: 700; font-size: 12.5px; text-transform: uppercase; letter-spacing: .06em; padding-block: 8px; }
+.cmp { margin-top: 48px; }
+.cmp h3 { margin: 0 0 6px; font-size: 20px; letter-spacing: -.01em; }
+.cmp > .bench-note:first-of-type { margin: 0 0 18px; }
+.cmp .more { margin-top: 14px; }
+.cmp .more summary { cursor: pointer; color: var(--muted); font-size: 14px; font-weight: 600; padding: 6px 0; }
+.cmp .more .tbl { margin-top: 8px; }
 .sys { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 8px 20px; margin: 0; }
 .sys div { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 14.5px; }
 .sys div:last-child { border-bottom: 0; }
@@ -276,25 +282,44 @@ footer a { color: var(--muted); }
 [data-en] { display: none; }
 html[lang="en"] [data-tr] { display: none; }
 html[lang="en"] [data-en] { display: revert; }
-/* Kasa: kaydırdıkça birleşen 3D görünüm */
-.case-top { padding-top: 48px; }
-.case-head { display: flex; gap: 24px; align-items: end; justify-content: space-between; flex-wrap: wrap; margin-bottom: 28px; }
-.case-head .sub { margin-bottom: 0; }
-.case-dl { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
-.case-dl .meta { margin: 0; }
-.case-scroll { height: 360vh; position: relative; }
-.case-scroll.still { height: auto; }
-.case-stage { position: sticky; top: 60px; height: min(calc(100vh - 60px), 820px); height: min(calc(100svh - 60px), 820px); border-radius: 20px; overflow: hidden; border: 1px solid var(--line); background: radial-gradient(60% 55% at 50% 42%, color-mix(in srgb, var(--accent) 16%, var(--surface)) 0%, var(--surface-2) 70%); touch-action: pan-y; }
-.case-scroll.still .case-stage { position: relative; top: 0; height: min(70vh, 640px); }
-.case-stage canvas { display: block; width: 100%; height: 100%; opacity: 0; transition: opacity .6s ease; cursor: grab; }
-.case-stage.ready canvas { opacity: 1; }
-.case-stage.grab canvas { cursor: grabbing; }
-.case-stage.no-gl canvas { display: none; }
-.case-rail { position: absolute; left: 50%; bottom: 26px; width: min(320px, 60%); height: 2px; transform: translateX(-50%); background: color-mix(in srgb, var(--text) 14%, transparent); border-radius: 2px; }
+/* Giriş: tam ekran, kaydırdıkça birleşen kasa (sağda) ve değişen başlıklar (solda) */
+.intro { padding: 0; }
+.intro-track { height: 520vh; position: relative; }
+.intro-stage { position: sticky; top: 60px; height: calc(100vh - 60px); height: calc(100svh - 60px); overflow: hidden; touch-action: pan-y; background: radial-gradient(48% 60% at 70% 48%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 72%); }
+.intro-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; opacity: 0; transition: opacity .6s ease; cursor: grab; }
+.intro-stage.ready canvas { opacity: 1; }
+.intro-stage.grab canvas { cursor: grabbing; }
+.intro-stage.no-gl canvas { display: none; }
+.intro-copy { position: absolute; inset: 0; display: flex; align-items: center; pointer-events: none; z-index: 1; }
+.beats { position: relative; width: min(470px, 42%); height: 100%; }
+.beat { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(calc(-50% + 18px)); opacity: 0; transition: opacity .45s ease, transform .45s ease; }
+.beat.on { opacity: 1; transform: translateY(-50%); pointer-events: auto; }
+.beat h1 { font-size: clamp(40px, 6vw, 72px); margin: 18px 0 16px; }
+.beat h2 { font-size: clamp(30px, 4vw, 48px); }
+.beat .lead { margin: 0 0 26px; max-width: none; }
+.beat .cta { justify-content: flex-start; }
+.beat .meta { margin-top: 12px; }
+.case-rail { position: absolute; left: 50%; bottom: 26px; width: min(320px, 60%); height: 2px; transform: translateX(-50%); background: color-mix(in srgb, var(--text) 14%, transparent); border-radius: 2px; z-index: 2; }
 .case-rail .fill { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--accent); border-radius: 2px; }
 .case-rail .dot { position: absolute; top: 50%; width: 12px; height: 12px; padding: 0; transform: translate(-50%, -50%); border-radius: 50%; border: 2px solid color-mix(in srgb, var(--text) 30%, transparent); background: var(--surface); cursor: pointer; transition: background .2s, border-color .2s; }
 .case-rail .dot.on { background: var(--accent); border-color: var(--accent); }
-.case-scroll.still .case-rail { display: none; }
+@media (max-width: 800px) {
+  .intro-stage { background: radial-gradient(70% 40% at 50% 30%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 72%); }
+  .intro-copy { align-items: flex-end; padding-bottom: 64px; }
+  .beats { width: 100%; height: 46%; }
+  .beat { top: auto; bottom: 0; transform: translateY(18px); }
+  .beat.on { transform: none; }
+  .beat h1 { font-size: 40px; margin-top: 12px; }
+  .beat .lead { font-size: 16px; margin-bottom: 18px; }
+}
+/* Hareket azaltılmışsa ya da 3D yoksa: başlıklar alt alta, model birleşik */
+.intro-track.still { height: auto; }
+.intro-track.still .intro-stage { position: relative; top: 0; height: auto; min-height: calc(100svh - 60px); }
+.intro-track.still .intro-copy { position: relative; padding: 48px 16px; }
+.intro-track.still .beats { height: auto; }
+.intro-track.still .beat { position: static; opacity: 1; transform: none; margin-bottom: 40px; pointer-events: auto; }
+.intro-track.still .case-rail { display: none; }
+.intro-track.still .intro-stage canvas { position: relative; height: 60vh; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .btn, .card, .links a { transition: none; } }
 </style>
 </head>
@@ -327,7 +352,6 @@ html[lang="en"] [data-en] { display: revert; }
       <a href="#plugins"><span data-tr>Eklentiler</span><span data-en>Plugins</span></a>
       <a href="#performance"><span data-tr>Başarım</span><span data-en>Performance</span></a>
       <a href="#setup"><span data-tr>Kurulum</span><span data-en>Setup</span></a>
-      <a href="#developers"><span data-tr>Geliştiriciler</span><span data-en>Developers</span></a>
       <a href="https://github.com/ferhatozcelik/maker-os">GitHub</a>
     </nav>
     <button class="lang" type="button" id="lang" aria-label="Dil / Language">EN</button>
@@ -335,52 +359,51 @@ html[lang="en"] [data-en] { display: revert; }
 </header>
 
 <main>
-  <section id="case" class="case-top">
-    <div class="wrap">
-      <div class="case-head">
-        <div>
-          <p class="kicker"><span data-tr>Kasa</span><span data-en>Case</span></p>
-          <h2><span data-tr>Kartına bir kasa bas.</span><span data-en>Print a case for your board.</span></h2>
-          <p class="sub"><span data-tr>Raspberry Pi 4 ve kamera modülü için üç parçalı kutu: gövde, kamera tutucu ve logolu ön panel. 3MF dosyasını dilimleyicinde aç ve bas.</span><span data-en>A three-part box for the Raspberry Pi 4 and camera module: body, camera clamp and a front panel with the logo. Open the 3MF in your slicer and print.</span></p>
+  <section class="intro" id="case" aria-label="MakerOS">
+    <div class="intro-track" id="case-scroll">
+      <div class="intro-stage" id="case-stage">
+        <div class="intro-copy wrap">
+          <div class="beats">
+            <div class="beat on" data-beat="0">
+              <a class="pill" href="https://github.com/ferhatozcelik/maker-os/releases/latest"><b>v1.0.0</b><span data-tr>İlk kararlı sürüm yayında</span><span data-en>First stable release is out</span></a>
+              <h1><span data-tr>Atölyen<br><em>cebinde.</em></span><span data-en>Your workshop,<br><em>in your pocket.</em></span></h1>
+              <p class="lead"><span data-tr>Pi 4 uyumlu kartlar için bağımsız, açık kaynaklı Linux. Web masaüstü, yerel yapay zekâ ve eklentiler tek bir bütünde.</span><span data-en>An independent, open-source Linux for Pi 4 compatible boards. Web desktop, on-device AI and plugins in one system.</span></p>
+              <div class="cta">
+                <a class="btn primary" href="https://github.com/ferhatozcelik/maker-os/releases/latest"><svg aria-hidden="true"><use href="#i-dl"/></svg><span data-tr>İmajı indir</span><span data-en>Download image</span></a>
+                <a class="btn" href="#setup"><span data-tr>Kurulum</span><span data-en>Setup</span></a>
+              </div>
+            </div>
+            <div class="beat" data-beat="1">
+              <p class="kicker"><span data-tr>Kart</span><span data-en>Board</span></p>
+              <h2><span data-tr>Pi 4 ve 400 için kendi işletim sistemi.</span><span data-en>Its own OS for the Pi 4 and 400.</span></h2>
+              <p class="lead"><span data-tr>ARM64 üzerinde Buildroot ve Linux 6.18; salt okunur kök dosya sistemi ve imzalı A/B güncelleme.</span><span data-en>Buildroot and Linux 6.18 on ARM64, with a read-only root and signed A/B updates.</span></p>
+            </div>
+            <div class="beat" data-beat="2">
+              <p class="kicker"><span data-tr>Masaüstü</span><span data-en>Desktop</span></p>
+              <h2><span data-tr>Her yerde aynı masaüstü.</span><span data-en>One desktop, everywhere.</span></h2>
+              <p class="lead"><span data-tr>Kartın ekranında, ağdaki bir bilgisayarda ya da telefonda aynı pencereli deneyim.</span><span data-en>The same windowed experience on the board's display, any computer on your network, or your phone.</span></p>
+            </div>
+            <div class="beat" data-beat="3">
+              <p class="kicker"><span data-tr>Donanım ve AI</span><span data-en>Hardware and AI</span></p>
+              <h2><span data-tr>Kamera, GPIO ve yerel yapay zekâ.</span><span data-en>Camera, GPIO and on-device AI.</span></h2>
+              <p class="lead"><span data-tr>Kamera ve GPIO, makerd API'siyle hazır; yapay zekâ asistanı internetsiz, kartın üzerinde çalışır.</span><span data-en>Camera and GPIO are ready through the makerd API; the AI assistant runs offline, on the board.</span></p>
+            </div>
+            <div class="beat" data-beat="4">
+              <p class="kicker"><span data-tr>Kasa</span><span data-en>Case</span></p>
+              <h2><span data-tr>Kasasını da bas.</span><span data-en>Print its case too.</span></h2>
+              <p class="lead"><span data-tr>Raspberry Pi 4 ve kamera modülü için üç parçalı kutu. 3MF dosyasını dilimleyicinde aç ve bas.</span><span data-en>A three-part box for the Raspberry Pi 4 and camera module. Open the 3MF in your slicer and print.</span></p>
+              <div class="cta">
+                <a class="btn primary" href="case/RPi4_Kamera_Kutusu.3mf" download><svg aria-hidden="true"><use href="#i-dl"/></svg><span data-tr>3MF indir</span><span data-en>Download 3MF</span></a>
+              </div>
+              <p class="meta"><span data-tr>113 × 105 × 41 mm · 3 parça</span><span data-en>113 × 105 × 41 mm · 3 parts</span></p>
+            </div>
+          </div>
         </div>
-        <div class="case-dl">
-          <a class="btn primary" href="case/RPi4_Kamera_Kutusu.3mf" download><svg aria-hidden="true"><use href="#i-dl"/></svg><span data-tr>3MF indir</span><span data-en>Download 3MF</span></a>
-          <p class="meta"><span data-tr>113 × 105 × 41 mm · 3 parça</span><span data-en>113 × 105 × 41 mm · 3 parts</span></p>
-        </div>
-      </div>
-      <div class="case-scroll" id="case-scroll">
-        <div class="case-stage" id="case-stage">
-          <div class="case-rail" id="case-rail"><div class="fill"></div></div>
-        </div>
+        <div class="case-rail" id="case-rail"><div class="fill"></div></div>
       </div>
     </div>
   </section>
   <script type="module" src="case/viewer.js"></script>
-
-  <div class="hero">
-    <div class="wrap">
-      <a class="pill" href="https://github.com/ferhatozcelik/maker-os/releases/latest"><b>v1.0.0</b><span data-tr>İlk kararlı sürüm yayında</span><span data-en>First stable release is out</span></a>
-      <img class="logo" src="assets/logo.svg" alt="MakerOS logosu" width="96" height="96">
-      <h1><span data-tr>Atölyen<br><em>cebinde.</em></span><span data-en>Your workshop,<br><em>in your pocket.</em></span></h1>
-      <p class="lead">
-        <span data-tr>MakerOS; ARM64 tabanlı, Pi 4 uyumlu kartlar için bağımsız ve açık kaynaklı bir Linux işletim sistemi. Web masaüstü, Rust sistem servisleri, A/B güncelleme, yerel yapay zekâ asistanı ve cihazın içinde çalışan eklentiler tek bir bütünde.</span>
-        <span data-en>MakerOS is an independent, open-source Linux operating system for ARM64, Pi 4 compatible boards. Web desktop, Rust system services, A/B updates, an on-device AI assistant and plugins that run on the board, in one cohesive system.</span>
-      </p>
-      <div class="cta">
-        <a class="btn primary" href="https://github.com/ferhatozcelik/maker-os/releases/latest"><svg aria-hidden="true"><use href="#i-dl"/></svg><span data-tr>İmajı indir</span><span data-en>Download image</span></a>
-        <a class="btn" href="#setup"><span data-tr>Kurulum rehberi</span><span data-en>Setup guide</span></a>
-        <a class="btn" href="#plugins"><svg aria-hidden="true"><use href="#i-puzzle"/></svg><span data-tr>Eklenti mağazası</span><span data-en>Plugin store</span></a>
-      </div>
-      <ul class="facts">
-        <li><span data-tr>Pi 4 / 400 · ARM64</span><span data-en>Pi 4 / 400 · ARM64</span></li>
-        <li><span data-tr>Tek komutla kurulum: SD ya da USB-C</span><span data-en>One-command install: SD or USB-C</span></li>
-        <li><span data-tr>İmzalı A/B güncelleme</span><span data-en>Signed A/B updates</span></li>
-        <li><span data-tr>İnternetsiz yerel AI</span><span data-en>Offline on-device AI</span></li>
-        <li><span data-tr>MIT lisansı</span><span data-en>MIT licensed</span></li>
-      </ul>
-      <img class="shot" src="assets/screenshots/desktop.png" width="2880" height="1800" alt="MakerOS masaüstü: tarayıcı ve yerel AI asistanı" fetchpriority="high">
-    </div>
-  </div>
 
   <section id="features">
     <div class="wrap">
@@ -776,6 +799,57 @@ html[lang="en"] [data-en] { display: revert; }
           <p class="bench-note"><span data-tr>Testler Python ile yazılmış iş yükleridir; aynı MakerOS Bench sürümüyle alınan sonuçlar birbiriyle karşılaştırılabilir. Disk sonuçları kullanılan microSD karta bağlıdır.</span><span data-en>The tests are Python workloads; results from the same MakerOS Bench version are comparable with each other. Disk results depend on the microSD card used.</span></p>
         </div>
       </div>
+      <div class="cmp">
+        <h3><span data-tr>Yayımlanmış Raspberry Pi 4 sonuçlarıyla karşılaştırma</span><span data-en>Compared with published Raspberry Pi 4 results</span></h3>
+        <p class="bench-note"><span data-tr>Aşağıdaki testler MakerOS'ta aynı yöntemle çalıştırılacak (<code>makeros-bench.py --compare</code>); sonuçlar gelince MakerOS sütunu dolacak. Kaynak ölçümler farklı yıllarda ve çoğu 32 bit Raspbian ile alındı; koşullar her satırda yazılı.</span><span data-en>The tests below will be run on MakerOS the same way (<code>makeros-bench.py --compare</code>); the MakerOS column fills in when results arrive. The source runs were taken in different years, most on 32-bit Raspbian; conditions are listed on each row.</span></p>
+        <div class="tbl">
+          <table>
+            <thead><tr><th><span data-tr>Test</span><span data-en>Test</span></th><th style="text-align:right">Raspberry Pi 4</th><th><span data-tr>Kaynak ve koşullar</span><span data-en>Source and conditions</span></th><th style="text-align:right">MakerOS</th></tr></thead>
+            <tbody>
+            <tr><td><span data-tr>Geekbench 5 · tek çekirdek</span><span data-en>Geekbench 5 · single core</span></td><td class="n">233</td><td class="r" style="text-align:left"><a href="https://browser.geekbench.com/v5/cpu/9697615">Geekbench</a> · 4 GB · Linux 5.10 aarch64 · 2021</td><td class="r"><span data-tr>ölçülecek</span><span data-en>pending</span></td></tr>
+            <tr><td><span data-tr>Geekbench 5 · çok çekirdek</span><span data-en>Geekbench 5 · multi core</span></td><td class="n">686</td><td class="r" style="text-align:left"><a href="https://browser.geekbench.com/v5/cpu/9697615">Geekbench</a> · 4 GB · Linux 5.10 aarch64 · 2021</td><td class="r"><span data-tr>ölçülecek</span><span data-en>pending</span></td></tr>
+            <tr><td><span data-tr>Zstd sıkıştırma, seviye 19</span><span data-en>Zstd compression, level 19</span></td><td class="n">291.5 <span data-tr>sn</span><span data-en>s</span></td><td class="r" style="text-align:left"><a href="https://openbenchmarking.org/result/2202182-NE-2202156EI32">OpenBenchmarking</a> · 4 GB · Raspbian 10 armv7l · 2019</td><td class="r"><span data-tr>ölçülecek</span><span data-en>pending</span></td></tr>
+            <tr><td><span data-tr>Speedometer 2.0 (tarayıcı)</span><span data-en>Speedometer 2.0 (browser)</span></td><td class="n">16.91 <span data-tr>çalışma/dk</span><span data-en>runs/min</span></td><td class="r" style="text-align:left"><a href="https://magazine.raspberrypi.com/articles/raspberry-pi-4-specs-benchmarks">The MagPi</a> · Raspbian · 2019</td><td class="r"><span data-tr>ölçülecek</span><span data-en>pending</span></td></tr>
+            <tr><td><span data-tr>UnixBench endeksi (1 / 4 kopya)</span><span data-en>UnixBench index (1 / 4 copies)</span></td><td class="n">327.6 / 803.9</td><td class="r" style="text-align:left"><a href="https://gist.github.com/lonelyion/41c12fbc3d0bd6dfbe94062574c6be66">UnixBench 5.1.3</a> · 4 GB · Linux 4.19 armv7l · 2019</td><td class="r"><span data-tr>derleyici gerekir</span><span data-en>needs a compiler</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <details class="more">
+          <summary><span data-tr>Kaynaklardaki diğer Raspberry Pi 4 değerleri</span><span data-en>Other Raspberry Pi 4 values from the sources</span></summary>
+          <div class="tbl">
+            <table>
+              <tbody>
+              <tr class="g"><td colspan="2"><a href="https://magazine.raspberrypi.com/articles/raspberry-pi-4-specs-benchmarks">The MagPi</a> · Raspbian · 2019</td></tr>
+              <tr><td>Linpack (SP / DP / SP NEON)</td><td class="n">925.47 / 748.73 / 2037.33 MIPS</td></tr>
+              <tr><td><span data-tr>Bellek bant genişliği, okuma / yazma (1 MB blok)</span><span data-en>Memory bandwidth, read / write (1 MB blocks)</span></td><td class="n">4129.83 / 4427.18 MB/s</td></tr>
+              <tr><td><span data-tr>Dosya sıkıştırma, tek / çok iş parçacığı</span><span data-en>File compression, single / multi thread</span></td><td class="n">49.35 / 16.05 <span data-tr>sn</span><span data-en>s</span></td></tr>
+              <tr><td><span data-tr>GIMP görüntü düzenleme</span><span data-en>GIMP image editing</span></td><td class="n">47.35 <span data-tr>sn</span><span data-en>s</span></td></tr>
+              <tr><td>GPIO Zero</td><td class="n">50.84 kHz</td></tr>
+              <tr><td>OpenArena Time Demo</td><td class="n">41.4 fps</td></tr>
+              <tr><td><span data-tr>USB depolama, okuma / yazma</span><span data-en>USB storage, read / write</span></td><td class="n">363 / 323 MB/s</td></tr>
+              <tr><td>Ethernet (iperf3)</td><td class="n">943 Mbit/s</td></tr>
+              <tr><td><span data-tr>Kablosuz, 2.4 / 5 GHz</span><span data-en>Wireless, 2.4 / 5 GHz</span></td><td class="n">58.3 / 114 Mbit/s</td></tr>
+              <tr><td><span data-tr>Güç, boşta / yük altında</span><span data-en>Power, idle / under load</span></td><td class="n">3.4 / 7.6 W</td></tr>
+              <tr class="g"><td colspan="2"><a href="https://openbenchmarking.org/result/2202182-NE-2202156EI32">OpenBenchmarking</a> · 4 GB · Raspbian 10 armv7l · Linux 4.19.50 · 2019</td></tr>
+              <tr><td>SciMark 2.0 (composite)</td><td class="n">142.17 Mflops</td></tr>
+              <tr><td>x264 (H.264)</td><td class="n">3.10 fps</td></tr>
+              <tr><td><span data-tr>GraphicsMagick, döndürme / boyutlandırma</span><span data-en>GraphicsMagick, rotate / resize</span></td><td class="n">63 / 45 <span data-tr>yineleme/dk</span><span data-en>iter/min</span></td></tr>
+              <tr><td>Smallpt (128 samples)</td><td class="n">260.72 <span data-tr>sn</span><span data-en>s</span></td></tr>
+              <tr><td>Rust Prime (200,000,000)</td><td class="n">1104.33 <span data-tr>sn</span><span data-en>s</span></td></tr>
+              <tr><td>FLAC / LAME MP3</td><td class="n">111.09 / 125.34 <span data-tr>sn</span><span data-en>s</span></td></tr>
+              <tr><td>PyBench</td><td class="n">5249 ms</td></tr>
+              <tr><td>NGINX (ab)</td><td class="n">4745.75 <span data-tr>istek/sn</span><span data-en>req/s</span></td></tr>
+              <tr><td>PHPBench</td><td class="n">101564</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </details>
+        <p class="bench-note"><span data-tr>Kaynaklar:</span><span data-en>Sources:</span>
+          <a href="https://magazine.raspberrypi.com/articles/raspberry-pi-4-specs-benchmarks">The MagPi</a> ·
+          <a href="https://gist.github.com/lonelyion/41c12fbc3d0bd6dfbe94062574c6be66">UnixBench (gist)</a> ·
+          <a href="https://browser.geekbench.com/v5/cpu/9697615">Geekbench 5</a> ·
+          <a href="https://openbenchmarking.org/result/2202182-NE-2202156EI32">OpenBenchmarking</a></p>
+      </div>
     </div>
   </section>
 
@@ -832,39 +906,6 @@ html[lang="en"] [data-en] { display: revert; }
         <li><h3><span data-tr>Bağlanın</span><span data-en>Connect</span></h3><p><span data-tr><code>http://maker-os.local/</code>, USB-C ile <code>http://10.42.0.1/</code>; ağ yoksa <code>MakerOS</code> Wi-Fi'ı.</span><span data-en><code>http://maker-os.local/</code>, <code>http://10.42.0.1/</code> over USB-C, or the <code>MakerOS</code> Wi-Fi.</span></p></li>
         <li><h3><span data-tr>Oturum açın</span><span data-en>Sign in</span></h3><p><span data-tr>Varsayılan hesap <code>maker</code> / <code>maker</code>; parolayı Ayarlar › Kullanıcı'dan değiştirin.</span><span data-en>Default account <code>maker</code> / <code>maker</code>; change it in Settings › User.</span></p></li>
       </ol>
-    </div>
-  </section>
-
-  <section id="developers" class="alt">
-    <div class="wrap">
-      <p class="kicker"><span data-tr>Geliştiriciler</span><span data-en>Developers</span></p>
-      <h2><span data-tr>Bir klasör, bir eklenti.</span><span data-en>One folder, one plugin.</span></h2>
-      <p class="sub"><span data-tr>Eklenti; <code>plugin.json</code>, <code>pyproject.toml</code> ve <code>main.py</code>'den oluşan bir Python klasörüdür. MakerOS onu kendi kullanıcı hesabınızla <code>uv run</code> ile çalıştırır ve arayüzünü pencerede, widget'ta ya da telefonda gösterir. Derleme ya da yayın adımı yok: klasör depoya girdiği an mağazadadır.</span><span data-en>A plugin is a Python folder with <code>plugin.json</code>, <code>pyproject.toml</code> and <code>main.py</code>. MakerOS runs it as your user with <code>uv run</code> and shows its UI in a window, a widget or on your phone. No build or release step: once the folder lands in the repository, it is in the store.</span></p>
-      <div class="dev">
-<pre class="code"><span class="c"># 1. Şablonu oluştur (MakerOS terminali)</span>
-<span class="k">$</span> mos plugin new sensor-panel
-
-<span class="c"># 2. plugins/sensor-panel/plugin.json</span>
-{
-  <span class="s">"id"</span>: <span class="s">"sensor-panel"</span>,
-  <span class="s">"name"</span>: <span class="s">"Sensör Paneli"</span>,
-  <span class="s">"version"</span>: <span class="s">"1.0.0"</span>,
-  <span class="s">"entrypoint"</span>: <span class="s">"main.py"</span>,
-  <span class="s">"web_port"</span>: 8799,
-  <span class="s">"icon"</span>: <span class="s">"icon.svg"</span>,
-  <span class="s">"widget"</span>: { <span class="s">"path"</span>: <span class="s">"/widget"</span>, <span class="s">"w"</span>: 320, <span class="s">"h"</span>: 200 }
-}
-
-<span class="c"># 3. Denetle ve dene, sonra PR aç</span>
-<span class="k">$</span> python3 tools/build.py
-<span class="k">$</span> python3 tools/smoke.py sensor-panel</pre>
-        <div class="links">
-          <a href="https://github.com/ferhatozcelik/makeros-plugins#eklenti-eklemek"><span class="ic"><svg aria-hidden="true"><use href="#i-puzzle"/></svg></span><span><b><span data-tr>Eklenti yazma rehberi</span><span data-en>Plugin guide</span></b><span class="d"><span data-tr>Şablon, kurallar, duman testi ve PR adımları.</span><span data-en>Template, rules, smoke tests and the PR flow.</span></span></span></a>
-          <a href="https://github.com/ferhatozcelik/maker-os/blob/main/docs/api.md"><span class="ic"><svg aria-hidden="true"><use href="#i-code"/></svg></span><span><b><span data-tr>makerd REST API</span><span data-en>makerd REST API</span></b><span class="d"><span data-tr><code>/api/v1</code> uçları ve WebSocket olayları: sistem, dosyalar, GPIO, kamera, işler.</span><span data-en><code>/api/v1</code> endpoints and WebSocket events: system, files, GPIO, camera, jobs.</span></span></span></a>
-          <a href="https://github.com/ferhatozcelik/maker-os/blob/main/docs/development/build-and-test.md"><span class="ic"><svg aria-hidden="true"><use href="#i-cog"/></svg></span><span><b><span data-tr>Kaynaktan derle</span><span data-en>Build from source</span></b><span class="d"><span data-tr>Buildroot imajı, makerd testleri ve USB-C üzerinden anında güncelleme.</span><span data-en>Buildroot image, makerd tests and live updates over USB-C.</span></span></span></a>
-          <a href="https://github.com/ferhatozcelik/maker-os/blob/main/docs/architecture/overview.md"><span class="ic"><svg aria-hidden="true"><use href="#i-book"/></svg></span><span><b><span data-tr>Mimari</span><span data-en>Architecture</span></b><span class="d"><span data-tr>Önyükleme, A/B depolama, masaüstü, ağ güvenliği ve AI asistanı.</span><span data-en>Boot, A/B storage, desktop, network security and the AI assistant.</span></span></span></a>
-        </div>
-      </div>
     </div>
   </section>
 
@@ -945,7 +986,7 @@ html[lang="en"] [data-en] { display: revert; }
       <div class="tags">${p.tags.map(t => `<span class="tag${t === "app" ? "" : " hl"}">${esc(T(...TAG[t]))}</span>`).join("")}</div>
       <div class="plug-f"><span>${esc(p.author || "")}</span><a href="${esc(p.url)}">${T("Kaynağı gör", "View source")} →</a></div>
     </article>`);
-    cards.push(`<a class="card plug new" href="#developers"><div class="plug-h"><div class="plug-ic"><svg width="22" height="22" aria-hidden="true"><use href="#i-plug"/></svg></div>
+    cards.push(`<a class="card plug new" href="https://github.com/ferhatozcelik/makeros-plugins#eklenti-eklemek"><div class="plug-h"><div class="plug-ic"><svg width="22" height="22" aria-hidden="true"><use href="#i-plug"/></svg></div>
       <div><h3>${T("Kendi eklentini yaz", "Write your own")}</h3><span class="ver">plugin.json + main.py</span></div></div>
       <p>${T("Bir klasör yeterli; depoya girdiği an mağazada.", "A single folder; in the store as soon as it lands.")}</p></a>`);
     store.innerHTML = list.length ? cards.join("") : `<p class="store-empty">${T("Aramanızla eşleşen eklenti yok.", "No plugins match your search.")}</p>` + cards.at(-1);
