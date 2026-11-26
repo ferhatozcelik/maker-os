@@ -1,0 +1,83 @@
+{
+ "schema": 1,
+ "version": "1.1.0",
+ "name": "Raspberry Pi 4 Rev 1.2 4 GB · MakerOS 1.0.0",
+ "date": "2026-11-26T23:34:52Z",
+ "mode": "tam",
+ "duration_s": 3088.2,
+ "disk_fs": "54 GB birim",
+ "system": {
+  "python": "3.14.5",
+  "python_impl": "CPython",
+  "arch": "aarch64",
+  "kernel": "6.18.59-v8-makeros",
+  "cores": 4,
+  "os": "MakerOS 1.0.0",
+  "os_id": "makeros",
+  "cpu": "aarch64",
+  "model": "Raspberry Pi 4 Model B Rev 1.2",
+  "ram_gb": 3.7,
+  "cpu_max_mhz": 1500,
+  "governor": "ondemand"
+ },
+ "thermal": {
+  "before": {
+   "temp_c": 57.9
+  },
+  "after": {
+   "temp_c": 67.7
+  }
+ },
+ "results": {
+  "cpu.int": 0.846,
+  "cpu.float": 1.195,
+  "cpu.sha256": 143.42,
+  "cpu.zlib": 12.225,
+  "cpu.json": 1.427,
+  "cpu.regex": 5.302,
+  "multi.int": 3.309,
+  "multi.float": 4.5,
+  "mem.copy": 2.389,
+  "mem.alloc": 0.259,
+  "disk.seq_write": 20.878,
+  "disk.seq_read": 46.397,
+  "disk.rand_write": 129.911,
+  "disk.rand_read": 2048.527
+ },
+ "scores": {
+  "total": 98,
+  "categories": {
+   "cpu": 144,
+   "multi": 112,
+   "mem": 97,
+   "disk": 59
+  },
+  "tests": {
+   "cpu.int": 143,
+   "cpu.float": 199,
+   "cpu.sha256": 60,
+   "cpu.zlib": 231,
+   "cpu.json": 126,
+   "cpu.regex": 177,
+   "multi.int": 97,
+   "multi.float": 129,
+   "mem.copy": 54,
+   "mem.alloc": 175,
+   "disk.seq_write": 6,
+   "disk.seq_read": 19,
+   "disk.rand_write": 634,
+   "disk.rand_read": 171
+  }
+ },
+ "compare": {
+  "gb5.error": "puan okunamadı: Visit the following link and add this result to your profile:    https://browser.geekbench.com/v5/cpu/24849878/claim?key=813854",
+  "gb5.url": "https://browser.geekbench.com/v5/cpu/24849878",
+  "zstd19": 686.42,
+  "zstd.runs": [
+   685.6,
+   688.9,
+   686.42
+  ],
+  "zstd.version": "*** Zstandard CLI (64-bit) v1.5.7, by Yann Collet ***"
+ }
+}

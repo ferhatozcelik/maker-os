@@ -9,6 +9,7 @@ macOS, Linux, Raspberry Pi OS ve MakerOS'ta çalışır (Python 3.8+; yalnız st
     python3 makeros-bench.py --name "Pi 4 4GB · Raspberry Pi OS"   # listede görünecek ad
     python3 makeros-bench.py --compare        # + yayımlanmış Raspberry Pi OS sonuçlarıyla aynı testler (~25 dk)
     python3 makeros-bench.py --compare --speedometer 17.4   # tarayıcıda ölçülen Speedometer 2.0 sonucunu da ekle
+    python3 makeros-bench.py --compare --gb5 268,745        # Geekbench sayfasındaki puanları elle ekle
 
 Ölçülenler
   CPU tek çekirdek  tamsayı, kayan nokta, SHA-256, zlib, JSON, düzenli ifade
@@ -527,7 +528,11 @@ def compare_geekbench():
     if m:
         r["gb5.url"] = m.group(0)
     if "gb5.single" not in r:
-        r["error"] = "puan okunamadı: " + " ".join(out.strip().splitlines()[-3:])[:200]
+        if "gb5.url" in r:
+            # Linux Preview sürümü puanı ekrana yazmaz; yalnızca yüklediği sonucun bağlantısını verir.
+            r["gb5.note"] = "puanlar " + r["gb5.url"] + " sayfasında; --gb5 TEK,ÇOK ile rapora eklenebilir"
+        else:
+            r["error"] = "puan okunamadı: " + " ".join(out.strip().splitlines()[-3:])[:200]
     return r
 
 
@@ -673,6 +678,7 @@ def main():
     ap.add_argument("--compare-only", action="store_true", help="--compare, puanlı Python testleri olmadan")
     ap.add_argument("--no-geekbench", action="store_true", help="--compare içinde Geekbench'i atla (yükleme yapılmaz)")
     ap.add_argument("--no-zstd", action="store_true", help="--compare içinde zstd testini atla")
+    ap.add_argument("--gb5", metavar="TEK,ÇOK", help="Geekbench 5 sayfasındaki tek ve çok çekirdek puanı (ör. 268,745)")
     ap.add_argument("--speedometer", type=float, help="tarayıcıda ölçtüğün Speedometer 2.0 sonucu (çalışma/dk)")
     a = ap.parse_args()
 
@@ -714,6 +720,8 @@ def main():
             if "error" in g:
                 cmp["gb5.error"] = g.pop("error")
                 log(f"    atlandı: {cmp['gb5.error']}")
+            if "gb5.note" in g:
+                log(f"    {g['gb5.note']}")
             cmp.update(g)
         if not a.no_zstd:
             log("▶ Karşılaştırma: zstd -19 (ubuntu-16.04.3-server-i386.img)")
@@ -727,6 +735,11 @@ def main():
             cmp.update(z)
     if a.speedometer:
         cmp["speedometer2"] = a.speedometer
+    if a.gb5:
+        try:
+            cmp["gb5.single"], cmp["gb5.multi"] = (int(x) for x in a.gb5.split(","))
+        except ValueError:
+            ap.error("--gb5 biçimi: TEK,ÇOK (ör. 268,745)")
     th_after = thermal()
 
     per, cats, total = scores(results)

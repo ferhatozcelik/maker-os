@@ -273,6 +273,18 @@ footer a { color: var(--muted); }
 .cmp .more { margin-top: 14px; }
 .cmp .more summary { cursor: pointer; color: var(--muted); font-size: 14px; font-weight: 600; padding: 6px 0; }
 .cmp .more .tbl { margin-top: 8px; }
+.vs { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; margin-bottom: 16px; }
+.vs-h { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; font-size: 14.5px; }
+.vs-h > span { color: var(--faint); font-size: 13px; }
+.vs-row { display: grid; grid-template-columns: 210px 1fr 80px; gap: 14px; align-items: center; padding: 6px 0; font-size: 14px; }
+.vs-l { color: var(--muted); }
+.vs-bar { height: 12px; border-radius: 6px; background: var(--surface-2); overflow: hidden; }
+.vs-bar i { display: block; height: 100%; border-radius: 6px; background: color-mix(in srgb, var(--muted) 55%, transparent); }
+.vs-row.me .vs-bar i { background: var(--accent); }
+.vs-row.me .vs-l { color: var(--text); font-weight: 600; }
+.vs-v { text-align: right; font: 600 14px/1.4 "JetBrains Mono", ui-monospace, monospace; }
+.vs-n { color: var(--faint); font-size: 13px; margin: 10px 0 0; }
+@media (max-width: 600px) { .vs-row { grid-template-columns: 1fr 70px; } .vs-l { grid-column: 1 / -1; } }
 .sys { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 8px 20px; margin: 0; }
 .sys div { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 14.5px; }
 .sys div:last-child { border-bottom: 0; }
@@ -801,15 +813,21 @@ html[lang="en"] [data-en] { display: revert; }
       </div>
       <div class="cmp">
         <h3><span data-tr>Yayımlanmış Raspberry Pi 4 sonuçlarıyla karşılaştırma</span><span data-en>Compared with published Raspberry Pi 4 results</span></h3>
-        <p class="bench-note"><span data-tr>Aşağıdaki testler MakerOS'ta aynı yöntemle çalıştırılacak (<code>makeros-bench.py --compare</code>); sonuçlar gelince MakerOS sütunu dolacak. Kaynak ölçümler farklı yıllarda ve çoğu 32 bit Raspbian ile alındı; koşullar her satırda yazılı.</span><span data-en>The tests below will be run on MakerOS the same way (<code>makeros-bench.py --compare</code>); the MakerOS column fills in when results arrive. The source runs were taken in different years, most on 32-bit Raspbian; conditions are listed on each row.</span></p>
+        <p class="bench-note"><span data-tr>MakerOS sütunu 27 Kasım 2026'da aynı Pi 4 (4 GB, MakerOS 1.0.0) üzerinde <code>makeros-bench.py --compare</code> ile ölçüldü. Kaynak ölçümler farklı yıllarda ve çoğu 32 bit Raspbian ile alındı; koşullar her satırda yazılı.</span><span data-en>The MakerOS column was measured on 27 November 2026 on the same Pi 4 (4 GB, MakerOS 1.0.0) with <code>makeros-bench.py --compare</code>. The source runs were taken in different years, most on 32-bit Raspbian; conditions are listed on each row.</span></p>
+        <div class="vs">
+          <div class="vs-h"><b><span data-tr>Zstd sıkıştırma, seviye 19</span><span data-en>Zstd compression, level 19</span></b><span><span data-tr>süre · kısa olan daha iyi</span><span data-en>time · shorter is better</span></span></div>
+          <div class="vs-row"><span class="vs-l">Raspbian 10 · zstd 1.3.4</span><span class="vs-bar"><i style="width:42.5%"></i></span><span class="vs-v">291.5 <span data-tr>sn</span><span data-en>s</span></span></div>
+          <div class="vs-row me"><span class="vs-l">MakerOS 1.0.0 · zstd 1.5.7</span><span class="vs-bar"><i style="width:100%"></i></span><span class="vs-v">686 <span data-tr>sn</span><span data-en>s</span></span></div>
+          <p class="vs-n"><span data-tr>Aynı dosya (ubuntu-16.04.3-server-i386.img, SHA-256 doğrulandı), tek iş parçacığı, üç ölçümün ortancası (686 / 689 / 686 sn). MakerOS burada 2.4 kat yavaş. Kaynak ölçüm zstd 1.3.4 ile 32 bit sistemde alındı, bu ölçüm zstd 1.5.7 ile 64 bit sistemde; zstd sürümü de değiştiği için fark yalnızca işletim sistemine bağlanamaz.</span><span data-en>Same file (ubuntu-16.04.3-server-i386.img, SHA-256 verified), single thread, median of three runs (686 / 689 / 686 s). MakerOS is 2.4× slower here. The source run used zstd 1.3.4 on a 32-bit system, this one zstd 1.5.7 on a 64-bit system; since the zstd version changed too, the gap cannot be put on the operating system alone.</span></p>
+        </div>
         <div class="tbl">
           <table>
             <thead><tr><th><span data-tr>Test</span><span data-en>Test</span></th><th style="text-align:right">Raspberry Pi 4</th><th><span data-tr>Kaynak ve koşullar</span><span data-en>Source and conditions</span></th><th style="text-align:right">MakerOS</th></tr></thead>
             <tbody>
-            <tr><td><span data-tr>Geekbench 5 · tek çekirdek</span><span data-en>Geekbench 5 · single core</span></td><td class="n">233</td><td class="r" style="text-align:left"><a href="https://browser.geekbench.com/v5/cpu/9697615">Geekbench</a> · 4 GB · Linux 5.10 aarch64 · 2021</td><td class="r"><span data-tr>ölçülecek</span><span data-en>pending</span></td></tr>
-            <tr><td><span data-tr>Geekbench 5 · çok çekirdek</span><span data-en>Geekbench 5 · multi core</span></td><td class="n">686</td><td class="r" style="text-align:left"><a href="https://browser.geekbench.com/v5/cpu/9697615">Geekbench</a> · 4 GB · Linux 5.10 aarch64 · 2021</td><td class="r"><span data-tr>ölçülecek</span><span data-en>pending</span></td></tr>
-            <tr><td><span data-tr>Zstd sıkıştırma, seviye 19</span><span data-en>Zstd compression, level 19</span></td><td class="n">291.5 <span data-tr>sn</span><span data-en>s</span></td><td class="r" style="text-align:left"><a href="https://openbenchmarking.org/result/2202182-NE-2202156EI32">OpenBenchmarking</a> · 4 GB · Raspbian 10 armv7l · 2019</td><td class="r"><span data-tr>ölçülecek</span><span data-en>pending</span></td></tr>
-            <tr><td><span data-tr>Speedometer 2.0 (tarayıcı)</span><span data-en>Speedometer 2.0 (browser)</span></td><td class="n">16.91 <span data-tr>çalışma/dk</span><span data-en>runs/min</span></td><td class="r" style="text-align:left"><a href="https://magazine.raspberrypi.com/articles/raspberry-pi-4-specs-benchmarks">The MagPi</a> · Raspbian · 2019</td><td class="r"><span data-tr>ölçülecek</span><span data-en>pending</span></td></tr>
+            <tr><td><span data-tr>Geekbench 5 · tek çekirdek</span><span data-en>Geekbench 5 · single core</span></td><td class="n">233</td><td class="r" style="text-align:left"><a href="https://browser.geekbench.com/v5/cpu/9697615">Geekbench</a> · 4 GB · Linux 5.10 aarch64 · 2021</td><td class="r"><a href="https://browser.geekbench.com/v5/cpu/24849878"><span data-tr>sonuç sayfası</span><span data-en>result page</span></a></td></tr>
+            <tr><td><span data-tr>Geekbench 5 · çok çekirdek</span><span data-en>Geekbench 5 · multi core</span></td><td class="n">686</td><td class="r" style="text-align:left"><a href="https://browser.geekbench.com/v5/cpu/9697615">Geekbench</a> · 4 GB · Linux 5.10 aarch64 · 2021</td><td class="r"><a href="https://browser.geekbench.com/v5/cpu/24849878"><span data-tr>sonuç sayfası</span><span data-en>result page</span></a></td></tr>
+            <tr><td><span data-tr>Zstd sıkıştırma, seviye 19</span><span data-en>Zstd compression, level 19</span></td><td class="n">291.5 <span data-tr>sn</span><span data-en>s</span></td><td class="r" style="text-align:left"><a href="https://openbenchmarking.org/result/2202182-NE-2202156EI32">OpenBenchmarking</a> · 4 GB · Raspbian 10 armv7l · 2019</td><td class="n">686 <span data-tr>sn</span><span data-en>s</span></td></tr>
+            <tr><td><span data-tr>Speedometer 2.0 (tarayıcı)</span><span data-en>Speedometer 2.0 (browser)</span></td><td class="n">16.91 <span data-tr>çalışma/dk</span><span data-en>runs/min</span></td><td class="r" style="text-align:left"><a href="https://magazine.raspberrypi.com/articles/raspberry-pi-4-specs-benchmarks">The MagPi</a> · Raspbian · 2019</td><td class="r"><span data-tr>tarayıcıda elle</span><span data-en>manual, in browser</span></td></tr>
             <tr><td><span data-tr>UnixBench endeksi (1 / 4 kopya)</span><span data-en>UnixBench index (1 / 4 copies)</span></td><td class="n">327.6 / 803.9</td><td class="r" style="text-align:left"><a href="https://gist.github.com/lonelyion/41c12fbc3d0bd6dfbe94062574c6be66">UnixBench 5.1.3</a> · 4 GB · Linux 4.19 armv7l · 2019</td><td class="r"><span data-tr>derleyici gerekir</span><span data-en>needs a compiler</span></td></tr>
             </tbody>
           </table>
