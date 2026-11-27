@@ -1,23 +1,5 @@
 # Değişiklik Günlüğü
 
-## 1.1.0
-
-Taban imaj (Buildroot, çekirdek ve sistem paketleri) 1.0.0 ile aynı; bu sürüm o imajdan yeniden paketlendi.
-
-### Yeni
-
-- **HTTPS:** makerd arayüzü şifreli bağlantıyla da açılır
-- **Tarayıcı hoparlörü ve mikrofonu** (kullanıcı başına PulseAudio köprüsü): kodu bu sürümde, ancak gereken
-  PulseAudio paketleri bir sonraki taban imajla gelecek; o zamana dek özellik kendiliğinden kapalı kalır
-- **MakerOS Bench 1.1** (`benchmark/makeros-bench.py`): `--compare` ile yayımlanmış Raspberry Pi 4 sonuçlarıyla
-  aynı testler (Geekbench 5.4.0, zstd -19) ve `--speedometer`; mevcut puanlama değişmedi
-- **Tanıtım sayfası:** kaydırdıkça birleşen 3D Pi 4 kamera kasası ve 3MF indirme, Raspberry Pi 4 karşılaştırma tablosu
-
-### Düzeltmeler
-
-- **Güncelleme (OTA):** deneme açılışına (tryboot) yeniden başlatma argümanı logind D-Bus ile verilir;
-  makerd-priv'de `/run` salt okunur olduğu için önceki yol çalışmıyordu
-
 ## 1.0.0
 
 MakerOS'un ilk kararlı sürümü: Buildroot ile Linux çekirdeği üzerine sıfırdan kurulan bağımsız işletim sistemi.
@@ -74,6 +56,25 @@ MakerOS'un ilk kararlı sürümü: Buildroot ile Linux çekirdeği üzerine sıf
 - **Eklenti Mağazası ve Temalar:** `ferhatozcelik/makeros-plugins` deposundaki eklentileri doğrudan listeleme,
   SHA-1 doğrulamasıyla kurma ve güncelleme; Maker (varsayılan), Konya HackerSpace (canlı kapı durumu göstergesi ve
   masaüstü/web widget kartı), Donanım, Siber güvenlik, 3B baskı temaları
+
+### Başarım ve kararlılık
+
+- **Geekbench 5 (Pi 4, 1.5 GHz, hız aşırtma yok): 238 tek / 701 çok çekirdek**; aynı kartta diğer Linux
+  dağıtımlarının ortancası 237 / 691 (bkz. README › Başarım)
+- `/run/user` izinleri (0755) ve kullanıcı çalışma dizini düzeltildi: logind kullanıcı oturumlarını açar,
+  ekran bağlı değilken ekran kabuğu sürekli yeniden başlamaz (kalıcı hatada artan bekleme)
+- Eklentiler ve kapsayıcıları düşük öncelikle çalışır (nice 10, düşük CPU ağırlığı): kullanıcının işini yavaşlatmaz
+- Yeni kullanıcılar için kalıcı oturum (linger): `podman` ve eklentiler açılışta hazır
+- **MakerOS Bench 1.1** (`benchmark/makeros-bench.py`): `--compare` ile yayımlanmış Raspberry Pi 4 sonuçlarıyla aynı
+  testler (Geekbench 5.4.0, zstd -19), `--speedometer`; boşta yük %10'u aşarsa uyarır
+
+### Ayrıca
+
+- **HTTPS:** makerd arayüzü şifreli bağlantıyla da açılır
+- **Tarayıcı hoparlörü ve mikrofonu** (kullanıcı başına PulseAudio köprüsü): gereken PulseAudio paketleri bir sonraki
+  taban imajla gelecek; o zamana dek özellik kendiliğinden kapalı kalır
+- **Güncelleme (OTA):** deneme açılışına (tryboot) yeniden başlatma argümanı logind D-Bus ile verilir
+- **Tanıtım sayfası:** 3D Pi 4 kamera kasası ve 3MF indirme, kartlar arası karşılaştırma
 
 ### Doğrulama
 
