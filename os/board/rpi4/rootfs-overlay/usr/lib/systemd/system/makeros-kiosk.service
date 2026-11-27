@@ -3,6 +3,7 @@
 # pam_systemd) ile seat0'da. Kurulum tamamlanmadan da calisir: makerd '/'
 # adresinde kurulum sihirbazini sunar.
 [Unit]
+StartLimitIntervalSec=0
 Description=MakerOS yerel kabuk (labwc + cog)
 After=systemd-user-sessions.service makerd.service systemd-logind.service
 Wants=makerd.service
@@ -38,6 +39,9 @@ Environment=XDG_CACHE_HOME=/var/cache/makeros-kiosk
 ExecStart=/usr/lib/makeros/session
 Restart=always
 RestartSec=2
+# Kalıcı hata (ör. ekran yok, PAM) işlemciyi sürekli meşgul etmesin: 2 sn'den 2 dk'ya artan bekleme.
+RestartSteps=8
+RestartMaxDelaySec=120
 
 [Install]
 WantedBy=graphical.target

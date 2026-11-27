@@ -58,6 +58,13 @@ fn main() {
     // Ortam değişkenleri çalışma zamanı (iş parçacıkları) kurulmadan ayarlanır.
     if std::env::var_os("XDG_RUNTIME_DIR").is_none_or(|v| v.is_empty()) {
         let rd = format!("/run/user/{uid}");
+        // logind kalıcı oturumu (linger) açılışta /run/user/<uid>'i biraz sonra kurar: en çok 15 sn bekle.
+        for _ in 0..30 {
+            if Path::new(&rd).is_dir() {
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(500));
+        }
         if Path::new(&rd).is_dir() {
             // SAFETY: henüz tek iş parçacığı var.
             unsafe { std::env::set_var("XDG_RUNTIME_DIR", rd) };

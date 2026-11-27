@@ -336,11 +336,13 @@ pub async fn start(a: &dyn Agent, user: &str, id: &str) -> ApiResult<Plugin> {
     let run = format!("cd {} && exec uv run --quiet {}{args} >> .log 2>&1", quote(&dir), shq(&m.entrypoint));
     let env = format!("MAKEROS_PLUGIN_ID={id} MAKEROS_PLUGIN_PORT={}", m.web_port);
     // systemd --user varsa apps.slice içinde (bellek sınırı, kabuk korunur); yoksa ayrık süreç.
+    // Eklentiler arka plan hizmetidir: nice 10 + düşük CPU ağırlığı, kullanıcının işini (terminal,
+    // projeler, ölçümler) yavaşlatmaz; podman kapsayıcıları da bu önceliği devralır.
     let cmd = format!(
         "cd {qd} && : > .log && if command -v systemd-run >/dev/null 2>&1 && systemctl --user show-environment >/dev/null 2>&1; then
-  systemd-run --user --quiet --collect --unit makeros-plugin-{id} --slice apps --setenv=MAKEROS_PLUGIN_ID={id} --setenv=MAKEROS_PLUGIN_PORT={port} sh -c {qr} && sleep 0.3 && systemctl --user show -p MainPID --value makeros-plugin-{id} > .pid
+  systemd-run --user --quiet --collect --unit makeros-plugin-{id} --slice apps --nice=10 -p CPUWeight=50 --setenv=MAKEROS_PLUGIN_ID={id} --setenv=MAKEROS_PLUGIN_PORT={port} sh -c {qr} && sleep 0.3 && systemctl --user show -p MainPID --value makeros-plugin-{id} > .pid
 else
-  env {env} setsid sh -c {qr} </dev/null >/dev/null 2>&1 & echo $! > .pid
+  env {env} setsid nice -n 10 sh -c {qr} </dev/null >/dev/null 2>&1 & echo $! > .pid
 fi",
         qd = quote(&dir),
         port = m.web_port,

@@ -4,7 +4,7 @@
 # makerd'nin kum havuzu dışında çalışır: terminalde sudo çalışır (NoNewPrivileges YOK).
 [Unit]
 Description=MakerOS kullanıcı hizmeti (%i): web terminali
-After=systemd-tmpfiles-setup.service systemd-user-sessions.service
+After=systemd-tmpfiles-setup.service systemd-user-sessions.service systemd-logind.service
 Before=makerd.service
 
 [Service]
@@ -18,10 +18,10 @@ RestartSec=2
 Slice=user.slice
 # Kabuklar bu birimin cgroup'unda çalışır; durdurulunca hepsi kapanır.
 KillMode=control-group
-RuntimeDirectory=user/%U
-RuntimeDirectoryMode=0700
 UMask=0022
-Environment=LANG=C.UTF-8 XDG_RUNTIME_DIR=/run/user/%U
+# XDG_RUNTIME_DIR: /run/user/<uid> logind açar (kalıcı oturum/linger); makerd-user bekler ve ayarlar.
+# %U burada KULLANILMAZ: sistem birimlerinde 0'a çözülür (/run/user/0).
+Environment=LANG=C.UTF-8
 # Kasıtlı olarak NoNewPrivileges/ProtectSystem/MemoryDenyWriteExecute yok: bu
 # kullanıcının kendi oturumudur (sudo, podman, Node JIT çalışmalı).
 OOMScoreAdjust=100

@@ -230,6 +230,11 @@ pub fn user_create(shadow: &str, min_uid: u32, uf: &UserFiles, a: &UserCreateArg
     make_home(Path::new(&home), &uf.skel, uid as u32, gid as u32)?;
     res.uid = uid as u32;
     if !uf.systemctl.is_empty() && Path::new(&uf.systemctl).exists() {
+        // Kalıcı oturum (linger): /run/user/<uid> ve systemd --user açılışta kurulur (podman, eklentiler).
+        let loginctl = Path::new(&uf.systemctl).with_file_name("loginctl");
+        if loginctl.exists() {
+            let _ = run_timeout(&loginctl.to_string_lossy(), &["enable-linger", &a.user], Duration::from_secs(3));
+        }
         let unit = format!("makerd-user@{}.service", a.user);
         let _ = run_timeout(&uf.systemctl, &["enable", &unit], Duration::from_secs(3));
         res.service = run_timeout(&uf.systemctl, &["start", "--no-block", &unit], Duration::from_secs(3));
