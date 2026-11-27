@@ -137,6 +137,20 @@ def geomean(xs):
 
 # --- sistem bilgisi (kimlik bilgisi yok) ------------------------------------------
 
+def idle_load(seconds=3):
+    """Testten önce tüm çekirdeklerde boşta yük (%); Linux dışında None."""
+    def snap():
+        v = [int(x) for x in read("/proc/stat").splitlines()[0].split()[1:]]
+        return sum(v), v[3] + (v[4] if len(v) > 4 else 0)
+    try:
+        t1, i1 = snap()
+        time.sleep(seconds)
+        t2, i2 = snap()
+        return round(100 * (1 - (i2 - i1) / max(1, t2 - t1)), 1)
+    except (ValueError, IndexError, AttributeError):
+        return None
+
+
 def system_info():
     info = {"python": platform.python_version(), "python_impl": platform.python_implementation(),
             "arch": platform.machine(), "kernel": platform.release(), "cores": os.cpu_count() or 1}
@@ -697,6 +711,13 @@ def main():
     t0 = time.time()
     th_before = thermal()
     results = {}
+    idle = idle_load()
+    if idle is not None:
+        sysi["idle_load_pct"] = idle
+        if idle > 10:
+            log(f"⚠ Boşta işlemci yükü %{idle:.0f}: arka planda çalışan bir şey var (eklenti, kapsayıcı, proje).")
+            log("  Sonuçlar düşük çıkar; karşılaştırma için önce durdurun. En çok kullananlar:")
+            log("  " + run(["sh", "-c", "ps -eo pcpu,comm --sort=-pcpu | sed -n 2,6p"]).replace("\n", "\n  "))
     steps = [("cpu", "CPU tek çekirdek", lambda: bench_cpu(scale, repeats)),
              ("multi", f"CPU çok çekirdek ({sysi['cores']})", lambda: bench_multi(scale, repeats, sysi["cores"])),
              ("mem", "Bellek", lambda: bench_mem(scale, repeats)),

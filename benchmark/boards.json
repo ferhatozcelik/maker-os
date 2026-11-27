@@ -2,11 +2,13 @@
   "about": "Geekbench 5 (Linux) karşılaştırması. Diğer kartlar: Geekbench Browser aramasında sistem adı tam eşleşen Linux sonuçlarının ortancası (p25-p75 aralığıyla), 2026-11-27'de toplandı. Pi 4 · diğer Linux satırı yalnız 1500 MHz (fabrika saat hızı) sonuçlarıdır; Geekbench listesi dağıtımı göstermediği için Raspberry Pi OS, Ubuntu vb. karışıktır; MakerOS ile aynı koşul.",
   "collected": "2026-11-27",
   "makeros": {
-    "label": "MakerOS 1.0.0 · Pi 4",
+    "label": "MakerOS · Pi 4",
     "soc": "BCM2711 · 4× A72 1.5 GHz",
-    "single": 215,
-    "multi": 634,
-    "src": "https://browser.geekbench.com/v5/cpu/24849878"
+    "single": 238,
+    "multi": 701,
+    "runs": [[239, 701, "https://browser.geekbench.com/v5/cpu/24851977"], [238, 702, "https://browser.geekbench.com/v5/cpu/24852002"]],
+    "note": "2026-11-27, iki ölçüm; tablo/grafik her sütunun düşük değeri. 26 Kasım'daki 215/634 ölçümünde Home Assistant eklentisinin kapsayıcısı boşta bir çekirdeği meşgul ediyordu.",
+    "src": "https://browser.geekbench.com/v5/cpu/24851977"
   },
   "boards": [
     {"label": "Pi Zero 2 W", "soc": "BCM2710A1 · 4× A53 1.0 GHz", "n": 147, "single": [75, 86, 92], "multi": [128, 149, 166], "q": "Raspberry Pi Zero 2 W"},

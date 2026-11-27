@@ -196,7 +196,7 @@ All tests with ranges: [website](https://ferhatozcelik.github.io/maker-os/#perfo
 
 ### Compared with other boards
 
-Geekbench 5.4.0 (Linux AArch64) on the same Pi 4 running MakerOS 1.0.0: **215 single-core / 634 multi-core** ([result](https://browser.geekbench.com/v5/cpu/24849878)). Other boards are medians of Linux results on Geekbench Browser (27 November 2026).
+Geekbench 5.4.0 (Linux AArch64), run twice on the same Pi 4 with MakerOS: **239 / 701** and **238 / 702** (single / multi-core; [1](https://browser.geekbench.com/v5/cpu/24851977), [2](https://browser.geekbench.com/v5/cpu/24852002)). Other boards are medians of Linux results on Geekbench Browser (27 November 2026).
 
 <p align="center"><img src="docs/assets/diagrams/bench-boards.en.svg" alt="Geekbench 5 single- and multi-core scores: Pi Zero 2 W, Pi 3 B+, MakerOS Pi 4, Pi 4 other Linux, Jetson Nano, Pi 5, Rock 5B, Orange Pi 5, Jetson Orin Nano" width="100%"></p>
 
@@ -204,7 +204,7 @@ Geekbench 5.4.0 (Linux AArch64) on the same Pi 4 running MakerOS 1.0.0: **215 si
 | --- | --- | ---: | ---: | ---: |
 | Pi Zero 2 W | BCM2710A1 · 4× A53 1.0 GHz | 86 | 149 | 147 |
 | Pi 3 B+ | BCM2837B0 · 4× A53 1.4 GHz | 100 | 186 | 199 |
-| **Pi 4 · MakerOS 1.0.0** | **BCM2711 · 4× A72 1.5 GHz** | **215** | **634** | **1** |
+| **Pi 4 · MakerOS** | **BCM2711 · 4× A72 1.5 GHz** | **238** | **701** | **2** |
 | Pi 4 · other Linux distros | BCM2711 · 4× A72 1.5 GHz | 237 | 691 | 25 |
 | Jetson Nano | Tegra X1 · 4× A57 1.43 GHz | 231 | 839 | 35 |
 | Pi 5 | BCM2712 · 4× A76 2.4 GHz | 673 | 1,983 | 125 |
@@ -212,7 +212,7 @@ Geekbench 5.4.0 (Linux AArch64) on the same Pi 4 running MakerOS 1.0.0: **215 si
 | Orange Pi 5 | RK3588S · 4× A76 + 4× A55 | 606 | 2,566 | 82 |
 | Jetson Orin Nano | Orin · 6× A78AE | 539 | 2,870 | 30 |
 
-- **Same board:** MakerOS is about **9% (single) / 8% (multi)** behind the median of other Linux distributions at the stock clock (1.5 GHz; Raspberry Pi OS, Ubuntu etc., Geekbench does not tell them apart). This is a single run, taken with the `ondemand` CPU governor and the desktop running.
+- **Same board:** MakerOS is ahead of the median of other Linux distributions at the stock clock (1.5 GHz; Raspberry Pi OS, Ubuntu etc., Geekbench does not tell them apart): **238 / 701** vs. **237 / 691**. No overclock, `ondemand` governor, plugins (Home Assistant, Chromecast…) running. The first run on 26 November (215 / 634) was taken while the Home Assistant container kept one core busy at idle; plugins now run at low priority.
 - The Pi 4 is ~2× a Pi 3 B+ single-core and ~3.4× multi-core; the Pi 5 and RK3588 boards are roughly 3–4× a Pi 4.
 - **zstd -19** (same file, single thread): MakerOS 686 s vs. a published Raspbian 10 result of 291 s. The source used 32-bit zstd 1.3.4, so the gap cannot be put on the OS alone.
 
