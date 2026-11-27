@@ -179,7 +179,47 @@ Plugins come from the [makeros-plugins](https://github.com/ferhatozcelik/makeros
 
 ## Performance
 
-Raspberry Pi 4 Model B (4 GB), MakerOS 1.0.0, no overclock, microSD card. Median of three MakerOS Bench runs (22 November 2026):
+**Geekbench 5 on a Raspberry Pi 4: 238 single / 701 multi-core.** On the same board at the same 1.5 GHz, above the median of other Linux distributions (237 / 691); no overclock, plugins running.
+
+### Same board: MakerOS vs. other Linux distributions
+
+<p align="center"><img src="docs/assets/diagrams/bench-same.en.svg" alt="Geekbench 5 on the same Pi 4 at 1.5 GHz: MakerOS 26 Nov 215 / 634, other Linux 237 / 691, MakerOS 27 Nov 238 / 701" width="100%"></p>
+
+| | Single-core | Multi-core | Delta (single / multi) |
+| --- | ---: | ---: | ---: |
+| MakerOS · 26 Nov | 215 | 634 | −9.3% / −8.2% |
+| Other Linux distributions (median, 25 results) | 237 | 691 | — |
+| **MakerOS · 27 Nov** | **238** | **701** | **+0.4% / +1.4%** |
+
+**What changed?** The kernel settings match Raspberry Pi OS (`PREEMPT`, 250 Hz, `ondemand`); the gap was at runtime:
+
+- **The Home Assistant container** kept 80–95% of one core busy at idle. The system was 25.6% busy at idle; 1.2% with HA stopped.
+- **`/run/user` permissions** kept user sessions from starting; with no display attached, the screen shell restarted 2,351 times in 88 minutes.
+- **Fix:** plugins and their containers run at low priority (nice 10, low CPU weight), `/run/user` is back to 0755, and the screen shell backs off on persistent errors. `makeros-bench` now warns when idle load is above 10%.
+
+### Across boards
+
+<p align="center"><img src="docs/assets/diagrams/bench-boards.en.svg" alt="With MakerOS Pi 4 = 1×, single- and multi-core ratios of Jetson Orin Nano, Orange Pi 5, Rock 5B, Pi 5, Jetson Nano, Pi 3 B+ and Pi Zero 2 W" width="100%"></p>
+
+| Board | CPU | Single | Multi | Single (×) | Multi (×) | Samples |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| Jetson Orin Nano | Orin · 6× A78AE | 539 | 2,870 | 2.26 | 4.09 | 30 |
+| Orange Pi 5 | RK3588S · 4× A76 + 4× A55 | 606 | 2,566 | 2.55 | 3.66 | 82 |
+| Rock 5B | RK3588 · 4× A76 + 4× A55 | 587 | 2,471 | 2.47 | 3.52 | 187 |
+| Pi 5 | BCM2712 · 4× A76 2.4 GHz | 673 | 1,983 | 2.83 | 2.83 | 125 |
+| Jetson Nano | Tegra X1 · 4× A57 1.43 GHz | 231 | 839 | 0.97 | 1.20 | 35 |
+| **Pi 4 · MakerOS** | **BCM2711 · 4× A72 1.5 GHz** | **238** | **701** | **1** | **1** | **2** |
+| Pi 4 · other Linux | BCM2711 · 4× A72 1.5 GHz | 237 | 691 | 1.00 | 0.99 | 25 |
+| Pi 3 B+ | BCM2837B0 · 4× A53 1.4 GHz | 100 | 186 | 0.42 | 0.27 | 199 |
+| Pi Zero 2 W | BCM2710A1 · 4× A53 1.0 GHz | 86 | 149 | 0.36 | 0.21 | 147 |
+
+- **×:** ratio to MakerOS on the Pi 4 (1 = equal). Sorted by multi-core.
+- The Pi 4 is ~2.4× a Pi 3 B+ single-core and ~3.8× multi-core. The Pi 5 is ~2.8× on both; the 8-core RK3588 boards are ~3.5× ahead multi-core.
+- The Jetson Nano is level with the Pi 4 single-core (0.97×) and 20% ahead multi-core.
+
+### MakerOS Bench (Python workloads)
+
+Pi 4 Model B (4 GB), no overclock, microSD card. Median of three runs (22 November 2026):
 
 | Test | Result |
 | --- | ---: |
@@ -192,31 +232,14 @@ Raspberry Pi 4 Model B (4 GB), MakerOS 1.0.0, no overclock, microSD card. Median
 | Random 4K read / write (fsync) | 2,062 / 133 IOPS |
 | Peak temperature under load | 52.6 °C |
 
-All tests with ranges: [website](https://ferhatozcelik.github.io/maker-os/#performance). The tests are Python workloads; disk results depend on the microSD card used.
+Disk results depend on the microSD card used. All tests with ranges: [website](https://ferhatozcelik.github.io/maker-os/#performance).
 
-### Compared with other boards
+### Method and sources
 
-Geekbench 5.4.0 (Linux AArch64), run twice on the same Pi 4 with MakerOS: **239 / 701** and **238 / 702** (single / multi-core; [1](https://browser.geekbench.com/v5/cpu/24851977), [2](https://browser.geekbench.com/v5/cpu/24852002)). Other boards are medians of Linux results on Geekbench Browser (27 November 2026).
-
-<p align="center"><img src="docs/assets/diagrams/bench-boards.en.svg" alt="Geekbench 5 single- and multi-core scores: Pi Zero 2 W, Pi 3 B+, MakerOS Pi 4, Pi 4 other Linux, Jetson Nano, Pi 5, Rock 5B, Orange Pi 5, Jetson Orin Nano" width="100%"></p>
-
-| Board | CPU | Single-core | Multi-core | Samples |
-| --- | --- | ---: | ---: | ---: |
-| Pi Zero 2 W | BCM2710A1 · 4× A53 1.0 GHz | 86 | 149 | 147 |
-| Pi 3 B+ | BCM2837B0 · 4× A53 1.4 GHz | 100 | 186 | 199 |
-| **Pi 4 · MakerOS** | **BCM2711 · 4× A72 1.5 GHz** | **238** | **701** | **2** |
-| Pi 4 · other Linux distros | BCM2711 · 4× A72 1.5 GHz | 237 | 691 | 25 |
-| Jetson Nano | Tegra X1 · 4× A57 1.43 GHz | 231 | 839 | 35 |
-| Pi 5 | BCM2712 · 4× A76 2.4 GHz | 673 | 1,983 | 125 |
-| Rock 5B | RK3588 · 4× A76 + 4× A55 | 587 | 2,471 | 187 |
-| Orange Pi 5 | RK3588S · 4× A76 + 4× A55 | 606 | 2,566 | 82 |
-| Jetson Orin Nano | Orin · 6× A78AE | 539 | 2,870 | 30 |
-
-- **Same board:** MakerOS is ahead of the median of other Linux distributions at the stock clock (1.5 GHz; Raspberry Pi OS, Ubuntu etc., Geekbench does not tell them apart): **238 / 701** vs. **237 / 691**. No overclock, `ondemand` governor, plugins (Home Assistant, Chromecast…) running. The first run on 26 November (215 / 634) was taken while the Home Assistant container kept one core busy at idle; plugins now run at low priority.
-- The Pi 4 is ~2× a Pi 3 B+ single-core and ~3.4× multi-core; the Pi 5 and RK3588 boards are roughly 3–4× a Pi 4.
+- **MakerOS:** Geekbench 5.4.0 (Linux AArch64), 27 November 2026, two runs: [239 / 701](https://browser.geekbench.com/v5/cpu/24851977), [238 / 702](https://browser.geekbench.com/v5/cpu/24852002). The table shows the lower value of each column.
+- **Other boards:** median of Linux results on Geekbench Browser whose system name matches exactly (27 November 2026). "Pi 4 · other Linux" is 1,500 MHz results only; Geekbench does not tell distributions apart, so Raspberry Pi OS, Ubuntu etc. are mixed.
 - **zstd -19** (same file, single thread): MakerOS 686 s vs. a published Raspbian 10 result of 291 s. The source used 32-bit zstd 1.3.4, so the gap cannot be put on the OS alone.
-
-Source data and method: [benchmark/boards.json](benchmark/boards.json) · [MakerOS Bench result](benchmark/results/20261126-2334-makeros-raspberry-pi-4-rev-1-2-4-gb-makeros-1-0-0.md). To regenerate the chart: `python3 docs/assets/diagrams/bench.py`
+- Data: [benchmark/boards.json](benchmark/boards.json) · diagnosis: [benchmark/gb5-diag.sh](benchmark/gb5-diag.sh) · charts: `python3 docs/assets/diagrams/bench.py`
 
 <a id="setup-guide"></a>
 

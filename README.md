@@ -179,44 +179,67 @@ Eklentiler [makeros-plugins](https://github.com/ferhatozcelik/makeros-plugins) d
 
 ## Başarım
 
-Raspberry Pi 4 Model B (4 GB), MakerOS 1.0.0, hız aşırtma yok, microSD kart. Üç MakerOS Bench ölçümünün ortancası (22 Kasım 2026):
+**Raspberry Pi 4'te Geekbench 5: 238 tek / 701 çok çekirdek.** Aynı kartta, aynı 1,5 GHz'te diğer Linux dağıtımlarının ortancasının (237 / 691) üstünde; hız aşırtma yok, eklentiler açık.
+
+### Aynı kartta: MakerOS ve diğer Linux dağıtımları
+
+<p align="center"><img src="docs/assets/diagrams/bench-same.svg" alt="Aynı Pi 4 ve 1,5 GHz'te Geekbench 5: MakerOS 26 Kasım 215 / 634, diğer Linux 237 / 691, MakerOS 27 Kasım 238 / 701" width="100%"></p>
+
+| | Tek çekirdek | Çok çekirdek | Fark (tek / çok) |
+| --- | ---: | ---: | ---: |
+| MakerOS · 26 Kasım | 215 | 634 | −9,3% / −8,2% |
+| Diğer Linux dağıtımları (ortanca, 25 sonuç) | 237 | 691 | — |
+| **MakerOS · 27 Kasım** | **238** | **701** | **+0,4% / +1,4%** |
+
+**Ne değişti?** Çekirdek ayarları Raspberry Pi OS ile aynı (`PREEMPT`, 250 Hz, `ondemand`); fark çalışma anındaydı:
+
+- **Home Assistant kapsayıcısı** boşta bir çekirdeğin %80–95'ini kullanıyordu. Sistem boşta %25,6 meşguldü; HA durdurulunca %1,2'ye indi.
+- **`/run/user` izinleri** yüzünden kullanıcı oturumları açılmıyor, ekran bağlı değilken ekran kabuğu 88 dakikada 2.351 kez yeniden başlıyordu.
+- **Düzeltme:** eklentiler ve kapsayıcıları düşük öncelikle çalışır (nice 10, düşük CPU ağırlığı), `/run/user` 0755'e döndü, ekran kabuğu kalıcı hatada artan aralıkla dener. `makeros-bench` artık boşta yük %10'u aşarsa uyarır.
+
+### Kartlar arası
+
+<p align="center"><img src="docs/assets/diagrams/bench-boards.svg" alt="MakerOS Pi 4 = 1× kabul edilerek Jetson Orin Nano, Orange Pi 5, Rock 5B, Pi 5, Jetson Nano, Pi 3 B+ ve Pi Zero 2 W'nin tek ve çok çekirdek kat farkı" width="100%"></p>
+
+| Kart | İşlemci | Tek | Çok | Tek (×) | Çok (×) | Örnek |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| Jetson Orin Nano | Orin · 6× A78AE | 539 | 2.870 | 2,26 | 4,09 | 30 |
+| Orange Pi 5 | RK3588S · 4× A76 + 4× A55 | 606 | 2.566 | 2,55 | 3,66 | 82 |
+| Rock 5B | RK3588 · 4× A76 + 4× A55 | 587 | 2.471 | 2,47 | 3,52 | 187 |
+| Pi 5 | BCM2712 · 4× A76 2,4 GHz | 673 | 1.983 | 2,83 | 2,83 | 125 |
+| Jetson Nano | Tegra X1 · 4× A57 1,43 GHz | 231 | 839 | 0,97 | 1,20 | 35 |
+| **Pi 4 · MakerOS** | **BCM2711 · 4× A72 1,5 GHz** | **238** | **701** | **1** | **1** | **2** |
+| Pi 4 · diğer Linux | BCM2711 · 4× A72 1,5 GHz | 237 | 691 | 1,00 | 0,99 | 25 |
+| Pi 3 B+ | BCM2837B0 · 4× A53 1,4 GHz | 100 | 186 | 0,42 | 0,27 | 199 |
+| Pi Zero 2 W | BCM2710A1 · 4× A53 1,0 GHz | 86 | 149 | 0,36 | 0,21 | 147 |
+
+- **×:** MakerOS Pi 4'e göre kat (1 = aynı). Liste çok çekirdeğe göre sıralı.
+- Pi 4, Pi 3 B+'nın tek çekirdekte ~2,4, çok çekirdekte ~3,8 katı. Pi 5 her iki tarafta ~2,8 kat, 8 çekirdekli RK3588 kartları çok çekirdekte ~3,5 kat önde.
+- Jetson Nano tek çekirdekte Pi 4 ile başa baş (0,97×), çok çekirdekte %20 önde.
+
+### MakerOS Bench (Python iş yükleri)
+
+Pi 4 Model B (4 GB), hız aşırtma yok, microSD kart. Üç ölçümün ortancası (22 Kasım 2026):
 
 | Test | Sonuç |
 | --- | ---: |
-| CPU tamsayı · tek çekirdek | 0.83 M işlem/sn |
-| CPU tamsayı · 4 çekirdek | 3.28 M işlem/sn (4.0×) |
+| CPU tamsayı · tek çekirdek | 0,83 M işlem/sn |
+| CPU tamsayı · 4 çekirdek | 3,28 M işlem/sn (4,0×) |
 | SHA-256 | 143 MB/s |
-| zlib sıkıştırma | 12.3 MB/s |
-| Bellek kopyalama | 2.70 GB/s |
-| Sıralı okuma / yazma (fsync) | 46.3 / 20.5 MB/s |
-| Rastgele 4K okuma / yazma (fsync) | 2,062 / 133 IOPS |
-| Yük altında en yüksek sıcaklık | 52.6 °C |
+| zlib sıkıştırma | 12,3 MB/s |
+| Bellek kopyalama | 2,70 GB/s |
+| Sıralı okuma / yazma (fsync) | 46,3 / 20,5 MB/s |
+| Rastgele 4K okuma / yazma (fsync) | 2.062 / 133 IOPS |
+| Yük altında en yüksek sıcaklık | 52,6 °C |
 
-Tüm testler ve aralıklar: [tanıtım sayfası](https://ferhatozcelik.github.io/maker-os/#performance). Testler Python iş yükleridir; disk sonuçları kullanılan microSD karta bağlıdır.
+Disk sonuçları kullanılan microSD karta bağlıdır. Tüm testler ve aralıklar: [tanıtım sayfası](https://ferhatozcelik.github.io/maker-os/#performance).
 
-### Diğer kartlarla karşılaştırma
+### Yöntem ve kaynaklar
 
-Aynı Pi 4 üzerinde MakerOS ile Geekbench 5.4.0 (Linux AArch64) iki kez çalıştırıldı: **239 / 701** ve **238 / 702** (tek / çok çekirdek; [1](https://browser.geekbench.com/v5/cpu/24851977), [2](https://browser.geekbench.com/v5/cpu/24852002)). Diğer kartlar Geekbench Browser'daki Linux sonuçlarının ortancasıdır (27 Kasım 2026).
-
-<p align="center"><img src="docs/assets/diagrams/bench-boards.svg" alt="Geekbench 5 tek ve çok çekirdek puanları: Pi Zero 2 W, Pi 3 B+, MakerOS Pi 4, Pi 4 diğer Linux, Jetson Nano, Pi 5, Rock 5B, Orange Pi 5, Jetson Orin Nano" width="100%"></p>
-
-| Kart | İşlemci | Tek çekirdek | Çok çekirdek | Örnek |
-| --- | --- | ---: | ---: | ---: |
-| Pi Zero 2 W | BCM2710A1 · 4× A53 1.0 GHz | 86 | 149 | 147 |
-| Pi 3 B+ | BCM2837B0 · 4× A53 1.4 GHz | 100 | 186 | 199 |
-| **Pi 4 · MakerOS** | **BCM2711 · 4× A72 1.5 GHz** | **238** | **701** | **2** |
-| Pi 4 · diğer Linux dağıtımları | BCM2711 · 4× A72 1.5 GHz | 237 | 691 | 25 |
-| Jetson Nano | Tegra X1 · 4× A57 1.43 GHz | 231 | 839 | 35 |
-| Pi 5 | BCM2712 · 4× A76 2.4 GHz | 673 | 1,983 | 125 |
-| Rock 5B | RK3588 · 4× A76 + 4× A55 | 587 | 2,471 | 187 |
-| Orange Pi 5 | RK3588S · 4× A76 + 4× A55 | 606 | 2,566 | 82 |
-| Jetson Orin Nano | Orin · 6× A78AE | 539 | 2,870 | 30 |
-
-- **Aynı kartta:** MakerOS, fabrika saat hızında (1.5 GHz) diğer Linux dağıtımlarıyla (Raspberry Pi OS, Ubuntu vb.; Geekbench dağıtımı ayırmıyor) alınan sonuçların ortancasını geçiyor: **238 / 701**, karşısında **237 / 691**. Hız aşırtma yok, CPU yöneticisi `ondemand`, eklentiler (Home Assistant, Chromecast…) açık. 26 Kasım'daki ilk ölçüm (215 / 634) Home Assistant kapsayıcısı boşta bir çekirdeği meşgul ederken alınmıştı; eklentiler artık düşük öncelikle çalışır.
-- Pi 4, Pi 3 B+'nın tek çekirdekte ~2×, çok çekirdekte ~3,4× üstünde; Pi 5 ve RK3588 kartları ise Pi 4'ün yaklaşık 3–4 katı.
+- **MakerOS:** Geekbench 5.4.0 (Linux AArch64), 27 Kasım 2026, iki ölçüm: [239 / 701](https://browser.geekbench.com/v5/cpu/24851977), [238 / 702](https://browser.geekbench.com/v5/cpu/24852002). Tabloda her sütunun düşük değeri.
+- **Diğer kartlar:** Geekbench Browser'da sistem adı tam eşleşen Linux sonuçlarının ortancası (27 Kasım 2026). "Pi 4 · diğer Linux" yalnız 1.500 MHz sonuçlarıdır; Geekbench dağıtımı ayırmadığı için Raspberry Pi OS, Ubuntu vb. karışıktır.
 - **zstd -19** (aynı dosya, tek iş parçacığı): MakerOS 686 sn, yayımlanmış Raspbian 10 sonucu 291 sn. Kaynak 32 bit zstd 1.3.4 ile alındığından fark yalnız işletim sistemine bağlanamaz.
-
-Kaynak veri ve ölçüm yöntemi: [benchmark/boards.json](benchmark/boards.json) · [MakerOS Bench sonucu](benchmark/results/20261126-2334-makeros-raspberry-pi-4-rev-1-2-4-gb-makeros-1-0-0.md). Grafiği yeniden üretmek için: `python3 docs/assets/diagrams/bench.py`
+- Veri: [benchmark/boards.json](benchmark/boards.json) · teşhis: [benchmark/gb5-diag.sh](benchmark/gb5-diag.sh) · grafikler: `python3 docs/assets/diagrams/bench.py`
 
 <a id="setup-guide"></a>
 

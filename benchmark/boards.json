@@ -8,7 +8,9 @@
     "multi": 701,
     "runs": [[239, 701, "https://browser.geekbench.com/v5/cpu/24851977"], [238, 702, "https://browser.geekbench.com/v5/cpu/24852002"]],
     "note": "2026-11-27, iki ölçüm; tablo/grafik her sütunun düşük değeri. 26 Kasım'daki 215/634 ölçümünde Home Assistant eklentisinin kapsayıcısı boşta bir çekirdeği meşgul ediyordu.",
-    "src": "https://browser.geekbench.com/v5/cpu/24851977"
+    "src": "https://browser.geekbench.com/v5/cpu/24851977",
+    "before": {"date": "2026-11-26", "single": 215, "multi": 634, "src": "https://browser.geekbench.com/v5/cpu/24849878",
+               "why": "Home Assistant kapsayıcısı boşta bir çekirdeğin %80-95'ini kullanıyordu (sistem boşta %25,6; HA durdurulunca %1,2)."}
   },
   "boards": [
     {"label": "Pi Zero 2 W", "soc": "BCM2710A1 · 4× A53 1.0 GHz", "n": 147, "single": [75, 86, 92], "multi": [128, 149, 166], "q": "Raspberry Pi Zero 2 W"},
