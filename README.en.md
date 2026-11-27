@@ -194,6 +194,30 @@ Raspberry Pi 4 Model B (4 GB), MakerOS 1.0.0, no overclock, microSD card. Median
 
 All tests with ranges: [website](https://ferhatozcelik.github.io/maker-os/#performance). The tests are Python workloads; disk results depend on the microSD card used.
 
+### Compared with other boards
+
+Geekbench 5.4.0 (Linux AArch64) on the same Pi 4 running MakerOS 1.0.0: **215 single-core / 634 multi-core** ([result](https://browser.geekbench.com/v5/cpu/24849878)). Other boards are medians of Linux results on Geekbench Browser (27 November 2026).
+
+<p align="center"><img src="docs/assets/diagrams/bench-boards.en.svg" alt="Geekbench 5 single- and multi-core scores: Pi Zero 2 W, Pi 3 B+, MakerOS Pi 4, Pi 4 other Linux, Jetson Nano, Pi 5, Rock 5B, Orange Pi 5, Jetson Orin Nano" width="100%"></p>
+
+| Board | CPU | Single-core | Multi-core | Samples |
+| --- | --- | ---: | ---: | ---: |
+| Pi Zero 2 W | BCM2710A1 · 4× A53 1.0 GHz | 86 | 149 | 147 |
+| Pi 3 B+ | BCM2837B0 · 4× A53 1.4 GHz | 100 | 186 | 199 |
+| **Pi 4 · MakerOS 1.0.0** | **BCM2711 · 4× A72 1.5 GHz** | **215** | **634** | **1** |
+| Pi 4 · other Linux distros | BCM2711 · 4× A72 1.5 GHz | 237 | 691 | 25 |
+| Jetson Nano | Tegra X1 · 4× A57 1.43 GHz | 231 | 839 | 35 |
+| Pi 5 | BCM2712 · 4× A76 2.4 GHz | 673 | 1,983 | 125 |
+| Rock 5B | RK3588 · 4× A76 + 4× A55 | 587 | 2,471 | 187 |
+| Orange Pi 5 | RK3588S · 4× A76 + 4× A55 | 606 | 2,566 | 82 |
+| Jetson Orin Nano | Orin · 6× A78AE | 539 | 2,870 | 30 |
+
+- **Same board:** MakerOS is about **9% (single) / 8% (multi)** behind the median of other Linux distributions at the stock clock (1.5 GHz; Raspberry Pi OS, Ubuntu etc., Geekbench does not tell them apart). This is a single run, taken with the `ondemand` CPU governor and the desktop running.
+- The Pi 4 is ~2× a Pi 3 B+ single-core and ~3.4× multi-core; the Pi 5 and RK3588 boards are roughly 3–4× a Pi 4.
+- **zstd -19** (same file, single thread): MakerOS 686 s vs. a published Raspbian 10 result of 291 s. The source used 32-bit zstd 1.3.4, so the gap cannot be put on the OS alone.
+
+Source data and method: [benchmark/boards.json](benchmark/boards.json) · [MakerOS Bench result](benchmark/results/20261126-2334-makeros-raspberry-pi-4-rev-1-2-4-gb-makeros-1-0-0.md). To regenerate the chart: `python3 docs/assets/diagrams/bench.py`
+
 <a id="setup-guide"></a>
 
 ## Setup

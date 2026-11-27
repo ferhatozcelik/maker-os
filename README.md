@@ -194,6 +194,30 @@ Raspberry Pi 4 Model B (4 GB), MakerOS 1.0.0, hız aşırtma yok, microSD kart. 
 
 Tüm testler ve aralıklar: [tanıtım sayfası](https://ferhatozcelik.github.io/maker-os/#performance). Testler Python iş yükleridir; disk sonuçları kullanılan microSD karta bağlıdır.
 
+### Diğer kartlarla karşılaştırma
+
+Aynı Pi 4 üzerinde MakerOS 1.0.0 ile Geekbench 5.4.0 (Linux AArch64) çalıştırıldı: **215 tek çekirdek / 634 çok çekirdek** ([sonuç](https://browser.geekbench.com/v5/cpu/24849878)). Diğer kartlar Geekbench Browser'daki Linux sonuçlarının ortancasıdır (27 Kasım 2026).
+
+<p align="center"><img src="docs/assets/diagrams/bench-boards.svg" alt="Geekbench 5 tek ve çok çekirdek puanları: Pi Zero 2 W, Pi 3 B+, MakerOS Pi 4, Pi 4 diğer Linux, Jetson Nano, Pi 5, Rock 5B, Orange Pi 5, Jetson Orin Nano" width="100%"></p>
+
+| Kart | İşlemci | Tek çekirdek | Çok çekirdek | Örnek |
+| --- | --- | ---: | ---: | ---: |
+| Pi Zero 2 W | BCM2710A1 · 4× A53 1.0 GHz | 86 | 149 | 147 |
+| Pi 3 B+ | BCM2837B0 · 4× A53 1.4 GHz | 100 | 186 | 199 |
+| **Pi 4 · MakerOS 1.0.0** | **BCM2711 · 4× A72 1.5 GHz** | **215** | **634** | **1** |
+| Pi 4 · diğer Linux dağıtımları | BCM2711 · 4× A72 1.5 GHz | 237 | 691 | 25 |
+| Jetson Nano | Tegra X1 · 4× A57 1.43 GHz | 231 | 839 | 35 |
+| Pi 5 | BCM2712 · 4× A76 2.4 GHz | 673 | 1,983 | 125 |
+| Rock 5B | RK3588 · 4× A76 + 4× A55 | 587 | 2,471 | 187 |
+| Orange Pi 5 | RK3588S · 4× A76 + 4× A55 | 606 | 2,566 | 82 |
+| Jetson Orin Nano | Orin · 6× A78AE | 539 | 2,870 | 30 |
+
+- **Aynı kartta:** MakerOS, fabrika saat hızında (1.5 GHz) diğer Linux dağıtımlarıyla (Raspberry Pi OS, Ubuntu vb.; Geekbench dağıtımı ayırmıyor) alınan sonuçların ortancasının yaklaşık **%9 (tek) / %8 (çok)** gerisinde. Bu tek bir ölçüm; MakerOS'ta CPU yöneticisi `ondemand` ve masaüstü açıkken alındı.
+- Pi 4, Pi 3 B+'nın tek çekirdekte ~2×, çok çekirdekte ~3,4× üstünde; Pi 5 ve RK3588 kartları ise Pi 4'ün yaklaşık 3–4 katı.
+- **zstd -19** (aynı dosya, tek iş parçacığı): MakerOS 686 sn, yayımlanmış Raspbian 10 sonucu 291 sn. Kaynak 32 bit zstd 1.3.4 ile alındığından fark yalnız işletim sistemine bağlanamaz.
+
+Kaynak veri ve ölçüm yöntemi: [benchmark/boards.json](benchmark/boards.json) · [MakerOS Bench sonucu](benchmark/results/20261126-2334-makeros-raspberry-pi-4-rev-1-2-4-gb-makeros-1-0-0.md). Grafiği yeniden üretmek için: `python3 docs/assets/diagrams/bench.py`
+
 <a id="setup-guide"></a>
 
 ## Kurulum

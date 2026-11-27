@@ -50,8 +50,8 @@
 
 | Test | Raspberry Pi 4 (kaynak) | Bu sistem | Fark | |
 |---|---:|---:|---:|---|
-| Geekbench 5 · tek çekirdek | 233 puan | — |  |  |
-| Geekbench 5 · çok çekirdek | 686 puan | — |  |  |
+| Geekbench 5 · tek çekirdek | 233 puan | 215 puan | -8% | `█████████░░░░░░░░░░░` |
+| Geekbench 5 · çok çekirdek | 686 puan | 634 puan | -8% | `█████████░░░░░░░░░░░` |
 | Zstd sıkıştırma (seviye 19) | 291 sn | 686 sn | -58% | `████░░░░░░░░░░░░░░░░` |
 | Speedometer 2.0 (tarayıcı) | 16.9 çalışma/dk | — |  |  |
 
@@ -65,7 +65,6 @@ Kaynaklar ve koşullar:
 - Speedometer 2.0 (tarayıcı): Pi 4 · Raspbian (Haziran 2019) — https://magazine.raspberrypi.com/articles/raspberry-pi-4-specs-benchmarks
 - Bu sistemde zstd: *** Zstandard CLI (64-bit) v1.5.7, by Yann Collet *** (`zstd -19 -T1`, 3 ölçümün ortancası)
 - Bu sistemin Geekbench sonucu: https://browser.geekbench.com/v5/cpu/24849878
-- gb5 atlandı: puan okunamadı: Visit the following link and add this result to your profile:    https://browser.geekbench.com/v5/cpu/24849878/claim?key=813854
 
 Süre: 3088 sn · kip: tam · disk testi: 54 GB birim
 

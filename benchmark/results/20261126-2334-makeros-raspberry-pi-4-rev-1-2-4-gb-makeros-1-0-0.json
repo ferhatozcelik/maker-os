@@ -70,7 +70,6 @@
   }
  },
  "compare": {
-  "gb5.error": "puan okunamadı: Visit the following link and add this result to your profile:    https://browser.geekbench.com/v5/cpu/24849878/claim?key=813854",
   "gb5.url": "https://browser.geekbench.com/v5/cpu/24849878",
   "zstd19": 686.42,
   "zstd.runs": [
@@ -78,6 +77,8 @@
    688.9,
    686.42
   ],
-  "zstd.version": "*** Zstandard CLI (64-bit) v1.5.7, by Yann Collet ***"
+  "zstd.version": "*** Zstandard CLI (64-bit) v1.5.7, by Yann Collet ***",
+  "gb5.single": 215,
+  "gb5.multi": 634
  }
 }

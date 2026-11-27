@@ -1,0 +1,21 @@
+{
+  "about": "Geekbench 5 (Linux) karşılaştırması. Diğer kartlar: Geekbench Browser aramasında sistem adı tam eşleşen Linux sonuçlarının ortancası (p25-p75 aralığıyla), 2026-11-27'de toplandı. Pi 4 · diğer Linux satırı yalnız 1500 MHz (fabrika saat hızı) sonuçlarıdır; Geekbench listesi dağıtımı göstermediği için Raspberry Pi OS, Ubuntu vb. karışıktır; MakerOS ile aynı koşul.",
+  "collected": "2026-11-27",
+  "makeros": {
+    "label": "MakerOS 1.0.0 · Pi 4",
+    "soc": "BCM2711 · 4× A72 1.5 GHz",
+    "single": 215,
+    "multi": 634,
+    "src": "https://browser.geekbench.com/v5/cpu/24849878"
+  },
+  "boards": [
+    {"label": "Pi Zero 2 W", "soc": "BCM2710A1 · 4× A53 1.0 GHz", "n": 147, "single": [75, 86, 92], "multi": [128, 149, 166], "q": "Raspberry Pi Zero 2 W"},
+    {"label": "Pi 3 B+", "soc": "BCM2837B0 · 4× A53 1.4 GHz", "n": 199, "single": [89, 100, 108], "multi": [165, 186, 207], "q": "Raspberry Pi 3 Model B Plus"},
+    {"label": "Jetson Nano", "soc": "Tegra X1 · 4× A57 1.43 GHz", "n": 35, "single": [225, 231, 236], "multi": [759, 839, 867], "q": "Jetson Nano Developer Kit"},
+    {"label": "Pi 4 · diğer Linux", "label_en": "Pi 4 · other Linux", "soc": "BCM2711 · 4× A72 1.5 GHz", "n": 25, "single": [null, 237, null], "multi": [null, 691, null], "q": "Raspberry Pi 4 Model B", "same_hw": true},
+    {"label": "Rock 5B", "soc": "RK3588 · 4× A76 + 4× A55", "n": 187, "single": [565, 587, 621], "multi": [2332, 2471, 2636], "q": "Radxa ROCK 5B"},
+    {"label": "Orange Pi 5", "soc": "RK3588S · 4× A76 + 4× A55", "n": 82, "single": [587, 606, 631], "multi": [2454, 2566, 2652], "q": "Orange Pi 5"},
+    {"label": "Jetson Orin Nano", "soc": "Orin · 6× A78AE", "n": 30, "single": [534, 539, 609], "multi": [2745, 2870, 3154], "q": "Jetson Orin Nano"},
+    {"label": "Pi 5", "soc": "BCM2712 · 4× A76 2.4 GHz", "n": 125, "single": [660, 673, 760], "multi": [1849, 1983, 2131], "q": "Raspberry Pi 5 Model B"}
+  ]
+}
